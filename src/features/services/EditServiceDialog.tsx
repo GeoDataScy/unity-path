@@ -31,7 +31,10 @@ type Props = {
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
   const [saving, setSaving] = useState(false);
   const [clientEmail, setClientEmail] = useState(service.client_email);
-  const [serviceDate, setServiceDate] = useState(service.service_date);
+  const [serviceDate, setServiceDate] = useState(() => {
+    // Ensure the <input type="date"> receives YYYY-MM-DD (not an ISO timestamp).
+    return service.service_date?.includes("T") ? service.service_date.slice(0, 10) : service.service_date;
+  });
   const [product, setProduct] = useState(service.product);
 
   const canSave = useMemo(() => {

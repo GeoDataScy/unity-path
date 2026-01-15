@@ -34,7 +34,13 @@ function todayISO() {
 function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
   if (!value) return null;
 
-  // Date-only coming from <input type="date">: keep it in local time to avoid timezone shifts.
+  // If backend returns a timestamp (e.g. 2026-01-15T00:00:00.000Z),
+  // render the *date portion* to avoid timezone shifting to the previous day.
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    value = value.slice(0, 10);
+  }
+
+  // Date-only coming from <input type="date">: keep it in local time.
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [y, m, d] = value.split("-").map((n) => Number(n));
     if (!y || !m || !d) return null;
@@ -42,7 +48,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
     return Number.isNaN(dt.getTime()) ? null : dt;
   }
 
-  // Fallback: attempt to parse full ISO timestamps.
+  // Fallback: attempt to parse other formats.
   const dt = new Date(value);
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
