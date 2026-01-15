@@ -31,10 +31,20 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function parseDateOnlyToLocal(dateOnly: string) {
-  // Avoid timezone shifts when rendering a YYYY-MM-DD value.
-  const [y, m, d] = dateOnly.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
+function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
+  if (!value) return null;
+
+  // Date-only coming from <input type="date">: keep it in local time to avoid timezone shifts.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split("-").map((n) => Number(n));
+    if (!y || !m || !d) return null;
+    const dt = new Date(y, m - 1, d);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+
+  // Fallback: attempt to parse full ISO timestamps.
+  const dt = new Date(value);
+  return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
 
@@ -292,7 +302,10 @@ const Workspace = () => {
                   services.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>
-                        {s.service_date ? format(parseDateOnlyToLocal(s.service_date), "dd/MM/yyyy") : "—"}
+                        {(() => {
+                          const dt = parseServiceDateForDisplay(s.service_date);
+                          return dt ? format(dt, "dd/MM/yyyy") : "—";
+                        })()}
                       </TableCell>
                       <TableCell className="font-medium">{s.client_email}</TableCell>
                       <TableCell>{s.product}</TableCell>
