@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+
 import { Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,13 @@ const PRODUCTS = ["Produto A", "Produto B", "Produto C"] as const;
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+function parseDateOnlyToLocal(dateOnly: string) {
+  // Avoid timezone shifts when rendering a YYYY-MM-DD value.
+  const [y, m, d] = dateOnly.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
 
 const Workspace = () => {
   const navigate = useNavigate();
@@ -284,7 +292,7 @@ const Workspace = () => {
                   services.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>
-                        {s.service_date ? format(new Date(s.service_date), "dd/MM/yyyy") : "—"}
+                        {s.service_date ? format(parseDateOnlyToLocal(s.service_date), "dd/MM/yyyy") : "—"}
                       </TableCell>
                       <TableCell className="font-medium">{s.client_email}</TableCell>
                       <TableCell>{s.product}</TableCell>
