@@ -61,6 +61,7 @@ const Workspace = () => {
 
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
 
   // Form state
   const [clientEmail, setClientEmail] = useState("");
@@ -92,6 +93,19 @@ const Workspace = () => {
         return;
       }
 
+      // Busca do nome do usuário logado (para saudação no topo)
+      const { data: profileName, error: profileNameError } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (profileNameError) {
+        // Não bloqueia a tela: apenas cai no fallback "Time"
+        console.warn("Falha ao buscar full_name:", profileNameError.message);
+      }
+
+      setFullName(profileName?.full_name ?? null);
       setUserId(session.user.id);
       setLoading(false);
     };
@@ -104,6 +118,11 @@ const Workspace = () => {
   const canSubmit = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product);
   }, [clientEmail, serviceDate, product]);
+
+  const greetingName = useMemo(() => {
+    const trimmed = (fullName ?? "").trim();
+    return trimmed.length > 0 ? trimmed : "Time";
+  }, [fullName]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -225,6 +244,10 @@ const Workspace = () => {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
+        <h1 className="mb-6 text-3xl font-extrabold tracking-tight md:text-4xl">
+          Vamos lá, {greetingName} 🚀
+        </h1>
+
         <Card>
           <CardHeader>
             <CardTitle>Novo registro de atendimento</CardTitle>
