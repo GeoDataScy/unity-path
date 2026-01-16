@@ -244,7 +244,7 @@ const Workspace = () => {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <h1 className="mb-6 text-3xl font-extrabold tracking-tight md:text-4xl">
+        <h1 className="mb-6 text-3xl font-normal tracking-tight md:text-4xl">
           Vamos lá, {greetingName} 🚀
         </h1>
 
