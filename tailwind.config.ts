@@ -54,6 +54,11 @@ export default {
             border: "hsl(var(--login-input-border))",
           },
         },
+        dashboard: {
+          sidebar: "hsl(var(--dashboard-sidebar))",
+          "sidebar-foreground": "hsl(var(--dashboard-sidebar-foreground))",
+          surface: "hsl(var(--dashboard-surface))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
