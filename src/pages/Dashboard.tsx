@@ -387,6 +387,9 @@ const Dashboard = () => {
                 ) : (
                   <>
                     <div className="text-lg font-semibold">{kpiTopAgentLabel}</div>
+                    {agentId !== "all" && kpiTopAgentLabel !== "Você é o Líder 🏆" && (
+                      <div className="text-sm text-muted-foreground">do volume do Top 1</div>
+                    )}
                     {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
                   </>
                 )}
