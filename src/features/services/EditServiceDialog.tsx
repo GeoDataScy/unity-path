@@ -19,7 +19,20 @@ import {
 } from "@/components/ui/select";
 import type { ServiceItem } from "@/features/services/useMyServicesQuery";
 
-const PRODUCTS = ["Produto A", "Produto B", "Produto C"] as const;
+const PRODUCTS = [
+  "Arialief",
+  "Alphacur",
+  "Blinzador",
+  "Feilaira",
+  "Garaherb",
+  "Karylief",
+  "Kymezol",
+  "Jertaris",
+  "Laellium",
+  "Memyts",
+  "Presgera",
+  "VIP.Shipping",
+] as const;
 
 type Props = {
   service: ServiceItem;

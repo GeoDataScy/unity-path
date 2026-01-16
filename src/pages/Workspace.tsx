@@ -25,7 +25,20 @@ import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyS
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 
-const PRODUCTS = ["Produto A", "Produto B", "Produto C"] as const;
+const PRODUCTS = [
+  "Arialief",
+  "Alphacur",
+  "Blinzador",
+  "Feilaira",
+  "Garaherb",
+  "Karylief",
+  "Kymezol",
+  "Jertaris",
+  "Laellium",
+  "Memyts",
+  "Presgera",
+  "VIP.Shipping",
+] as const;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -66,7 +79,7 @@ const Workspace = () => {
   // Form state
   const [clientEmail, setClientEmail] = useState("");
   const [serviceDate, setServiceDate] = useState(todayISO());
-  const [product, setProduct] = useState<(typeof PRODUCTS)[number]>("Produto A");
+  const [product, setProduct] = useState<(typeof PRODUCTS)[number]>("Arialief");
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -144,7 +157,7 @@ const Workspace = () => {
     onSuccess: async () => {
       setClientEmail("");
       setServiceDate(todayISO());
-      setProduct("Produto A");
+      setProduct("Arialief");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       toast({
         title: "Atendimento registrado",
