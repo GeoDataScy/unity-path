@@ -123,13 +123,23 @@ const Dashboard = () => {
     agentId: agentId === "all" ? undefined : agentId,
   });
 
+  // Query to always get ALL agents data for benchmark calculation
+  const allServicesQuery = useDashboardServicesQuery({
+    enabled: !authLoading && agentId !== "all",
+    from: fromISO,
+    to: toISO,
+    agentId: undefined, // Always fetch all agents
+  });
+
   const services = servicesQuery.data ?? [];
+  const allServices = allServicesQuery.data ?? [];
 
   // Metrics + series
   const {
     kpiTotal,
     kpiDailyAvg,
     kpiTopAgentLabel,
+    kpiTopAgentSubtext,
     kpiTopProduct,
     byAgentSeries,
     byProductSeries,
@@ -139,6 +149,7 @@ const Dashboard = () => {
       kpiTotal: 0,
       kpiDailyAvg: 0,
       kpiTopAgentLabel: "—",
+      kpiTopAgentSubtext: "" as string | undefined,
       kpiTopProduct: "—",
       byAgentSeries: [] as Array<{ name: string; value: number }>,
       byProductSeries: [] as Array<{ name: string; value: number }>,
@@ -189,14 +200,49 @@ const Dashboard = () => {
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([day, value]) => ({ day: format(parseISO(day), "dd/MM"), value }));
 
-    const topAgent = kpi.byAgentSeries[0];
-    if (topAgent) kpi.kpiTopAgentLabel = `${topAgent.name} (${formatCompactNumber(topAgent.value)})`;
+    // TOP AGENT LOGIC
+    if (agentId === "all") {
+      // Show the winner (top agent)
+      const topAgent = kpi.byAgentSeries[0];
+      if (topAgent) kpi.kpiTopAgentLabel = `${topAgent.name} (${formatCompactNumber(topAgent.value)})`;
+    } else {
+      // Benchmark mode: compare selected agent vs leader
+      // Calculate leader from ALL services (not filtered)
+      const allAgentCounts = new Map<string, number>();
+      for (const row of allServices) {
+        const agentName = (row.profiles?.full_name ?? "").trim() || "Sem nome";
+        allAgentCounts.set(agentName, (allAgentCounts.get(agentName) ?? 0) + 1);
+      }
+
+      const allAgentsSeries = Array.from(allAgentCounts.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
+      const leader = allAgentsSeries[0];
+      const selectedAgent = kpi.byAgentSeries[0]; // The filtered one
+
+      if (leader && selectedAgent) {
+        const leaderCount = leader.value;
+        const selectedCount = selectedAgent.value;
+
+        if (selectedAgent.name === leader.name) {
+          // The selected agent IS the leader
+          kpi.kpiTopAgentLabel = "Você é o Líder 🏆";
+          kpi.kpiTopAgentSubtext = undefined;
+        } else {
+          // Calculate percentage
+          const percentage = (selectedCount / leaderCount) * 100;
+          kpi.kpiTopAgentLabel = `${percentage.toFixed(0)}%`;
+          kpi.kpiTopAgentSubtext = `Líder: ${leader.name} (${formatCompactNumber(leaderCount)} atendimentos)`;
+        }
+      }
+    }
 
     const topProduct = kpi.byProductSeries[0];
     if (topProduct) kpi.kpiTopProduct = topProduct.name;
 
     return kpi;
-  }, [services, range, fromISO, toISO]);
+  }, [services, allServices, agentId, range, fromISO, toISO]);
 
   // Table pagination
   const [page, setPage] = useState(1);
@@ -221,7 +267,7 @@ const Dashboard = () => {
     await Promise.all([agentsQuery.refetch(), servicesQuery.refetch()]);
   };
 
-  const isLoading = authLoading || agentsQuery.isLoading || servicesQuery.isLoading;
+  const isLoading = authLoading || agentsQuery.isLoading || servicesQuery.isLoading || (agentId !== "all" && allServicesQuery.isLoading);
 
   return (
     <div className="min-h-screen flex">
@@ -332,11 +378,18 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-primary" /> Top agente
+                  <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Performance vs Líder"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-40" /> : <div className="text-lg font-semibold">{kpiTopAgentLabel}</div>}
+                {isLoading ? (
+                  <Skeleton className="h-8 w-40" />
+                ) : (
+                  <>
+                    <div className="text-lg font-semibold">{kpiTopAgentLabel}</div>
+                    {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
+                  </>
+                )}
               </CardContent>
             </Card>
 
