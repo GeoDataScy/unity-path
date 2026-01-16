@@ -228,11 +228,12 @@ const Dashboard = () => {
         if (selectedAgent.name === leader.name) {
           // The selected agent IS the leader
           kpi.kpiTopAgentLabel = "Você é o Líder 🏆";
-          kpi.kpiTopAgentSubtext = undefined;
+          kpi.kpiTopAgentSubtext = "0% de gap";
         } else {
-          // Calculate percentage
-          const percentage = (selectedCount / leaderCount) * 100;
-          kpi.kpiTopAgentLabel = `${percentage.toFixed(0)}%`;
+          // Calculate gap (distance from leader)
+          const volumePercentage = (selectedCount / leaderCount) * 100;
+          const gap = 100 - volumePercentage;
+          kpi.kpiTopAgentLabel = `${gap.toFixed(0)}%`;
           kpi.kpiTopAgentSubtext = `Líder: ${leader.name} (${formatCompactNumber(leaderCount)} atendimentos)`;
         }
       }
@@ -378,7 +379,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Performance vs Líder"}
+                  <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Distância do Líder"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -386,9 +387,11 @@ const Dashboard = () => {
                   <Skeleton className="h-8 w-40" />
                 ) : (
                   <>
-                    <div className="text-lg font-semibold">{kpiTopAgentLabel}</div>
+                    <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== "Você é o Líder 🏆" ? "text-orange-600 dark:text-orange-400" : ""}`}>
+                      {kpiTopAgentLabel}
+                    </div>
                     {agentId !== "all" && kpiTopAgentLabel !== "Você é o Líder 🏆" && (
-                      <div className="text-sm text-muted-foreground">do volume do Top 1</div>
+                      <div className="text-sm text-muted-foreground">abaixo da referência</div>
                     )}
                     {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
                   </>
