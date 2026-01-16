@@ -293,7 +293,7 @@ const Dashboard = () => {
         <div className="mx-auto max-w-7xl space-y-6">
           <header className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Olá Ester</p>
+              <p className="text-lg font-semibold text-muted-foreground">Olá Ester!</p>
               <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
               <p className="text-sm text-muted-foreground">
                 Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
