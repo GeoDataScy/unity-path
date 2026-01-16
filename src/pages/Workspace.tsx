@@ -281,13 +281,18 @@ const Workspace = () => {
 
               <div className="grid gap-2">
                 <Label htmlFor="serviceDate">Data do Atendimento</Label>
-                <Input
-                  id="serviceDate"
-                  type="date"
-                  value={serviceDate}
-                  onChange={(e) => setServiceDate(e.target.value)}
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="serviceDate"
+                    type="date"
+                    value={serviceDate}
+                    onChange={(e) => setServiceDate(e.target.value)}
+                    required
+                  />
+                  <Button type="button" onClick={() => setServiceDate(todayISO())}>
+                    Hoje
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-2">
