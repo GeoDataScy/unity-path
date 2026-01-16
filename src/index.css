@@ -37,10 +37,16 @@ All colors MUST be HSL.
     --ring: 263 70% 62%;
 
     --radius: 0.75rem;
-    
+
+    /* App-specific tokens */
     --login-bg: 0 0% 0%;
     --login-input-bg: 260 30% 12%;
     --login-input-border: 260 20% 20%;
+
+    /* Dashboard layout tokens */
+    --dashboard-sidebar: 225 26% 14%; /* ~#1A1F2C */
+    --dashboard-sidebar-foreground: 0 0% 100%;
+    --dashboard-surface: 210 40% 98%; /* ~slate-50 */
   }
 
   .dark {
@@ -71,6 +77,11 @@ All colors MUST be HSL.
     --border: 220 13% 20%;
     --input: 220 13% 20%;
     --ring: 263 70% 62%;
+
+    /* Dashboard stays consistent even in dark mode */
+    --dashboard-sidebar: 225 26% 14%;
+    --dashboard-sidebar-foreground: 0 0% 100%;
+    --dashboard-surface: 210 40% 98%;
   }
 }
 

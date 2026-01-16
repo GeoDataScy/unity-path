@@ -1,13 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 
-export type DashboardServiceRow = {
-  id: string;
-  client_email: string;
-  service_date: string;
-  product: string;
-  created_at: string | null;
-  user_id: string;
+export type DashboardServiceRow = Tables<"services"> & {
   profiles: {
     full_name: string | null;
   } | null;
@@ -38,9 +33,10 @@ export function useDashboardServicesQuery({ enabled, from, to, agentId }: Params
     queryFn: async (): Promise<DashboardServiceRow[]> => {
       await requireSession();
 
+      // Real data only. Keep server-side filtering for performance.
       let q = supabase
         .from("services")
-        .select("id, client_email, service_date, product, created_at, user_id, profiles(full_name)")
+        .select("*, profiles(full_name)")
         .gte("service_date", from)
         .lte("service_date", to)
         .order("service_date", { ascending: false });
