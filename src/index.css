@@ -44,7 +44,8 @@ All colors MUST be HSL.
     --login-input-border: 260 20% 20%;
 
     /* Dashboard layout tokens */
-    --dashboard-sidebar: 225 26% 14%; /* ~#1A1F2C */
+    /* Roxo bem escuro (match com o fundo do logo) */
+    --dashboard-sidebar: 226 35% 10%;
     --dashboard-sidebar-foreground: 0 0% 100%;
     --dashboard-surface: 210 40% 98%; /* ~slate-50 */
   }
