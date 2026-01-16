@@ -78,8 +78,8 @@ const Workspace = () => {
 
   // Form state
   const [clientEmail, setClientEmail] = useState("");
-  const [serviceDate, setServiceDate] = useState(todayISO());
-  const [product, setProduct] = useState<(typeof PRODUCTS)[number]>("Arialief");
+  const [serviceDate, setServiceDate] = useState("");
+  const [product, setProduct] = useState("");
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -156,8 +156,8 @@ const Workspace = () => {
     },
     onSuccess: async () => {
       setClientEmail("");
-      setServiceDate(todayISO());
-      setProduct("Arialief");
+      setServiceDate("");
+      setProduct("");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       toast({
         title: "Atendimento registrado",
@@ -297,7 +297,7 @@ const Workspace = () => {
 
               <div className="grid gap-2">
                 <Label>Produto</Label>
-                <Select value={product} onValueChange={(v) => setProduct(v as (typeof PRODUCTS)[number])}>
+                <Select value={product} onValueChange={setProduct}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
