@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
+import { useMyServicesCountQuery } from "@/features/services/useMyServicesCountQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 
@@ -81,6 +82,9 @@ const Workspace = () => {
   const [serviceDate, setServiceDate] = useState("");
   const [product, setProduct] = useState("");
 
+  // Stats filter
+  const [statsDate, setStatsDate] = useState<string>(todayISO());
+
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
 
@@ -126,7 +130,16 @@ const Workspace = () => {
     checkAuth();
   }, [navigate]);
 
-  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(!loading && Boolean(userId));
+  const enabledQueries = !loading && Boolean(userId);
+
+  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(enabledQueries);
+
+  const { data: totalCount = 0 } = useMyServicesCountQuery({ enabled: enabledQueries });
+  const { data: filteredCount = 0 } = useMyServicesCountQuery({
+    enabled: enabledQueries && Boolean(statsDate),
+    from: statsDate,
+    to: statsDate,
+  });
 
   const canSubmit = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product);
@@ -159,6 +172,7 @@ const Workspace = () => {
       setServiceDate("");
       setProduct("");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["services", "me", "count"] });
       toast({
         title: "Atendimento registrado",
         description: "Seu registro foi salvo com sucesso.",
@@ -180,6 +194,7 @@ const Workspace = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["services", "me", "count"] });
       toast({
         title: "Atendimento excluído",
         description: "O registro foi removido.",
@@ -209,6 +224,7 @@ const Workspace = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["services", "me", "count"] });
       toast({
         title: "Atendimento atualizado",
         description: "As alterações foram salvas.",
@@ -261,64 +277,97 @@ const Workspace = () => {
           Vamos lá, {greetingName} 🚀
         </h1>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Novo registro de atendimento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-4 lg:items-end">
-              <div className="grid gap-2">
-                <Label htmlFor="clientEmail">E-mail do Cliente</Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  placeholder="cliente@email.com"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                  required
-                />
+        <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Novo registro de atendimento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-4 lg:items-end">
+                <div className="grid gap-2">
+                  <Label htmlFor="clientEmail">E-mail do Cliente</Label>
+                  <Input
+                    id="clientEmail"
+                    type="email"
+                    placeholder="cliente@email.com"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="serviceDate">Data do Atendimento</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="serviceDate"
+                      type="date"
+                      value={serviceDate}
+                      onChange={(e) => setServiceDate(e.target.value)}
+                      required
+                    />
+                    <Button type="button" onClick={() => setServiceDate(todayISO())}>
+                      Hoje
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Produto</Label>
+                  <Select value={product} onValueChange={setProduct}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRODUCTS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex lg:justify-end">
+                  <Button type="submit" className="w-full lg:w-auto" disabled={!canSubmit || createMutation.isPending}>
+                    {createMutation.isPending ? "Registrando..." : "Registrar Atendimento"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Seus registros</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-1">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-3xl font-semibold tabular-nums">{totalCount}</span>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="serviceDate">Data do Atendimento</Label>
+                <Label htmlFor="statsDate">Filtrar por data</Label>
                 <div className="flex gap-2">
                   <Input
-                    id="serviceDate"
+                    id="statsDate"
                     type="date"
-                    value={serviceDate}
-                    onChange={(e) => setServiceDate(e.target.value)}
-                    required
+                    value={statsDate}
+                    onChange={(e) => setStatsDate(e.target.value)}
                   />
-                  <Button type="button" onClick={() => setServiceDate(todayISO())}>
+                  <Button type="button" variant="secondary" onClick={() => setStatsDate(todayISO())}>
                     Hoje
                   </Button>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Registros em {statsDate ? format(parseServiceDateForDisplay(statsDate) ?? new Date(), "dd/MM/yyyy") : "—"}: {" "}
+                  <span className="font-medium text-foreground tabular-nums">{filteredCount}</span>
+                </p>
               </div>
-
-              <div className="grid gap-2">
-                <Label>Produto</Label>
-                <Select value={product} onValueChange={setProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCTS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex lg:justify-end">
-                <Button type="submit" className="w-full lg:w-auto" disabled={!canSubmit || createMutation.isPending}>
-                  {createMutation.isPending ? "Registrando..." : "Registrar Atendimento"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
