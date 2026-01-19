@@ -22,23 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
+import { useProductsQuery } from "@/features/products/useProductsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
-
-const PRODUCTS = [
-  "Arialief",
-  "Alphacur",
-  "Blinzador",
-  "Feilaira",
-  "Garaherb",
-  "Karylief",
-  "Kymezol",
-  "Jertaris",
-  "Laellium",
-  "Memyts",
-  "Presgera",
-  "VIP.Shipping",
-] as const;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -127,6 +113,7 @@ const Workspace = () => {
   }, [navigate]);
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(!loading && Boolean(userId));
+  const { data: products = [], isLoading: productsLoading } = useProductsQuery(!loading && Boolean(userId));
 
   const canSubmit = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product);
@@ -301,13 +288,23 @@ const Workspace = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCTS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                   <SelectContent>
+                     {productsLoading ? (
+                       <SelectItem value="__loading" disabled>
+                         Carregando...
+                       </SelectItem>
+                     ) : products.length === 0 ? (
+                       <SelectItem value="__empty" disabled>
+                         Nenhum produto ativo
+                       </SelectItem>
+                     ) : (
+                       products.map((p) => (
+                         <SelectItem key={p.id} value={p.name}>
+                           {p.name}
+                         </SelectItem>
+                       ))
+                     )}
+                   </SelectContent>
                 </Select>
               </div>
 
