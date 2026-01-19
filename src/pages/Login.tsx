@@ -78,6 +78,9 @@ const Login = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              role: "agent", // Default role for new signups
+            },
           },
         });
 

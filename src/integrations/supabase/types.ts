@@ -38,30 +38,6 @@ export type Database = {
         }
         Relationships: []
       }
-      products: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -115,13 +91,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "services_product_fkey"
-            columns: ["product"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["name"]
-          },
           {
             foreignKeyName: "services_user_id_fkey"
             columns: ["user_id"]

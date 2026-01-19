@@ -18,7 +18,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ServiceItem } from "@/features/services/useMyServicesQuery";
-import { useProductsQuery } from "@/features/products/useProductsQuery";
+
+const PRODUCTS = [
+  "Arialief",
+  "Alphacur",
+  "Blinzador",
+  "Feilaira",
+  "Garaherb",
+  "Karylief",
+  "Kymezol",
+  "Jertaris",
+  "Laellium",
+  "Memyts",
+  "Presgera",
+  "VIP.Shipping",
+] as const;
 
 type Props = {
   service: ServiceItem;
@@ -36,19 +50,9 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   });
   const [product, setProduct] = useState(service.product);
 
-  const { data: products = [], isLoading: productsLoading } = useProductsQuery(open);
-
   const canSave = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && !saving;
   }, [clientEmail, serviceDate, product, saving]);
-
-  const productOptions = useMemo(() => {
-    const names = products.map((p) => p.name);
-    // If the saved record references a product that is no longer active,
-    // keep it selectable so the Select can render the current value.
-    if (product && !names.includes(product)) return [product, ...names];
-    return names;
-  }, [products, product]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -96,23 +100,13 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-               <SelectContent>
-                 {productsLoading ? (
-                   <SelectItem value="__loading" disabled>
-                     Carregando...
-                   </SelectItem>
-                 ) : productOptions.length === 0 ? (
-                   <SelectItem value="__empty" disabled>
-                     Nenhum produto ativo
-                   </SelectItem>
-                 ) : (
-                   productOptions.map((name) => (
-                     <SelectItem key={name} value={name}>
-                       {name}
-                     </SelectItem>
-                   ))
-                 )}
-               </SelectContent>
+              <SelectContent>
+                {PRODUCTS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </div>
