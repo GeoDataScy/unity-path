@@ -36,7 +36,8 @@ import {
 import logo from "@/assets/logo-xmx.png";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
-import { useDashboardServicesQuery, type DashboardServiceRow } from "@/features/dashboard/useDashboardServicesQuery";
+import { useDashboardMetricsQuery } from "@/features/dashboard/useDashboardMetricsQuery";
+import { useDashboardAuditQuery } from "@/features/dashboard/useDashboardAuditQuery";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -116,23 +117,42 @@ const Dashboard = () => {
 
   const agentsQuery = useAgentsQuery(!authLoading);
 
-  const servicesQuery = useDashboardServicesQuery({
+  // Fetch metrics for the selected filter (agent or all)
+  const metricsQuery = useDashboardMetricsQuery({
     enabled: !authLoading,
     from: fromISO,
     to: toISO,
     agentId: agentId === "all" ? undefined : agentId,
   });
 
-  // Query to always get ALL agents data for benchmark calculation
-  const allServicesQuery = useDashboardServicesQuery({
+  // When a specific agent is selected, fetch ALL agents metrics for benchmark
+  const allMetricsQuery = useDashboardMetricsQuery({
     enabled: !authLoading && agentId !== "all",
     from: fromISO,
     to: toISO,
-    agentId: undefined, // Always fetch all agents
+    agentId: undefined,
   });
 
-  const services = servicesQuery.data ?? [];
-  const allServices = allServicesQuery.data ?? [];
+  // Table pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromISO, toISO, agentId]);
+
+  const auditQuery = useDashboardAuditQuery({
+    enabled: !authLoading,
+    from: fromISO,
+    to: toISO,
+    agentId: agentId === "all" ? undefined : agentId,
+    page,
+    pageSize,
+  });
+
+  const metrics = metricsQuery.data;
+  const allMetrics = allMetricsQuery.data;
+  const audit = auditQuery.data;
 
   // Metrics + series
   const {
@@ -144,7 +164,7 @@ const Dashboard = () => {
     byAgentSeries,
     byProductSeries,
     byDaySeries,
-  } = useMemo(() => {
+  } = useMemo(() => { 
     const kpi = {
       kpiTotal: 0,
       kpiDailyAvg: 0,
@@ -156,45 +176,28 @@ const Dashboard = () => {
       byDaySeries: [] as Array<{ day: string; value: number }>,
     };
 
+    if (!metrics) return kpi;
+
     const fromDt = range?.from ?? safeParseISODate(fromISO) ?? new Date(2026, 0, 1);
     const toDt = range?.to ?? safeParseISODate(toISO) ?? new Date(2026, 0, 31);
-
     const daysSelected = Math.max(1, differenceInCalendarDays(toDt, fromDt) + 1);
 
-    const agentCounts = new Map<string, number>();
-    const productCounts = new Map<string, number>();
-    const dayCounts = new Map<string, number>();
+    kpi.kpiTotal = metrics.total_count;
+    kpi.kpiDailyAvg = metrics.total_count / daysSelected;
 
-    for (const row of services) {
-      kpi.kpiTotal += 1;
-
-      const agentName = (row.profiles?.full_name ?? "").trim() || "Sem nome";
-      agentCounts.set(agentName, (agentCounts.get(agentName) ?? 0) + 1);
-
-      const product = (row.product ?? "").trim() || "—";
-      productCounts.set(product, (productCounts.get(product) ?? 0) + 1);
-
-      const dayKey = row.service_date.slice(0, 10);
-      dayCounts.set(dayKey, (dayCounts.get(dayKey) ?? 0) + 1);
-    }
-
-    kpi.kpiDailyAvg = kpi.kpiTotal / daysSelected;
+    kpi.byAgentSeries = metrics.by_agent.map(({ name, value }) => ({ name, value }));
+    kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
 
     // Fill missing days for area chart continuity
+    const dayCounts = new Map<string, number>(
+      metrics.by_day.map(({ day, value }) => [day, value])
+    );
+
     for (let i = 0; i < daysSelected; i++) {
       const d = addDays(fromDt, i);
       const key = toISODate(d);
       if (!dayCounts.has(key)) dayCounts.set(key, 0);
     }
-
-    kpi.byAgentSeries = Array.from(agentCounts.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-
-    kpi.byProductSeries = Array.from(productCounts.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
 
     kpi.byDaySeries = Array.from(dayCounts.entries())
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -202,39 +205,27 @@ const Dashboard = () => {
 
     // TOP AGENT LOGIC
     if (agentId === "all") {
-      // Show the winner (top agent)
       const topAgent = kpi.byAgentSeries[0];
       if (topAgent) kpi.kpiTopAgentLabel = `${topAgent.name} (${formatCompactNumber(topAgent.value)})`;
     } else {
-      // Benchmark mode: compare selected agent vs leader
-      // Calculate leader from ALL services (not filtered)
-      const allAgentCounts = new Map<string, number>();
-      for (const row of allServices) {
-        const agentName = (row.profiles?.full_name ?? "").trim() || "Sem nome";
-        allAgentCounts.set(agentName, (allAgentCounts.get(agentName) ?? 0) + 1);
-      }
+      // Benchmark mode: compare selected agent vs leader from ALL agents
+      if (allMetrics) {
+        const leader = allMetrics.by_agent[0];
+        const selectedAgent = kpi.byAgentSeries[0];
 
-      const allAgentsSeries = Array.from(allAgentCounts.entries())
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value);
+        if (leader && selectedAgent) {
+          const leaderCount = leader.value;
+          const selectedCount = selectedAgent.value;
 
-      const leader = allAgentsSeries[0];
-      const selectedAgent = kpi.byAgentSeries[0]; // The filtered one
-
-      if (leader && selectedAgent) {
-        const leaderCount = leader.value;
-        const selectedCount = selectedAgent.value;
-
-        if (selectedAgent.name === leader.name) {
-          // The selected agent IS the leader
-          kpi.kpiTopAgentLabel = "Você é o Líder 🏆";
-          kpi.kpiTopAgentSubtext = "0% de gap";
-        } else {
-          // Calculate gap (distance from leader)
-          const volumePercentage = (selectedCount / leaderCount) * 100;
-          const gap = 100 - volumePercentage;
-          kpi.kpiTopAgentLabel = `${gap.toFixed(0)}%`;
-          kpi.kpiTopAgentSubtext = `Líder: ${leader.name} (${formatCompactNumber(leaderCount)} atendimentos)`;
+          if (selectedAgent.name === leader.name) {
+            kpi.kpiTopAgentLabel = "Você é o Líder 🏆";
+            kpi.kpiTopAgentSubtext = "0% de gap";
+          } else {
+            const volumePercentage = (selectedCount / leaderCount) * 100;
+            const gap = 100 - volumePercentage;
+            kpi.kpiTopAgentLabel = `${gap.toFixed(0)}%`;
+            kpi.kpiTopAgentSubtext = `Líder: ${leader.name} (${formatCompactNumber(leaderCount)} atendimentos)`;
+          }
         }
       }
     }
@@ -243,21 +234,13 @@ const Dashboard = () => {
     if (topProduct) kpi.kpiTopProduct = topProduct.name;
 
     return kpi;
-  }, [services, allServices, agentId, range, fromISO, toISO]);
+  }, [metrics, allMetrics, agentId, range, fromISO, toISO]);
 
-  // Table pagination
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
-
-  useEffect(() => {
-    setPage(1);
-  }, [fromISO, toISO, agentId]);
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(services.length / pageSize)), [services.length]);
-  const pageRows = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return services.slice(start, start + pageSize);
-  }, [services, page]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((audit?.total_count ?? 0) / pageSize)),
+    [audit?.total_count]
+  );
+  const pageRows = audit?.rows ?? [];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -265,10 +248,20 @@ const Dashboard = () => {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([agentsQuery.refetch(), servicesQuery.refetch()]);
+    await Promise.all([
+      agentsQuery.refetch(),
+      metricsQuery.refetch(),
+      allMetricsQuery.refetch(),
+      auditQuery.refetch(),
+    ]);
   };
 
-  const isLoading = authLoading || agentsQuery.isLoading || servicesQuery.isLoading || (agentId !== "all" && allServicesQuery.isLoading);
+  const isLoading =
+    authLoading ||
+    agentsQuery.isLoading ||
+    metricsQuery.isLoading ||
+    (agentId !== "all" && allMetricsQuery.isLoading) ||
+    auditQuery.isLoading;
 
   return (
     <div className="min-h-screen flex">
@@ -316,9 +309,9 @@ const Dashboard = () => {
               Atualizar Métricas
             </Button>
 
-            {servicesQuery.error ? (
+            {metricsQuery.error || auditQuery.error ? (
               <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
-                {(servicesQuery.error as any)?.message ?? "Erro ao carregar dados."}
+                {(metricsQuery.error as any)?.message || (auditQuery.error as any)?.message || "Erro ao carregar dados."}
               </p>
             ) : null}
           </div>
@@ -513,7 +506,7 @@ const Dashboard = () => {
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                   </div>
-                ) : services.length === 0 ? (
+                ) : pageRows.length === 0 ? (
                   <div className="py-10 text-center text-muted-foreground">Nenhum dado encontrado neste período</div>
                 ) : (
                   <>
@@ -528,7 +521,7 @@ const Dashboard = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {pageRows.map((row: DashboardServiceRow) => (
+                          {pageRows.map((row) => (
                             <TableRow key={row.id}>
                               <TableCell>{format(parseISO(row.service_date.slice(0, 10)), "dd/MM/yyyy")}</TableCell>
                               <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
@@ -542,7 +535,7 @@ const Dashboard = () => {
 
                     <div className="mt-4 flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
-                        Página {page} de {totalPages} • {formatCompactNumber(services.length)} registros
+                        Página {page} de {totalPages} • {formatCompactNumber(audit?.total_count ?? 0)} registros
                       </p>
 
                       <Pagination>
