@@ -86,6 +86,56 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          completion_date: string | null
+          created_at: string
+          customer_email: string
+          id: string
+          items_returned: boolean
+          order_id: string
+          reason: string
+          refund_type: string
+          request_date: string
+          sales_platform: string
+          user_id: string
+        }
+        Insert: {
+          completion_date?: string | null
+          created_at?: string
+          customer_email: string
+          id?: string
+          items_returned?: boolean
+          order_id: string
+          reason: string
+          refund_type: string
+          request_date: string
+          sales_platform: string
+          user_id: string
+        }
+        Update: {
+          completion_date?: string | null
+          created_at?: string
+          customer_email?: string
+          id?: string
+          items_returned?: boolean
+          order_id?: string
+          reason?: string
+          refund_type?: string
+          request_date?: string
+          sales_platform?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           client_email: string
