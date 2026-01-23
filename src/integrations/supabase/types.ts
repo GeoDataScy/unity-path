@@ -221,6 +221,28 @@ export type Database = {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
       }
+      dashboard_refund_audit: {
+        Args: {
+          agent_id?: string
+          from_date: string
+          page_offset?: number
+          page_size?: number
+          refund_type_filter?: string
+          status_filter?: string
+          to_date: string
+        }
+        Returns: Json
+      }
+      dashboard_refund_metrics: {
+        Args: {
+          agent_id?: string
+          from_date: string
+          refund_type_filter?: string
+          status_filter?: string
+          to_date: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
