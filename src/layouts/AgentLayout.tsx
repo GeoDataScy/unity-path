@@ -81,27 +81,35 @@ export default function AgentLayout() {
 
   return (
     <SidebarProvider defaultOpen>
-      <AgentSidebar />
+      <div className="min-h-screen flex w-full bg-dashboard-surface">
+        <AgentSidebar />
 
-      <SidebarInset>
-        <header className="border-b bg-background">
-          <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger className="-ml-1" />
-              <div className="flex items-center gap-2">
-                <img src={logo} alt="XMX" className="h-6 w-auto" loading="lazy" />
-                <span className="text-sm font-medium tracking-wide">Workspace</span>
+        <SidebarInset>
+          <header className="border-b border-sidebar-border/10 bg-sidebar text-sidebar-foreground">
+            <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="-ml-1 text-sidebar-foreground hover:bg-sidebar-foreground/10" />
+                <div className="flex items-center gap-2">
+                  <img src={logo} alt="XMX" className="h-6 w-auto" loading="lazy" />
+                  <span className="text-sm font-medium tracking-wide">Workspace</span>
+                </div>
               </div>
+
+              <Button
+                onClick={handleLogout}
+                variant="secondary"
+                className="bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/15"
+              >
+                Sair
+              </Button>
             </div>
+          </header>
 
-            <Button onClick={handleLogout} variant="secondary">
-              Sair
-            </Button>
+          <div className="bg-dashboard-surface">
+            <Outlet context={outletContext} />
           </div>
-        </header>
-
-        <Outlet context={outletContext} />
-      </SidebarInset>
+        </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }

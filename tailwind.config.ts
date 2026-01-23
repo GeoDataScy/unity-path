@@ -59,6 +59,14 @@ export default {
           "sidebar-foreground": "hsl(var(--dashboard-sidebar-foreground))",
           surface: "hsl(var(--dashboard-surface))",
         },
+
+        // shadcn sidebar semantic tokens (mapped to dashboard identity)
+        sidebar: "hsl(var(--sidebar))",
+        "sidebar-foreground": "hsl(var(--sidebar-foreground))",
+        "sidebar-accent": "hsl(var(--sidebar-accent))",
+        "sidebar-accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+        "sidebar-border": "hsl(var(--sidebar-border))",
+        "sidebar-ring": "hsl(var(--sidebar-ring))",
       },
       borderRadius: {
         lg: "var(--radius)",
