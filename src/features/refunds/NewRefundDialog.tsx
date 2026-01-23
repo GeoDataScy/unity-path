@@ -21,37 +21,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { SALES_PLATFORMS } from "@/features/refunds/types";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-const newRefundSchema = z
-  .object({
-    customer_email: z.string().trim().email("E-mail inválido").max(255),
-    request_date: z
-      .string()
-      .trim()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
-    completion_date: z
-      .string()
-      .trim()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
-      .optional()
-      .or(z.literal("")),
-    reason: z.string().trim().min(1, "Informe o motivo").max(1000),
-    items_returned: z.boolean(),
-    sales_platform: z.enum(SALES_PLATFORMS, { message: "Selecione a plataforma" }),
-    order_id: z.string().trim().min(1, "Informe o número do pedido").max(100),
-    refund_type: z.string().trim().min(1, "Informe o tipo de reembolso").max(100),
-  })
-  .transform((v) => ({
-    ...v,
-    completion_date: v.completion_date ? v.completion_date : undefined,
-  }));
+// No cadastro inicial (“Em aberto”), apenas 3 campos devem ser obrigatórios:
+// - E-mail
+// - Data da solicitação
+// - Número do pedido
+// A plataforma continua visível, mas vem pré-selecionada.
+const newRefundSchema = z.object({
+  customer_email: z.string().trim().email("E-mail inválido").max(255),
+  request_date: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+  order_id: z.string().trim().min(1, "Informe o número do pedido").max(100),
+  sales_platform: z.enum(SALES_PLATFORMS, { message: "Selecione a plataforma" }),
+});
 
 export type NewRefundValues = z.infer<typeof newRefundSchema>;
 
@@ -67,12 +56,8 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
     () => ({
       customer_email: "",
       request_date: todayISO(),
-      completion_date: "",
-      reason: "",
-      items_returned: false,
       sales_platform: "Cartpanda",
       order_id: "",
-      refund_type: "",
     }),
     [],
   );
@@ -117,14 +102,6 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
                 <p className="text-sm text-destructive">{form.formState.errors.request_date.message}</p>
               )}
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="refund-completion-date">Data de conclusão (opcional)</Label>
-              <Input id="refund-completion-date" type="date" {...form.register("completion_date")} />
-              {form.formState.errors.completion_date?.message && (
-                <p className="text-sm text-destructive">{form.formState.errors.completion_date.message}</p>
-              )}
-            </div>
           </div>
 
           <div className="grid gap-2">
@@ -157,34 +134,6 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
                 <p className="text-sm text-destructive">{form.formState.errors.order_id.message}</p>
               )}
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="refund-type">Tipo de reembolso</Label>
-              <Input id="refund-type" placeholder="Ex: Total, Parcial 50%" {...form.register("refund_type")} />
-              {form.formState.errors.refund_type?.message && (
-                <p className="text-sm text-destructive">{form.formState.errors.refund_type.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="refund-reason">Motivo</Label>
-            <Textarea id="refund-reason" rows={3} placeholder="Descreva o motivo" {...form.register("reason")} />
-            {form.formState.errors.reason?.message && (
-              <p className="text-sm text-destructive">{form.formState.errors.reason.message}</p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div className="grid gap-0.5">
-              <p className="text-sm font-medium">Itens devolvidos</p>
-              <p className="text-sm text-muted-foreground">Marque se o cliente devolveu os itens.</p>
-            </div>
-            <Switch
-              checked={form.watch("items_returned")}
-              onCheckedChange={(checked) => form.setValue("items_returned", checked, { shouldValidate: true })}
-              aria-label="Itens devolvidos"
-            />
           </div>
 
           <DialogFooter>

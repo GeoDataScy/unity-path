@@ -53,12 +53,13 @@ export default function Reembolsos() {
         user_id: session.user.id,
         customer_email: values.customer_email,
         request_date: values.request_date,
-        completion_date: values.completion_date ?? null,
-        reason: values.reason,
-        items_returned: values.items_returned,
+        // Sempre cria como “Em aberto” no cadastro inicial
+        completion_date: null,
+        reason: null,
+        refund_type: null,
+        items_returned: false,
         sales_platform: values.sales_platform,
         order_id: values.order_id,
-        refund_type: values.refund_type,
       });
       if (error) throw error;
     },
