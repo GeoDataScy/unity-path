@@ -63,6 +63,8 @@ const DONUT_COLORS = [
   "hsl(var(--foreground))",
 ];
 
+const LEADER_LABEL = "Líder do grupo 🏆";
+
 const Dashboard = () => {
   const navigate = useNavigate();
 
@@ -218,7 +220,7 @@ const Dashboard = () => {
           const selectedCount = selectedAgent.value;
 
           if (selectedAgent.name === leader.name) {
-            kpi.kpiTopAgentLabel = "Você é o Líder 🏆";
+            kpi.kpiTopAgentLabel = LEADER_LABEL;
             kpi.kpiTopAgentSubtext = "0% de gap";
           } else {
             const volumePercentage = (selectedCount / leaderCount) * 100;
@@ -380,10 +382,10 @@ const Dashboard = () => {
                   <Skeleton className="h-8 w-40" />
                 ) : (
                   <>
-                    <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== "Você é o Líder 🏆" ? "text-orange-600 dark:text-orange-400" : ""}`}>
+                    <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
                       {kpiTopAgentLabel}
                     </div>
-                    {agentId !== "all" && kpiTopAgentLabel !== "Você é o Líder 🏆" && (
+                    {agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL && (
                       <div className="text-sm text-muted-foreground">abaixo da referência</div>
                     )}
                     {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
