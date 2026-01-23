@@ -143,7 +143,6 @@ export default function Reembolsos() {
                       <TableHead>E-mail</TableHead>
                       <TableHead>Plataforma</TableHead>
                       <TableHead>Pedido</TableHead>
-                      <TableHead>Itens</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[170px] text-right">Ações</TableHead>
                     </TableRow>
@@ -151,7 +150,7 @@ export default function Reembolsos() {
                   <TableBody>
                     {openRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
                           Nenhum reembolso em aberto.
                         </TableCell>
                       </TableRow>
@@ -167,7 +166,6 @@ export default function Reembolsos() {
                           <TableCell className="font-medium">{r.customer_email}</TableCell>
                           <TableCell>{r.sales_platform}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
-                          <TableCell>{r.items_returned ? "Sim" : "Não"}</TableCell>
                           <TableCell>
                             <Badge variant="secondary">Em Aberto</Badge>
                           </TableCell>
