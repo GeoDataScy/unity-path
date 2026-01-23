@@ -94,8 +94,8 @@ export type Database = {
           id: string
           items_returned: boolean
           order_id: string
-          reason: string
-          refund_type: string
+          reason: string | null
+          refund_type: string | null
           request_date: string
           sales_platform: string
           user_id: string
@@ -107,8 +107,8 @@ export type Database = {
           id?: string
           items_returned?: boolean
           order_id: string
-          reason: string
-          refund_type: string
+          reason?: string | null
+          refund_type?: string | null
           request_date: string
           sales_platform: string
           user_id: string
@@ -120,8 +120,8 @@ export type Database = {
           id?: string
           items_returned?: boolean
           order_id?: string
-          reason?: string
-          refund_type?: string
+          reason?: string | null
+          refund_type?: string | null
           request_date?: string
           sales_platform?: string
           user_id?: string
