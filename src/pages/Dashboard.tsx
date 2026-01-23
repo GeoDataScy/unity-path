@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
-import type { DateRange } from "react-day-picker";
 import {
   Area,
   AreaChart,
@@ -18,11 +17,9 @@ import {
 } from "recharts";
 import { BarChart3, Package, TrendingUp, Users } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Pagination,
@@ -32,10 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-
-import logo from "@/assets/logo-xmx.png";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
+import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { useDashboardMetricsQuery } from "@/features/dashboard/useDashboardMetricsQuery";
 import { useDashboardAuditQuery } from "@/features/dashboard/useDashboardAuditQuery";
 
@@ -66,62 +60,11 @@ const DONUT_COLORS = [
 const LEADER_LABEL = "Líder do grupo 🏆";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Defaults requested: 01/01/2026 -> 31/01/2026
-  const [range, setRange] = useState<DateRange | undefined>(() => {
-    const from = new Date(2026, 0, 1);
-    const to = new Date(2026, 0, 31);
-    return { from, to };
-  });
-
-  const [agentId, setAgentId] = useState<string>("all");
-
-  const fromISO = useMemo(() => {
-    const d = range?.from;
-    return d ? toISODate(d) : "2026-01-01";
-  }, [range?.from]);
-
-  const toISO = useMemo(() => {
-    const d = range?.to ?? range?.from;
-    return d ? toISODate(d) : "2026-01-31";
-  }, [range?.to, range?.from]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        navigate("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile?.role !== "manager") {
-        navigate("/workspace");
-        return;
-      }
-
-      setAuthLoading(false);
-    };
-
-    checkAuth();
-  }, [navigate]);
-
-  const agentsQuery = useAgentsQuery(!authLoading);
+  const { fullName, range, fromISO, toISO, agentId } = useOutletContext<ManagerOutletContext>();
 
   // Fetch metrics for the selected filter (agent or all)
   const metricsQuery = useDashboardMetricsQuery({
-    enabled: !authLoading,
+    enabled: true,
     from: fromISO,
     to: toISO,
     agentId: agentId === "all" ? undefined : agentId,
@@ -129,7 +72,7 @@ const Dashboard = () => {
 
   // When a specific agent is selected, fetch ALL agents metrics for benchmark
   const allMetricsQuery = useDashboardMetricsQuery({
-    enabled: !authLoading && agentId !== "all",
+    enabled: agentId !== "all",
     from: fromISO,
     to: toISO,
     agentId: undefined,
@@ -144,7 +87,7 @@ const Dashboard = () => {
   }, [fromISO, toISO, agentId]);
 
   const auditQuery = useDashboardAuditQuery({
-    enabled: !authLoading,
+    enabled: true,
     from: fromISO,
     to: toISO,
     agentId: agentId === "all" ? undefined : agentId,
@@ -244,104 +187,27 @@ const Dashboard = () => {
   );
   const pageRows = audit?.rows ?? [];
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
-
   const handleRefresh = async () => {
-    await Promise.all([
-      agentsQuery.refetch(),
-      metricsQuery.refetch(),
-      allMetricsQuery.refetch(),
-      auditQuery.refetch(),
-    ]);
+    await Promise.all([metricsQuery.refetch(), allMetricsQuery.refetch(), auditQuery.refetch()]);
   };
 
-  const isLoading =
-    authLoading ||
-    agentsQuery.isLoading ||
-    metricsQuery.isLoading ||
-    (agentId !== "all" && allMetricsQuery.isLoading) ||
-    auditQuery.isLoading;
+  const isLoading = metricsQuery.isLoading || (agentId !== "all" && allMetricsQuery.isLoading) || auditQuery.isLoading;
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-[250px] shrink-0 sticky top-0 h-screen bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10">
-        <div className="h-full flex flex-col p-4 gap-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo da empresa" className="h-8 w-auto" loading="lazy" />
-            <div className="leading-tight">
-              <div className="text-sm font-semibold">Painel da Gestora</div>
-              <div className="text-xs opacity-80">Analytics</div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
-              <DateRangePicker value={range} onChange={setRange} />
-              <div className="text-[11px] opacity-75">Default: 01/01/2026 — 31/01/2026</div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
-              <Select value={agentId} onValueChange={setAgentId}>
-                <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent className="z-50">
-                  <SelectItem value="all">Todos</SelectItem>
-                  {(agentsQuery.data ?? []).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              Atualizar Métricas
-            </Button>
-
-            {metricsQuery.error || auditQuery.error ? (
-              <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
-                {(metricsQuery.error as any)?.message || (auditQuery.error as any)?.message || "Erro ao carregar dados."}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="mt-auto">
-            <Button
-              onClick={handleLogout}
-              variant="secondary"
-              className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
-            >
-              Logout
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-lg font-semibold text-muted-foreground">Olá {fullName ?? ""}!</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
+          </p>
         </div>
-      </aside>
 
-      {/* Main */}
-      <main className="flex-1 bg-dashboard-surface p-8">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <header className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-lg font-semibold text-muted-foreground">Olá Ester!</p>
-              <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">
-                Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
-              </p>
-            </div>
-          </header>
+        <Button type="button" onClick={handleRefresh} disabled={isLoading}>
+          Atualizar Métricas
+        </Button>
+      </header>
 
           {/* KPIs */}
           <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -587,8 +453,11 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </section>
-        </div>
-      </main>
+      {metricsQuery.error || auditQuery.error ? (
+        <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
+          {(metricsQuery.error as any)?.message || (auditQuery.error as any)?.message || "Erro ao carregar dados."}
+        </p>
+      ) : null}
     </div>
   );
 };

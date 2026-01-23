@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ManagerLayout from "./layouts/ManagerLayout";
+import DashboardRefunds from "./pages/DashboardRefunds";
 import AgentLayout from "./layouts/AgentLayout";
 import Atendimentos from "./pages/agent/Atendimentos";
 import Reembolsos from "./pages/agent/Reembolsos";
@@ -22,7 +24,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ManagerLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="reembolsos" element={<DashboardRefunds />} />
+          </Route>
           <Route path="/workspace" element={<AgentLayout />}>
             <Route index element={<Atendimentos />} />
             <Route path="reembolsos" element={<Reembolsos />} />

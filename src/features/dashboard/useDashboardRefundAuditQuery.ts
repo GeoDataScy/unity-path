@@ -1,0 +1,88 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+type Params = {
+  enabled: boolean;
+  from: string; // YYYY-MM-DD
+  to: string; // YYYY-MM-DD
+  agentId?: string;
+  status?: "all" | "open" | "done";
+  refundType?: string; // 'all' | 'null' | specific type
+  page: number; // 1-based
+  pageSize: number;
+  refetchIntervalMs?: number;
+};
+
+export type DashboardRefundAuditRow = {
+  id: string;
+  created_at: string;
+  user_id: string;
+  customer_email: string;
+  request_date: string;
+  completion_date: string | null;
+  sales_platform: string;
+  order_id: string;
+  refund_type: string | null;
+  reason: string | null;
+  items_returned: boolean;
+  profiles: { full_name: string | null } | null;
+};
+
+export type DashboardRefundAuditResult = {
+  total_count: number;
+  rows: DashboardRefundAuditRow[];
+};
+
+async function requireSession() {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) throw error;
+  if (!session) throw new Error("Sessão inválida");
+  return session;
+}
+
+export function useDashboardRefundAuditQuery({
+  enabled,
+  from,
+  to,
+  agentId,
+  status = "all",
+  refundType = "all",
+  page,
+  pageSize,
+  refetchIntervalMs = 15_000,
+}: Params) {
+  const pageOffset = Math.max(0, (page - 1) * pageSize);
+
+  return useQuery({
+    queryKey: [
+      "dashboard",
+      "refunds",
+      "audit",
+      { from, to, agentId: agentId ?? "all", status, refundType, page, pageSize },
+    ],
+    enabled,
+    queryFn: async (): Promise<DashboardRefundAuditResult> => {
+      await requireSession();
+
+      const { data, error } = await supabase.rpc("dashboard_refund_audit", {
+        from_date: from,
+        to_date: to,
+        agent_id: agentId || null,
+        status_filter: status,
+        refund_type_filter: refundType,
+        page_size: pageSize,
+        page_offset: pageOffset,
+      });
+
+      if (error) throw error;
+      return data as DashboardRefundAuditResult;
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchInterval: refetchIntervalMs,
+  });
+}
