@@ -1,0 +1,107 @@
+import { useEffect, useMemo, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo-xmx.png";
+import { AgentSidebar } from "@/components/agent/AgentSidebar";
+
+export type AgentOutletContext = {
+  userId: string;
+  fullName: string | null;
+};
+
+export default function AgentLayout() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, full_name")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (profile?.role === "manager") {
+        navigate("/dashboard");
+        return;
+      }
+
+      if (!active) return;
+      setUserId(session.user.id);
+      setFullName(profile?.full_name ?? null);
+      setLoading(false);
+    };
+
+    checkAuth();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  const outletContext = useMemo<AgentOutletContext | null>(() => {
+    if (!userId) return null;
+    return { userId, fullName };
+  }, [userId, fullName]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Sessão encerrada",
+      description: "Você saiu do painel.",
+    });
+    navigate("/login");
+  };
+
+  if (loading || !outletContext) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider defaultOpen>
+      <AgentSidebar />
+
+      <SidebarInset>
+        <header className="border-b bg-background">
+          <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="-ml-1" />
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="XMX" className="h-6 w-auto" loading="lazy" />
+                <span className="text-sm font-medium tracking-wide">Workspace</span>
+              </div>
+            </div>
+
+            <Button onClick={handleLogout} variant="secondary">
+              Sair
+            </Button>
+          </div>
+        </header>
+
+        <Outlet context={outletContext} />
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
