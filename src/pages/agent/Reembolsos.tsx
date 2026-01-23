@@ -167,7 +167,7 @@ export default function Reembolsos() {
                           <TableCell>{r.sales_platform}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">Em Aberto</Badge>
+                            <Badge variant="open">Em Aberto</Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

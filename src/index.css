@@ -56,6 +56,11 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: var(--dashboard-sidebar);
     --sidebar-border: 0 0% 100%;
     --sidebar-ring: var(--ring);
+
+    /* Status tokens */
+    /* Amarelo pastel escuro + texto branco (para “Em aberto”) */
+    --status-open: 44 86% 45%;
+    --status-open-foreground: 0 0% 100%;
   }
 
   .dark {
