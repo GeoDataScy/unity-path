@@ -172,7 +172,8 @@ export default function Reembolsos() {
                           <TableCell className="text-right">
                             <Button
                               type="button"
-                              variant="secondary"
+                               variant="default"
+                               className="transition-transform active:translate-y-px active:scale-[0.98]"
                               onClick={() => setCompleting(r)}
                               disabled={completeMutation.isPending}
                             >
