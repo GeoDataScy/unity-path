@@ -60,6 +60,13 @@ export default {
           surface: "hsl(var(--dashboard-surface))",
         },
 
+        status: {
+          open: {
+            DEFAULT: "hsl(var(--status-open))",
+            foreground: "hsl(var(--status-open-foreground))",
+          },
+        },
+
         // shadcn sidebar semantic tokens (mapped to dashboard identity)
         sidebar: "hsl(var(--sidebar))",
         "sidebar-foreground": "hsl(var(--sidebar-foreground))",
