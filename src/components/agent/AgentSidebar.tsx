@@ -36,10 +36,10 @@ export function AgentSidebar() {
   }, [currentPath]);
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/10">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Painel</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Painel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {

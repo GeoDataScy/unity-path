@@ -48,6 +48,14 @@ All colors MUST be HSL.
     --dashboard-sidebar: 226 35% 10%;
     --dashboard-sidebar-foreground: 0 0% 100%;
     --dashboard-surface: 210 40% 98%; /* ~slate-50 */
+
+    /* Sidebar (shadcn) tokens — keep consistent with dashboard */
+    --sidebar: var(--dashboard-sidebar);
+    --sidebar-foreground: var(--dashboard-sidebar-foreground);
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: var(--dashboard-sidebar);
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: var(--ring);
   }
 
   .dark {
@@ -83,6 +91,14 @@ All colors MUST be HSL.
     --dashboard-sidebar: 225 26% 14%;
     --dashboard-sidebar-foreground: 0 0% 100%;
     --dashboard-surface: 210 40% 98%;
+
+    /* Sidebar (shadcn) tokens — keep consistent with dashboard */
+    --sidebar: var(--dashboard-sidebar);
+    --sidebar-foreground: var(--dashboard-sidebar-foreground);
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: var(--dashboard-sidebar);
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: var(--ring);
   }
 }
 
