@@ -36,7 +36,10 @@ export function AgentSidebar() {
   }, [currentPath]);
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/10">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-dashboard-sidebar [&_[data-sidebar=sidebar]]:text-dashboard-sidebar-foreground"
+    >
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70">Painel</SidebarGroupLabel>
