@@ -85,10 +85,10 @@ export default function AgentLayout() {
         <AgentSidebar />
 
         <SidebarInset>
-          <header className="border-b border-sidebar-border/10 bg-sidebar text-sidebar-foreground">
+          <header className="border-b border-white/10 bg-dashboard-sidebar text-dashboard-sidebar-foreground">
             <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="-ml-1 text-sidebar-foreground hover:bg-sidebar-foreground/10" />
+                <SidebarTrigger className="-ml-1 text-dashboard-sidebar-foreground hover:bg-white/10" />
                 <div className="flex items-center gap-2">
                   <img src={logo} alt="XMX" className="h-6 w-auto" loading="lazy" />
                   <span className="text-sm font-medium tracking-wide">Workspace</span>
@@ -98,7 +98,7 @@ export default function AgentLayout() {
               <Button
                 onClick={handleLogout}
                 variant="secondary"
-                className="bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/15"
+                className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
               >
                 Sair
               </Button>
