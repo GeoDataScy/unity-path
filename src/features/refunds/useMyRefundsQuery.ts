@@ -16,7 +16,7 @@ export function useMyRefundsQuery(enabled: boolean) {
       const { data, error } = await supabase
         .from("refunds")
         .select(
-          "id, created_at, user_id, customer_email, request_date, completion_date, reason, items_returned, sales_platform, order_id, refund_type",
+          "id, created_at, user_id, customer_email, request_date, completion_date, reason, items_returned, sales_platform, order_id, refund_type, refund_value",
         )
         .eq("user_id", session.user.id)
         .order("request_date", { ascending: false });

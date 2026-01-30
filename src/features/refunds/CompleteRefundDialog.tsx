@@ -35,11 +35,25 @@ function isValidPercentOption(value: string | null | undefined): value is (typeo
   return (PERCENT_OPTIONS as readonly string[]).includes(value);
 }
 
+function sanitizeUsdInput(raw: string): string {
+  // Allow only digits and a single dot, limit to 2 decimal places.
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const [intPart = "", ...rest] = cleaned.split(".");
+  const decPart = rest.join("");
+  if (rest.length === 0) return intPart;
+  return `${intPart}.${decPart.slice(0, 2)}`;
+}
+
 const completeSchema = z.object({
   completion_date: z
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de conclusão"),
+  refund_value: z
+    .string()
+    .trim()
+    .min(1, "Informe o valor do reembolso")
+    .regex(/^\d+(\.\d{1,2})?$/, "Use somente números (ex: 25 ou 25.50)"),
   refund_type: z.enum(PERCENT_OPTIONS, { message: "Selecione um percentual válido" }),
   reason: z.string().trim().min(1, "Informe o motivo").max(2000, "Máximo de 2000 caracteres"),
   items_returned: z.boolean(),
@@ -59,11 +73,12 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
   const defaultValues = useMemo<CompleteRefundValues>(
     () => ({
       completion_date: refund.completion_date ?? "",
+      refund_value: refund.refund_value == null ? "" : refund.refund_value.toFixed(2),
       refund_type: isValidPercentOption(refund.refund_type) ? refund.refund_type : ("" as CompleteRefundValues["refund_type"]),
       reason: refund.reason ?? "",
       items_returned: Boolean(refund.items_returned),
     }),
-    [refund.completion_date, refund.refund_type, refund.reason, refund.items_returned],
+    [refund.completion_date, refund.refund_value, refund.refund_type, refund.reason, refund.items_returned],
   );
 
   const form = useForm<CompleteRefundValues>({
@@ -100,6 +115,38 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
             <Input id="complete-date" type="date" {...form.register("completion_date")} />
             {form.formState.errors.completion_date?.message && (
               <p className="text-sm text-destructive">{form.formState.errors.completion_date.message}</p>
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="refund-value">Valor do reembolso</Label>
+            <div className="relative">
+              <span
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
+                aria-hidden="true"
+              >
+                $
+              </span>
+              <Controller
+                control={form.control}
+                name="refund_value"
+                render={({ field }) => (
+                  <Input
+                    id="refund-value"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="pl-7"
+                    value={field.value}
+                    onChange={(e) => {
+                      const next = sanitizeUsdInput(e.target.value);
+                      field.onChange(next);
+                    }}
+                  />
+                )}
+              />
+            </div>
+            {form.formState.errors.refund_value?.message && (
+              <p className="text-sm text-destructive">{form.formState.errors.refund_value.message}</p>
             )}
           </div>
 
