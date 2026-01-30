@@ -241,7 +241,7 @@ export default function Atendimentos() {
   }, []);
 
   const handleDebugSimulateGoalHit = () => {
-    const CELEBRATION_MS = 4800;
+    const CELEBRATION_MS = 9600;
     const GOAL = 100;
 
     setDebugOverrideCount(GOAL);

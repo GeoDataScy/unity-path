@@ -32,10 +32,35 @@ export function AgentDailyMetricsSection({
   debugCelebrateNonce,
   debugOverrideCount,
 }: Props) {
-  const CELEBRATION_MS = 4800;
+  const CELEBRATION_MS = 9600;
   const myCount = dailyMetrics?.my_count ?? 0;
   const effectiveCount = debugOverrideCount ?? myCount;
   const remainingToGoal = Math.max(0, goal - effectiveCount);
+
+  const clapRef = useRef<HTMLAudioElement | null>(null);
+  const clapUnlockedRef = useRef(false);
+
+  const ensureClapAudio = () => {
+    if (!clapRef.current) {
+      const audio = new Audio("/sounds/clap.mp3");
+      audio.preload = "auto";
+      audio.volume = 0.7;
+      clapRef.current = audio;
+    }
+    return clapRef.current;
+  };
+
+  const playClap = () => {
+    try {
+      const audio = ensureClapAudio();
+      audio.currentTime = 0;
+      void audio.play().catch(() => {
+        // Autoplay may be blocked when celebration is triggered by background refetch.
+      });
+    } catch {
+      // Fail silently
+    }
+  };
 
   const progress = useMemo(() => {
     if (goal <= 0) return 0;
@@ -64,6 +89,7 @@ export function AgentDailyMetricsSection({
         localStorage.setItem(storageKey, "1");
         setCelebrate(true);
         setPulse(true);
+        playClap();
 
         const t1 = window.setTimeout(() => setCelebrate(false), CELEBRATION_MS);
         const t2 = window.setTimeout(() => setPulse(false), CELEBRATION_MS);
@@ -77,6 +103,34 @@ export function AgentDailyMetricsSection({
     prevCount.current = myCount;
   }, [goal, myCount, userId]);
 
+  // Try to "unlock" audio on the first user interaction to maximize chance of playing later.
+  useEffect(() => {
+    const onFirstPointerDown = () => {
+      if (clapUnlockedRef.current) return;
+      clapUnlockedRef.current = true;
+
+      try {
+        const audio = ensureClapAudio();
+        audio.load();
+        // Some browsers allow a muted/paused play inside a user gesture to unlock.
+        void audio
+          .play()
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          })
+          .catch(() => {
+            // Ignore
+          });
+      } catch {
+        // Ignore
+      }
+    };
+
+    window.addEventListener("pointerdown", onFirstPointerDown, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirstPointerDown);
+  }, []);
+
   useEffect(() => {
     prevCount.current = myCount;
   }, [myCount]);
@@ -87,6 +141,7 @@ export function AgentDailyMetricsSection({
 
     setCelebrate(true);
     setPulse(true);
+    playClap();
 
     const t1 = window.setTimeout(() => setCelebrate(false), CELEBRATION_MS);
     const t2 = window.setTimeout(() => setPulse(false), CELEBRATION_MS);
@@ -100,7 +155,7 @@ export function AgentDailyMetricsSection({
 
   return (
     <div className="relative">
-      {celebrate && <ConfettiBurst />}
+      {celebrate && <ConfettiBurst pieces={64} />}
 
       <section className="mb-2 grid gap-4 md:grid-cols-3" aria-label="Métricas do dia">
         <Card>
