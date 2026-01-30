@@ -61,6 +61,10 @@ All colors MUST be HSL.
     /* Amarelo pastel escuro + texto branco (para “Em aberto”) */
     --status-open: 44 86% 45%;
     --status-open-foreground: 0 0% 100%;
+
+    /* Verde corporativo (sucesso/meta batida) */
+    --status-success: 152 60% 40%;
+    --status-success-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -104,6 +108,10 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: var(--dashboard-sidebar);
     --sidebar-border: 0 0% 100%;
     --sidebar-ring: var(--ring);
+
+    /* Status tokens keep same hue for dark mode */
+    --status-success: 152 60% 40%;
+    --status-success-foreground: 0 0% 100%;
   }
 }
 
