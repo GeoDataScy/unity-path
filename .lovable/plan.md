@@ -1,101 +1,70 @@
 
-Objetivo (o que vamos fazer agora)
-1) Triplicar a duração do efeito de confete/pulse quando bate a meta (de ~1,6s para ~4,8s), ajustando também a animação das partículas para ficar visualmente “bonita” durante todo o tempo (sem cortar no meio).
-2) Em seguida, limpar os dados de teste da agente Giovanna no ambiente de teste (apenas os registros “fake” usados no teste).
+Contexto do pedido
+- Hoje o campo **“Tipo final”** no modal **Concluir reembolso** é um `<Input />` livre e o schema aceita qualquer texto.
+- Você quer que essa coluna aceite **somente percentuais** no formato com `%` e com as opções:
+  - 05%, 10%, 15%, …, 100% (incremento de 5)
+- Não é necessário mudar o banco de dados, porque a coluna `refund_type` já é **texto** e vai continuar armazenando “05%”, “10%”, etc. O que vamos fazer é **restringir o preenchimento** (UI + validação) para evitar valores fora do padrão.
 
-Estado atual (como está hoje)
-- O confete aparece porque o componente `AgentDailyMetricsSection` liga `celebrate=true` ao cruzar a meta, e renderiza `<ConfettiBurst />`.
-- O tempo que o confete fica na tela hoje é definido por:
-  - Timeout no `AgentDailyMetricsSection`: 1600ms para desligar `celebrate` e `pulse`.
-  - Partículas no `ConfettiBurst`: duração randômica entre ~1100–1700ms e delay até 220ms.
-- Resultado prático: o overlay some em 1,6s; algumas partículas poderiam durar um pouco mais, mas são interrompidas quando o overlay desmonta.
+O que vou implementar
 
-Mudanças planejadas (triplicar tempo e “adaptar para ficar bom aos olhos”)
-A) Ajustar duração do overlay (o “tempo na tela”)
-- Arquivo: `src/features/agent/components/AgentDailyMetricsSection.tsx`
-- Trocar o timeout de:
-  - `1600ms` -> `4800ms` (triplo)
-- Como você escolheu “Pulse 4,8s”, o `pulse` vai acompanhar o mesmo tempo:
-  - `setPulse(false)` também após `4800ms`
-- Resultado: confete e pulse ficam visíveis por ~4,8s.
+1) Criar uma lista oficial de opções “Tipo final”
+- Local: `src/features/refunds/CompleteRefundDialog.tsx` (ou, se for melhor para reaproveitar, mover para `src/features/refunds/types.ts` depois)
+- Gerar/definir um array fixo:
+  - `["05%", "10%", "15%", ... "100%"]`
+- Observação: “05%” precisa ter zero à esquerda.
 
-B) Ajustar a animação do confete para “preencher” bem esses 4,8s
-Problema que vamos evitar:
-- Se apenas aumentarmos o timeout para 4,8s mas deixarmos as partículas com 1,1–1,7s, elas “morrem” cedo e ficam ~3s sem nada acontecendo (sensação de bug).
+2) Trocar o campo “Tipo final” de Input para Select (dropdown)
+- Arquivo: `src/features/refunds/CompleteRefundDialog.tsx`
+- Substituir:
+  - `<Input ... {...form.register("refund_type")} />`
+- Por um `Select` (o mesmo componente usado em `NewRefundDialog.tsx`), garantindo:
+  - As opções vêm do array de percentuais
+  - O valor é controlado com `form.watch("refund_type")` + `form.setValue("refund_type", ...)` com `shouldValidate: true`
+  - Mensagens de erro continuam aparecendo abaixo do campo
 
-Ajustes no `ConfettiBurst`:
-- Arquivo: `src/components/effects/ConfettiBurst.tsx`
-- Aumentar a duração das partículas proporcionalmente:
-  - Hoje: `durationMs = 1100..1700`
-  - Novo alvo: `durationMs = 3300..5100` (aprox. 3x)
-- Ajustar o delay para espalhar melhor o início (sem virar “chuva infinita”):
-  - Hoje: `delayMs = 0..220`
-  - Novo alvo: `delayMs = 0..450` (leve aumento para distribuir mais, mas ainda com “burst” rápido)
-- Ajustar a distância percorrida no keyframe para manter movimento natural durante mais tempo:
-  - Hoje: desce `160px`
-  - Novo alvo: `~280–360px` (vamos calibrar visualmente; em geral 320px fica bom para 4–5s sem parecer lento demais)
-- Manter cores discretas, mas garantir legibilidade:
-  - Continuar usando `primary`, `status-success` e `muted-foreground` (já está corporativo).
-- Como você pediu “um pouco mais” de intensidade:
-  - Aumentar `pieces` padrão de `22` para algo como `28–34` (vou começar por 30/32, que costuma ficar sutil ainda).
-  - Manter tamanho das partículas igual (para não virar carnaval), a ideia é só ter “vida” na tela durante 4,8s.
+3) Reforçar validação (client-side) para aceitar apenas as opções permitidas
+- Arquivo: `src/features/refunds/CompleteRefundDialog.tsx`
+- Atualizar o Zod schema:
+  - De: `refund_type: z.string().trim().min(1)...`
+  - Para: `refund_type: z.enum(PERCENT_OPTIONS, { message: "Selecione um percentual válido" })`
+- Benefícios:
+  - Impede envio por “tampering” (ex.: alguém tentando injetar outro texto via DevTools)
+  - Mantém consistência total no histórico e nos relatórios
 
-C) Garantir que não há “corte” no final
-- Importante: o overlay deve ficar tempo suficiente para cobrir o pior caso:
-  - `max(delay) + max(duration)` precisa ser <= `4800ms` (ou bem próximo).
-- Se usarmos `delay` até 450ms e `duration` até 5100ms, daria 5550ms (cortaria).
-- Então vamos alinhar para não cortar:
-  - Opção recomendada (eu vou aplicar esta): `durationMs = 2800..4200` e `delayMs = 0..600`, com overlay `4800ms`.
-  - Assim o pior caso fica perto de 4800ms e não corta perceptivelmente.
-- Resumo de calibração que vou implementar:
-  - Overlay: 4800ms
-  - Partículas: duração até ~4200ms e delays até ~500–600ms
-  - Queda: ~320px
+4) Garantir compatibilidade com registros antigos (se existirem)
+- Situação: se já houver reembolsos concluídos com `refund_type` antigo (ex.: “Total”, “Parcial 50%”), ao abrir “Concluir reembolso” novamente para aquele registro, o `Select` não vai reconhecer o valor.
+- Tratamento planejado (para não quebrar a UX):
+  - Se `refund.refund_type` não estiver na lista de percentuais:
+    - Setar `defaultValues.refund_type` como `""` (vazio)
+    - Mostrar erro/validação pedindo seleção
+  - Alternativa (se você preferir): mostrar uma opção “Valor antigo: X” somente para visualização. (Eu só implemento isso se você pedir; por padrão, manteremos rígido para padrão novo.)
 
-D) Teste visual rápido (para validar “bom aos olhos”)
-- No /workspace (logada como agente), ao cruzar 99→100:
-  1) Confete deve ficar “ativo” durante quase todo o período de 4,8s (não só no começo).
-  2) O número deve pulsar durante 4,8s (como você definiu).
-  3) Badge “🏆 Meta Batida!” permanece.
-  4) Não deve travar scroll/click (continua `pointer-events-none`).
+5) Conferir reflexo no “Histórico/Concluídos”
+- Arquivo: `src/pages/agent/Reembolsos.tsx`
+- Já existe a coluna “Tipo” que renderiza `r.refund_type`.
+- Após a mudança, ela vai naturalmente mostrar “05%”, “10%”, etc., porque:
+  - O formulário passa a mandar apenas esses valores
+  - O `completeMutation` já atualiza `refund_type` corretamente
+- Pequena melhoria opcional (sem mudar comportamento):
+  - Renderizar `r.refund_type ?? "—"` para ficar consistente se algum registro vier nulo.
 
-Limpeza dos dados de teste da Giovanna (ambiente de teste)
-Como você escolheu “Só dados de teste”:
-- Vamos remover apenas os registros que foram inseridos para teste (ex.: e-mails `@test.local` / prefixos `giovanna+...`), sem apagar atendimentos reais.
-- Critério de remoção (proposto, seguro):
-  - Tabela: `services`
-  - `user_id = <id da Giovanna>`
-  - E-mail de teste: `client_email ILIKE '%@test.local%'` OR `client_email ILIKE 'giovanna+%`
-  - (Opcional) Restringir também ao dia de hoje em São Paulo para não remover testes antigos inadvertidamente.
-- Após a limpeza:
-  - Invalidar/atualizar os dados no UI (as queries já invalidam quando cria/deleta via UI; como a limpeza será feita fora da UI, vamos recarregar a página ou invalidar queries).
-
-Observação importante para “retestar” confete depois da limpeza
-- O disparo é “uma vez por dia” por usuário via `localStorage` (chave `goalHit:${userId}:${dateKey}`).
-- Se você quiser testar novamente no mesmo dia após a limpeza:
-  - Precisaremos limpar essa chave no navegador (DevTools > Application > Local Storage) ou implementar temporariamente um botão/admin reset (opcional).
-  - Alternativamente: testar no dia seguinte.
+Testes que vou fazer (checklist)
+1) No /workspace/reembolsos → Em Aberto → Concluir Reembolso:
+   - Campo “Tipo final” aparece como dropdown e lista 05%…100%
+   - Não dá para digitar texto livre
+   - Ao tentar concluir sem escolher, mostra erro “Selecione um percentual válido”
+2) Selecionar “25%”, preencher os demais campos, concluir:
+   - Registro sai de “Em Aberto”
+   - Aparece em “Histórico/Concluídos” com Tipo = “25%”
+3) Reabrir um registro concluído (se o sistema permitir) para confirmar que o valor selecionado permanece compatível.
 
 Arquivos que serão alterados
-1) `src/features/agent/components/AgentDailyMetricsSection.tsx`
-- Trocar timeouts de 1600ms para 4800ms (celebrate + pulse).
+- `src/features/refunds/CompleteRefundDialog.tsx`
+  - Trocar Input por Select
+  - Criar lista 05–100%
+  - Ajustar Zod schema para enum
 
-2) `src/components/effects/ConfettiBurst.tsx`
-- Ajustar duração/delay das partículas, distância da animação e aumentar ligeiramente a quantidade (`pieces`).
+Possíveis impactos
+- Qualquer valor fora da lista passa a ser inválido no modal (como você pediu).
+- Se existirem registros antigos com tipos fora do padrão, eles podem aparecer no histórico normalmente, mas ao editar/concluir novamente, o “Tipo final” exigirá um valor válido do dropdown.
 
-3) Limpeza de dados (sem mudança de schema)
-- Executar uma operação de DELETE nos dados de teste da tabela `services` (ambiente de teste), filtrando por `user_id` da Giovanna e padrões de e-mail de teste.
-
-Critérios de aceite
-- Ao cruzar 99→100:
-  - Confete visível por ~4,8s (sem “sumir cedo”).
-  - Pulse visível por ~4,8s.
-  - Efeito continua sutil e corporativo (sem exagero de cores/tamanho).
-- Limpeza:
-  - Todos os registros `@test.local` / `giovanna+...` da Giovanna somem do ambiente de teste.
-  - Nenhum dado “real” é removido.
-
-Sequência de execução
-1) Ajustar tempo e animação (código).
-2) Testar no /workspace (idealmente com uma agente em 99 para cruzar 100).
-3) Fazer a limpeza de dados de teste da Giovanna.
