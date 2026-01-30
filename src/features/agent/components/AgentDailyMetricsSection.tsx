@@ -18,23 +18,35 @@ type Props = {
   metricsLoading: boolean;
   dailyMetrics: AgentDailyMetrics | undefined;
   goal?: number;
+  /** DEV only: bump this number to force the celebration (ignores localStorage) */
+  debugCelebrateNonce?: number;
+  /** DEV only: overrides the UI count temporarily (does not affect backend) */
+  debugOverrideCount?: number | null;
 };
 
-export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics, goal = 100 }: Props) {
+export function AgentDailyMetricsSection({
+  userId,
+  metricsLoading,
+  dailyMetrics,
+  goal = 100,
+  debugCelebrateNonce,
+  debugOverrideCount,
+}: Props) {
   const CELEBRATION_MS = 4800;
   const myCount = dailyMetrics?.my_count ?? 0;
-  const remainingToGoal = Math.max(0, goal - myCount);
+  const effectiveCount = debugOverrideCount ?? myCount;
+  const remainingToGoal = Math.max(0, goal - effectiveCount);
 
   const progress = useMemo(() => {
     if (goal <= 0) return 0;
-    return Math.min(100, Math.max(0, (myCount / goal) * 100));
-  }, [goal, myCount]);
+    return Math.min(100, Math.max(0, (effectiveCount / goal) * 100));
+  }, [goal, effectiveCount]);
 
   const indicatorClassName = useMemo(() => {
-    if (myCount <= 59) return "bg-destructive";
-    if (myCount <= 89) return "bg-status-open";
+    if (effectiveCount <= 59) return "bg-destructive";
+    if (effectiveCount <= 89) return "bg-status-open";
     return "bg-status-success";
-  }, [myCount]);
+  }, [effectiveCount]);
 
   const [celebrate, setCelebrate] = useState(false);
   const [pulse, setPulse] = useState(false);
@@ -69,7 +81,22 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
     prevCount.current = myCount;
   }, [myCount]);
 
-  const glowClass = myCount >= goal ? "shadow-[0_0_0_3px_hsl(var(--status-success)/0.22)]" : "";
+  useEffect(() => {
+    if (!userId) return;
+    if (!debugCelebrateNonce) return;
+
+    setCelebrate(true);
+    setPulse(true);
+
+    const t1 = window.setTimeout(() => setCelebrate(false), CELEBRATION_MS);
+    const t2 = window.setTimeout(() => setPulse(false), CELEBRATION_MS);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [CELEBRATION_MS, debugCelebrateNonce, userId]);
+
+  const glowClass = effectiveCount >= goal ? "shadow-[0_0_0_3px_hsl(var(--status-success)/0.22)]" : "";
 
   return (
     <div className="relative">
@@ -80,15 +107,17 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-base font-semibold">Total de atendimentos hoje</CardTitle>
-              {!metricsLoading && myCount >= goal && <Badge variant="success">🏆 Meta Batida!</Badge>}
+              {!metricsLoading && effectiveCount >= goal && <Badge variant="success">🏆 Meta Batida!</Badge>}
             </div>
           </CardHeader>
           <CardContent>
             {metricsLoading ? (
               <Skeleton className="h-10 w-24" />
             ) : (
-              <div className={cn("text-4xl font-semibold tabular-nums", pulse && myCount >= goal && "pulse")}>
-                {myCount.toLocaleString("pt-BR")}
+              <div
+                className={cn("text-4xl font-semibold tabular-nums", pulse && effectiveCount >= goal && "pulse")}
+              >
+                {effectiveCount.toLocaleString("pt-BR")}
               </div>
             )}
           </CardContent>
@@ -116,7 +145,7 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
                 <p className="text-sm text-muted-foreground">
                   Você está{" "}
                   <span className="font-medium text-foreground tabular-nums">
-                    {Math.max(0, (dailyMetrics.leader_count ?? 0) - myCount).toLocaleString("pt-BR")}
+                    {Math.max(0, (dailyMetrics.leader_count ?? 0) - effectiveCount).toLocaleString("pt-BR")}
                   </span>{" "}
                   atendimentos atrás de{" "}
                   <span className="font-medium text-foreground">{dailyMetrics.leader_name || "Sem nome"}</span>.
@@ -148,7 +177,7 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
           <p className="text-sm text-muted-foreground">Progresso da meta</p>
           {!metricsLoading && (
             <p className="text-sm tabular-nums text-muted-foreground">
-              {Math.min(myCount, goal).toLocaleString("pt-BR")}/{goal}
+              {Math.min(effectiveCount, goal).toLocaleString("pt-BR")}/{goal}
             </p>
           )}
         </div>
@@ -159,7 +188,10 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
           <Progress
             value={progress}
             className={cn("h-4", glowClass)}
-            indicatorClassName={cn(indicatorClassName, myCount >= goal && "shadow-[0_0_10px_hsl(var(--status-success)/0.35)]")}
+            indicatorClassName={cn(
+              indicatorClassName,
+              effectiveCount >= goal && "shadow-[0_0_10px_hsl(var(--status-success)/0.35)]",
+            )}
           />
         )}
       </div>

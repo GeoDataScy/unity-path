@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Pencil } from "lucide-react";
@@ -112,6 +112,11 @@ export default function Atendimentos() {
   const { userId, fullName } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // DEV-only: simulate the exact “hit 100” celebration without backend changes
+  const [debugCelebrateNonce, setDebugCelebrateNonce] = useState(0);
+  const [debugOverrideCount, setDebugOverrideCount] = useState<number | null>(null);
+  const debugResetTimeoutRef = useRef<number | null>(null);
 
   // Form state
   const [clientEmail, setClientEmail] = useState("");
@@ -227,11 +232,45 @@ export default function Atendimentos() {
     createMutation.mutate();
   };
 
+  useEffect(() => {
+    return () => {
+      if (debugResetTimeoutRef.current != null) {
+        window.clearTimeout(debugResetTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleDebugSimulateGoalHit = () => {
+    const CELEBRATION_MS = 4800;
+    const GOAL = 100;
+
+    setDebugOverrideCount(GOAL);
+    setDebugCelebrateNonce((n) => n + 1);
+
+    if (debugResetTimeoutRef.current != null) {
+      window.clearTimeout(debugResetTimeoutRef.current);
+    }
+    debugResetTimeoutRef.current = window.setTimeout(() => setDebugOverrideCount(null), CELEBRATION_MS);
+  };
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+        {import.meta.env.DEV && (
+          <Button type="button" variant="outline" size="sm" onClick={handleDebugSimulateGoalHit}>
+            Simular meta batida (DEV)
+          </Button>
+        )}
+      </div>
 
-      <AgentDailyMetricsSection userId={userId} metricsLoading={metricsLoading} dailyMetrics={dailyMetrics} />
+      <AgentDailyMetricsSection
+        userId={userId}
+        metricsLoading={metricsLoading}
+        dailyMetrics={dailyMetrics}
+        debugCelebrateNonce={debugCelebrateNonce}
+        debugOverrideCount={debugOverrideCount}
+      />
 
       <Card>
         <CardHeader>
