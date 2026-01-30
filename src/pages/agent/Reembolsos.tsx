@@ -81,14 +81,18 @@ export default function Reembolsos() {
 
   const completeMutation = useMutation({
     mutationFn: async (payload: { id: string; values: CompleteRefundValues }) => {
+      const refundValue = Number(payload.values.refund_value);
+      if (!Number.isFinite(refundValue)) throw new Error("Valor do reembolso inválido");
+
       const { error } = await supabase
         .from("refunds")
-        .update({
+        .update(({
           completion_date: payload.values.completion_date,
+          refund_value: refundValue,
           refund_type: payload.values.refund_type,
           reason: payload.values.reason,
           items_returned: payload.values.items_returned,
-        })
+        } as any))
         .eq("id", payload.id);
       if (error) throw error;
     },
