@@ -14,16 +14,33 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { RefundItem } from "@/features/refunds/types";
+
+const PERCENT_OPTIONS = Array.from({ length: 20 }, (_, i) => {
+  const value = (i + 1) * 5;
+  return `${String(value).padStart(2, "0")}%`;
+}) as unknown as readonly [string, ...string[]];
+
+function isValidPercentOption(value: string | null | undefined): value is (typeof PERCENT_OPTIONS)[number] {
+  if (!value) return false;
+  return (PERCENT_OPTIONS as readonly string[]).includes(value);
+}
 
 const completeSchema = z.object({
   completion_date: z
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de conclusão"),
-  refund_type: z.string().trim().min(1, "Informe o tipo final").max(100),
+  refund_type: z.enum(PERCENT_OPTIONS, { message: "Selecione um percentual válido" }),
   reason: z.string().trim().min(1, "Informe o motivo").max(2000, "Máximo de 2000 caracteres"),
   items_returned: z.boolean(),
 });
@@ -42,7 +59,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
   const defaultValues = useMemo<CompleteRefundValues>(
     () => ({
       completion_date: refund.completion_date ?? "",
-      refund_type: refund.refund_type ?? "",
+      refund_type: isValidPercentOption(refund.refund_type) ? refund.refund_type : ("" as CompleteRefundValues["refund_type"]),
       reason: refund.reason ?? "",
       items_returned: Boolean(refund.items_returned),
     }),
@@ -88,7 +105,24 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
 
           <div className="grid gap-2">
             <Label htmlFor="complete-type">Tipo final</Label>
-            <Input id="complete-type" placeholder="Ex: Total, Parcial 50%" {...form.register("refund_type")} />
+            <Controller
+              control={form.control}
+              name="refund_type"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="complete-type" aria-label="Tipo final">
+                    <SelectValue placeholder="Selecione (ex: 25%)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PERCENT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             {form.formState.errors.refund_type?.message && (
               <p className="text-sm text-destructive">{form.formState.errors.refund_type.message}</p>
             )}
