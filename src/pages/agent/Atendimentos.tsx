@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Pencil } from "lucide-react";
+import { Pencil, Trophy } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -17,8 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
+import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
@@ -112,6 +114,10 @@ export default function Atendimentos() {
   const [editing, setEditing] = useState<ServiceItem | null>(null);
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
+  const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
+
+  const myCount = dailyMetrics?.my_count ?? 0;
+  const remainingToGoal = Math.max(0, 100 - myCount);
 
   const canSubmit = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product);
@@ -144,6 +150,7 @@ export default function Atendimentos() {
       setServiceDate("");
       setProduct("");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
         title: "Atendimento registrado",
         description: "Seu registro foi salvo com sucesso.",
@@ -165,6 +172,7 @@ export default function Atendimentos() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
         title: "Atendimento excluído",
         description: "O registro foi removido.",
@@ -217,6 +225,69 @@ export default function Atendimentos() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <h1 className="mb-6 text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+
+      <section className="mb-8 grid gap-4 md:grid-cols-3" aria-label="Métricas do dia">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Total de atendimentos hoje</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Skeleton className="h-10 w-24" />
+            ) : (
+              <div className="text-4xl font-semibold tabular-nums">{myCount.toLocaleString("pt-BR")}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Distância do líder</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <div className="grid gap-2">
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            ) : dailyMetrics?.leader_count ? (
+              dailyMetrics.is_leader ? (
+                <div className="flex items-start gap-3">
+                  <Trophy className="mt-0.5 h-5 w-5 text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Parabéns! Você está na liderança</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Você está{" "}
+                  <span className="font-medium text-foreground tabular-nums">
+                    {Math.max(0, (dailyMetrics.leader_count ?? 0) - myCount).toLocaleString("pt-BR")}
+                  </span>{" "}
+                  atendimentos atrás de{" "}
+                  <span className="font-medium text-foreground">{dailyMetrics.leader_name || "Sem nome"}</span>.
+                </p>
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground">Ainda não há atendimentos registrados hoje.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Atendimentos para alcançar a meta</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Skeleton className="h-10 w-24" />
+            ) : (
+              <div className="text-4xl font-semibold tabular-nums">{remainingToGoal.toLocaleString("pt-BR")}</div>
+            )}
+            <p className="mt-2 text-sm text-muted-foreground">Meta diária: 100</p>
+          </CardContent>
+        </Card>
+      </section>
 
       <Card>
         <CardHeader>
