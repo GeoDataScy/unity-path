@@ -1,116 +1,132 @@
 
-Objetivo (entendido do seu pedido)
-- Na tela do agente (/workspace → Atendimentos), logo abaixo do “Vamos lá, {Nome} 🚀”, adicionar **3 cards de métricas do dia**, alinhados e com bom espaçamento:
-  1) **Total de atendimentos hoje**: quantidade de atendimentos do agente logado no dia atual.
-  2) **Distância do líder**:
-     - Se o agente for o líder do dia: mostrar “Parabéns! Você está na liderança” + ícone de troféu.
-     - Caso contrário: “Você está X atendimentos atrás de ‘Nome do líder’”.
-  3) **Atendimentos para alcançar a meta**: meta diária fixa = 100; mostrar `max(0, 100 - total_hoje)`.
+Contexto (o que já existe hoje)
+- A tela `src/pages/agent/Atendimentos.tsx` já exibe 3 cards de métricas do dia (total do agente, distância do líder, restante para meta 100) alimentados por `useAgentDailyMetricsQuery`.
+- Já existe um componente de progresso `src/components/ui/progress.tsx` (Radix Progress) com animação suave (`transition-all`), mas hoje ele usa sempre `bg-primary` no indicador.
+- Não existe implementação de “confetti” no projeto (nenhuma ocorrência no código).
 
-Regras importantes
-- “Hoje” será calculado no fuso **Brasil (São Paulo)**.
-- Sempre que o agente **registrar** ou **deletar** um atendimento, os cards devem **atualizar automaticamente** (sem recarregar a página).
-- A UI não pode causar sobreposição com o formulário ou a tabela já existentes.
+Objetivo do ajuste
+- Adicionar uma barra de progresso logo abaixo dos 3 cards:
+  - 0–59: vermelho (atenção)
+  - 60–89: amarelo (alerta / progresso)
+  - 90–100: verde (meta próxima/atingida)
+  - Preenchimento gradual com animação suave conforme novos atendimentos são registrados.
+- Ao atingir 100 (meta do dia):
+  - Explosão sutil de confetes por ~1–2s, sem bloquear interface.
+  - Mostrar um badge fixo “🏆 Meta Batida!” no card (vou colocar no card “Total de atendimentos hoje”, por ser o mais direto).
+  - Micro animação de “pulse” no número 100 destacando a conquista.
+- UX:
+  - Leve, corporativo, não intrusivo.
+  - O estímulo (confete + pulse de conquista) deve acontecer apenas 1 vez por dia, no momento exato que cruza 100.
+  - Após meta atingida, barra permanece verde com leve glow discreto.
 
-Diagnóstico do que já existe (base atual)
-- A página do agente é `src/pages/agent/Atendimentos.tsx`.
-- O agente já possui:
-  - listagem `useMyServicesQuery(["services","me"])`
-  - mutations para criar/atualizar/deletar atendimentos, invalidando `["services","me"]`.
-- O banco tem a tabela `services` (com `service_date` como `timestamptz`) e `profiles` (com `full_name`).
-- Já existe precedente de “agregação de métricas no backend” via RPC (`dashboard_metrics`), o que é ideal para performance e para evitar múltiplas queries no cliente.
+Abordagem técnica (sem dependências extras)
+1) Calcular progresso e “estado visual” (cor)
+- Em `Atendimentos.tsx`, calcular:
+  - `const goal = 100`
+  - `const progress = Math.min(100, Math.max(0, (myCount / goal) * 100))`
+- Determinar a cor do indicador por faixa:
+  - `myCount <= 59` → classe `bg-red-500`
+  - `60..89` → `bg-amber-400` (ou `bg-yellow-400`)
+  - `>= 90` → `bg-emerald-500`
+- Se `myCount >= 100`, aplicar glow discreto no container:
+  - ex.: `shadow-[0_0_0_3px_rgba(16,185,129,0.20)]` (ajustar para ficar sutil)
 
-Decisão técnica (como vamos calcular as métricas)
-- Vou criar uma função no backend (RPC) específica para o agente, com **resultado mínimo necessário** (sem expor dados sensíveis):
-  - Retorna:
-    - `my_count` (total do agente no dia)
-    - `leader_count` (total do líder do dia)
-    - `leader_name` (nome do líder do dia)
-  - A função usará o usuário logado (`auth.uid()`) e calculará o “dia” usando São Paulo:
-    - Comparação por dia: `((service_date AT TIME ZONE 'America/Sao_Paulo')::date = target_date)`
-- Isso evita:
-  - buscar todos os atendimentos do dia no front-end,
-  - depender de regras de timezone no cliente,
-  - múltiplas requisições para “leaderboard”.
+2) Inserir a barra abaixo dos cards (layout)
+- Ainda em `Atendimentos.tsx`, logo após o `<section ... aria-label="Métricas do dia">`, inserir um bloco:
+  - Um wrapper com `mt-2`/`-mt` pequeno para “colar” visualmente nos cards, e `mb-8` para manter respiro antes do formulário.
+  - Label pequena (opcional) “Progresso da meta: X/100” em texto muted.
+  - Componente `Progress` com `value={progress}`.
+- Para personalizar a cor do indicador, farei uma destas opções (vou escolher a que se encaixar melhor no código atual):
+  A) Melhor (mantém `Progress` genérico): evoluir `src/components/ui/progress.tsx` para aceitar `indicatorClassName` (prop extra) e usar `cn()` no Indicator.
+  B) Alternativa (sem mexer no componente): renderizar um progresso simples com `div`/`span` e `style={{ width: `${progress}%` }}` + `transition` (100% controlável).
+- Preferência: (A), pois mantém padrão shadcn/Radix e reutilizável.
 
-Plano de implementação (passo a passo)
+3) “Meta Batida!” (badge fixo no card)
+- No card “Total de atendimentos hoje”:
+  - Se `myCount >= 100`, renderizar um `Badge` (provavelmente `variant="open"` ou `default`, com ajuste de cor se necessário) com o texto “🏆 Meta Batida!”
+  - Posicionamento:
+    - Ao lado do título (“Total de atendimentos hoje”) no header, ou abaixo do número. Vou colocar no header à direita para ficar “clean” e fixo.
 
-1) Backend: criar RPC “agent_daily_metrics”
-- Adicionar uma migração criando a função:
-  - Nome sugerido: `public.agent_daily_metrics(target_date date default (now() at time zone 'America/Sao_Paulo')::date)`
-  - Retorno: `jsonb` com `{ my_count, leader_count, leader_name }`
-  - Lógica:
-    - Garantir usuário autenticado (`auth.uid() is not null`), caso contrário erro.
-    - Contar atendimentos do usuário logado no dia (`my_count`).
-    - Buscar o líder do dia:
-      - `select user_id, count(*) as c from services where day=target_date group by user_id order by c desc limit 1`
-      - join em `profiles` para obter `leader_name` (fallback “Sem nome”).
-    - Montar o jsonb.
-- Por que via função?
-  - Mais rápido/consistente e já segue o padrão do dashboard.
-  - Evita inconsistência com `timestamptz` + “hoje” em timezone diferente.
+4) Disparo único diário (confete + pulse) ao cruzar 100
+- Precisamos detectar “momento do evento”: quando `myCount` muda de `< 100` para `>= 100`.
+- Em `Atendimentos.tsx`:
+  - Criar `const dateKey = todayISO()` (já existe função timezone São Paulo).
+  - Guardar `prevCount` via `useRef<number>(myCount)` para comparar transições.
+  - Usar `useEffect` observando `[myCount, userId, dateKey]`:
+    - Se `!userId` return
+    - Se `prevCount.current < 100 && myCount >= 100`:
+      - Checar localStorage: `localStorage.getItem(confettiKey)`.
+      - `confettiKey = goalHit:${userId}:${dateKey}`
+      - Se ainda não disparou hoje:
+        - setar `localStorage.setItem(confettiKey, "1")`
+        - setar um state `celebrate = true` por ~1600ms (com `setTimeout`)
+        - setar um state `pulse = true` por ~1200–2000ms (também via timeout)
+    - Atualizar `prevCount.current = myCount` no final.
+- Isso garante: só ocorre quando cruza 100 e apenas uma vez por dia (por usuário).
 
-2) Frontend: criar um hook de query para as métricas do agente
-- Criar um hook em `src/features/agent/` (ex.: `useAgentDailyMetricsQuery.ts`):
-  - `queryKey`: `["agent", "daily-metrics", { date: todayISO }]`
-  - `queryFn`: chamar `supabase.rpc("agent_daily_metrics", { target_date: todayISO })`
-  - `enabled`: somente quando houver sessão (e/ou `Boolean(userId)`).
-  - Configurar:
-    - `staleTime: 0` (para aceitar invalidação imediata)
-    - `refetchOnWindowFocus: true` (bom para quando o agente volta para a aba)
-    - Opcional: `refetchInterval: 15000` (auto-refresh suave), mas o principal será a invalidação no create/delete.
+5) Confete sutil, leve e não intrusivo (sem bloquear)
+- Implementar um componente pequeno, por exemplo `src/components/effects/ConfettiBurst.tsx`:
+  - Renderiza um overlay `div` com `pointer-events-none`, `position: absolute`, `inset: 0`, `overflow-hidden`.
+  - Gera ~18–28 “pedaços” (spans) com posições e delays pseudo-randômicos (usando `Math.random()` no mount).
+  - Animação CSS curta (1.2–1.8s) de “subir um pouco e cair” + rotação, com opacidade diminuindo:
+    - Definir keyframes dentro do próprio componente via `<style>` local (para não precisar mexer no `index.css`/tailwind config).
+  - Cores discretas: primário do sistema + tons neutros + verde (evitar carnaval/exagero).
+- Em `Atendimentos.tsx`, posicionar o ConfettiBurst:
+  - Idealmente no container que envolve os cards + barra, com `relative`, e o confete como overlay absoluto.
+  - Só renderizar quando `celebrate === true`.
 
-3) UI: adicionar os 3 cards abaixo do título
-- Em `src/pages/agent/Atendimentos.tsx`:
-  - Logo após o `<h1>Vamos lá...` inserir uma `<section>` com grid responsiva:
-    - `grid gap-4 md:grid-cols-3`
-    - Cards com `CardHeader` compacto + `CardContent` com número/texto.
-  - Card 1: “Total de atendimentos hoje”
-    - Exibir número grande (formatado pt-BR).
-  - Card 2: “Distância do líder”
-    - Se `my_count >= leader_count` e o líder for o próprio agente: mostrar:
-      - texto “Parabéns! Você está na liderança”
-      - ícone `Trophy` (lucide-react)
-    - Caso contrário:
-      - calcular `gap = leader_count - my_count`
-      - texto: `Você está ${gap} atendimentos atrás de '${leader_name}'`
-      - (se `leader_name` vier vazio/null, fallback “Sem nome”)
-  - Card 3: “Atendimentos para alcançar a meta”
-    - meta fixa = 100
-    - exibir `remaining = Math.max(0, 100 - my_count)`
-- Estado de loading:
-  - Enquanto carrega, usar `Skeleton` (já existe no projeto) para evitar “pulo” de layout.
-- Garantia de layout:
-  - Cards ficam entre o H1 e o formulário atual, com `mb`/`mt` adequado para não colidir.
+6) Pulse no número 100 (micro animação)
+- Requisito: “Aplicar micro animação de pulse no número 100, destacando a conquista”.
+- Implementação:
+  - No número do card “Total de atendimentos hoje”, aplicar `className` condicional:
+    - Se `pulse === true` e `myCount >= 100`, adicionar classe `pulse` (já existe utilidade no projeto conforme as animações).
+    - Alternativa: `animate-pulse` do Tailwind, mas prefiro usar `pulse` já definido (para manter consistência e controle).
+  - Duração controlada pelo timeout do state `pulse`.
 
-4) Atualização automática quando criar/deletar atendimento
-- No `onSuccess` do `createMutation` e `deleteMutation` (em `Atendimentos.tsx`):
-  - Além de invalidar `["services", "me"]`, também invalidar:
-    - `["agent", "daily-metrics", { date: todayISO }]` (ou invalidar por prefixo `["agent", "daily-metrics"]` para simplificar).
-- Resultado:
-  - Ao registrar/deletar, a lista e os cards atualizam juntos.
-
-5) Validação final (checklist de testes)
-- Com 2+ agentes:
-  - Agente A registra 3 atendimentos hoje → card total = 3; meta = 97; distância do líder correta.
-  - Agente B registra 5 atendimentos hoje → B vê mensagem de liderança; A vê “2 atrás de B”.
-  - Ao deletar 1 atendimento de B → atualizar instantaneamente e recalcular liderança/gap.
-- Conferir transição de dia (São Paulo):
-  - perto da meia-noite, “hoje” troca corretamente no cálculo.
+7) Estados de loading e consistência
+- Enquanto `metricsLoading`:
+  - Barra de progresso mostra `Skeleton` ou `Progress` em 0 com cor neutra (mais simples: usar `Skeleton` para evitar “pulos”).
+- Ao atualizar contagem:
+  - A `ProgressPrimitive.Indicator` já tem `transition-all`, então o preenchimento será suave automaticamente (ou adicionaremos `duration-500 ease-out`).
 
 Arquivos que serão alterados/criados
-- Backend (migração):
-  - `supabase/migrations/<timestamp>_agent_daily_metrics.sql` (criar RPC)
-- Frontend:
-  - Criar `src/features/agent/useAgentDailyMetricsQuery.ts`
-  - Editar `src/pages/agent/Atendimentos.tsx` (inserir cards + invalidations)
-  - (Se necessário) usar `src/components/ui/skeleton.tsx` que já existe.
+- Editar:
+  - `src/pages/agent/Atendimentos.tsx`
+    - inserir barra de progresso abaixo dos cards
+    - badge de meta no card
+    - lógica de disparo único diário (localStorage + useEffect)
+    - render do confetti overlay e pulse
+- Editar (se escolher a opção A):
+  - `src/components/ui/progress.tsx`
+    - adicionar prop opcional `indicatorClassName?: string`
+    - aplicar `cn(..., indicatorClassName)` no Indicator
+- Criar (componente de efeito):
+  - `src/components/effects/ConfettiBurst.tsx` (ou nome similar)
+    - confete sutil por 1–2s, sem dependências externas
 
-Observações e limitações
-- Como `service_date` é `timestamptz`, a definição de “hoje” precisa mesmo ser “por timezone”. O uso de `AT TIME ZONE 'America/Sao_Paulo'` resolve isso de forma consistente para todos os agentes.
-- A liderança é calculada “por dia”. Se houver empate, a função pode retornar o primeiro encontrado (ordem determinística adicional pode ser incluída, se você quiser).
+Critérios de aceite (como você valida rapidamente)
+1) Progresso e cores
+- Com `myCount` entre 0–59: barra vermelha
+- 60–89: barra amarela
+- 90–99: verde
+- 100+: verde + glow discreto
 
-Próxima decisão (não bloqueante)
-- No card “Distância do líder”, você quer mostrar também:
-  - o total do líder (ex.: “Giovanna (12)”), ou apenas o nome?
-  - Vou começar apenas com o texto que você pediu, e posso ajustar depois rapidamente.
+2) Animações
+- Registrar atendimentos e ver a barra preenchendo suavemente (sem “saltos” bruscos).
+- Ao cruzar 100:
+  - confete aparece por ~1–2s e some sozinho
+  - número “100” aplica pulse curto
+  - badge “🏆 Meta Batida!” aparece e permanece
+- Registrar mais atendimentos após 100:
+  - barra continua verde e com glow (sem re-disparar confete/pulse)
+
+3) “Apenas uma vez por dia”
+- No mesmo dia, após atingir 100:
+  - atualizar/registrar mais atendimentos não dispara novamente
+- No dia seguinte:
+  - ao cruzar 100 novamente, dispara de novo (chave do localStorage inclui a data São Paulo)
+
+Notas de UX (para ficar corporativo e motivador)
+- Confete com poucas partículas, movimento curto, cores discretas (primário + verde + neutros).
+- Glow leve (não neon).
+- Pulse curto (não infinito), somente no momento da conquista.
