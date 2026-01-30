@@ -21,6 +21,7 @@ type Props = {
 };
 
 export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics, goal = 100 }: Props) {
+  const CELEBRATION_MS = 4800;
   const myCount = dailyMetrics?.my_count ?? 0;
   const remainingToGoal = Math.max(0, goal - myCount);
 
@@ -52,8 +53,8 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
         setCelebrate(true);
         setPulse(true);
 
-        const t1 = window.setTimeout(() => setCelebrate(false), 1600);
-        const t2 = window.setTimeout(() => setPulse(false), 1600);
+        const t1 = window.setTimeout(() => setCelebrate(false), CELEBRATION_MS);
+        const t2 = window.setTimeout(() => setPulse(false), CELEBRATION_MS);
         return () => {
           window.clearTimeout(t1);
           window.clearTimeout(t2);

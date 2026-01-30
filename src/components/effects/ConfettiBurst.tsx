@@ -15,14 +15,15 @@ const COLORS = [
   "hsl(var(--muted-foreground))",
 ];
 
-export function ConfettiBurst({ pieces = 22 }: { pieces?: number }) {
+export function ConfettiBurst({ pieces = 32 }: { pieces?: number }) {
   const data = useMemo<Piece[]>(() => {
     return Array.from({ length: pieces }, () => {
       const color = COLORS[Math.floor(Math.random() * COLORS.length)]!;
       return {
         leftPct: Math.random() * 100,
-        delayMs: Math.floor(Math.random() * 220),
-        durationMs: 1100 + Math.floor(Math.random() * 600),
+        // Calibrado para um overlay de ~4,8s (delay máx 600 + duração máx 4200 = 4800)
+        delayMs: Math.floor(Math.random() * 600),
+        durationMs: 2800 + Math.floor(Math.random() * 1400),
         rotateDeg: Math.floor(Math.random() * 360),
         driftPx: -40 + Math.floor(Math.random() * 80),
         color,
@@ -41,7 +42,7 @@ export function ConfettiBurst({ pieces = 22 }: { pieces?: number }) {
             }
             10% { opacity: 1; }
             100% {
-              transform: translate3d(calc(var(--drift) * -1), 160px, 0) rotate(calc(var(--rot) + 260deg));
+              transform: translate3d(calc(var(--drift) * -1), 320px, 0) rotate(calc(var(--rot) + 260deg));
               opacity: 0;
             }
           }
