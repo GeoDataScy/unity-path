@@ -207,6 +207,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agent_daily_metrics: { Args: { target_date?: string }; Returns: Json }
       dashboard_audit: {
         Args: {
           agent_id?: string
