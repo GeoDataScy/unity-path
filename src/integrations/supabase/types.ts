@@ -255,6 +255,24 @@ export type Database = {
         Returns: boolean
       }
       is_manager: { Args: never; Returns: boolean }
+      my_refunds_with_refunded_value: {
+        Args: never
+        Returns: {
+          completion_date: string
+          created_at: string
+          customer_email: string
+          id: string
+          items_returned: boolean
+          order_id: string
+          reason: string
+          refund_type: string
+          refund_value: number
+          refunded_value: number
+          request_date: string
+          sales_platform: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "agent" | "manager"
