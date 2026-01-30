@@ -96,6 +96,7 @@ export type Database = {
           order_id: string
           reason: string | null
           refund_type: string | null
+          refund_value: number | null
           request_date: string
           sales_platform: string
           user_id: string
@@ -109,6 +110,7 @@ export type Database = {
           order_id: string
           reason?: string | null
           refund_type?: string | null
+          refund_value?: number | null
           request_date: string
           sales_platform: string
           user_id: string
@@ -122,6 +124,7 @@ export type Database = {
           order_id?: string
           reason?: string | null
           refund_type?: string | null
+          refund_value?: number | null
           request_date?: string
           sales_platform?: string
           user_id?: string
