@@ -1,104 +1,87 @@
 
-Objetivo
-- No modal **“Concluir reembolso”**, logo abaixo de **“Data de conclusão”**, adicionar o campo **“Valor do reembolso”**:
-  - Aceita apenas números em dólar, com **até 2 casas decimais** (ex.: `25` ou `25.50`)
-  - O símbolo **`$`** deve ficar visível “dentro do campo” (como prefixo visual), sem atrapalhar a digitação
-  - Deve ser **obrigatório** para concluir
-- Salvar esse valor no backend (banco), mas **não exibir** como coluna na tabela “Histórico/Concluídos” por enquanto (como você escolheu)
+Objetivo (o que vai mudar)
+- Na aba **Histórico/Concluídos** (/workspace/reembolsos), adicionar uma nova coluna **“Valor reembolsado”**.
+- Esse valor será **calculado** com base em:
+  - **Valor do reembolso** (o valor “cheio” que o agente preenche, ex: 1000.00)
+  - **Tipo final** (percentual, ex: 50%)
+- Exemplo: `Valor do reembolso = 1000.00` e `Tipo final = 50%` → **Valor reembolsado = 500.00**
+- O campo **Valor do reembolso** (refund_value) **continua sem aparecer** como coluna na tabela do histórico (apenas será usado para cálculo e, se necessário, para reabrir o modal preenchido).
 
-Decisão técnica (para atender “com centavos / obrigatório”)
-- Criar uma nova coluna na tabela `refunds`:
-  - Nome sugerido: `refund_value`
-  - Tipo: `numeric(10,2)`
-  - `NULL` permitido (para não quebrar registros antigos e reembolsos “Em aberto”)
-  - O formulário do “Concluir reembolso” exigirá o valor (obrigatório), então novos concluídos terão o campo preenchido.
+Como vamos fazer o cálculo “no banco” (como você pediu)
+1) Criar uma função no backend para listar reembolsos do agente já com o valor calculado
+- Criar uma SQL function (via migration) no schema `public`, por exemplo:
+  - Nome sugerido: `my_refunds_with_refunded_value`
+- Ela vai:
+  - Garantir que só devolve registros do usuário logado (`user_id = auth.uid()`)
+  - Retornar as colunas que o frontend já usa (id, datas, email, plataforma, pedido, etc.)
+  - Retornar também um campo calculado: **`refunded_value`** (numeric 10,2)
 
-Mudanças no backend (estrutura do banco)
-1) Migration para adicionar coluna
-- Alterar tabela `refunds` adicionando:
-  - `refund_value numeric(10,2) null`
-- (Opcional recomendado) Adicionar uma constraint simples para evitar valores negativos:
-  - `CHECK (refund_value IS NULL OR refund_value >= 0)`
-  - Isso é seguro e não depende de tempo, então não conflita com regras de imutabilidade.
+2) Regra de cálculo na função (robusta para dados antigos)
+- O campo `refund_type` é texto e pode existir legado (ou nulo). Então a função vai tratar assim:
+  - Se `refund_value` for NULL → `refunded_value` = NULL
+  - Se `refund_type` for NULL → `refunded_value` = NULL
+  - Se `refund_type` não estiver no padrão esperado (`NN%` ou `NNN%`) → `refunded_value` = NULL
+  - Senão:
+    - `percent = replace(refund_type, '%', '')::numeric / 100`
+    - `refunded_value = round(refund_value * percent, 2)`
 
-Mudanças no frontend (modal “Concluir reembolso”)
-2) Atualizar `CompleteRefundDialog.tsx`
-Arquivo: `src/features/refunds/CompleteRefundDialog.tsx`
+3) Segurança
+- Como já existe RLS na tabela `refunds`, a função ainda assim vai filtrar por `auth.uid()` para garantir que o agente só veja os próprios dados.
+- A função será `STABLE` e não vai exigir permissões especiais do usuário além de estar autenticado.
 
-2.1) Adicionar o campo no schema e no form
-- Adicionar `refund_value` ao `completeSchema` e ao tipo `CompleteRefundValues`
-- Como o input vem como texto, vamos validar assim:
-  - Obrigatório (não vazio)
-  - Aceita apenas números com 0–2 casas decimais
-  - Ex.: regex: `^\d+(\.\d{1,2})?$`
-- Transformação: ao submeter, converter para `number` (ex.: `parseFloat`) antes de enviar para o backend.
+Mudanças no frontend
+4) Alterar a query `useMyRefundsQuery` para buscar via RPC (função) em vez de select direto na tabela
+- Arquivo: `src/features/refunds/useMyRefundsQuery.ts`
+- Trocar:
+  - `.from("refunds").select(...)...`
+- Por:
+  - `.rpc("my_refunds_with_refunded_value")`
+- Resultado: o frontend passa a receber `refunded_value` pronto (já calculado no backend).
 
-2.2) UI do campo com prefixo “$” dentro do input
-- Implementar um “input com prefixo” usando Tailwind, sem criar dependências novas:
-  - Wrapper `div` com `relative`
-  - Um `span` absoluto à esquerda com `"$"`
-  - O `<Input />` com padding-left maior (ex.: `pl-7`) para não sobrepor o texto
-- O `$` deve permanecer visível mesmo após digitar, assim o usuário sempre entende que é valor em dólar.
-
-2.3) Restrições de digitação (UX)
-- Usar:
-  - `inputMode="decimal"` (facilita teclado numérico no celular)
-  - `placeholder="0.00"` (ou `00.00`)
-- Opcional (melhora UX): no `onChange`, filtrar caracteres para permitir apenas dígitos e ponto (`.`) e no máximo 2 decimais.
-  - Mesmo com filtro, a validação do Zod continua sendo a “fonte da verdade”.
-
-2.4) Default values / compatibilidade
-- `defaultValues.refund_value`:
-  - Se existir no registro, preencher
-  - Senão, começar vazio (e como é obrigatório, exigirá preenchimento)
-
-Mudanças no salvamento (quando clicar “Concluir”)
-3) Atualizar a mutation de conclusão
-Arquivo: `src/pages/agent/Reembolsos.tsx`
-- No `completeMutation.update({...})`, incluir:
-  - `refund_value: <valor convertido para number>`
-- Manter `completion_date`, `refund_type`, `reason`, `items_returned` como já estão
-
-Mudanças no carregamento de dados do reembolso (para o modal poder preencher)
-4) Atualizar query que busca os reembolsos
-Arquivo: `src/features/refunds/useMyRefundsQuery.ts`
-- Incluir `refund_value` no `.select(...)`
-
-5) Atualizar o tipo `RefundItem`
-Arquivo: `src/features/refunds/types.ts`
+5) Ajustar o tipo `RefundItem` para incluir o novo campo calculado
+- Arquivo: `src/features/refunds/types.ts`
 - Adicionar:
-  - `refund_value: number | null` (se o retorno vier como number)
-  - Observação: dependendo do driver/typing, `numeric` pode chegar como `string` no client. Se isso acontecer no seu setup, ajustaremos para `string | null` e faremos parse no modal. (Eu vou verificar como está vindo na prática quando implementar.)
+  - `refunded_value: number | null`
+- Manter `refund_value` no tipo (para o modal “Concluir reembolso” continuar podendo preencher o campo ao reabrir), mas continuar não exibindo esse campo na tabela.
 
-O que NÃO vamos fazer (por decisão sua)
-- Não vamos adicionar a coluna “Valor” na tabela de **Histórico/Concluídos** agora (apenas salvar).
+6) Adicionar a coluna “Valor reembolsado” no Histórico/Concluídos
+- Arquivo: `src/pages/agent/Reembolsos.tsx`
+- Mudanças:
+  - No `<TableHeader>` da aba “done”, inserir uma coluna “Valor reembolsado”.
+  - No `<TableRow>` de cada item concluído, renderizar:
+    - Se `r.refunded_value` for null → “—”
+    - Senão formatar como dinheiro em dólar com 2 casas.
+- Formatação (conforme seu exemplo “$ 500,00”):
+  - Usar formatação pt-BR para separador decimal (vírgula) e prefixo manual “$ ”.
+  - Ex.: `"$ " + new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor)`
+
+O que NÃO vai mudar
+- Não vamos criar/mostrar uma coluna “Valor do reembolso” no Histórico/Concluídos.
+- O agente continua preenchendo “Valor do reembolso” e “Tipo final” no modal; o histórico só mostra o “Valor reembolsado” (resultado do percentual).
 
 Checklist de testes (end-to-end)
-1) Em `/workspace/reembolsos` → “Em Aberto” → “Concluir Reembolso”
-- Campo “Valor do reembolso” aparece logo abaixo de “Data de conclusão”
-- O `$` aparece dentro do campo (prefixo)
-- Ao tentar concluir sem preencher:
-  - Deve mostrar erro e impedir o submit
-- Ao preencher `25.50`:
-  - Deve aceitar
-- Ao tentar preencher `25.555` ou texto:
-  - Deve bloquear/invalidar e mostrar erro
+1) Abrir /workspace/reembolsos → concluir um reembolso:
+- Valor do reembolso: `1000.00`
+- Tipo final: `50%`
+- Concluir
+2) Ir em Histórico/Concluídos e verificar:
+- A nova coluna “Valor reembolsado” aparece
+- Para esse registro, mostra **$ 500,00**
+- A coluna “Valor do reembolso” não aparece
+3) Testar casos de dados incompletos/antigos:
+- Se existir concluído com `refund_type` nulo ou fora do padrão, “Valor reembolsado” deve mostrar “—” (sem quebrar a tabela)
 
-2) Concluir reembolso normalmente
-- O registro muda para “Histórico/Concluídos”
-- Sem necessidade de mostrar o valor na tabela (como pedido)
-- Reabrir o mesmo reembolso (se existir essa possibilidade/fluxo):
-  - O valor deve aparecer preenchido no modal
-
-Arquivos que serão alterados
+Arquivos/itens que serão alterados
 - Backend (migration):
-  - `refunds`: adicionar coluna `refund_value numeric(10,2) null` (+ opcional check >= 0)
+  - Criar função `public.my_refunds_with_refunded_value()` retornando lista de reembolsos do usuário + `refunded_value`
 - Frontend:
-  - `src/features/refunds/CompleteRefundDialog.tsx`
-  - `src/pages/agent/Reembolsos.tsx`
-  - `src/features/refunds/useMyRefundsQuery.ts`
-  - `src/features/refunds/types.ts`
+  - `src/features/refunds/useMyRefundsQuery.ts` (passar a chamar RPC)
+  - `src/features/refunds/types.ts` (adicionar `refunded_value`)
+  - `src/pages/agent/Reembolsos.tsx` (adicionar coluna e renderização)
 
-Riscos/atenções
-- Tipo do campo `numeric` pode retornar como string dependendo do client/typing. Se ocorrer, vamos padronizar parse/format no modal para evitar bugs.
-- Como é um campo novo, registros antigos continuarão com `NULL` e não quebrarão as telas (porque o campo só será obrigatório no modal de conclusão).
+Riscos e como vamos evitar
+- “refund_type” legado (texto fora de “NN%”): função retorna `refunded_value = NULL` e UI mostra “—”.
+- Tipo `numeric` vindo como string no client: se acontecer, ajustamos tipagem/conversão no ponto de leitura da RPC. (Ajuste pequeno e controlado.)
+
+Resultado final esperado
+- Histórico/Concluídos passa a mostrar o valor efetivamente reembolsado (resultado do percentual) sem expor o valor base preenchido no modal.
