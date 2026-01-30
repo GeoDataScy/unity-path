@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { RefundItem } from "@/features/refunds/types";
 
+type RefundRpcRow = Omit<RefundItem, "refunded_value"> & {
+  refunded_value: number | string | null;
+};
+
 export function useMyRefundsQuery(enabled: boolean) {
   return useQuery({
     queryKey: ["refunds", "me"],
@@ -13,16 +17,21 @@ export function useMyRefundsQuery(enabled: boolean) {
       } = await supabase.auth.getSession();
       if (!session) return [];
 
-      const { data, error } = await supabase
-        .from("refunds")
-        .select(
-          "id, created_at, user_id, customer_email, request_date, completion_date, reason, items_returned, sales_platform, order_id, refund_type, refund_value",
-        )
-        .eq("user_id", session.user.id)
-        .order("request_date", { ascending: false });
+      // Busca via RPC para já trazer refunded_value calculado no backend
+      const { data, error } = await supabase.rpc("my_refunds_with_refunded_value");
 
       if (error) throw error;
-      return (data ?? []) as RefundItem[];
+
+      const rows = (data ?? []) as RefundRpcRow[];
+      return rows.map((r) => ({
+        ...r,
+        refunded_value:
+          r.refunded_value === null
+            ? null
+            : typeof r.refunded_value === "string"
+              ? Number(r.refunded_value)
+              : r.refunded_value,
+      }));
     },
   });
 }

@@ -29,6 +29,17 @@ function parseDateForDisplay(value: string | null | undefined): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
+function formatUsdPtBr(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return (
+    "$ " +
+    new Intl.NumberFormat("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  );
+}
+
 export default function Reembolsos() {
   const { userId } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
@@ -206,6 +217,7 @@ export default function Reembolsos() {
                       <TableHead>Plataforma</TableHead>
                       <TableHead>Pedido</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Valor reembolsado</TableHead>
                       <TableHead>Motivo</TableHead>
                       <TableHead>Itens</TableHead>
                       <TableHead>Status</TableHead>
@@ -214,7 +226,7 @@ export default function Reembolsos() {
                   <TableBody>
                     {doneRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center text-muted-foreground">
                           Nenhum reembolso concluído ainda.
                         </TableCell>
                       </TableRow>
@@ -237,6 +249,9 @@ export default function Reembolsos() {
                           <TableCell>{r.sales_platform}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
                           <TableCell>{r.refund_type}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatUsdPtBr(r.refunded_value ?? null)}
+                          </TableCell>
                           <TableCell>
                             <span
                               className="block max-w-[360px] truncate"
