@@ -86,6 +86,8 @@ export default function Reembolsos() {
         .update({
           completion_date: payload.values.completion_date,
           refund_type: payload.values.refund_type,
+          reason: payload.values.reason,
+          items_returned: payload.values.items_returned,
         })
         .eq("id", payload.id);
       if (error) throw error;
@@ -200,6 +202,7 @@ export default function Reembolsos() {
                       <TableHead>Plataforma</TableHead>
                       <TableHead>Pedido</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Motivo</TableHead>
                       <TableHead>Itens</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -207,7 +210,7 @@ export default function Reembolsos() {
                   <TableBody>
                     {doneRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center text-muted-foreground">
                           Nenhum reembolso concluído ainda.
                         </TableCell>
                       </TableRow>
@@ -230,6 +233,14 @@ export default function Reembolsos() {
                           <TableCell>{r.sales_platform}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
                           <TableCell>{r.refund_type}</TableCell>
+                          <TableCell>
+                            <span
+                              className="block max-w-[360px] truncate"
+                              title={r.reason ?? ""}
+                            >
+                              {r.reason ?? "—"}
+                            </span>
+                          </TableCell>
                           <TableCell>{r.items_returned ? "Sim" : "Não"}</TableCell>
                           <TableCell>
                             <Badge>Concluído</Badge>

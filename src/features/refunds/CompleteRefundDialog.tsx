@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import type { RefundItem } from "@/features/refunds/types";
 
 const completeSchema = z.object({
@@ -22,6 +24,8 @@ const completeSchema = z.object({
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de conclusão"),
   refund_type: z.string().trim().min(1, "Informe o tipo final").max(100),
+  reason: z.string().trim().min(1, "Informe o motivo").max(2000, "Máximo de 2000 caracteres"),
+  items_returned: z.boolean(),
 });
 
 export type CompleteRefundValues = z.infer<typeof completeSchema>;
@@ -39,8 +43,10 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
     () => ({
       completion_date: refund.completion_date ?? "",
       refund_type: refund.refund_type ?? "",
+      reason: refund.reason ?? "",
+      items_returned: Boolean(refund.items_returned),
     }),
-    [refund.completion_date, refund.refund_type],
+    [refund.completion_date, refund.refund_type, refund.reason, refund.items_returned],
   );
 
   const form = useForm<CompleteRefundValues>({
@@ -86,6 +92,33 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
             {form.formState.errors.refund_type?.message && (
               <p className="text-sm text-destructive">{form.formState.errors.refund_type.message}</p>
             )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="complete-reason">Motivo</Label>
+            <Textarea
+              id="complete-reason"
+              placeholder="Descreva o motivo do reembolso"
+              className="min-h-[110px]"
+              {...form.register("reason")}
+            />
+            {form.formState.errors.reason?.message && (
+              <p className="text-sm text-destructive">{form.formState.errors.reason.message}</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+            <div className="grid gap-0.5">
+              <p className="text-sm font-medium">Itens</p>
+              <p className="text-sm text-muted-foreground">Habilitado = Sim • Desabilitado = Não</p>
+            </div>
+            <Controller
+              control={form.control}
+              name="items_returned"
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Itens devolvidos" />
+              )}
+            />
           </div>
 
           <DialogFooter>
