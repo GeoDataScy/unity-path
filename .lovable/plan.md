@@ -1,87 +1,87 @@
 
-Objetivo (o que vai mudar)
-- Na aba **Histórico/Concluídos** (/workspace/reembolsos), adicionar uma nova coluna **“Valor reembolsado”**.
-- Esse valor será **calculado** com base em:
-  - **Valor do reembolso** (o valor “cheio” que o agente preenche, ex: 1000.00)
-  - **Tipo final** (percentual, ex: 50%)
-- Exemplo: `Valor do reembolso = 1000.00` e `Tipo final = 50%` → **Valor reembolsado = 500.00**
-- O campo **Valor do reembolso** (refund_value) **continua sem aparecer** como coluna na tabela do histórico (apenas será usado para cálculo e, se necessário, para reabrir o modal preenchido).
+Objetivo
+- Na tela de Atendimentos, adicionar um botão visível somente em desenvolvimento (DEV) que, ao clicar, simula exatamente o “momento de bater 100 atendimentos”: badge “Meta Batida!”, número pulsando e confetes por ~4,8s, sem depender do backend nem do número real de atendimentos.
 
-Como vamos fazer o cálculo “no banco” (como você pediu)
-1) Criar uma função no backend para listar reembolsos do agente já com o valor calculado
-- Criar uma SQL function (via migration) no schema `public`, por exemplo:
-  - Nome sugerido: `my_refunds_with_refunded_value`
-- Ela vai:
-  - Garantir que só devolve registros do usuário logado (`user_id = auth.uid()`)
-  - Retornar as colunas que o frontend já usa (id, datas, email, plataforma, pedido, etc.)
-  - Retornar também um campo calculado: **`refunded_value`** (numeric 10,2)
+O que existe hoje (estado atual)
+- A celebração real acontece em `AgentDailyMetricsSection` quando o contador do dia cruza a meta:
+  - Condição: `prevCount.current < goal && myCount >= goal`
+  - Dispara confetes (`ConfettiBurst`) por 4800ms e adiciona `pulse` no número.
+  - Usa `localStorage` com chave `goalHit:${userId}:${dateKey}` para tocar apenas 1 vez por dia.
+- A tela `Atendimentos.tsx` já renderiza `AgentDailyMetricsSection` no topo, então é o ponto ideal para colocar um botão de simulação.
 
-2) Regra de cálculo na função (robusta para dados antigos)
-- O campo `refund_type` é texto e pode existir legado (ou nulo). Então a função vai tratar assim:
-  - Se `refund_value` for NULL → `refunded_value` = NULL
-  - Se `refund_type` for NULL → `refunded_value` = NULL
-  - Se `refund_type` não estiver no padrão esperado (`NN%` ou `NNN%`) → `refunded_value` = NULL
-  - Senão:
-    - `percent = replace(refund_type, '%', '')::numeric / 100`
-    - `refunded_value = round(refund_value * percent, 2)`
+Decisão de design (como vamos simular “exatamente”)
+- Não vamos “mexer” no banco nem criar 100 registros.
+- A simulação será totalmente front-end, mas reutilizando os mesmos elementos visuais da celebração real:
+  - Confetes: o mesmo componente `ConfettiBurst`
+  - Pulso: a mesma classe `pulse`
+  - Badge/estado da meta: usando a mesma lógica do componente, porém com um “contador efetivo” temporário (ex.: 100) para que a UI mostre “meta batida” como se tivesse acontecido.
+- A simulação precisa ignorar o bloqueio “uma vez por dia” do `localStorage`, senão você clicaria e não veria nada se já bateu meta hoje. Portanto, o gatilho de DEV terá um fluxo separado que não grava/consulta o `localStorage`.
 
-3) Segurança
-- Como já existe RLS na tabela `refunds`, a função ainda assim vai filtrar por `auth.uid()` para garantir que o agente só veja os próprios dados.
-- A função será `STABLE` e não vai exigir permissões especiais do usuário além de estar autenticado.
+Mudanças planejadas (frontend)
 
-Mudanças no frontend
-4) Alterar a query `useMyRefundsQuery` para buscar via RPC (função) em vez de select direto na tabela
-- Arquivo: `src/features/refunds/useMyRefundsQuery.ts`
-- Trocar:
-  - `.from("refunds").select(...)...`
-- Por:
-  - `.rpc("my_refunds_with_refunded_value")`
-- Resultado: o frontend passa a receber `refunded_value` pronto (já calculado no backend).
+1) Atualizar `AgentDailyMetricsSection` para suportar simulação em DEV
+- Alterar o type `Props` para aceitar props opcionais de debug, por exemplo:
+  - `debugCelebrateNonce?: number` (um número que muda a cada clique, só para disparar o efeito)
+  - `debugOverrideCount?: number | null` (quando presente, a UI usa esse valor como “myCount”)
+- Implementação:
+  - Criar `const effectiveCount = debugOverrideCount ?? myCount;`
+  - Trocar os usos de `myCount` por `effectiveCount` nos cálculos/visual:
+    - progress, indicador de cor, remainingToGoal, badge “Meta Batida!”, glow, texto do número e do contador “x/goal”.
+  - Manter a lógica real (com localStorage) intacta para o uso normal.
+  - Adicionar um `useEffect` separado que escuta `debugCelebrateNonce`:
+    - Quando `debugCelebrateNonce` mudar (e houver `userId`), executar:
+      - `setCelebrate(true); setPulse(true);`
+      - timeouts para desligar após `CELEBRATION_MS`
+    - Esse efeito não lê nem escreve `localStorage`.
+  - Garantir cleanup de timeouts no return do effect.
 
-5) Ajustar o tipo `RefundItem` para incluir o novo campo calculado
-- Arquivo: `src/features/refunds/types.ts`
-- Adicionar:
-  - `refunded_value: number | null`
-- Manter `refund_value` no tipo (para o modal “Concluir reembolso” continuar podendo preencher o campo ao reabrir), mas continuar não exibindo esse campo na tabela.
+2) Adicionar o botão DEV na tela `src/pages/agent/Atendimentos.tsx`
+- Criar state local para controlar a simulação:
+  - `const [debugCelebrateNonce, setDebugCelebrateNonce] = useState(0);`
+  - `const [debugOverrideCount, setDebugOverrideCount] = useState<number | null>(null);`
+- Renderizar o botão somente em DEV:
+  - Condição: `if (import.meta.env.DEV) { ... }`
+- Colocação sugerida:
+  - Logo abaixo do `<h1>` e antes do `AgentDailyMetricsSection`, ou ao lado do título, para ficar fácil de testar.
+- Comportamento do botão (ao clicar):
+  - Setar `debugOverrideCount` para o valor da meta (ex.: 100) para a UI mostrar “meta batida”.
+  - Incrementar `debugCelebrateNonce` (ex.: `setDebugCelebrateNonce((n) => n + 1)`).
+  - Agendar um timeout de 4800ms para limpar o override:
+    - `setDebugOverrideCount(null)` depois de acabar a animação, para voltar a mostrar os dados reais.
+- Passar as props para o componente:
+  - `<AgentDailyMetricsSection ... debugCelebrateNonce={debugCelebrateNonce} debugOverrideCount={debugOverrideCount} />`
 
-6) Adicionar a coluna “Valor reembolsado” no Histórico/Concluídos
-- Arquivo: `src/pages/agent/Reembolsos.tsx`
-- Mudanças:
-  - No `<TableHeader>` da aba “done”, inserir uma coluna “Valor reembolsado”.
-  - No `<TableRow>` de cada item concluído, renderizar:
-    - Se `r.refunded_value` for null → “—”
-    - Senão formatar como dinheiro em dólar com 2 casas.
-- Formatação (conforme seu exemplo “$ 500,00”):
-  - Usar formatação pt-BR para separador decimal (vírgula) e prefixo manual “$ ”.
-  - Ex.: `"$ " + new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor)`
+3) Garantias importantes (para ficar “exato” e seguro)
+- “Somente DEV”: o botão fica invisível em produção porque `import.meta.env.DEV` é false.
+- Não altera dados reais:
+  - Não insere registros, não muda a métrica real, não mexe em backend.
+- “Exato visualmente”:
+  - Confetes e pulse são os mesmos já usados na celebração real.
+  - A badge “Meta Batida!” e o glow aparecem porque o “contador efetivo” chega na meta.
+- Repetível:
+  - Como a simulação ignora `localStorage`, você consegue clicar quantas vezes quiser para ver “o que acontece”.
 
-O que NÃO vai mudar
-- Não vamos criar/mostrar uma coluna “Valor do reembolso” no Histórico/Concluídos.
-- O agente continua preenchendo “Valor do reembolso” e “Tipo final” no modal; o histórico só mostra o “Valor reembolsado” (resultado do percentual).
+Testes (checklist)
+- Em DEV (preview), ir em Atendimentos:
+  - Ver o botão “Simular meta batida” (ou nome similar).
+  - Clicar:
+    - Confetes aparecem e somem após ~4,8s.
+    - Número entra em pulse durante a janela da celebração.
+    - Badge “Meta Batida!” aparece durante a simulação.
+    - Barra de progresso fica no estado final (verde + glow).
+  - Após ~4,8s:
+    - UI volta a exibir o contador real vindo do backend (sem ficar travado em 100).
+- Em produção (published):
+  - Confirmar que o botão não aparece.
+  - A celebração real continua funcionando quando o usuário realmente cruzar a meta.
 
-Checklist de testes (end-to-end)
-1) Abrir /workspace/reembolsos → concluir um reembolso:
-- Valor do reembolso: `1000.00`
-- Tipo final: `50%`
-- Concluir
-2) Ir em Histórico/Concluídos e verificar:
-- A nova coluna “Valor reembolsado” aparece
-- Para esse registro, mostra **$ 500,00**
-- A coluna “Valor do reembolso” não aparece
-3) Testar casos de dados incompletos/antigos:
-- Se existir concluído com `refund_type` nulo ou fora do padrão, “Valor reembolsado” deve mostrar “—” (sem quebrar a tabela)
+Arquivos que serão alterados
+- `src/features/agent/components/AgentDailyMetricsSection.tsx`
+  - Adição de props de debug
+  - Cálculo `effectiveCount`
+  - Novo effect para simulação
+- `src/pages/agent/Atendimentos.tsx`
+  - Botão DEV + state + passagem das props para `AgentDailyMetricsSection`
 
-Arquivos/itens que serão alterados
-- Backend (migration):
-  - Criar função `public.my_refunds_with_refunded_value()` retornando lista de reembolsos do usuário + `refunded_value`
-- Frontend:
-  - `src/features/refunds/useMyRefundsQuery.ts` (passar a chamar RPC)
-  - `src/features/refunds/types.ts` (adicionar `refunded_value`)
-  - `src/pages/agent/Reembolsos.tsx` (adicionar coluna e renderização)
-
-Riscos e como vamos evitar
-- “refund_type” legado (texto fora de “NN%”): função retorna `refunded_value = NULL` e UI mostra “—”.
-- Tipo `numeric` vindo como string no client: se acontecer, ajustamos tipagem/conversão no ponto de leitura da RPC. (Ajuste pequeno e controlado.)
-
-Resultado final esperado
-- Histórico/Concluídos passa a mostrar o valor efetivamente reembolsado (resultado do percentual) sem expor o valor base preenchido no modal.
+Observação de compatibilidade
+- Não foi encontrado uso amplo de `import.meta.env` no projeto além do client do backend; usar `import.meta.env.DEV` é compatível com Vite e é o padrão para condicionar UI em desenvolvimento.
