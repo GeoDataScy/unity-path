@@ -75,7 +75,15 @@ const PRODUCTS = [
 ] as const;
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  // Use São Paulo date (avoid UTC date drift around midnight)
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+function toSaoPauloTimestamptz(dateOnly: string) {
+  // services.service_date is timestamptz; if we send YYYY-MM-DD, Postgres will interpret as 00:00Z,
+  // which becomes the previous day in São Paulo. We store midnight São Paulo explicitly.
+  // São Paulo has no DST currently, so -03:00 is stable.
+  return `${dateOnly}T00:00:00-03:00`;
 }
 
 function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
@@ -137,7 +145,7 @@ export default function Atendimentos() {
 
       const { error } = await supabase.from("services").insert({
         client_email: clientEmail,
-        service_date: serviceDate,
+        service_date: toSaoPauloTimestamptz(serviceDate),
         product,
         status: "registered",
         user_id: session.user.id,
@@ -193,7 +201,7 @@ export default function Atendimentos() {
         .from("services")
         .update({
           client_email: payload.client_email,
-          service_date: payload.service_date,
+          service_date: toSaoPauloTimestamptz(payload.service_date),
           product: payload.product,
         })
         .eq("id", payload.id);
