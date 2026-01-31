@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_daily_service_counts: {
+        Row: {
+          day: string
+          service_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          day: string
+          service_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          day?: string
+          service_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -211,6 +232,14 @@ export type Database = {
     }
     Functions: {
       agent_daily_metrics: { Args: { target_date?: string }; Returns: Json }
+      agent_metrics_range: {
+        Args: { from_date: string; to_date: string }
+        Returns: Json
+      }
+      agent_product_mix: {
+        Args: { from_date: string; to_date: string; top_n?: number }
+        Returns: Json
+      }
       dashboard_audit: {
         Args: {
           agent_id?: string
@@ -272,6 +301,10 @@ export type Database = {
           sales_platform: string
           user_id: string
         }[]
+      }
+      refresh_agent_daily_service_count: {
+        Args: { p_day: string; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
