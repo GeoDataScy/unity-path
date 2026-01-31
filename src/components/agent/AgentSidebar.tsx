@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { ClipboardList, HandCoins } from "lucide-react";
+import { ClipboardList, HandCoins, LineChart } from "lucide-react";
 
 import { NavLink } from "@/components/NavLink";
 import {
@@ -18,6 +18,7 @@ import {
 const items = [
   { title: "Atendimentos", to: "/workspace", icon: ClipboardList },
   { title: "Reembolsos", to: "/workspace/reembolsos", icon: HandCoins },
+  { title: "Minhas métricas", to: "/workspace/metricas", icon: LineChart },
 ] as const;
 
 export function AgentSidebar() {
