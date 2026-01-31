@@ -232,7 +232,7 @@ export function AgentDailyMetricsSection({
           <p className="text-sm text-muted-foreground">Progresso da meta</p>
           {!metricsLoading && (
             <p className="text-sm tabular-nums text-muted-foreground">
-              {Math.min(effectiveCount, goal).toLocaleString("pt-BR")}/{goal}
+              {effectiveCount.toLocaleString("pt-BR")}/{goal}
             </p>
           )}
         </div>
