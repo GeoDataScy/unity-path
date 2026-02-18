@@ -35,22 +35,25 @@ export default function ManagerLayout() {
   const [authLoading, setAuthLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
 
-  // Defaults requested: 01/01/2026 -> 31/01/2026
+  // Default: 1st of current month → today
   const [range, setRange] = useState<DateRange | undefined>(() => {
-    const from = new Date(2026, 0, 1);
-    const to = new Date(2026, 0, 31);
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    const to = now;
     return { from, to };
   });
   const [agentId, setAgentId] = useState<string>("all");
 
   const fromISO = useMemo(() => {
     const d = range?.from;
-    return d ? toISODate(d) : "2026-01-01";
+    if (d) return toISODate(d);
+    const now = new Date();
+    return toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
   }, [range?.from]);
 
   const toISO = useMemo(() => {
     const d = range?.to ?? range?.from;
-    return d ? toISODate(d) : "2026-01-31";
+    return d ? toISODate(d) : toISODate(new Date());
   }, [range?.to, range?.from]);
 
   useEffect(() => {
@@ -155,7 +158,7 @@ export default function ManagerLayout() {
             <div className="space-y-2">
               <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
               <DateRangePicker value={range} onChange={setRange} />
-              <div className="text-[11px] opacity-75">Default: 01/01/2026 — 31/01/2026</div>
+              <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
             </div>
 
             <div className="space-y-2">

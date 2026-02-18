@@ -109,7 +109,7 @@ const Dashboard = () => {
     byAgentSeries,
     byProductSeries,
     byDaySeries,
-  } = useMemo(() => { 
+  } = useMemo(() => {
     const kpi = {
       kpiTotal: 0,
       kpiDailyAvg: 0,
@@ -123,8 +123,9 @@ const Dashboard = () => {
 
     if (!metrics) return kpi;
 
-    const fromDt = range?.from ?? safeParseISODate(fromISO) ?? new Date(2026, 0, 1);
-    const toDt = range?.to ?? safeParseISODate(toISO) ?? new Date(2026, 0, 31);
+    const now = new Date();
+    const fromDt = range?.from ?? safeParseISODate(fromISO) ?? new Date(now.getFullYear(), now.getMonth(), 1);
+    const toDt = range?.to ?? safeParseISODate(toISO) ?? now;
     const daysSelected = Math.max(1, differenceInCalendarDays(toDt, fromDt) + 1);
 
     kpi.kpiTotal = metrics.total_count;
@@ -209,250 +210,250 @@ const Dashboard = () => {
         </Button>
       </header>
 
-          {/* KPIs */}
-          <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" /> Total de atendimentos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{formatCompactNumber(kpiTotal)}</div>}
-              </CardContent>
-            </Card>
+      {/* KPIs */}
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" /> Total de atendimentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{formatCompactNumber(kpiTotal)}</div>}
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" /> Média diária
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-28" />
-                ) : (
-                  <div className="text-3xl font-semibold">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" /> Média diária
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div className="text-3xl font-semibold">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Distância do Líder"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-8 w-40" />
+            ) : (
+              <>
+                <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
+                  {kpiTopAgentLabel}
+                </div>
+                {agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL && (
+                  <div className="text-sm text-muted-foreground">abaixo da referência</div>
                 )}
-              </CardContent>
-            </Card>
+                {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Distância do Líder"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-40" />
-                ) : (
-                  <>
-                    <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
-                      {kpiTopAgentLabel}
-                    </div>
-                    {agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL && (
-                      <div className="text-sm text-muted-foreground">abaixo da referência</div>
-                    )}
-                    {kpiTopAgentSubtext && <div className="text-xs text-muted-foreground mt-1">{kpiTopAgentSubtext}</div>}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Package className="h-4 w-4 text-primary" /> Produto + saída
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-lg font-semibold">{kpiTopProduct}</div>}
+          </CardContent>
+        </Card>
+      </section>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Package className="h-4 w-4 text-primary" /> Produto + saída
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-lg font-semibold">{kpiTopProduct}</div>}
-              </CardContent>
-            </Card>
-          </section>
+      {/* Charts row */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ranking de performance</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : byAgentSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={byAgentSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Charts row */}
-          <section className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ranking de performance</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[320px]">
-                {isLoading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : byAgentSeries.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={byAgentSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mix de produtos</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : byProductSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip />
+                  <Pie
+                    data={byProductSeries}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={2}
+                  >
+                    {byProductSeries.map((_, i) => (
+                      <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Mix de produtos</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[320px]">
-                {isLoading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : byProductSeries.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Tooltip />
-                      <Pie
-                        data={byProductSeries}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={70}
-                        outerRadius={110}
-                        paddingAngle={2}
-                      >
-                        {byProductSeries.map((_, i) => (
-                          <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+      {/* Evolution */}
+      <section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tendência temporal</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[340px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : byDaySeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={byDaySeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#areaFill)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
-          {/* Evolution */}
-          <section>
-            <Card>
-              <CardHeader>
-                <CardTitle>Tendência temporal</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[340px]">
-                {isLoading ? (
-                  <Skeleton className="h-full w-full" />
-                ) : byDaySeries.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={byDaySeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#areaFill)" strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+      {/* Table */}
+      <section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Auditoria (registros)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : pageRows.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <>
+                <div className="rounded-lg border bg-card">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Agente</TableHead>
+                        <TableHead>E-mail Cliente</TableHead>
+                        <TableHead>Produto</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pageRows.map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell>{format(parseISO(row.service_date.slice(0, 10)), "dd/MM/yyyy")}</TableCell>
+                          <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{row.client_email}</TableCell>
+                          <TableCell>{row.product}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-          {/* Table */}
-          <section>
-            <Card>
-              <CardHeader>
-                <CardTitle>Auditoria (registros)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : pageRows.length === 0 ? (
-                  <div className="py-10 text-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-                ) : (
-                  <>
-                    <div className="rounded-lg border bg-card">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Agente</TableHead>
-                            <TableHead>E-mail Cliente</TableHead>
-                            <TableHead>Produto</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {pageRows.map((row) => (
-                            <TableRow key={row.id}>
-                              <TableCell>{format(parseISO(row.service_date.slice(0, 10)), "dd/MM/yyyy")}</TableCell>
-                              <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
-                              <TableCell className="text-muted-foreground">{row.client_email}</TableCell>
-                              <TableCell>{row.product}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Página {page} de {totalPages} • {formatCompactNumber(audit?.total_count ?? 0)} registros
+                  </p>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">
-                        Página {page} de {totalPages} • {formatCompactNumber(audit?.total_count ?? 0)} registros
-                      </p>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage((p) => Math.max(1, p - 1));
+                          }}
+                        />
+                      </PaginationItem>
 
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
+                      {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
+                        const p = idx + 1;
+                        return (
+                          <PaginationItem key={p}>
+                            <PaginationLink
                               href="#"
+                              isActive={p === page}
                               onClick={(e) => {
                                 e.preventDefault();
-                                setPage((p) => Math.max(1, p - 1));
+                                setPage(p);
                               }}
-                            />
+                            >
+                              {p}
+                            </PaginationLink>
                           </PaginationItem>
+                        );
+                      })}
 
-                          {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
-                            const p = idx + 1;
-                            return (
-                              <PaginationItem key={p}>
-                                <PaginationLink
-                                  href="#"
-                                  isActive={p === page}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setPage(p);
-                                  }}
-                                >
-                                  {p}
-                                </PaginationLink>
-                              </PaginationItem>
-                            );
-                          })}
-
-                          <PaginationItem>
-                            <PaginationNext
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setPage((p) => Math.min(totalPages, p + 1));
-                              }}
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage((p) => Math.min(totalPages, p + 1));
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </section>
       {metricsQuery.error || auditQuery.error ? (
         <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
           {(metricsQuery.error as any)?.message || (auditQuery.error as any)?.message || "Erro ao carregar dados."}
