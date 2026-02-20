@@ -296,6 +296,7 @@ export type Database = {
           id: string
           items_returned: boolean
           order_id: string
+          product: string
           reason: string
           refund_type: string
           refund_value: number
