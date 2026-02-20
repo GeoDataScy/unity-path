@@ -12,7 +12,57 @@ export type RefundItem = {
   refund_type: string | null;
   refund_value: number | null; // numeric(10,2)
   refunded_value?: number | null; // calculado no backend (numeric)
+  product: string | null;
 };
 
 export const SALES_PLATFORMS = ["Cartpanda", "Buygoods", "Hotmart"] as const;
 export type SalesPlatform = (typeof SALES_PLATFORMS)[number];
+
+export const REFUND_PRODUCTS = [
+  "Arialief",
+  "Alphacur",
+  "Blinzador",
+  "Feilaira",
+  "Garaherb",
+  "Karylief",
+  "Kymezol",
+  "Jertaris",
+  "Laellium",
+  "Memyts",
+  "Presgera",
+  "Biografa",
+  "Cetacondor",
+  "Cetadusse",
+  "Sciatilief",
+  "Goldenfrib",
+  "Felaromi",
+  "Tenurima",
+  "Ariovira",
+  "CucuDrops",
+  "Zalovira",
+  "Xelovita",
+  "Cerami",
+  "NATHUREX",
+  "Mahgryn",
+  "Levhyn",
+  "Ariomyx",
+  "Alitoryn",
+  "Athentys",
+  "Velynivo",
+  "Mioralab",
+  "Vergolief",
+  "Olisteren",
+  "Halegryn",
+  "Danmyts",
+  "Maizkidor",
+  "Basmontex",
+  "Fraganief",
+  "Ceramiri",
+  "Shapeon",
+  "Nexburn",
+  "Memoryon",
+  "Korvizol",
+  "Erectozyn",
+  "Thewellnesswize",
+  "VIP.Shipping",
+] as const;

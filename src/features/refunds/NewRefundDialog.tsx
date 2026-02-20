@@ -21,16 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SALES_PLATFORMS } from "@/features/refunds/types";
+import { SALES_PLATFORMS, REFUND_PRODUCTS } from "@/features/refunds/types";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// No cadastro inicial (“Em aberto”), apenas 3 campos devem ser obrigatórios:
+// No cadastro inicial ("Em aberto"), apenas 4 campos devem ser obrigatórios:
 // - E-mail
 // - Data da solicitação
 // - Número do pedido
+// - Produto
 // A plataforma continua visível, mas vem pré-selecionada.
 const newRefundSchema = z.object({
   customer_email: z.string().trim().email("E-mail inválido").max(255),
@@ -40,6 +41,7 @@ const newRefundSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   order_id: z.string().trim().min(1, "Informe o número do pedido").max(100),
   sales_platform: z.enum(SALES_PLATFORMS, { message: "Selecione a plataforma" }),
+  product: z.string().trim().min(1, "Selecione o produto"),
 });
 
 export type NewRefundValues = z.infer<typeof newRefundSchema>;
@@ -58,6 +60,7 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
       request_date: todayISO(),
       sales_platform: "Cartpanda",
       order_id: "",
+      product: "",
     }),
     [],
   );
@@ -102,6 +105,28 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
                 <p className="text-sm text-destructive">{form.formState.errors.request_date.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Produto</Label>
+            <Select
+              value={form.watch("product")}
+              onValueChange={(v) => form.setValue("product", v, { shouldValidate: true })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o produto" />
+              </SelectTrigger>
+              <SelectContent>
+                {REFUND_PRODUCTS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.product?.message && (
+              <p className="text-sm text-destructive">{form.formState.errors.product.message}</p>
+            )}
           </div>
 
           <div className="grid gap-2">

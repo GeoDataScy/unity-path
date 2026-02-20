@@ -71,6 +71,7 @@ export default function Reembolsos() {
         items_returned: false,
         sales_platform: values.sales_platform,
         order_id: values.order_id,
+        product: values.product,
       });
       if (error) throw error;
     },
@@ -159,6 +160,7 @@ export default function Reembolsos() {
                       <TableHead>Solicitação</TableHead>
                       <TableHead>E-mail</TableHead>
                       <TableHead>Plataforma</TableHead>
+                      <TableHead>Produto</TableHead>
                       <TableHead>Pedido</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[170px] text-right">Ações</TableHead>
@@ -167,7 +169,7 @@ export default function Reembolsos() {
                   <TableBody>
                     {openRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
                           Nenhum reembolso em aberto.
                         </TableCell>
                       </TableRow>
@@ -182,6 +184,7 @@ export default function Reembolsos() {
                           </TableCell>
                           <TableCell className="font-medium">{r.customer_email}</TableCell>
                           <TableCell>{r.sales_platform}</TableCell>
+                          <TableCell>{r.product ?? "—"}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
                           <TableCell>
                             <Badge variant="open">Em Aberto</Badge>
@@ -189,8 +192,8 @@ export default function Reembolsos() {
                           <TableCell className="text-right">
                             <Button
                               type="button"
-                               variant="default"
-                               className="transition-transform active:translate-y-px active:scale-[0.98]"
+                              variant="default"
+                              className="transition-transform active:translate-y-px active:scale-[0.98]"
                               onClick={() => setCompleting(r)}
                               disabled={completeMutation.isPending}
                             >
@@ -215,6 +218,7 @@ export default function Reembolsos() {
                       <TableHead>Conclusão</TableHead>
                       <TableHead>E-mail</TableHead>
                       <TableHead>Plataforma</TableHead>
+                      <TableHead>Produto</TableHead>
                       <TableHead>Pedido</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Valor reembolsado</TableHead>
@@ -226,7 +230,7 @@ export default function Reembolsos() {
                   <TableBody>
                     {doneRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground">
+                        <TableCell colSpan={11} className="text-center text-muted-foreground">
                           Nenhum reembolso concluído ainda.
                         </TableCell>
                       </TableRow>
@@ -247,6 +251,7 @@ export default function Reembolsos() {
                           </TableCell>
                           <TableCell className="font-medium">{r.customer_email}</TableCell>
                           <TableCell>{r.sales_platform}</TableCell>
+                          <TableCell>{r.product ?? "—"}</TableCell>
                           <TableCell>{r.order_id}</TableCell>
                           <TableCell>{r.refund_type}</TableCell>
                           <TableCell className="whitespace-nowrap">

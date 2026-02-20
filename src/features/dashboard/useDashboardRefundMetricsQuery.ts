@@ -18,6 +18,7 @@ export type DashboardRefundMetrics = {
   by_agent: Array<{ name: string; value: number; user_id: string }>;
   by_status: Array<{ name: string; value: number }>;
   by_refund_type: Array<{ name: string; value: number }>;
+  by_product: Array<{ name: string; value: number }>;
 };
 
 async function requireSession() {

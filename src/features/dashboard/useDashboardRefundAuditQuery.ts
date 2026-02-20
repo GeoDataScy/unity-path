@@ -25,6 +25,7 @@ export type DashboardRefundAuditRow = {
   refund_type: string | null;
   reason: string | null;
   items_returned: boolean;
+  product: string | null;
   profiles: { full_name: string | null } | null;
 };
 

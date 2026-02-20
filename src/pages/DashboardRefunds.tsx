@@ -102,6 +102,7 @@ export default function DashboardRefunds() {
       byAgent: (metrics?.by_agent ?? []).map((x) => ({ name: x.name, value: x.value })),
       byStatus: metrics?.by_status ?? [],
       byType: metrics?.by_refund_type ?? [],
+      byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
     };
   }, [metrics]);
 
@@ -259,7 +260,30 @@ export default function DashboardRefunds() {
         </Card>
       </section>
 
-      <section>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Reembolsos por produto</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : kpis.byProduct.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={kpis.byProduct} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Tipos de reembolso (concluídos)</CardTitle>
@@ -310,6 +334,7 @@ export default function DashboardRefunds() {
                         <TableHead>Agente</TableHead>
                         <TableHead>E-mail</TableHead>
                         <TableHead>Plataforma</TableHead>
+                        <TableHead>Produto</TableHead>
                         <TableHead>Pedido</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Tipo</TableHead>
@@ -326,6 +351,7 @@ export default function DashboardRefunds() {
                             <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
                             <TableCell className="text-muted-foreground">{row.customer_email}</TableCell>
                             <TableCell>{row.sales_platform}</TableCell>
+                            <TableCell>{row.product ?? "—"}</TableCell>
                             <TableCell className="font-mono text-xs">{row.order_id}</TableCell>
                             <TableCell>{statusLabel}</TableCell>
                             <TableCell>{typeLabel}</TableCell>
