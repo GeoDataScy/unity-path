@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -265,19 +266,23 @@ export default function DashboardRefunds() {
           <CardHeader>
             <CardTitle>Reembolsos por produto</CardTitle>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[380px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : kpis.byProduct.length === 0 ? (
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={kpis.byProduct} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <BarChart data={kpis.byProduct} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-35} textAnchor="end" height={70} />
                   <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                  <Tooltip formatter={(value: number) => [value, "Reembolsos"]} />
+                  <Bar dataKey="value" name="Reembolsos" radius={[8, 8, 0, 0]}>
+                    {kpis.byProduct.map((_, i) => (
+                      <Cell key={`bar-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -288,7 +293,7 @@ export default function DashboardRefunds() {
           <CardHeader>
             <CardTitle>Tipos de reembolso (concluídos)</CardTitle>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[380px]">
             {isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : kpis.byType.length === 0 ? (
@@ -296,8 +301,9 @@ export default function DashboardRefunds() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Tooltip />
-                  <Pie data={kpis.byType} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110} paddingAngle={2}>
+                  <Tooltip formatter={(value: number, name: string) => [value, name]} />
+                  <Legend layout="horizontal" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                  <Pie data={kpis.byType} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                     {kpis.byType.map((_, i) => (
                       <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
                     ))}
