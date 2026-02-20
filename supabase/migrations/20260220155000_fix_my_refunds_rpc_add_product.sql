@@ -1,5 +1,8 @@
--- Fix: add product column to my_refunds_with_refunded_value RPC
-CREATE OR REPLACE FUNCTION public.my_refunds_with_refunded_value()
+-- Drop old function (return type changed — cannot use CREATE OR REPLACE)
+DROP FUNCTION IF EXISTS public.my_refunds_with_refunded_value();
+
+-- Recreate with product column + explicit casts
+CREATE FUNCTION public.my_refunds_with_refunded_value()
 RETURNS TABLE (
   id uuid,
   created_at timestamptz,
@@ -21,18 +24,18 @@ STABLE
 SET search_path TO 'public'
 AS $$
   SELECT
-    r.id,
-    r.created_at,
-    r.user_id,
-    r.customer_email,
-    r.request_date,
-    r.completion_date,
-    r.reason,
-    r.items_returned,
-    r.sales_platform,
-    r.order_id,
-    r.refund_type,
-    r.refund_value,
+    r.id::uuid,
+    r.created_at::timestamptz,
+    r.user_id::uuid,
+    r.customer_email::text,
+    r.request_date::date,
+    r.completion_date::date,
+    r.reason::text,
+    r.items_returned::boolean,
+    r.sales_platform::text,
+    r.order_id::text,
+    r.refund_type::text,
+    r.refund_value::numeric,
     CASE
       WHEN r.refund_value IS NULL THEN NULL
       WHEN r.refund_type IS NULL THEN NULL
@@ -41,11 +44,11 @@ AS $$
         CASE
           WHEN (replace(r.refund_type, '%', '')::numeric) < 0 THEN NULL
           WHEN (replace(r.refund_type, '%', '')::numeric) > 100 THEN NULL
-          ELSE round(r.refund_value * (replace(r.refund_type, '%', '')::numeric / 100), 2)
+          ELSE round((r.refund_value * (replace(r.refund_type, '%', '')::numeric / 100))::numeric, 2)
         END
     END AS refunded_value,
-    r.product
+    r.product::text
   FROM public.refunds r
-  WHERE r.user_id = auth.uid()
+  WHERE r.user_id::uuid = auth.uid()
   ORDER BY r.request_date DESC;
 $$;
