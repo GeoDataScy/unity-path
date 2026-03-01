@@ -60,18 +60,12 @@ export default function Reembolsos() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
-      const { error } = await supabase.from("refunds").insert({
-        user_id: session.user.id,
-        customer_email: values.customer_email,
-        request_date: values.request_date,
-        // Sempre cria como “Em aberto” no cadastro inicial
-        completion_date: null,
-        reason: null,
-        refund_type: null,
-        items_returned: false,
-        sales_platform: values.sales_platform,
-        order_id: values.order_id,
-        product: values.product,
+      const { error } = await supabase.rpc(“create_refund”, {
+        p_customer_email: values.customer_email,
+        p_request_date: values.request_date,
+        p_sales_platform: values.sales_platform,
+        p_order_id: values.order_id,
+        p_product: values.product,
       });
       if (error) throw error;
     },
@@ -98,13 +92,13 @@ export default function Reembolsos() {
 
       const { error } = await supabase
         .from("refunds")
-        .update(({
+        .update({
           completion_date: payload.values.completion_date,
           refund_value: refundValue,
           refund_type: payload.values.refund_type,
           reason: payload.values.reason,
           items_returned: payload.values.items_returned,
-        } as any))
+        })
         .eq("id", payload.id);
       if (error) throw error;
     },
