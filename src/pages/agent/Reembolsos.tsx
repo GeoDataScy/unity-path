@@ -60,7 +60,7 @@ export default function Reembolsos() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
-      const { error } = await supabase.rpc(“create_refund”, {
+      const { error } = await supabase.rpc("create_refund", {
         p_customer_email: values.customer_email,
         p_request_date: values.request_date,
         p_sales_platform: values.sales_platform,
