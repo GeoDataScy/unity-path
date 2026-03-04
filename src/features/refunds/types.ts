@@ -65,4 +65,7 @@ export const REFUND_PRODUCTS = [
   "Erectozyn",
   "Thewellnesswize",
   "VIP.Shipping",
+  "VisualEase",
+  "NerveEase",
+  "Steelpower",
 ] as const;
