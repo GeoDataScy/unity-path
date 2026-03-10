@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Plus } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,17 @@ import { useMyRefundsQuery } from "@/features/refunds/useMyRefundsQuery";
 import type { RefundItem } from "@/features/refunds/types";
 import { NewRefundDialog, type NewRefundValues } from "@/features/refunds/NewRefundDialog";
 import { CompleteRefundDialog, type CompleteRefundValues } from "@/features/refunds/CompleteRefundDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function parseDateForDisplay(value: string | null | undefined): Date | null {
   if (!value) return null;
@@ -47,6 +58,7 @@ export default function Reembolsos() {
 
   const [newOpen, setNewOpen] = useState(false);
   const [completing, setCompleting] = useState<RefundItem | null>(null);
+  const [editing, setEditing] = useState<RefundItem | null>(null);
 
   const { data: refunds = [], isLoading } = useMyRefundsQuery(Boolean(userId));
 
@@ -112,6 +124,54 @@ export default function Reembolsos() {
     onError: (error: any) => {
       toast({
         title: "Erro ao concluir",
+        description: error?.message ?? "Não foi possível atualizar o reembolso.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("refunds").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
+      toast({ title: "Reembolso excluído", description: "O registro foi removido." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao excluir",
+        description: error?.message ?? "Não foi possível excluir o reembolso.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (payload: { id: string; values: CompleteRefundValues }) => {
+      const refundValue = Number(payload.values.refund_value);
+      if (!Number.isFinite(refundValue)) throw new Error("Valor inválido");
+
+      const { error } = await supabase
+        .from("refunds")
+        .update({
+          completion_date: payload.values.completion_date,
+          refund_value: refundValue,
+          refund_type: payload.values.refund_type,
+          reason: payload.values.reason,
+          items_returned: payload.values.items_returned,
+        })
+        .eq("id", payload.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
+      toast({ title: "Reembolso atualizado", description: "As alterações foram salvas." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atualizar",
         description: error?.message ?? "Não foi possível atualizar o reembolso.",
         variant: "destructive",
       });
@@ -219,12 +279,13 @@ export default function Reembolsos() {
                       <TableHead>Motivo</TableHead>
                       <TableHead>Itens</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-[96px] text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {doneRefunds.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center text-muted-foreground">
+                        <TableCell colSpan={12} className="text-center text-muted-foreground">
                           Nenhum reembolso concluído ainda.
                         </TableCell>
                       </TableRow>
@@ -263,6 +324,46 @@ export default function Reembolsos() {
                           <TableCell>
                             <Badge>Concluído</Badge>
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditing(r)}
+                                title="Editar"
+                              >
+                                <Pencil className="text-muted-foreground" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={deleteMutation.isPending}
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="text-muted-foreground" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir reembolso?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. O registro será removido permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => void deleteMutation.mutateAsync(r.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -293,6 +394,20 @@ export default function Reembolsos() {
           }}
           onSubmit={async (values) => {
             await completeMutation.mutateAsync({ id: completing.id, values });
+          }}
+        />
+      )}
+
+      {editing && (
+        <CompleteRefundDialog
+          open={Boolean(editing)}
+          refund={editing}
+          submitting={editMutation.isPending}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
+          onSubmit={async (values) => {
+            await editMutation.mutateAsync({ id: editing.id, values });
           }}
         />
       )}
