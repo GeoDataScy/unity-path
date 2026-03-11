@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, CircleDot, Filter, PackageCheck } from "lucide-react";
+import { BarChart3, CircleDot, Filter, Package, PackageCheck } from "lucide-react";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +50,7 @@ export default function DashboardRefunds() {
 
   const [status, setStatus] = useState<"all" | "open" | "done">("all");
   const [refundType, setRefundType] = useState<string>("all");
+  const [product, setProduct] = useState<string>("all");
 
   // Table pagination
   const [page, setPage] = useState(1);
@@ -57,7 +58,7 @@ export default function DashboardRefunds() {
 
   useEffect(() => {
     setPage(1);
-  }, [fromISO, toISO, agentId, status, refundType]);
+  }, [fromISO, toISO, agentId, status, refundType, product]);
 
   const metricsQuery = useDashboardRefundMetricsQuery({
     enabled: true,
@@ -66,6 +67,7 @@ export default function DashboardRefunds() {
     agentId: agentId === "all" ? undefined : agentId,
     status,
     refundType,
+    product,
     refetchIntervalMs: 15_000,
   });
 
@@ -76,6 +78,7 @@ export default function DashboardRefunds() {
     agentId: agentId === "all" ? undefined : agentId,
     status,
     refundType,
+    product,
     page,
     pageSize,
     refetchIntervalMs: 15_000,
@@ -92,6 +95,12 @@ export default function DashboardRefunds() {
     const unique = Array.from(new Set(items));
     return unique;
   }, [metrics?.by_refund_type]);
+
+  const productOptions = useMemo(() => {
+    const items = (metrics?.by_product ?? []).map((x) => x.name).filter(Boolean);
+    const unique = Array.from(new Set(items));
+    return unique.sort((a, b) => a.localeCompare(b));
+  }, [metrics?.by_product]);
 
   const kpis = useMemo(() => {
     return {
@@ -157,6 +166,24 @@ export default function DashboardRefunds() {
               {refundTypeOptions.map((t) => (
                 <SelectItem key={t} value={t}>
                   {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto</div>
+          <Select value={product} onValueChange={setProduct}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="null">Não informado</SelectItem>
+              {productOptions.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
                 </SelectItem>
               ))}
             </SelectContent>

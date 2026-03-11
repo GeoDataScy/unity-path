@@ -8,6 +8,7 @@ type Params = {
   agentId?: string;
   status?: "all" | "open" | "done";
   refundType?: string; // 'all' | 'null' | specific type
+  product?: string; // 'all' | 'null' | specific product
   refetchIntervalMs?: number;
 };
 
@@ -39,6 +40,7 @@ export function useDashboardRefundMetricsQuery({
   agentId,
   status = "all",
   refundType = "all",
+  product = "all",
   refetchIntervalMs = 15_000,
 }: Params) {
   return useQuery({
@@ -46,7 +48,7 @@ export function useDashboardRefundMetricsQuery({
       "dashboard",
       "refunds",
       "metrics",
-      { from, to, agentId: agentId ?? "all", status, refundType },
+      { from, to, agentId: agentId ?? "all", status, refundType, product },
     ],
     enabled,
     queryFn: async (): Promise<DashboardRefundMetrics> => {
@@ -58,6 +60,7 @@ export function useDashboardRefundMetricsQuery({
         agent_id: agentId || null,
         status_filter: status,
         refund_type_filter: refundType,
+        product_filter: product,
       });
 
       if (error) throw error;

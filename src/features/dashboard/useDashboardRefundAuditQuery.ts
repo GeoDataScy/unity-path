@@ -8,6 +8,7 @@ type Params = {
   agentId?: string;
   status?: "all" | "open" | "done";
   refundType?: string; // 'all' | 'null' | specific type
+  product?: string; // 'all' | 'null' | specific product
   page: number; // 1-based
   pageSize: number;
   refetchIntervalMs?: number;
@@ -52,6 +53,7 @@ export function useDashboardRefundAuditQuery({
   agentId,
   status = "all",
   refundType = "all",
+  product = "all",
   page,
   pageSize,
   refetchIntervalMs = 15_000,
@@ -63,7 +65,7 @@ export function useDashboardRefundAuditQuery({
       "dashboard",
       "refunds",
       "audit",
-      { from, to, agentId: agentId ?? "all", status, refundType, page, pageSize },
+      { from, to, agentId: agentId ?? "all", status, refundType, product, page, pageSize },
     ],
     enabled,
     queryFn: async (): Promise<DashboardRefundAuditResult> => {
@@ -75,6 +77,7 @@ export function useDashboardRefundAuditQuery({
         agent_id: agentId || null,
         status_filter: status,
         refund_type_filter: refundType,
+        product_filter: product,
         page_size: pageSize,
         page_offset: pageOffset,
       });
