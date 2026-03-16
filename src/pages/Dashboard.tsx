@@ -108,6 +108,7 @@ const Dashboard = () => {
     kpiTopProduct,
     byAgentSeries,
     byProductSeries,
+    byPlatformSeries,
     byDaySeries,
   } = useMemo(() => {
     const kpi = {
@@ -118,6 +119,7 @@ const Dashboard = () => {
       kpiTopProduct: "—",
       byAgentSeries: [] as Array<{ name: string; value: number }>,
       byProductSeries: [] as Array<{ name: string; value: number }>,
+      byPlatformSeries: [] as Array<{ name: string; value: number }>,
       byDaySeries: [] as Array<{ day: string; value: number }>,
     };
 
@@ -133,6 +135,7 @@ const Dashboard = () => {
 
     kpi.byAgentSeries = metrics.by_agent.map(({ name, value }) => ({ name, value }));
     kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
+    kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
 
     // Fill missing days for area chart continuity
     const dayCounts = new Map<string, number>(
@@ -330,6 +333,32 @@ const Dashboard = () => {
         </Card>
       </section>
 
+      {/* Platform chart */}
+      <section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Atendimentos por plataforma</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : byPlatformSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={byPlatformSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
       {/* Evolution */}
       <section>
         <Card>
@@ -387,6 +416,7 @@ const Dashboard = () => {
                         <TableHead>Agente</TableHead>
                         <TableHead>E-mail Cliente</TableHead>
                         <TableHead>Produto</TableHead>
+                        <TableHead>Plataforma</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -396,6 +426,7 @@ const Dashboard = () => {
                           <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{row.client_email}</TableCell>
                           <TableCell>{row.product}</TableCell>
+                          <TableCell>{row.platform ?? "—"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

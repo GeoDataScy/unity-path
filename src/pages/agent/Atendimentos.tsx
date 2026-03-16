@@ -77,6 +77,15 @@ const PRODUCTS = [
   "Steelpower",
 ] as const;
 
+const PLATFORMS = [
+  "Cartpanda",
+  "Buygoods",
+  "ClickBank",
+  "Digistore24",
+  "SalesBound",
+  "LogiCall",
+] as const;
+
 function todayISO() {
   // Use São Paulo date (avoid UTC date drift around midnight)
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -125,6 +134,7 @@ export default function Atendimentos() {
   const [clientEmail, setClientEmail] = useState("");
   const [serviceDate, setServiceDate] = useState("");
   const [product, setProduct] = useState("");
+  const [platform, setPlatform] = useState("");
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -133,8 +143,8 @@ export default function Atendimentos() {
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
 
   const canSubmit = useMemo(() => {
-    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product);
-  }, [clientEmail, serviceDate, product]);
+    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform);
+  }, [clientEmail, serviceDate, product, platform]);
 
   const greetingName = useMemo(() => {
     const trimmed = (fullName ?? "").trim();
@@ -152,6 +162,7 @@ export default function Atendimentos() {
         client_email: clientEmail,
         service_date: toSaoPauloTimestamptz(serviceDate),
         product,
+        platform,
         status: "registered",
         user_id: session.user.id,
       });
@@ -162,6 +173,7 @@ export default function Atendimentos() {
       setClientEmail("");
       setServiceDate("");
       setProduct("");
+      setPlatform("");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
@@ -201,13 +213,14 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string }) => {
+    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string }) => {
       const { error } = await supabase
         .from("services")
         .update({
           client_email: payload.client_email,
           service_date: toSaoPauloTimestamptz(payload.service_date),
           product: payload.product,
+          platform: payload.platform,
         })
         .eq("id", payload.id);
 
@@ -280,7 +293,7 @@ export default function Atendimentos() {
           <CardTitle>Novo registro de atendimento</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-4 lg:items-end">
+          <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
             <div className="grid gap-2">
               <Label htmlFor="clientEmail">E-mail do Cliente</Label>
               <Input
@@ -325,6 +338,22 @@ export default function Atendimentos() {
               </Select>
             </div>
 
+            <div className="grid gap-2">
+              <Label>Plataforma</Label>
+              <Select value={platform} onValueChange={setPlatform}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex lg:justify-end">
               <Button type="submit" className="w-full lg:w-auto" disabled={!canSubmit || createMutation.isPending}>
                 {createMutation.isPending ? "Registrando..." : "Registrar Atendimento"}
@@ -349,13 +378,14 @@ export default function Atendimentos() {
                 <TableHead>Data</TableHead>
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
+                <TableHead>Plataforma</TableHead>
                 <TableHead className="w-[96px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {services.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     Nenhum atendimento registrado ainda.
                   </TableCell>
                 </TableRow>
@@ -370,6 +400,7 @@ export default function Atendimentos() {
                     </TableCell>
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
+                    <TableCell>{s.platform ?? "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
                         <Button

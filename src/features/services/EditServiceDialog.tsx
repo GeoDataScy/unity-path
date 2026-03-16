@@ -71,11 +71,20 @@ const PRODUCTS = [
   "Steelpower",
 ] as const;
 
+const PLATFORMS = [
+  "Cartpanda",
+  "Buygoods",
+  "ClickBank",
+  "Digistore24",
+  "SalesBound",
+  "LogiCall",
+] as const;
+
 type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; service_date: string; product: string }) => Promise<void>;
+  onSave: (next: { client_email: string; service_date: string; product: string; platform: string }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
@@ -86,15 +95,16 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
     return service.service_date?.includes("T") ? service.service_date.slice(0, 10) : service.service_date;
   });
   const [product, setProduct] = useState(service.product);
+  const [platform, setPlatform] = useState(service.platform ?? "");
 
   const canSave = useMemo(() => {
-    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && !saving;
-  }, [clientEmail, serviceDate, product, saving]);
+    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && !saving;
+  }, [clientEmail, serviceDate, product, platform, saving]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ client_email: clientEmail, service_date: serviceDate, product });
+      await onSave({ client_email: clientEmail, service_date: serviceDate, product, platform });
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -139,6 +149,22 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
               </SelectTrigger>
               <SelectContent>
                 {PRODUCTS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Plataforma</Label>
+            <Select value={platform} onValueChange={setPlatform}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {PLATFORMS.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
                   </SelectItem>

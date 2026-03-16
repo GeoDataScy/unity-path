@@ -13,6 +13,7 @@
    by_agent: Array<{ name: string; value: number; user_id: string }>;
    by_product: Array<{ name: string; value: number }>;
    by_day: Array<{ day: string; value: number }>;
+   by_platform: Array<{ name: string; value: number }>;
  };
  
  async function requireSession() {

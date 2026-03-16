@@ -15,6 +15,7 @@ export type DashboardAuditRow = {
   service_date: string;
   client_email: string;
   product: string;
+  platform: string | null;
   profiles: { full_name: string | null } | null;
 };
 
