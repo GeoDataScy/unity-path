@@ -62,21 +62,29 @@ export default function ManagerLayout() {
     const checkAuth = async () => {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        navigate("/login");
+      if (error || !session) {
+        if (error) await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role, full_name")
         .eq("id", session.user.id)
         .maybeSingle();
 
+      if (profileError) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
+        return;
+      }
+
       if (profile?.role !== "manager") {
-        navigate("/workspace");
+        navigate("/workspace", { replace: true });
         return;
       }
 
@@ -98,9 +106,12 @@ export default function ManagerLayout() {
     return { fullName, range, setRange, agentId, setAgentId, fromISO, toISO };
   }, [authLoading, fullName, range, agentId, fromISO, toISO]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+  const handleLogout = () => {
+    // Limpa tokens do Supabase diretamente — evita 403 se sessão já expirou no servidor
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("sb-")) localStorage.removeItem(key);
+    }
+    window.location.href = "/login";
   };
 
   if (authLoading || !outletContext) {

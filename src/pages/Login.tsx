@@ -15,14 +15,26 @@ const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await redirectUser(session.user.id);
+    // Listen for auth changes — avoids race condition when redirected after signOut
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          redirectUser(session.user.id);
+        }
       }
-    };
-    checkSession();
+    );
+
+    // Also check existing session on mount (e.g. page refresh while logged in)
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
+        // Clear stale/invalid session
+        supabase.auth.signOut();
+        return;
+      }
+      redirectUser(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const redirectUser = async (userId: string) => {

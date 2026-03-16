@@ -27,21 +27,29 @@ export default function AgentLayout() {
     const checkAuth = async () => {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        navigate("/login");
+      if (error || !session) {
+        if (error) await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role, full_name")
         .eq("id", session.user.id)
         .maybeSingle();
 
+      if (profileError) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
+        return;
+      }
+
       if (profile?.role === "manager") {
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
         return;
       }
 
@@ -62,13 +70,11 @@ export default function AgentLayout() {
     return { userId, fullName };
   }, [userId, fullName]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Sessão encerrada",
-      description: "Você saiu do painel.",
-    });
-    navigate("/login");
+  const handleLogout = () => {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("sb-")) localStorage.removeItem(key);
+    }
+    window.location.href = "/login";
   };
 
   if (loading || !outletContext) {

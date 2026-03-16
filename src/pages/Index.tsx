@@ -7,22 +7,30 @@ const Index = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
+      const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (profile?.role === "manager") {
-          navigate("/dashboard");
-        } else {
-          navigate("/workspace");
-        }
+      if (error || !session) {
+        if (error) await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (profile?.role === "manager") {
+        navigate("/dashboard", { replace: true });
       } else {
-        navigate("/login");
+        navigate("/workspace", { replace: true });
       }
     };
 
