@@ -135,6 +135,7 @@ export default function Atendimentos() {
   const [serviceDate, setServiceDate] = useState("");
   const [product, setProduct] = useState("");
   const [platform, setPlatform] = useState("");
+  const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Clickbank");
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -293,6 +294,20 @@ export default function Atendimentos() {
           <CardTitle>Novo registro de atendimento</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex items-center gap-2">
+            <Label className="mr-1 text-sm text-muted-foreground">Canal</Label>
+            {(["Clickbank", "Email", "SMS"] as const).map((ch) => (
+              <Button
+                key={ch}
+                type="button"
+                size="sm"
+                variant={channel === ch ? "default" : "outline"}
+                onClick={() => setChannel(ch)}
+              >
+                {ch}
+              </Button>
+            ))}
+          </div>
           <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
             <div className="grid gap-2">
               <Label htmlFor="clientEmail">E-mail do Cliente</Label>
