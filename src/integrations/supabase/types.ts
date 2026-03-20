@@ -169,6 +169,8 @@ export type Database = {
           created_at: string | null
           id: string
           product: string
+          platform: string | null
+          channel: string | null
           service_date: string
           status: string
           user_id: string
@@ -178,6 +180,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           product: string
+          platform?: string | null
+          channel?: string | null
           service_date: string
           status?: string
           user_id: string
@@ -187,6 +191,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           product?: string
+          platform?: string | null
+          channel?: string | null
           service_date?: string
           status?: string
           user_id?: string

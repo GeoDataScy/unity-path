@@ -14,6 +14,7 @@
    by_product: Array<{ name: string; value: number }>;
    by_day: Array<{ day: string; value: number }>;
    by_platform: Array<{ name: string; value: number }>;
+   by_channel: Array<{ name: string; value: number }>;
  };
  
  async function requireSession() {

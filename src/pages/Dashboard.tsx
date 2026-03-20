@@ -109,6 +109,7 @@ const Dashboard = () => {
     byAgentSeries,
     byProductSeries,
     byPlatformSeries,
+    byChannelSeries,
     byDaySeries,
   } = useMemo(() => {
     const kpi = {
@@ -120,6 +121,7 @@ const Dashboard = () => {
       byAgentSeries: [] as Array<{ name: string; value: number }>,
       byProductSeries: [] as Array<{ name: string; value: number }>,
       byPlatformSeries: [] as Array<{ name: string; value: number }>,
+      byChannelSeries: [] as Array<{ name: string; value: number }>,
       byDaySeries: [] as Array<{ day: string; value: number }>,
     };
 
@@ -136,6 +138,7 @@ const Dashboard = () => {
     kpi.byAgentSeries = metrics.by_agent.map(({ name, value }) => ({ name, value }));
     kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
     kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
+    kpi.byChannelSeries = (metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
 
     // Fill missing days for area chart continuity
     const dayCounts = new Map<string, number>(
@@ -333,8 +336,8 @@ const Dashboard = () => {
         </Card>
       </section>
 
-      {/* Platform chart */}
-      <section>
+      {/* Platform & Channel charts */}
+      <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Atendimentos por plataforma</CardTitle>
@@ -352,6 +355,29 @@ const Dashboard = () => {
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="value" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Atendimentos por canal</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : byChannelSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={byChannelSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--ring))" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -417,6 +443,7 @@ const Dashboard = () => {
                         <TableHead>E-mail Cliente</TableHead>
                         <TableHead>Produto</TableHead>
                         <TableHead>Plataforma</TableHead>
+                        <TableHead>Canal</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -427,6 +454,7 @@ const Dashboard = () => {
                           <TableCell className="text-muted-foreground">{row.client_email}</TableCell>
                           <TableCell>{row.product}</TableCell>
                           <TableCell>{row.platform ?? "—"}</TableCell>
+                          <TableCell>{row.channel ?? "—"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

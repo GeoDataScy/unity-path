@@ -164,6 +164,7 @@ export default function Atendimentos() {
         service_date: toSaoPauloTimestamptz(serviceDate),
         product,
         platform,
+        channel,
         status: "registered",
         user_id: session.user.id,
       });
@@ -175,6 +176,7 @@ export default function Atendimentos() {
       setServiceDate("");
       setProduct("");
       setPlatform("");
+      setChannel("Nenhum");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
@@ -214,7 +216,7 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string }) => {
+    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string; channel: string }) => {
       const { error } = await supabase
         .from("services")
         .update({
@@ -222,6 +224,7 @@ export default function Atendimentos() {
           service_date: toSaoPauloTimestamptz(payload.service_date),
           product: payload.product,
           platform: payload.platform,
+          channel: payload.channel,
         })
         .eq("id", payload.id);
 
@@ -394,13 +397,14 @@ export default function Atendimentos() {
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
+                <TableHead>Canal</TableHead>
                 <TableHead className="w-[96px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {services.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Nenhum atendimento registrado ainda.
                   </TableCell>
                 </TableRow>
@@ -416,6 +420,7 @@ export default function Atendimentos() {
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
                     <TableCell>{s.platform ?? "—"}</TableCell>
+                    <TableCell>{s.channel ?? "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
                         <Button

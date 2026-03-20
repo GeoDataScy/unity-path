@@ -16,6 +16,7 @@ export type DashboardAuditRow = {
   client_email: string;
   product: string;
   platform: string | null;
+  channel: string | null;
   profiles: { full_name: string | null } | null;
 };
 

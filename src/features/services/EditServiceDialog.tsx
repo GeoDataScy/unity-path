@@ -80,11 +80,13 @@ const PLATFORMS = [
   "LogiCall",
 ] as const;
 
+const CHANNELS = ["Nenhum", "Clickbank", "Email", "SMS"] as const;
+
 type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; service_date: string; product: string; platform: string }) => Promise<void>;
+  onSave: (next: { client_email: string; service_date: string; product: string; platform: string; channel: string }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
@@ -96,6 +98,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   });
   const [product, setProduct] = useState(service.product);
   const [platform, setPlatform] = useState(service.platform ?? "");
+  const [channel, setChannel] = useState(service.channel ?? "Nenhum");
 
   const canSave = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && !saving;
@@ -104,7 +107,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ client_email: clientEmail, service_date: serviceDate, product, platform });
+      await onSave({ client_email: clientEmail, service_date: serviceDate, product, platform, channel });
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -167,6 +170,22 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
                 {PLATFORMS.map((p) => (
                   <SelectItem key={p} value={p}>
                     {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Canal</Label>
+            <Select value={channel} onValueChange={setChannel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNELS.map((ch) => (
+                  <SelectItem key={ch} value={ch}>
+                    {ch}
                   </SelectItem>
                 ))}
               </SelectContent>
