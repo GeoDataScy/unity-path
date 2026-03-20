@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
-import { BarChart3, RefreshCcw } from "lucide-react";
+import { BarChart3, ClipboardCheck, RefreshCcw } from "lucide-react";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -123,6 +123,7 @@ export default function ManagerLayout() {
   }
 
   const isOnRefunds = location.pathname.startsWith("/dashboard/reembolsos");
+  const isOnAcompanhamento = location.pathname.startsWith("/dashboard/acompanhamento");
 
   return (
     <div className="min-h-screen flex">
@@ -163,6 +164,19 @@ export default function ManagerLayout() {
               <RefreshCcw className="h-4 w-4" />
               <span>Reembolsos</span>
             </NavLink>
+
+            <NavLink
+              to="/dashboard/acompanhamento"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
+                  isActive && "bg-white/15",
+                )
+              }
+            >
+              <ClipboardCheck className="h-4 w-4" />
+              <span>Acompanhamento</span>
+            </NavLink>
           </nav>
 
           <div className="space-y-4">
@@ -200,7 +214,7 @@ export default function ManagerLayout() {
             </Button>
 
             <div className="text-[11px] opacity-70 px-1">
-              {isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+              {isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
             </div>
           </div>
         </div>
