@@ -68,10 +68,11 @@ export function AgentDailyMetricsSection({
   }, [goal, effectiveCount]);
 
   const indicatorClassName = useMemo(() => {
-    if (effectiveCount <= 59) return "bg-destructive";
-    if (effectiveCount <= 89) return "bg-status-open";
+    const pct = goal > 0 ? effectiveCount / goal : 0;
+    if (pct < 0.6) return "bg-destructive";
+    if (pct < 0.9) return "bg-status-open";
     return "bg-status-success";
-  }, [effectiveCount]);
+  }, [effectiveCount, goal]);
 
   const [celebrate, setCelebrate] = useState(false);
   const [pulse, setPulse] = useState(false);

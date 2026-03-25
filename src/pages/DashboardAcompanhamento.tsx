@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { format, subWeeks, startOfWeek, endOfWeek, isAfter } from "date-fns";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format, subWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,11 +18,19 @@ import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react"
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
+import { useAgentsQuery, type SupportChannel } from "@/features/dashboard/useAgentsQuery";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -29,7 +38,10 @@ import {
 } from "@/components/ui/tooltip";
 
 // ----- constants -----
-const WEEKLY_GOAL = 500;
+const GOALS: Record<SupportChannel, { weekly: number; alertMin: number; lowMin: number }> = {
+  email: { weekly: 500, alertMin: 450, lowMin: 400 },
+  sms:   { weekly: 750, alertMin: 675, lowMin: 600 },
+};
 const WEEKS_WINDOW = 8;
 
 type WeekRange = { from: string; to: string; label: string };
@@ -98,6 +110,8 @@ type AgentWeekResult = {
 type AgentSummary = {
   userId: string;
   name: string;
+  supportChannel: SupportChannel;
+  weeklyGoal: number;
   weeks: AgentWeekResult[];
   totalAlerts: number;
   totalWarnings: number;
@@ -105,11 +119,12 @@ type AgentSummary = {
 };
 
 function evaluateAgents(
-  agents: Array<{ id: string; label: string }>,
+  agents: Array<{ id: string; label: string; supportChannel: SupportChannel }>,
   weeks: WeekRange[],
   metricsPerWeek: WeeklyMetrics[],
 ): AgentSummary[] {
   return agents.map((agent) => {
+    const goal = GOALS[agent.supportChannel];
     const weekResults: AgentWeekResult[] = [];
     let accumulatedAlerts = 0;
     let totalWarnings = 0;
@@ -121,19 +136,16 @@ function evaluateAgents(
 
       let status: WeekStatus;
 
-      if (count >= WEEKLY_GOAL) {
+      if (count >= goal.weekly) {
         status = "ok";
-      } else if (count >= 450) {
-        // 450-499 → alerta
+      } else if (count >= goal.alertMin) {
         accumulatedAlerts += 1;
         status = "alerta";
-      } else if (count >= 400) {
-        // 400-449 → advertência
+      } else if (count >= goal.lowMin) {
         accumulatedAlerts += 1;
         totalWarnings += 1;
         status = "advertencia";
       } else {
-        // <400 → advertência
         accumulatedAlerts += 1;
         totalWarnings += 1;
         status = "advertencia";
@@ -152,6 +164,8 @@ function evaluateAgents(
     return {
       userId: agent.id,
       name: agent.label,
+      supportChannel: agent.supportChannel,
+      weeklyGoal: goal.weekly,
       weeks: weekResults,
       totalAlerts: accumulatedAlerts,
       totalWarnings,
@@ -194,19 +208,39 @@ function StatusIcon({ status }: { status: WeekStatus }) {
   }
 }
 
-function barColor(count: number) {
-  if (count >= WEEKLY_GOAL) return "hsl(var(--primary))";
-  if (count >= 450) return "#f59e0b";
+function barColor(count: number, channel: SupportChannel) {
+  const goal = GOALS[channel];
+  if (count >= goal.weekly) return "hsl(var(--primary))";
+  if (count >= goal.alertMin) return "#f59e0b";
   return "#ef4444";
 }
 
 // ----- component -----
 export default function DashboardAcompanhamento() {
   const { fullName } = useOutletContext<ManagerOutletContext>();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const agentsQuery = useAgentsQuery(true);
   const weeks = useMemo(() => buildWeekRanges(WEEKS_WINDOW), []);
   const metricsQuery = useWeeklyMetricsQuery(weeks);
+
+  const channelMutation = useMutation({
+    mutationFn: async ({ userId, channel }: { userId: string; channel: SupportChannel }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ support_channel: channel })
+        .eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "agents"] });
+      toast({ title: "Canal atualizado" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao atualizar canal", description: err?.message, variant: "destructive" });
+    },
+  });
 
   const agents = agentsQuery.data ?? [];
   const metricsPerWeek = metricsQuery.data ?? [];
@@ -232,7 +266,7 @@ export default function DashboardAcompanhamento() {
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Acompanhamento</h1>
         <p className="text-sm text-muted-foreground">
-          Controle semanal de performance dos agentes (meta: {WEEKLY_GOAL} atendimentos/semana) — Últimas {WEEKS_WINDOW} semanas
+          Controle semanal de performance dos agentes — Últimas {WEEKS_WINDOW} semanas
         </p>
       </header>
 
@@ -290,11 +324,27 @@ export default function DashboardAcompanhamento() {
             <ShieldAlert className="h-5 w-5 mt-0.5 shrink-0 text-muted-foreground" />
             <div className="space-y-1">
               <p><strong>Regras de acompanhamento:</strong></p>
-              <ul className="list-disc pl-4 space-y-0.5">
-                <li><span className="text-emerald-600 font-medium">500+</span> atendimentos → OK</li>
-                <li><span className="text-amber-600 font-medium">450–499</span> atendimentos → Alerta</li>
-                <li><span className="text-red-600 font-medium">400–449</span> atendimentos → Advertência</li>
-                <li><span className="text-red-600 font-medium">&lt;400</span> atendimentos → Advertência</li>
+              <div className="grid gap-3 sm:grid-cols-2 mt-1">
+                <div>
+                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">Email (meta: 500/semana)</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    <li><span className="text-emerald-600 font-medium">500+</span> → OK</li>
+                    <li><span className="text-amber-600 font-medium">450–499</span> → Alerta</li>
+                    <li><span className="text-red-600 font-medium">400–449</span> → Advertência</li>
+                    <li><span className="text-red-600 font-medium">&lt;400</span> → Advertência</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-violet-600 dark:text-violet-400 mb-1">SMS (meta: 750/semana)</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    <li><span className="text-emerald-600 font-medium">750+</span> → OK</li>
+                    <li><span className="text-amber-600 font-medium">675–749</span> → Alerta</li>
+                    <li><span className="text-red-600 font-medium">600–674</span> → Advertência</li>
+                    <li><span className="text-red-600 font-medium">&lt;600</span> → Advertência</li>
+                  </ul>
+                </div>
+              </div>
+              <ul className="list-disc pl-4 space-y-0.5 mt-2">
                 <li><strong>2 alertas</strong> acumulados = 1 advertência</li>
                 <li><strong>3 advertências</strong> em {WEEKS_WINDOW} semanas → contrato não renovado</li>
                 <li>Apuração recorrente: <strong>sexta-feira</strong></li>
@@ -338,7 +388,21 @@ export default function DashboardAcompanhamento() {
                     {summaries.map((agent) => (
                       <TableRow key={agent.userId} className={agent.contractRisk ? "bg-red-500/5" : ""}>
                         <TableCell className="sticky left-0 bg-card z-10 font-medium">
-                          {agent.name}
+                          <div className="flex items-center gap-2">
+                            <span>{agent.name}</span>
+                            <Select
+                              value={agent.supportChannel}
+                              onValueChange={(val) => channelMutation.mutate({ userId: agent.userId, channel: val as SupportChannel })}
+                            >
+                              <SelectTrigger className={`h-6 w-[110px] text-[10px] font-medium border-0 ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="email">EMAIL · 500/sem</SelectItem>
+                                <SelectItem value="sms">SMS · 750/sem</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </TableCell>
                         {agent.weeks.map((w, i) => (
                           <TableCell key={i} className="text-center">
@@ -400,7 +464,12 @@ export default function DashboardAcompanhamento() {
             <Card key={agent.userId}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>{agent.name}</span>
+                  <span className="flex items-center gap-1.5">
+                    {agent.name}
+                    <span className={`inline-flex rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+                      {agent.supportChannel.toUpperCase()}
+                    </span>
+                  </span>
                   {agent.contractRisk ? (
                     <Badge variant="destructive" className="text-[10px]">Risco</Badge>
                   ) : agent.totalWarnings > 0 ? (
@@ -420,10 +489,10 @@ export default function DashboardAcompanhamento() {
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} domain={[0, "auto"]} />
                     <Tooltip />
-                    {/* Reference line for goal */}
+                    <ReferenceLine y={agent.weeklyGoal} stroke="#888" strokeDasharray="4 4" label={{ value: `Meta ${agent.weeklyGoal}`, position: "right", fontSize: 10, fill: "#888" }} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                       {agent.weeks.map((w, i) => (
-                        <Cell key={i} fill={barColor(w.count)} />
+                        <Cell key={i} fill={barColor(w.count, agent.supportChannel)} />
                       ))}
                     </Bar>
                   </BarChart>

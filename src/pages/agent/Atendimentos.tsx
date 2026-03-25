@@ -121,7 +121,8 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName } = useOutletContext<AgentOutletContext>();
+  const { userId, fullName, supportChannel } = useOutletContext<AgentOutletContext>();
+  const dailyGoal = supportChannel === "sms" ? 150 : 100;
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -282,7 +283,7 @@ export default function Atendimentos() {
 
   const handleDebugSimulateGoalHit = () => {
     const CELEBRATION_MS = 9600;
-    const GOAL = 100;
+    const GOAL = dailyGoal;
 
     setDebugOverrideCount(GOAL);
     setDebugCelebrateNonce((n) => n + 1);
@@ -296,7 +297,12 @@ export default function Atendimentos() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+            {supportChannel.toUpperCase()}
+          </span>
+        </div>
         {import.meta.env.DEV && (
           <Button type="button" variant="outline" size="sm" onClick={handleDebugSimulateGoalHit}>
             Simular meta batida (DEV)
@@ -308,6 +314,7 @@ export default function Atendimentos() {
         userId={userId}
         metricsLoading={metricsLoading}
         dailyMetrics={dailyMetrics}
+        goal={dailyGoal}
         debugCelebrateNonce={debugCelebrateNonce}
         debugOverrideCount={debugOverrideCount}
       />
