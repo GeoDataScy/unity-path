@@ -159,8 +159,28 @@ export default function Atendimentos() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
+      // Check if same email was already registered today by this agent
+      const dayStart = toSaoPauloTimestamptz(serviceDate);
+      const nextDay = new Date(new Date(serviceDate + "T00:00:00").getTime() + 86400000)
+        .toISOString()
+        .slice(0, 10);
+      const dayEnd = toSaoPauloTimestamptz(nextDay);
+
+      const { data: existing } = await supabase
+        .from("services")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .ilike("client_email", clientEmail.trim())
+        .gte("service_date", dayStart)
+        .lt("service_date", dayEnd)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        throw new Error("Este e-mail já foi registrado nesta data. Você só pode registrar o mesmo e-mail novamente no dia seguinte.");
+      }
+
       const { error } = await supabase.from("services").insert({
-        client_email: clientEmail,
+        client_email: clientEmail.trim(),
         service_date: toSaoPauloTimestamptz(serviceDate),
         product,
         platform,
