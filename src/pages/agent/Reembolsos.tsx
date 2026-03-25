@@ -78,6 +78,7 @@ export default function Reembolsos() {
         p_sales_platform: values.sales_platform,
         p_order_id: values.order_id,
         p_product: values.product,
+        p_channel: values.channel === "Nenhum" ? null : values.channel,
       });
       if (error) throw error;
     },

@@ -113,6 +113,7 @@ export default function DashboardRefunds() {
       byStatus: metrics?.by_status ?? [],
       byType: metrics?.by_refund_type ?? [],
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
+      byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
     };
   }, [metrics]);
 
@@ -291,6 +292,33 @@ export default function DashboardRefunds() {
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
+            <CardTitle>Reembolsos por canal</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : kpis.byChannel.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={kpis.byChannel} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]}>
+                    {kpis.byChannel.map((_, i) => (
+                      <Cell key={`ch-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Reembolsos por produto</CardTitle>
           </CardHeader>
           <CardContent className="h-[380px]">
@@ -369,6 +397,7 @@ export default function DashboardRefunds() {
                         <TableHead>Plataforma</TableHead>
                         <TableHead>Produto</TableHead>
                         <TableHead>Pedido</TableHead>
+                        <TableHead>Canal</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Tipo</TableHead>
                       </TableRow>
@@ -386,6 +415,7 @@ export default function DashboardRefunds() {
                             <TableCell>{row.sales_platform}</TableCell>
                             <TableCell>{row.product ?? "—"}</TableCell>
                             <TableCell className="font-mono text-xs">{row.order_id}</TableCell>
+                            <TableCell>{row.channel ?? "—"}</TableCell>
                             <TableCell>{statusLabel}</TableCell>
                             <TableCell>{typeLabel}</TableCell>
                           </TableRow>

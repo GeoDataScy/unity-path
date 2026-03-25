@@ -20,6 +20,7 @@ export type DashboardRefundMetrics = {
   by_status: Array<{ name: string; value: number }>;
   by_refund_type: Array<{ name: string; value: number }>;
   by_product: Array<{ name: string; value: number }>;
+  by_channel: Array<{ name: string; value: number }>;
 };
 
 async function requireSession() {

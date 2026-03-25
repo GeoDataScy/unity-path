@@ -13,6 +13,7 @@ export type RefundItem = {
   refund_value: number | null; // numeric(10,2)
   refunded_value?: number | null; // calculado no backend (numeric)
   product: string | null;
+  channel: string | null;
 };
 
 export const SALES_PLATFORMS = ["Cartpanda", "Buygoods", "Hotmart"] as const;

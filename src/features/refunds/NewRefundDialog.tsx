@@ -33,6 +33,8 @@ function todayISO() {
 // - Número do pedido
 // - Produto
 // A plataforma continua visível, mas vem pré-selecionada.
+const CHANNELS = ["Nenhum", "Clickbank", "Email", "SMS"] as const;
+
 const newRefundSchema = z.object({
   customer_email: z.string().trim().email("E-mail inválido").max(255),
   request_date: z
@@ -42,6 +44,7 @@ const newRefundSchema = z.object({
   order_id: z.string().trim().min(1, "Informe o número do pedido").max(100),
   sales_platform: z.enum(SALES_PLATFORMS, { message: "Selecione a plataforma" }),
   product: z.string().trim().min(1, "Selecione o produto"),
+  channel: z.string().default("Nenhum"),
 });
 
 export type NewRefundValues = z.infer<typeof newRefundSchema>;
@@ -61,6 +64,7 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
       sales_platform: "Cartpanda",
       order_id: "",
       product: "",
+      channel: "Nenhum",
     }),
     [],
   );
@@ -158,6 +162,25 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
               {form.formState.errors.order_id?.message && (
                 <p className="text-sm text-destructive">{form.formState.errors.order_id.message}</p>
               )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Canal</Label>
+              <Select
+                value={form.watch("channel")}
+                onValueChange={(v) => form.setValue("channel", v, { shouldValidate: true })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNELS.map((ch) => (
+                    <SelectItem key={ch} value={ch}>
+                      {ch}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
