@@ -8,12 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 
-export type SupportChannel = "email" | "sms";
-
 export type AgentOutletContext = {
   userId: string;
   fullName: string | null;
-  supportChannel: SupportChannel;
 };
 
 export default function AgentLayout() {
@@ -23,7 +20,6 @@ export default function AgentLayout() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
-  const [supportChannel, setSupportChannel] = useState<SupportChannel>("email");
 
   useEffect(() => {
     let active = true;
@@ -42,7 +38,7 @@ export default function AgentLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name, support_channel")
+        .select("role, full_name")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -60,7 +56,6 @@ export default function AgentLayout() {
       if (!active) return;
       setUserId(session.user.id);
       setFullName(profile?.full_name ?? null);
-      setSupportChannel((profile?.support_channel as SupportChannel) ?? "email");
       setLoading(false);
     };
 
@@ -72,8 +67,8 @@ export default function AgentLayout() {
 
   const outletContext = useMemo<AgentOutletContext | null>(() => {
     if (!userId) return null;
-    return { userId, fullName, supportChannel };
-  }, [userId, fullName, supportChannel]);
+    return { userId, fullName };
+  }, [userId, fullName]);
 
   const handleLogout = () => {
     for (const key of Object.keys(localStorage)) {

@@ -121,8 +121,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName, supportChannel } = useOutletContext<AgentOutletContext>();
-  const dailyGoal = supportChannel === "sms" ? 150 : 100;
+  const { userId, fullName } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -143,6 +142,14 @@ export default function Atendimentos() {
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
+
+  // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
+  const supportChannel = useMemo(() => {
+    const smsCount = services.filter((s) => s.channel === "SMS").length;
+    const otherCount = services.length - smsCount;
+    return smsCount > otherCount ? "sms" : "email";
+  }, [services]) as "email" | "sms";
+  const dailyGoal = supportChannel === "sms" ? 150 : 100;
 
   const canSubmit = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform);

@@ -90,7 +90,6 @@ export type Database = {
           full_name: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
-          support_channel: "email" | "sms"
         }
         Insert: {
           created_at?: string | null
@@ -98,7 +97,6 @@ export type Database = {
           full_name?: string | null
           id: string
           role?: Database["public"]["Enums"]["app_role"]
-          support_channel?: "email" | "sms"
         }
         Update: {
           created_at?: string | null
@@ -106,7 +104,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          support_channel?: "email" | "sms"
         }
         Relationships: []
       }

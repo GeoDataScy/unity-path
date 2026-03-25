@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format, subWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -23,14 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -98,6 +90,41 @@ function useWeeklyMetricsQuery(weeks: WeekRange[]) {
   });
 }
 
+/** Fetch each agent's dominant channel from their services in the given period. */
+function useAgentChannelsQuery(weeks: WeekRange[]) {
+  const from = weeks[0]?.from;
+  const to = weeks[weeks.length - 1]?.to;
+  return useQuery({
+    queryKey: ["acompanhamento", "agent-channels", from, to],
+    enabled: Boolean(from && to),
+    queryFn: async (): Promise<Record<string, SupportChannel>> => {
+      const { data, error } = await supabase
+        .from("services")
+        .select("user_id, channel")
+        .gte("service_date", `${from}T00:00:00-03:00`)
+        .lt("service_date", `${to}T00:00:00-03:00`)
+        .not("channel", "is", null);
+      if (error) throw error;
+
+      // Count SMS vs other per agent
+      const counts: Record<string, { sms: number; other: number }> = {};
+      for (const s of data ?? []) {
+        if (!counts[s.user_id]) counts[s.user_id] = { sms: 0, other: 0 };
+        if (s.channel === "SMS") counts[s.user_id].sms++;
+        else counts[s.user_id].other++;
+      }
+
+      const result: Record<string, SupportChannel> = {};
+      for (const [uid, c] of Object.entries(counts)) {
+        result[uid] = c.sms > c.other ? "sms" : "email";
+      }
+      return result;
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
 // ----- evaluation logic -----
 type WeekStatus = "ok" | "alerta" | "advertencia";
 
@@ -119,12 +146,14 @@ type AgentSummary = {
 };
 
 function evaluateAgents(
-  agents: Array<{ id: string; label: string; supportChannel: SupportChannel }>,
+  agents: Array<{ id: string; label: string }>,
   weeks: WeekRange[],
   metricsPerWeek: WeeklyMetrics[],
+  channelMap: Record<string, SupportChannel>,
 ): AgentSummary[] {
   return agents.map((agent) => {
-    const goal = GOALS[agent.supportChannel];
+    const channel = channelMap[agent.id] ?? "email";
+    const goal = GOALS[channel];
     const weekResults: AgentWeekResult[] = [];
     let accumulatedAlerts = 0;
     let totalWarnings = 0;
@@ -164,7 +193,7 @@ function evaluateAgents(
     return {
       userId: agent.id,
       name: agent.label,
-      supportChannel: agent.supportChannel,
+      supportChannel: channel,
       weeklyGoal: goal.weekly,
       weeks: weekResults,
       totalAlerts: accumulatedAlerts,
@@ -218,39 +247,22 @@ function barColor(count: number, channel: SupportChannel) {
 // ----- component -----
 export default function DashboardAcompanhamento() {
   const { fullName } = useOutletContext<ManagerOutletContext>();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const agentsQuery = useAgentsQuery(true);
   const weeks = useMemo(() => buildWeekRanges(WEEKS_WINDOW), []);
   const metricsQuery = useWeeklyMetricsQuery(weeks);
-
-  const channelMutation = useMutation({
-    mutationFn: async ({ userId, channel }: { userId: string; channel: SupportChannel }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ support_channel: channel })
-        .eq("id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard", "agents"] });
-      toast({ title: "Canal atualizado" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Erro ao atualizar canal", description: err?.message, variant: "destructive" });
-    },
-  });
+  const channelsQuery = useAgentChannelsQuery(weeks);
 
   const agents = agentsQuery.data ?? [];
   const metricsPerWeek = metricsQuery.data ?? [];
+  const channelMap = channelsQuery.data ?? {};
 
   const summaries = useMemo(() => {
     if (agents.length === 0 || metricsPerWeek.length === 0) return [];
-    return evaluateAgents(agents, weeks, metricsPerWeek);
-  }, [agents, weeks, metricsPerWeek]);
+    return evaluateAgents(agents, weeks, metricsPerWeek, channelMap);
+  }, [agents, weeks, metricsPerWeek, channelMap]);
 
-  const isLoading = agentsQuery.isLoading || metricsQuery.isLoading;
+  const isLoading = agentsQuery.isLoading || metricsQuery.isLoading || channelsQuery.isLoading;
 
   // KPI totals
   const kpi = useMemo(() => {
@@ -390,18 +402,9 @@ export default function DashboardAcompanhamento() {
                         <TableCell className="sticky left-0 bg-card z-10 font-medium">
                           <div className="flex items-center gap-2">
                             <span>{agent.name}</span>
-                            <Select
-                              value={agent.supportChannel}
-                              onValueChange={(val) => channelMutation.mutate({ userId: agent.userId, channel: val as SupportChannel })}
-                            >
-                              <SelectTrigger className={`h-6 w-[110px] text-[10px] font-medium border-0 ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="email">EMAIL · 500/sem</SelectItem>
-                                <SelectItem value="sms">SMS · 750/sem</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+                              {agent.supportChannel.toUpperCase()} · {agent.weeklyGoal}/sem
+                            </span>
                           </div>
                         </TableCell>
                         {agent.weeks.map((w, i) => (

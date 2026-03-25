@@ -6,7 +6,6 @@ export type SupportChannel = "email" | "sms";
 export type AgentOption = {
   id: string;
   label: string;
-  supportChannel: SupportChannel;
 };
 
 export function useAgentsQuery(enabled: boolean) {
@@ -16,7 +15,7 @@ export function useAgentsQuery(enabled: boolean) {
     queryFn: async (): Promise<AgentOption[]> => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, email, support_channel")
+        .select("id, full_name, email")
         .eq("role", "agent")
         .order("full_name", { ascending: true, nullsFirst: false });
 
@@ -28,7 +27,6 @@ export function useAgentsQuery(enabled: boolean) {
         return {
           id: p.id,
           label: name.length > 0 ? name : email ? `Sem nome (${email})` : "Sem nome",
-          supportChannel: (p.support_channel as SupportChannel) ?? "email",
         };
       });
     },
