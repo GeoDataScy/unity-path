@@ -22,6 +22,9 @@ import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyS
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
+import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
+import { useStatusTracking } from "@/features/services/useStatusTracking";
+import { Badge } from "@/components/ui/badge";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
 
@@ -139,6 +142,10 @@ export default function Atendimentos() {
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
+
+  // Status tracking
+  const [trackingService, setTrackingService] = useState<ServiceItem | null>(null);
+  const { getCurrentStatus } = useStatusTracking();
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
@@ -432,13 +439,14 @@ export default function Atendimentos() {
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
                 <TableHead>Canal</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="w-[96px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {services.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Nenhum atendimento registrado ainda.
                   </TableCell>
                 </TableRow>
@@ -455,6 +463,20 @@ export default function Atendimentos() {
                     <TableCell>{s.product}</TableCell>
                     <TableCell>{s.platform ?? "—"}</TableCell>
                     <TableCell>{s.channel ?? "—"}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const st = getCurrentStatus(s.id);
+                        return (
+                          <Badge
+                            variant={st.variant}
+                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                            onClick={() => setTrackingService(s)}
+                          >
+                            {st.label}
+                          </Badge>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
                         <Button
@@ -493,6 +515,17 @@ export default function Atendimentos() {
           }}
           onSave={async (next) => {
             await updateMutation.mutateAsync({ id: editing.id, ...next });
+          }}
+        />
+      )}
+
+      {trackingService && (
+        <StatusTrackingDialog
+          serviceId={trackingService.id}
+          clientEmail={trackingService.client_email}
+          open={Boolean(trackingService)}
+          onOpenChange={(open) => {
+            if (!open) setTrackingService(null);
           }}
         />
       )}

@@ -69,6 +69,14 @@ export default {
             DEFAULT: "hsl(var(--status-success))",
             foreground: "hsl(var(--status-success-foreground))",
           },
+          "in-progress": {
+            DEFAULT: "hsl(var(--status-in-progress))",
+            foreground: "hsl(var(--status-in-progress-foreground))",
+          },
+          done: {
+            DEFAULT: "hsl(var(--status-done))",
+            foreground: "hsl(var(--status-done-foreground))",
+          },
         },
 
         // shadcn sidebar semantic tokens (mapped to dashboard identity)

@@ -65,6 +65,14 @@ All colors MUST be HSL.
     /* Verde corporativo (sucesso/meta batida) */
     --status-success: 152 60% 40%;
     --status-success-foreground: 0 0% 100%;
+
+    /* Roxo "Em Andamento" */
+    --status-in-progress: 263 70% 62%;
+    --status-in-progress-foreground: 0 0% 100%;
+
+    /* Azul "Concluído" (atendimento finalizado) */
+    --status-done: 210 70% 50%;
+    --status-done-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -112,6 +120,12 @@ All colors MUST be HSL.
     /* Status tokens keep same hue for dark mode */
     --status-success: 152 60% 40%;
     --status-success-foreground: 0 0% 100%;
+
+    --status-in-progress: 263 70% 62%;
+    --status-in-progress-foreground: 0 0% 100%;
+
+    --status-done: 210 70% 50%;
+    --status-done-foreground: 0 0% 100%;
   }
 }
 
