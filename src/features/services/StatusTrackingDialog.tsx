@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { format } from "date-fns";
 import { Clock, FileText, Hash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import {
   useStatusTracking,
   type ServiceStatus,
@@ -48,11 +48,11 @@ function nowTime() {
 }
 
 export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChange }: Props) {
-  const { getTracking, getCurrentStatus, addEntry } = useStatusTracking();
+  const { getEntries, getCurrentStatus, addEntryMutation } = useStatusTracking();
+  const { toast } = useToast();
 
-  const tracking = getTracking(serviceId);
+  const entries = getEntries(serviceId);
   const currentStatus = getCurrentStatus(serviceId);
-  const entries = tracking?.entries ?? [];
   const isConcluded = currentStatus.variant === "done";
 
   // Form state
@@ -61,17 +61,40 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
   const [time, setTime] = useState(nowTime);
   const [observation, setObservation] = useState("");
 
-  const handleSubmit = () => {
-    addEntry(serviceId, { status, date, time, observation });
-    // Reset form
-    setStatus("em_andamento");
-    setDate(nowDate());
-    setTime(nowTime());
-    setObservation("");
-    onOpenChange(false);
+  const handleSubmit = async () => {
+    const recordedAt = `${date}T${time}:00-03:00`;
+
+    try {
+      await addEntryMutation.mutateAsync({
+        serviceId,
+        status,
+        recordedAt,
+        observation,
+      });
+
+      toast({
+        title: "Acompanhamento registrado",
+        description: status === "concluido"
+          ? "Atendimento marcado como concluído."
+          : "Nova interação registrada com sucesso.",
+      });
+
+      // Reset form
+      setStatus("em_andamento");
+      setDate(nowDate());
+      setTime(nowTime());
+      setObservation("");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao registrar",
+        description: error?.message ?? "Não foi possível registrar o acompanhamento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const canSubmit = Boolean(date) && Boolean(time);
+  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,7 +116,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
           {entries.length > 0 && (
             <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
               <Hash className="h-3 w-3" />
-              {entries.length} {entries.length === 1 ? "interacao" : "interacoes"}
+              {entries.length} {entries.length === 1 ? "interação" : "interações"}
             </span>
           )}
         </div>
@@ -101,32 +124,43 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
         {/* History */}
         {entries.length > 0 && (
           <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Historico</p>
-            {entries.map((e, i) => (
-              <div key={i} className="flex items-start gap-2 border-l-2 border-primary/30 pl-3 text-sm">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={e.status === "concluido" ? "done" : "in-progress"}
-                      className="text-[10px] px-1.5 py-0"
-                    >
-                      {e.status === "concluido"
-                        ? "Concluido"
-                        : e.followUp <= 1
-                          ? "Em Andamento"
-                          : `Em Andamento ${e.followUp}`}
-                    </Badge>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {e.date.split("-").reverse().join("/")} {e.time}
-                    </span>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Histórico</p>
+            {entries.map((e) => {
+              const dt = new Date(e.recorded_at);
+              const dateStr = dt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+              const timeStr = dt.toLocaleTimeString("pt-BR", {
+                timeZone: "America/Sao_Paulo",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              });
+
+              return (
+                <div key={e.id} className="flex items-start gap-2 border-l-2 border-primary/30 pl-3 text-sm">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={e.status === "concluido" ? "done" : "in-progress"}
+                        className="text-[10px] px-1.5 py-0"
+                      >
+                        {e.status === "concluido"
+                          ? "Concluído"
+                          : e.follow_up_number <= 1
+                            ? "Em Andamento"
+                            : `Em Andamento ${e.follow_up_number}`}
+                      </Badge>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {dateStr} {timeStr}
+                      </span>
+                    </div>
+                    {e.observation && (
+                      <p className="mt-1 text-xs text-muted-foreground">{e.observation}</p>
+                    )}
                   </div>
-                  {e.observation && (
-                    <p className="mt-1 text-xs text-muted-foreground">{e.observation}</p>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -143,7 +177,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="concluido">Concluido</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -168,9 +202,9 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
             </div>
 
             <div className="grid gap-2">
-              <Label>Observacao</Label>
+              <Label>Observação</Label>
               <Textarea
-                placeholder="Descreva o que foi feito nesta interacao..."
+                placeholder="Descreva o que foi feito nesta interação..."
                 value={observation}
                 onChange={(e) => setObservation(e.target.value)}
                 rows={3}
@@ -181,8 +215,8 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
 
         {isConcluded && (
           <div className="rounded-lg border border-status-done/30 bg-status-done/10 p-4 text-center text-sm text-muted-foreground">
-            Este atendimento foi concluido com <strong>{entries.length}</strong>{" "}
-            {entries.length === 1 ? "interacao" : "interacoes"}.
+            Este atendimento foi concluído com <strong>{entries.length}</strong>{" "}
+            {entries.length === 1 ? "interação" : "interações"}.
           </div>
         )}
 
@@ -192,7 +226,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
           </Button>
           {!isConcluded && (
             <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
-              Registrar
+              {addEntryMutation.isPending ? "Registrando..." : "Registrar"}
             </Button>
           )}
         </DialogFooter>

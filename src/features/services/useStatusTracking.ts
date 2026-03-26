@@ -1,123 +1,122 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type ServiceStatus = "em_andamento" | "concluido";
 
-export interface StatusEntry {
-  /** Sequential follow-up number: 1 = first contact, 2 = second, etc. */
-  followUp: number;
-  status: ServiceStatus;
-  date: string;   // ISO date  YYYY-MM-DD
-  time: string;   // HH:mm
+export interface FollowUpRow {
+  id: string;
+  service_id: string;
+  user_id: string;
+  follow_up_number: number;
+  status: string;
+  recorded_at: string;
   observation: string;
+  created_at: string;
 }
 
-export interface ServiceTracking {
-  serviceId: string;
-  entries: StatusEntry[];
+// ── Query hook: fetch all follow-ups for the current agent ─────────────────────
+
+export function useFollowUpsQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: ["service-follow-ups"],
+    enabled,
+    queryFn: async (): Promise<FollowUpRow[]> => {
+      const { data, error } = await supabase
+        .from("service_follow_ups")
+        .select("*")
+        .order("follow_up_number", { ascending: true });
+
+      if (error) throw error;
+      return (data ?? []) as FollowUpRow[];
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
 }
 
-// ── Storage key ────────────────────────────────────────────────────────────────
+// ── Helper: group follow-ups by service_id ─────────────────────────────────────
 
-const STORAGE_KEY = "xmx:status-tracking";
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function readAll(): Record<string, ServiceTracking> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
+function groupByService(rows: FollowUpRow[]): Record<string, FollowUpRow[]> {
+  const map: Record<string, FollowUpRow[]> = {};
+  for (const row of rows) {
+    if (!map[row.service_id]) map[row.service_id] = [];
+    map[row.service_id].push(row);
   }
+  return map;
 }
 
-function writeAll(data: Record<string, ServiceTracking>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Notify subscribers
-  window.dispatchEvent(new Event("xmx-status-change"));
-}
-
-// ── External store (React 18 pattern for localStorage) ─────────────────────────
-
-let snapshot = readAll();
-
-function subscribe(cb: () => void) {
-  const handler = () => {
-    snapshot = readAll();
-    cb();
-  };
-  window.addEventListener("xmx-status-change", handler);
-  window.addEventListener("storage", handler);
-  return () => {
-    window.removeEventListener("xmx-status-change", handler);
-    window.removeEventListener("storage", handler);
-  };
-}
-
-function getSnapshot() {
-  return snapshot;
-}
-
-// ── Hook ───────────────────────────────────────────────────────────────────────
+// ── Main hook ──────────────────────────────────────────────────────────────────
 
 export function useStatusTracking() {
-  const trackingMap = useSyncExternalStore(subscribe, getSnapshot);
+  const queryClient = useQueryClient();
+  const { data: allFollowUps = [] } = useFollowUpsQuery(true);
+  const grouped = groupByService(allFollowUps);
 
-  /** Get current tracking data for a service */
-  const getTracking = useCallback(
-    (serviceId: string): ServiceTracking | null => {
-      return trackingMap[serviceId] ?? null;
+  /** Get all follow-up entries for a service */
+  const getEntries = useCallback(
+    (serviceId: string): FollowUpRow[] => {
+      return grouped[serviceId] ?? [];
     },
-    [trackingMap],
+    [grouped],
   );
 
   /** Get the current display status for a service */
   const getCurrentStatus = useCallback(
     (serviceId: string): { label: string; variant: "open" | "in-progress" | "done" } => {
-      const tracking = trackingMap[serviceId];
-      if (!tracking || tracking.entries.length === 0) {
+      const entries = grouped[serviceId];
+      if (!entries || entries.length === 0) {
         return { label: "Em Aberto", variant: "open" };
       }
 
-      const last = tracking.entries[tracking.entries.length - 1];
+      const last = entries[entries.length - 1];
       if (last.status === "concluido") {
         return { label: "Concluído", variant: "done" };
       }
 
-      const count = tracking.entries.filter((e) => e.status === "em_andamento").length;
-      if (count <= 1) {
+      const inProgressCount = entries.filter((e) => e.status === "em_andamento").length;
+      if (inProgressCount <= 1) {
         return { label: "Em Andamento", variant: "in-progress" };
       }
-      return { label: `Em Andamento ${count}`, variant: "in-progress" };
+      return { label: `Em Andamento ${inProgressCount}`, variant: "in-progress" };
     },
-    [trackingMap],
+    [grouped],
   );
 
-  /** Add a new status entry (follow-up) for a service */
-  const addEntry = useCallback(
-    (serviceId: string, entry: Omit<StatusEntry, "followUp">) => {
-      const all = readAll();
-      const existing = all[serviceId] ?? { serviceId, entries: [] };
+  /** Mutation to insert a new follow-up */
+  const addEntryMutation = useMutation({
+    mutationFn: async (params: {
+      serviceId: string;
+      status: ServiceStatus;
+      recordedAt: string; // ISO timestamptz
+      observation: string;
+    }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
 
-      const followUp = existing.entries.length + 1;
-      existing.entries.push({ ...entry, followUp });
-      all[serviceId] = existing;
+      // Calculate follow_up_number
+      const existing = grouped[params.serviceId] ?? [];
+      const followUpNumber = existing.length + 1;
 
-      writeAll(all);
+      const { error } = await supabase.from("service_follow_ups").insert({
+        service_id: params.serviceId,
+        user_id: session.user.id,
+        follow_up_number: followUpNumber,
+        status: params.status,
+        recorded_at: params.recordedAt,
+        observation: params.observation,
+      });
+
+      if (error) throw error;
     },
-    [],
-  );
-
-  /** Get total follow-up count for a service */
-  const getFollowUpCount = useCallback(
-    (serviceId: string): number => {
-      const tracking = trackingMap[serviceId];
-      return tracking?.entries.length ?? 0;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
     },
-    [trackingMap],
-  );
+  });
 
-  return { getTracking, getCurrentStatus, addEntry, getFollowUpCount };
+  return { getEntries, getCurrentStatus, addEntryMutation };
 }
