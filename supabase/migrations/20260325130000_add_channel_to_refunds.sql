@@ -37,8 +37,8 @@ BEGIN
     SUM(CASE WHEN r.completion_date IS NOT NULL THEN 1 ELSE 0 END)::bigint
   INTO v_total, v_open, v_done
   FROM public.refunds r
-  WHERE r.request_date >= from_date
-    AND r.request_date <= to_date
+  WHERE r.request_date::date >= from_date
+    AND r.request_date::date <= to_date
     AND (agent_id IS NULL OR r.user_id = agent_id)
     AND (status_filter IS NULL OR status_filter = 'all'
       OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -60,8 +60,8 @@ BEGIN
       r.user_id
     FROM public.refunds r
     LEFT JOIN public.profiles p ON p.id = r.user_id
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND (status_filter IS NULL OR status_filter = 'all'
         OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -83,8 +83,8 @@ BEGIN
       CASE WHEN r.completion_date IS NULL THEN 'Em aberto' ELSE 'Concluído' END AS name,
       COUNT(*)::int AS value
     FROM public.refunds r
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND (status_filter IS NULL OR status_filter = 'all'
         OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -106,8 +106,8 @@ BEGIN
       COALESCE(r.refund_type, 'Não informado') AS name,
       COUNT(*)::int AS value
     FROM public.refunds r
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND r.completion_date IS NOT NULL
       AND (status_filter IS NULL OR status_filter = 'all' OR status_filter = 'done')
@@ -128,8 +128,8 @@ BEGIN
       COALESCE(r.product, 'Não informado') AS name,
       COUNT(*)::int AS value
     FROM public.refunds r
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND (status_filter IS NULL OR status_filter = 'all'
         OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -151,8 +151,8 @@ BEGIN
       COALESCE(r.channel, 'Não informado') AS name,
       COUNT(*)::int AS value
     FROM public.refunds r
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND (status_filter IS NULL OR status_filter = 'all'
         OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -210,8 +210,8 @@ BEGIN
   SELECT COUNT(*)
     INTO v_total
   FROM public.refunds r
-  WHERE r.request_date >= from_date
-    AND r.request_date <= to_date
+  WHERE r.request_date::date >= from_date
+    AND r.request_date::date <= to_date
     AND (agent_id IS NULL OR r.user_id = agent_id)
     AND (status_filter IS NULL OR status_filter = 'all'
       OR (status_filter = 'open' AND r.completion_date IS NULL)
@@ -233,8 +233,8 @@ BEGIN
       jsonb_build_object('full_name', p.full_name) AS profiles
     FROM public.refunds r
     LEFT JOIN public.profiles p ON p.id = r.user_id
-    WHERE r.request_date >= from_date
-      AND r.request_date <= to_date
+    WHERE r.request_date::date >= from_date
+      AND r.request_date::date <= to_date
       AND (agent_id IS NULL OR r.user_id = agent_id)
       AND (status_filter IS NULL OR status_filter = 'all'
         OR (status_filter = 'open' AND r.completion_date IS NULL)

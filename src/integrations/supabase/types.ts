@@ -269,6 +269,7 @@ export type Database = {
           from_date: string
           page_offset?: number
           page_size?: number
+          product_filter?: string
           refund_type_filter?: string
           status_filter?: string
           to_date: string
@@ -279,6 +280,7 @@ export type Database = {
         Args: {
           agent_id?: string
           from_date: string
+          product_filter?: string
           refund_type_filter?: string
           status_filter?: string
           to_date: string
