@@ -69,4 +69,5 @@ export const REFUND_PRODUCTS = [
   "VisualEase",
   "NerveEase",
   "Steelpower",
+  "Gluco Off",
 ] as const;

@@ -69,6 +69,7 @@ const PRODUCTS = [
   "VisualEase",
   "NerveEase",
   "Steelpower",
+  "Gluco Off",
 ] as const;
 
 const PLATFORMS = [
