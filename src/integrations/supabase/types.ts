@@ -259,6 +259,13 @@ export type Database = {
         }
         Returns: Json
       }
+      dashboard_follow_up_detail: {
+        Args: {
+          p_from_date?: string
+          p_to_date?: string
+        }
+        Returns: Json
+      }
       dashboard_metrics: {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json

@@ -29,8 +29,8 @@ BEGIN
   WITH filtered_services AS (
     SELECT s.id, s.user_id, s.client_email, s.product, s.platform, s.channel
     FROM public.services s
-    WHERE s.service_date >= v_from
-      AND s.service_date <  v_to
+    WHERE s.service_date::timestamptz >= v_from
+      AND s.service_date::timestamptz <  v_to
   ),
   last_status AS (
     SELECT DISTINCT ON (fs.id)
@@ -58,8 +58,8 @@ BEGIN
   WITH filtered_services AS (
     SELECT s.id, s.user_id
     FROM public.services s
-    WHERE s.service_date >= v_from
-      AND s.service_date <  v_to
+    WHERE s.service_date::timestamptz >= v_from
+      AND s.service_date::timestamptz <  v_to
   ),
   last_status AS (
     SELECT DISTINCT ON (fs.id)
@@ -143,8 +143,8 @@ BEGIN
     FROM public.service_follow_ups f
     JOIN public.services s ON s.id = f.service_id
     LEFT JOIN public.profiles p ON p.id = f.user_id
-    WHERE s.service_date >= v_from
-      AND s.service_date <  v_to
+    WHERE s.service_date::timestamptz >= v_from
+      AND s.service_date::timestamptz <  v_to
     ORDER BY f.created_at DESC
     LIMIT 80
   ) t;
@@ -153,8 +153,8 @@ BEGIN
   WITH filtered_services AS (
     SELECT s.id, s.user_id
     FROM public.services s
-    WHERE s.service_date >= v_from
-      AND s.service_date <  v_to
+    WHERE s.service_date::timestamptz >= v_from
+      AND s.service_date::timestamptz <  v_to
   ),
   agent_done AS (
     SELECT
