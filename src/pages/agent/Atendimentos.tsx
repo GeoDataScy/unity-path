@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Pencil } from "lucide-react";
+import { Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -141,6 +141,9 @@ export default function Atendimentos() {
   const [platform, setPlatform] = useState("");
   const [channel, setChannel] = useState<"Nenhum" | "Clickbank" | "Email" | "SMS">("Nenhum");
 
+  // Search state
+  const [emailSearch, setEmailSearch] = useState("");
+
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
 
@@ -150,6 +153,12 @@ export default function Atendimentos() {
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
+
+  const filteredServices = useMemo(() => {
+    if (!emailSearch) return services;
+    const term = emailSearch.toLowerCase();
+    return services.filter((s) => s.client_email.toLowerCase().includes(term));
+  }, [services, emailSearch]);
 
   // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
   const supportChannel = useMemo(() => {
@@ -425,7 +434,28 @@ export default function Atendimentos() {
 
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar por e-mail..."
+                value={emailSearch}
+                onChange={(e) => setEmailSearch(e.target.value)}
+                className="h-8 w-56 pl-8 pr-8 text-sm"
+              />
+              {emailSearch && (
+                <button
+                  type="button"
+                  onClick={() => setEmailSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
           {(servicesLoading || createMutation.isPending) && (
             <span className="text-sm text-muted-foreground">Atualizando...</span>
           )}
@@ -445,14 +475,16 @@ export default function Atendimentos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.length === 0 ? (
+              {filteredServices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    Nenhum atendimento registrado ainda.
+                    {emailSearch
+                      ? "Nenhum atendimento encontrado para este e-mail."
+                      : "Nenhum atendimento registrado ainda."}
                   </TableCell>
                 </TableRow>
               ) : (
-                services.map((s) => (
+                filteredServices.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       {(() => {
