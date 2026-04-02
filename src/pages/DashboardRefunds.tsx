@@ -369,6 +369,41 @@ export default function DashboardRefunds() {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversão por canal (concluídos)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[380px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : kpis.byChannel.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (() => {
+              const total = kpis.byChannel.reduce((sum, x) => sum + x.value, 0);
+              const channelPercent = kpis.byChannel.map((x) => ({
+                name: x.name,
+                value: total > 0 ? Math.round((x.value / total) * 100) : 0,
+                count: x.value,
+              }));
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={channelPercent} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} unit="%" />
+                    <Tooltip formatter={(value: number, _: string, entry: { payload: { count: number } }) => [`${value}% (${entry.payload.count})`, "Conversão"]} />
+                    <Bar dataKey="value" name="Conversão" radius={[8, 8, 0, 0]}>
+                      {channelPercent.map((_, i) => (
+                        <Cell key={`conv-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Table */}
