@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Pencil, Search, X } from "lucide-react";
+import { CalendarDays, Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
@@ -141,8 +149,12 @@ export default function Atendimentos() {
   const [platform, setPlatform] = useState("");
   const [channel, setChannel] = useState<"Nenhum" | "Clickbank" | "Email" | "SMS">("Nenhum");
 
-  // Search state
+  // Search & filter state
   const [emailSearch, setEmailSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -155,10 +167,40 @@ export default function Atendimentos() {
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
 
   const filteredServices = useMemo(() => {
-    if (!emailSearch) return services;
-    const term = emailSearch.toLowerCase();
-    return services.filter((s) => s.client_email.toLowerCase().includes(term));
-  }, [services, emailSearch]);
+    let result = services;
+
+    if (emailSearch) {
+      const term = emailSearch.toLowerCase();
+      result = result.filter((s) => s.client_email.toLowerCase().includes(term));
+    }
+
+    if (dateFrom) {
+      result = result.filter((s) => {
+        const d = s.service_date?.slice(0, 10);
+        return d && d >= dateFrom;
+      });
+    }
+
+    if (dateTo) {
+      result = result.filter((s) => {
+        const d = s.service_date?.slice(0, 10);
+        return d && d <= dateTo;
+      });
+    }
+
+    return result;
+  }, [services, emailSearch, dateFrom, dateTo]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [emailSearch, dateFrom, dateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE));
+  const paginatedServices = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredServices.slice(start, start + PAGE_SIZE);
+  }, [filteredServices, page]);
 
   // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
   const supportChannel = useMemo(() => {
@@ -433,8 +475,8 @@ export default function Atendimentos() {
       </Card>
 
       <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -450,6 +492,34 @@ export default function Atendimentos() {
                   type="button"
                   onClick={() => setEmailSearch("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-8 w-36 text-sm"
+                title="Data inicial"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-8 w-36 text-sm"
+                title="Data final"
+              />
+              {(dateFrom || dateTo) && (
+                <button
+                  type="button"
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Limpar datas"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -475,16 +545,16 @@ export default function Atendimentos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredServices.length === 0 ? (
+              {paginatedServices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    {emailSearch
-                      ? "Nenhum atendimento encontrado para este e-mail."
+                    {emailSearch || dateFrom || dateTo
+                      ? "Nenhum atendimento encontrado com os filtros aplicados."
                       : "Nenhum atendimento registrado ainda."}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredServices.map((s) => (
+                paginatedServices.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       {(() => {
@@ -537,6 +607,55 @@ export default function Atendimentos() {
             </TableBody>
           </Table>
         </div>
+
+        {filteredServices.length > PAGE_SIZE && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Página {page} de {totalPages} • {filteredServices.length} registros
+            </p>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
+                  const p = idx + 1;
+                  return (
+                    <PaginationItem key={p}>
+                      <PaginationLink
+                        href="#"
+                        isActive={p === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage(p);
+                        }}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.min(totalPages, p + 1));
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </section>
 
       {editing && (
