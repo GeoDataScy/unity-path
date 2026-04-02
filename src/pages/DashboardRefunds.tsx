@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -355,15 +354,17 @@ export default function DashboardRefunds() {
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <BarChart data={kpis.byType} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
                   <Tooltip formatter={(value: number, name: string) => [value, name]} />
-                  <Legend layout="horizontal" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-                  <Pie data={kpis.byType} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  <Bar dataKey="value" name="Quantidade" radius={[8, 8, 0, 0]}>
                     {kpis.byType.map((_, i) => (
                       <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
                     ))}
-                  </Pie>
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
