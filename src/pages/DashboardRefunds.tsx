@@ -372,7 +372,7 @@ export default function DashboardRefunds() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Conversão por canal (concluídos)</CardTitle>
+            <CardTitle>Conversão por canal</CardTitle>
           </CardHeader>
           <CardContent className="h-[380px]">
             {isLoading ? (
