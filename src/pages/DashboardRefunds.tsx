@@ -113,7 +113,6 @@ export default function DashboardRefunds() {
       byType: metrics?.by_refund_type ?? [],
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
-      byChannelEfficiency: metrics?.by_channel_efficiency ?? [],
     };
   }, [metrics]);
 
@@ -371,95 +370,6 @@ export default function DashboardRefunds() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Conversão por canal</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[380px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : kpis.byChannel.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-            ) : (() => {
-              const total = kpis.byChannel.reduce((sum, x) => sum + x.value, 0);
-              const channelPercent = kpis.byChannel.map((x) => ({
-                name: x.name,
-                value: total > 0 ? Math.round((x.value / total) * 100) : 0,
-                count: x.value,
-              }));
-              return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={channelPercent} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} unit="%" />
-                    <Tooltip formatter={(value: number, _: string, entry: { payload: { count: number } }) => [`${value}% (${entry.payload.count})`, "Conversão"]} />
-                    <Bar dataKey="value" name="Conversão" radius={[8, 8, 0, 0]}>
-                      {channelPercent.map((_, i) => (
-                        <Cell key={`conv-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              );
-            })()}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Eficiência por canal (score)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[380px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : kpis.byChannelEfficiency.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-            ) : (() => {
-              const chartData = kpis.byChannelEfficiency.map((x) => ({
-                name: x.channel,
-                score: x.efficiency_score,
-                parcial: x.partial_count,
-                total100: x.full_count,
-                totalDone: x.total_done,
-              }));
-              return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} domain={[0, 100]} unit="%" />
-                    <Tooltip
-                      formatter={(value: number, name: string, entry: { payload: { parcial: number; total100: number; totalDone: number } }) => {
-                        if (name === "Score") return [`${value}%`, "Score de eficiência"];
-                        return [value, name];
-                      }}
-                      labelFormatter={(label: string) => {
-                        const item = chartData.find((x) => x.name === label);
-                        if (!item) return label;
-                        return `${label} — ${item.parcial} parciais, ${item.total100} totais (${item.totalDone} concluídos)`;
-                      }}
-                    />
-                    <Bar dataKey="score" name="Score" radius={[8, 8, 0, 0]}>
-                      {chartData.map((entry, i) => (
-                        <Cell
-                          key={`eff-${i}`}
-                          fill={
-                            entry.score >= 70
-                              ? "hsl(142, 71%, 45%)"
-                              : entry.score >= 40
-                                ? "hsl(48, 96%, 53%)"
-                                : "hsl(0, 84%, 60%)"
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              );
-            })()}
-          </CardContent>
-        </Card>
       </section>
 
       {/* Table */}
