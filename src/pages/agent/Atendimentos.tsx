@@ -147,7 +147,7 @@ export default function Atendimentos() {
   const [serviceDate, setServiceDate] = useState("");
   const [product, setProduct] = useState("");
   const [platform, setPlatform] = useState("");
-  const [channel, setChannel] = useState<"Nenhum" | "Clickbank" | "Email" | "SMS">("Nenhum");
+  const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
 
   // Search & filter state
   const [emailSearch, setEmailSearch] = useState("");
@@ -263,7 +263,7 @@ export default function Atendimentos() {
       setServiceDate("");
       setProduct("");
       setPlatform("");
-      setChannel("Nenhum");
+      setChannel("Email");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
@@ -392,7 +392,7 @@ export default function Atendimentos() {
         <CardContent>
           <div className="mb-4 flex items-center gap-2">
             <Label className="mr-1 text-sm text-muted-foreground">Canal</Label>
-            {(["Nenhum", "Clickbank", "Email", "SMS"] as const).map((ch) => (
+            {(["Clickbank", "Email", "SMS"] as const).map((ch) => (
               <Button
                 key={ch}
                 type="button"
