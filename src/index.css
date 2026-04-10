@@ -73,6 +73,10 @@ All colors MUST be HSL.
     /* Azul "Concluído" (atendimento finalizado) */
     --status-done: 210 70% 50%;
     --status-done-foreground: 0 0% 100%;
+
+    /* Azul escuro premium "Novo" (ticket novo do agente) */
+    --status-new: 220 60% 25%;
+    --status-new-foreground: 220 15% 85%;
   }
 
   .dark {

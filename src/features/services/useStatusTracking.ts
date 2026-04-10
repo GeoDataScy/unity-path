@@ -85,6 +85,47 @@ export function useStatusTracking() {
     [grouped],
   );
 
+  /**
+   * Check if a new interaction can be registered for this service.
+   * Rule: only 1 interaction per 24h. Creation of the ticket counts as interaction #1.
+   * Returns { allowed: boolean, nextAllowedAt?: Date, reason?: string }
+   */
+  const canAddInteraction = useCallback(
+    (serviceId: string, serviceCreatedAt: string | null): { allowed: boolean; nextAllowedAt?: Date; reason?: string } => {
+      const entries = grouped[serviceId] ?? [];
+      // Determine the timestamp of the last interaction
+      // - If no follow-ups: ticket creation is the last interaction
+      // - Otherwise: the most recent follow-up's recorded_at
+      let lastTime: Date | null = null;
+      if (entries.length === 0) {
+        if (serviceCreatedAt) lastTime = new Date(serviceCreatedAt);
+      } else {
+        const last = entries[entries.length - 1];
+        lastTime = new Date(last.recorded_at);
+      }
+
+      if (!lastTime || isNaN(lastTime.getTime())) {
+        return { allowed: true };
+      }
+
+      const now = new Date();
+      const diffMs = now.getTime() - lastTime.getTime();
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+      if (diffMs < TWENTY_FOUR_HOURS) {
+        const nextAllowedAt = new Date(lastTime.getTime() + TWENTY_FOUR_HOURS);
+        return {
+          allowed: false,
+          nextAllowedAt,
+          reason: `Já houve uma interação nas últimas 24h. Próxima interação permitida em ${nextAllowedAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`,
+        };
+      }
+
+      return { allowed: true };
+    },
+    [grouped],
+  );
+
   /** Mutation to insert a new follow-up */
   const addEntryMutation = useMutation({
     mutationFn: async (params: {
@@ -118,5 +159,5 @@ export function useStatusTracking() {
     },
   });
 
-  return { getEntries, getCurrentStatus, addEntryMutation };
+  return { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction };
 }

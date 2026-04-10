@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
+import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 
 export type AgentOutletContext = {
   userId: string;
@@ -116,6 +117,8 @@ export default function AgentLayout() {
           </div>
         </SidebarInset>
       </div>
+
+      <PendingRefundsAlert enabled={Boolean(userId)} />
     </SidebarProvider>
   );
 }

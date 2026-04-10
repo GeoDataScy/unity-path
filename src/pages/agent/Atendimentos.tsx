@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarDays, Pencil, Search, X } from "lucide-react";
@@ -161,7 +161,25 @@ export default function Atendimentos() {
 
   // Status tracking
   const [trackingService, setTrackingService] = useState<ServiceItem | null>(null);
-  const { getCurrentStatus } = useStatusTracking();
+  const { getCurrentStatus, getEntries } = useStatusTracking();
+
+  /** Agent-only: remap "Em Aberto" → "Novo" with premium badge */
+  const getAgentStatus = useCallback(
+    (serviceId: string) => {
+      const st = getCurrentStatus(serviceId);
+      if (st.variant === "open") {
+        return { label: "Novo", variant: "new" as const };
+      }
+      return st;
+    },
+    [getCurrentStatus],
+  );
+
+  /** Count interactions: ticket creation counts as #1 */
+  const getInteractionCount = useCallback(
+    (serviceId: string) => getEntries(serviceId).length + 1,
+    [getEntries],
+  );
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
@@ -196,6 +214,12 @@ export default function Atendimentos() {
     setPage(1);
   }, [emailSearch, dateFrom, dateTo]);
 
+  /** Total interactions across the filtered services (creation + follow-ups) */
+  const totalFilteredInteractions = useMemo(
+    () => filteredServices.reduce((sum, s) => sum + getInteractionCount(s.id), 0),
+    [filteredServices, getInteractionCount],
+  );
+
   const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE));
   const paginatedServices = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -220,30 +244,23 @@ export default function Atendimentos() {
   }, [fullName]);
 
   const createMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{ existing?: ServiceItem }> => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
-      // Check if same email was already registered today by this agent
-      const dayStart = toSaoPauloTimestamptz(serviceDate);
-      const nextDay = new Date(new Date(serviceDate + "T00:00:00").getTime() + 86400000)
-        .toISOString()
-        .slice(0, 10);
-      const dayEnd = toSaoPauloTimestamptz(nextDay);
-
-      const { data: existing } = await supabase
+      // Check if email already exists in this agent's base (any date)
+      const { data: existingRows } = await supabase
         .from("services")
-        .select("id")
+        .select("id, client_email, service_date, product, platform, channel, created_at")
         .eq("user_id", session.user.id)
         .ilike("client_email", clientEmail.trim())
-        .gte("service_date", dayStart)
-        .lt("service_date", dayEnd)
+        .order("created_at", { ascending: false })
         .limit(1);
 
-      if (existing && existing.length > 0) {
-        throw new Error("Este e-mail já foi registrado nesta data. Você só pode registrar o mesmo e-mail novamente no dia seguinte.");
+      if (existingRows && existingRows.length > 0) {
+        return { existing: existingRows[0] as ServiceItem };
       }
 
       const { error } = await supabase.from("services").insert({
@@ -257,8 +274,19 @@ export default function Atendimentos() {
       });
 
       if (error) throw error;
+      return {};
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      // If email already exists, open the microgerenciador for the existing ticket
+      if (result.existing) {
+        toast({
+          title: "E-mail já cadastrado",
+          description: "Abrindo o acompanhamento do atendimento existente.",
+        });
+        setTrackingService(result.existing);
+        return;
+      }
+
       setClientEmail("");
       setServiceDate("");
       setProduct("");
@@ -525,6 +553,10 @@ export default function Atendimentos() {
                 </button>
               )}
             </div>
+            <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs">
+              <span className="text-muted-foreground">Total de interações:</span>
+              <span className="font-semibold text-foreground">{totalFilteredInteractions}</span>
+            </div>
           </div>
           {(servicesLoading || createMutation.isPending) && (
             <span className="text-sm text-muted-foreground">Atualizando...</span>
@@ -568,15 +600,19 @@ export default function Atendimentos() {
                     <TableCell>{s.channel ?? "—"}</TableCell>
                     <TableCell>
                       {(() => {
-                        const st = getCurrentStatus(s.id);
+                        const st = getAgentStatus(s.id);
+                        const count = getInteractionCount(s.id);
                         return (
-                          <Badge
-                            variant={st.variant}
-                            className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                            onClick={() => setTrackingService(s)}
-                          >
-                            {st.label}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            <Badge
+                              variant={st.variant}
+                              className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                              onClick={() => setTrackingService(s)}
+                            >
+                              {st.label}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground">#{count}</span>
+                          </div>
                         );
                       })()}
                     </TableCell>
@@ -675,6 +711,7 @@ export default function Atendimentos() {
         <StatusTrackingDialog
           serviceId={trackingService.id}
           clientEmail={trackingService.client_email}
+          serviceCreatedAt={trackingService.created_at}
           open={Boolean(trackingService)}
           onOpenChange={(open) => {
             if (!open) setTrackingService(null);

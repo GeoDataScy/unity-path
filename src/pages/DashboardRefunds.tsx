@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -113,6 +114,7 @@ export default function DashboardRefunds() {
       byType: metrics?.by_refund_type ?? [],
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
+      byChannelEfficiency: metrics?.by_channel_efficiency ?? [],
     };
   }, [metrics]);
 
@@ -370,6 +372,57 @@ export default function DashboardRefunds() {
           </CardContent>
         </Card>
 
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Eficiência por canal</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[380px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : kpis.byChannelEfficiency.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
+            ) : (() => {
+              const chartData = kpis.byChannelEfficiency.map((x) => ({
+                name: x.channel,
+                Parcial: x.partial_count,
+                Total: x.full_count,
+                score: x.efficiency_score,
+                done: x.total_done,
+              }));
+              return (
+                <div className="flex h-full flex-col">
+                  <div className="mb-2 flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "#10b981" }} /> Parcial (&lt;100%)</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "#ef4444" }} /> Total (100%)</span>
+                  </div>
+                  <div className="flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 20, right: 10, left: 0, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip
+                          formatter={(value: number, name: string) => [value, name === "Parcial" ? "Reembolso parcial" : "Reembolso 100%"]}
+                          labelFormatter={(label: string) => {
+                            const item = chartData.find((x) => x.name === label);
+                            if (!item) return label;
+                            return `${label} — Score: ${item.score}% (${item.done} concluídos)`;
+                          }}
+                        />
+                        <Bar dataKey="Parcial" fill="#10b981" radius={[0, 0, 0, 0]} stackId="eff">
+                          <LabelList dataKey="Parcial" position="inside" style={{ fontSize: 11, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                        </Bar>
+                        <Bar dataKey="Total" fill="#ef4444" radius={[6, 6, 0, 0]} stackId="eff">
+                          <LabelList dataKey="Total" position="inside" style={{ fontSize: 11, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Table */}

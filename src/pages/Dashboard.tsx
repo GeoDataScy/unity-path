@@ -283,7 +283,7 @@ const Dashboard = () => {
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Ranking de performance</CardTitle>
+            <CardTitle>Tickets abertos no dia</CardTitle>
           </CardHeader>
           <CardContent className="h-[320px]">
             {isLoading ? (

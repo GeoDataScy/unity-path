@@ -11,6 +11,7 @@ const badgeVariants = cva(
         default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         open: "border-transparent bg-status-open text-status-open-foreground hover:bg-status-open/90",
+        new: "border-transparent bg-gradient-to-r from-status-new to-status-new/60 text-status-new-foreground hover:from-status-new/90 hover:to-status-new/50",
         success: "border-transparent bg-status-success text-status-success-foreground hover:bg-status-success/90",
         "in-progress": "border-transparent bg-status-in-progress text-status-in-progress-foreground hover:bg-status-in-progress/90",
         done: "border-transparent bg-status-done text-status-done-foreground hover:bg-status-done/90",

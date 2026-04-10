@@ -30,6 +30,7 @@ import {
 type Props = {
   serviceId: string;
   clientEmail: string;
+  serviceCreatedAt: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -47,13 +48,14 @@ function nowTime() {
   });
 }
 
-export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChange }: Props) {
-  const { getEntries, getCurrentStatus, addEntryMutation } = useStatusTracking();
+export function StatusTrackingDialog({ serviceId, clientEmail, serviceCreatedAt, open, onOpenChange }: Props) {
+  const { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction } = useStatusTracking();
   const { toast } = useToast();
 
   const entries = getEntries(serviceId);
   const currentStatus = getCurrentStatus(serviceId);
   const isConcluded = currentStatus.variant === "done";
+  const interactionCheck = canAddInteraction(serviceId, serviceCreatedAt);
 
   // Form state
   const [status, setStatus] = useState<ServiceStatus>("em_andamento");
@@ -62,6 +64,15 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
   const [observation, setObservation] = useState("");
 
   const handleSubmit = async () => {
+    if (!interactionCheck.allowed) {
+      toast({
+        title: "Aguarde 24h",
+        description: interactionCheck.reason ?? "Já houve uma interação nas últimas 24h.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const recordedAt = `${date}T${time}:00-03:00`;
 
     try {
@@ -94,7 +105,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
     }
   };
 
-  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending;
+  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending && interactionCheck.allowed;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,8 +175,16 @@ export function StatusTrackingDialog({ serviceId, clientEmail, open, onOpenChang
           </div>
         )}
 
+        {/* 24h block warning */}
+        {!isConcluded && !interactionCheck.allowed && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            <p className="font-semibold">Bloqueado por 24h</p>
+            <p className="mt-1 text-xs">{interactionCheck.reason}</p>
+          </div>
+        )}
+
         {/* New entry form */}
-        {!isConcluded && (
+        {!isConcluded && interactionCheck.allowed && (
           <div className="grid gap-4 rounded-lg border bg-card p-4">
             <p className="text-sm font-semibold">Novo registro de acompanhamento</p>
 

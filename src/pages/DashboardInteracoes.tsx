@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   Bar,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  LabelList,
   Legend,
 } from "recharts";
 import {
@@ -32,6 +33,7 @@ import {
   useFollowUpInsightsQuery,
   type AgentBreakdown,
 } from "@/features/dashboard/useFollowUpInsightsQuery";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,6 +102,7 @@ function statusBadge(status: string) {
 export default function DashboardInteracoes() {
   const { fromISO, toISO, agentId } = useOutletContext<ManagerOutletContext>();
   const { data, isLoading, error } = useFollowUpInsightsQuery(fromISO, toISO);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "open" | "in_progress" | "done">("all");
 
   // Filter by selected agent if not "all"
   const filteredAgents = useMemo(() => {
@@ -152,6 +155,7 @@ export default function DashboardInteracoes() {
         "Em Aberto": a.open_count,
         "Em Andamento": a.in_progress_count,
         "Concluido": a.done_count,
+        total: a.open_count + a.in_progress_count + a.done_count,
       }));
   }, [filteredAgents]);
 
@@ -270,7 +274,27 @@ export default function DashboardInteracoes() {
         {/* Stacked bars - By agent */}
         <Card className="lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Tickets por Agente</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">Tickets por Agente</CardTitle>
+              <div className="flex gap-1">
+                {([
+                  { key: "all", label: "Todos" },
+                  { key: "open", label: "Em Aberto" },
+                  { key: "in_progress", label: "Em Andamento" },
+                  { key: "done", label: "Concluído" },
+                ] as const).map((opt) => (
+                  <Button
+                    key={opt.key}
+                    size="sm"
+                    variant={ticketStatusFilter === opt.key ? "default" : "outline"}
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => setTicketStatusFilter(opt.key)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="h-[280px]">
             {isLoading ? (
@@ -283,23 +307,68 @@ export default function DashboardInteracoes() {
               <div className="h-full flex items-center justify-center">
                 <p className="text-sm text-muted-foreground">Sem dados no periodo</p>
               </div>
-            ) : (
+            ) : ticketStatusFilter === "all" ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={stackedBarData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                  margin={{ top: 28, right: 10, left: 0, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} />
-                  <Tooltip />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+                      const item = payload[0]?.payload as { "Em Aberto": number; "Em Andamento": number; Concluido: number; total: number } | undefined;
+                      if (!item) return null;
+                      return (
+                        <div className="rounded-md border bg-background p-2 text-xs shadow-md">
+                          <p className="mb-1 font-semibold">{label}</p>
+                          <div className="space-y-0.5">
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Em Aberto: <span className="font-medium">{item["Em Aberto"]}</span></p>
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.in_progress }} />Em Andamento: <span className="font-medium">{item["Em Andamento"]}</span></p>
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.done }} />Concluído: <span className="font-medium">{item.Concluido}</span></p>
+                            <p className="mt-1 border-t pt-1 font-semibold">Total: {item.total}</p>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="Em Aberto" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Em Andamento" stackId="status" fill={STATUS_COLORS.in_progress} />
-                  <Bar dataKey="Concluido" stackId="status" fill={STATUS_COLORS.done} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="Em Aberto" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
+                    <LabelList dataKey="Em Aberto" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                  </Bar>
+                  <Bar dataKey="Em Andamento" stackId="status" fill={STATUS_COLORS.in_progress}>
+                    <LabelList dataKey="Em Andamento" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                  </Bar>
+                  <Bar dataKey="Concluido" stackId="status" fill={STATUS_COLORS.done} radius={[6, 6, 0, 0]}>
+                    <LabelList dataKey="Concluido" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                    <LabelList dataKey="total" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            )}
+            ) : (() => {
+              const dataKey = ticketStatusFilter === "open" ? "Em Aberto"
+                : ticketStatusFilter === "in_progress" ? "Em Andamento"
+                : "Concluido";
+              const color = STATUS_COLORS[ticketStatusFilter === "in_progress" ? "in_progress" : ticketStatusFilter === "done" ? "done" : "open"];
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stackedBarData}
+                    margin={{ top: 20, right: 10, left: 0, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]}>
+                      <LabelList dataKey={dataKey} position="top" style={{ fontSize: 11, fill: "hsl(var(--foreground))" }} formatter={(v: number) => v > 0 ? v : ""} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()}
           </CardContent>
         </Card>
       </section>

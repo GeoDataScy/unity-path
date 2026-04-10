@@ -9,7 +9,6 @@ import logo from "@/assets/logo-xmx.png";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -67,42 +66,19 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        // Login
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data.user) {
-          await redirectUser(data.user.id);
-          toast({
-            title: "Bem-vindo!",
-            description: "Login realizado com sucesso.",
-          });
-        }
-      } else {
-        // Signup
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              role: "agent", // Default role for new signups
-            },
-          },
-        });
-
-        if (error) throw error;
-
+      if (data.user) {
+        await redirectUser(data.user.id);
         toast({
-          title: "Conta criada!",
-          description: "Você já pode fazer login.",
+          title: "Bem-vindo!",
+          description: "Login realizado com sucesso.",
         });
-        setIsLogin(true);
       }
     } catch (error: any) {
       toast({
@@ -127,12 +103,8 @@ const Login = () => {
           
           <div className="w-full space-y-6">
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-semibold text-white">
-                {isLogin ? "Bem-vindo de volta" : "Criar conta"}
-              </h1>
-              <p className="text-sm text-muted-foreground/80">
-                {isLogin ? "Faça login para continuar" : "Cadastre-se para começar"}
-              </p>
+              <h1 className="text-2xl font-semibold text-white">Bem-vindo de volta</h1>
+              <p className="text-sm text-muted-foreground/80">Faça login para continuar</p>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-4">
@@ -170,19 +142,9 @@ const Login = () => {
                 className="w-full h-12 text-base font-medium"
                 disabled={loading}
               >
-                {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar conta"}
+                {loading ? "Carregando..." : "Entrar"}
               </Button>
             </form>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground/80 hover:text-primary transition-colors duration-200"
-              >
-                {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Faça login"}
-              </button>
-            </div>
           </div>
         </div>
       </div>

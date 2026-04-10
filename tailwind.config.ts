@@ -77,6 +77,10 @@ export default {
             DEFAULT: "hsl(var(--status-done))",
             foreground: "hsl(var(--status-done-foreground))",
           },
+          new: {
+            DEFAULT: "hsl(var(--status-new))",
+            foreground: "hsl(var(--status-new-foreground))",
+          },
         },
 
         // shadcn sidebar semantic tokens (mapped to dashboard identity)
