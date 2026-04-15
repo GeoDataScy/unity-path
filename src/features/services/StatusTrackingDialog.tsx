@@ -66,8 +66,8 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceCreatedAt,
   const handleSubmit = async () => {
     if (!interactionCheck.allowed) {
       toast({
-        title: "Aguarde 24h",
-        description: interactionCheck.reason ?? "Já houve uma interação nas últimas 24h.",
+        title: "Interação bloqueada",
+        description: interactionCheck.reason ?? "A próxima interação com este atendimento só pode ser registrada no dia seguinte.",
         variant: "destructive",
       });
       return;
@@ -175,11 +175,11 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceCreatedAt,
           </div>
         )}
 
-        {/* 24h block warning */}
+        {/* Interaction block warning */}
         {!isConcluded && !interactionCheck.allowed && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            <p className="font-semibold">Bloqueado por 24h</p>
-            <p className="mt-1 text-xs">{interactionCheck.reason}</p>
+            <p className="font-semibold">Interação bloqueada</p>
+            <p className="mt-1 text-xs">A próxima interação com este atendimento só pode ser registrada no dia seguinte.</p>
           </div>
         )}
 

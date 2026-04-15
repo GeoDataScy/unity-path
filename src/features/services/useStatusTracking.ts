@@ -86,16 +86,12 @@ export function useStatusTracking() {
   );
 
   /**
-   * Check if a new interaction can be registered for this service.
-   * Rule: only 1 interaction per 24h. Creation of the ticket counts as interaction #1.
-   * Returns { allowed: boolean, nextAllowedAt?: Date, reason?: string }
+   * Rule: after interaction, service stays blocked until 18:00 (São Paulo tz)
+   * of the same day. Creation of the ticket counts as interaction #1.
    */
   const canAddInteraction = useCallback(
     (serviceId: string, serviceCreatedAt: string | null): { allowed: boolean; nextAllowedAt?: Date; reason?: string } => {
       const entries = grouped[serviceId] ?? [];
-      // Determine the timestamp of the last interaction
-      // - If no follow-ups: ticket creation is the last interaction
-      // - Otherwise: the most recent follow-up's recorded_at
       let lastTime: Date | null = null;
       if (entries.length === 0) {
         if (serviceCreatedAt) lastTime = new Date(serviceCreatedAt);
@@ -108,16 +104,21 @@ export function useStatusTracking() {
         return { allowed: true };
       }
 
+      const spDateFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const spDate = spDateFmt.format(lastTime);
+      const blockUntil = new Date(`${spDate}T18:00:00-03:00`);
       const now = new Date();
-      const diffMs = now.getTime() - lastTime.getTime();
-      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-      if (diffMs < TWENTY_FOUR_HOURS) {
-        const nextAllowedAt = new Date(lastTime.getTime() + TWENTY_FOUR_HOURS);
+      if (now < blockUntil) {
         return {
           allowed: false,
-          nextAllowedAt,
-          reason: `Já houve uma interação nas últimas 24h. Próxima interação permitida em ${nextAllowedAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`,
+          nextAllowedAt: blockUntil,
+          reason: "A próxima interação com este atendimento só pode ser registrada no dia seguinte.",
         };
       }
 
