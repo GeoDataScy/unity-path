@@ -90,11 +90,11 @@ export function useStatusTracking() {
    * of the same day. Creation of the ticket counts as interaction #1.
    */
   const canAddInteraction = useCallback(
-    (serviceId: string, serviceCreatedAt: string | null, hasTrackingCode: boolean = false): { allowed: boolean; nextAllowedAt?: Date; reason?: string } => {
+    (serviceId: string, serviceDate: string | null, hasTrackingCode: boolean = false): { allowed: boolean; nextAllowedAt?: Date; reason?: string } => {
       const entries = grouped[serviceId] ?? [];
       let lastTime: Date | null = null;
       if (entries.length === 0) {
-        if (serviceCreatedAt) lastTime = new Date(serviceCreatedAt);
+        if (serviceDate) lastTime = new Date(serviceDate);
       } else {
         const last = entries[entries.length - 1];
         lastTime = new Date(last.recorded_at);

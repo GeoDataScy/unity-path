@@ -748,7 +748,7 @@ export default function Atendimentos() {
         <StatusTrackingDialog
           serviceId={trackingService.id}
           clientEmail={trackingService.client_email}
-          serviceCreatedAt={trackingService.created_at}
+          serviceDate={trackingService.service_date}
           hasTrackingCode={trackingService.has_tracking_code}
           open={Boolean(trackingService)}
           onOpenChange={(open) => {
