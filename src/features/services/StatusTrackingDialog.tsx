@@ -31,6 +31,7 @@ type Props = {
   serviceId: string;
   clientEmail: string;
   serviceCreatedAt: string | null;
+  hasTrackingCode: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -48,14 +49,14 @@ function nowTime() {
   });
 }
 
-export function StatusTrackingDialog({ serviceId, clientEmail, serviceCreatedAt, open, onOpenChange }: Props) {
+export function StatusTrackingDialog({ serviceId, clientEmail, serviceCreatedAt, hasTrackingCode, open, onOpenChange }: Props) {
   const { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction } = useStatusTracking();
   const { toast } = useToast();
 
   const entries = getEntries(serviceId);
   const currentStatus = getCurrentStatus(serviceId);
   const isConcluded = currentStatus.variant === "done";
-  const interactionCheck = canAddInteraction(serviceId, serviceCreatedAt);
+  const interactionCheck = canAddInteraction(serviceId, serviceCreatedAt, hasTrackingCode);
 
   // Form state
   const [status, setStatus] = useState<ServiceStatus>("em_andamento");

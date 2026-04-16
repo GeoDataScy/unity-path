@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, Pencil, Search, X } from "lucide-react";
+import { CalendarDays, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
 import { useStatusTracking } from "@/features/services/useStatusTracking";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
 
@@ -148,11 +149,13 @@ export default function Atendimentos() {
   const [product, setProduct] = useState("");
   const [platform, setPlatform] = useState("");
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
+  const [hasTrackingCode, setHasTrackingCode] = useState(false);
 
   // Search & filter state
   const [emailSearch, setEmailSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [filterTrackingCode, setFilterTrackingCode] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
 
@@ -206,13 +209,17 @@ export default function Atendimentos() {
       });
     }
 
+    if (filterTrackingCode) {
+      result = result.filter((s) => s.has_tracking_code === true);
+    }
+
     return result;
-  }, [services, emailSearch, dateFrom, dateTo]);
+  }, [services, emailSearch, dateFrom, dateTo, filterTrackingCode]);
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [emailSearch, dateFrom, dateTo]);
+  }, [emailSearch, dateFrom, dateTo, filterTrackingCode]);
 
   /** Total interactions across the filtered services (creation + follow-ups) */
   const totalFilteredInteractions = useMemo(
@@ -253,7 +260,7 @@ export default function Atendimentos() {
       // Check if email already exists in this agent's base (any date)
       const { data: existingRows } = await supabase
         .from("services")
-        .select("id, client_email, service_date, product, platform, channel, created_at")
+        .select("id, client_email, service_date, product, platform, channel, created_at, has_tracking_code")
         .eq("user_id", session.user.id)
         .ilike("client_email", clientEmail.trim())
         .order("created_at", { ascending: false })
@@ -269,6 +276,7 @@ export default function Atendimentos() {
         product,
         platform,
         channel,
+        has_tracking_code: hasTrackingCode,
         status: "registered",
         user_id: session.user.id,
       });
@@ -292,6 +300,7 @@ export default function Atendimentos() {
       setProduct("");
       setPlatform("");
       setChannel("Email");
+      setHasTrackingCode(false);
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       toast({
@@ -431,6 +440,16 @@ export default function Atendimentos() {
                 {ch}
               </Button>
             ))}
+            <div className="ml-4 flex items-center gap-2 border-l pl-4">
+              <Label htmlFor="tracking-code-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                Cód. Rastreio
+              </Label>
+              <Switch
+                id="tracking-code-toggle"
+                checked={hasTrackingCode}
+                onCheckedChange={setHasTrackingCode}
+              />
+            </div>
           </div>
           <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
             <div className="grid gap-2">
@@ -557,6 +576,17 @@ export default function Atendimentos() {
               <span className="text-muted-foreground">Total de interações:</span>
               <span className="font-semibold text-foreground">{totalFilteredInteractions}</span>
             </div>
+            <Button
+              type="button"
+              variant={filterTrackingCode ? "default" : "outline"}
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => setFilterTrackingCode((prev) => !prev)}
+            >
+              <Package className="h-3.5 w-3.5" />
+              Cód. Rastreio
+              {filterTrackingCode && <X className="h-3 w-3" />}
+            </Button>
           </div>
           {(servicesLoading || createMutation.isPending) && (
             <span className="text-sm text-muted-foreground">Atualizando...</span>
@@ -597,7 +627,14 @@ export default function Atendimentos() {
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
                     <TableCell>{s.platform ?? "—"}</TableCell>
-                    <TableCell>{s.channel ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span>{s.channel ?? "—"}</span>
+                        {s.has_tracking_code && (
+                          <Package className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {(() => {
                         const st = getAgentStatus(s.id);
@@ -712,6 +749,7 @@ export default function Atendimentos() {
           serviceId={trackingService.id}
           clientEmail={trackingService.client_email}
           serviceCreatedAt={trackingService.created_at}
+          hasTrackingCode={trackingService.has_tracking_code}
           open={Boolean(trackingService)}
           onOpenChange={(open) => {
             if (!open) setTrackingService(null);

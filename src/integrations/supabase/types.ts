@@ -163,10 +163,52 @@ export type Database = {
           },
         ]
       }
+      service_follow_ups: {
+        Row: {
+          id: string
+          service_id: string
+          user_id: string
+          follow_up_number: number
+          status: string
+          recorded_at: string
+          observation: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          service_id: string
+          user_id: string
+          follow_up_number?: number
+          status?: string
+          recorded_at?: string
+          observation?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          service_id?: string
+          user_id?: string
+          follow_up_number?: number
+          status?: string
+          recorded_at?: string
+          observation?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_follow_ups_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           client_email: string
           created_at: string | null
+          has_tracking_code: boolean
           id: string
           product: string
           platform: string | null
@@ -178,6 +220,7 @@ export type Database = {
         Insert: {
           client_email: string
           created_at?: string | null
+          has_tracking_code?: boolean
           id?: string
           product: string
           platform?: string | null
@@ -189,6 +232,7 @@ export type Database = {
         Update: {
           client_email?: string
           created_at?: string | null
+          has_tracking_code?: boolean
           id?: string
           product?: string
           platform?: string | null
