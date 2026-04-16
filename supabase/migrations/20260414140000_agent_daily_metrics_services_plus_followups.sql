@@ -1,5 +1,5 @@
--- Update agent_daily_metrics to include follow-up interactions
--- Rule: "Total de atendimentos hoje" = services created today + follow-ups registered today
+-- agent_daily_metrics: daily count = services by service_date + follow-ups by recorded_at
+-- Counts by the date the agent chose, not when they saved in the DB.
 CREATE OR REPLACE FUNCTION public.agent_daily_metrics(
   target_date date DEFAULT (now() AT TIME ZONE 'America/Sao_Paulo')::date
 )
@@ -23,20 +23,23 @@ BEGIN
     RAISE EXCEPTION 'unauthorized';
   END IF;
 
+  -- Services: conta pela data que o agente escolheu (service_date)
   SELECT COUNT(*)::int
     INTO v_my_services
   FROM public.services s
   WHERE s.user_id = v_uid::text
     AND (s.service_date::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date = target_date;
 
+  -- Follow-ups: conta pela data que o agente registrou (recorded_at)
   SELECT COUNT(*)::int
     INTO v_my_follow_ups
   FROM public.service_follow_ups f
   WHERE f.user_id = v_uid::text
-    AND (f.created_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date;
+    AND (f.recorded_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date;
 
   v_my_count := COALESCE(v_my_services, 0) + COALESCE(v_my_follow_ups, 0);
 
+  -- Líder: mesma lógica (service_date + recorded_at)
   SELECT t.user_id, t.c
     INTO v_leader_id, v_leader_count
   FROM (
@@ -49,7 +52,7 @@ BEGIN
       UNION ALL
       SELECT f.user_id, COUNT(*)::int AS c
       FROM public.service_follow_ups f
-      WHERE (f.created_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date
+      WHERE (f.recorded_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date
       GROUP BY f.user_id
     ) u
     GROUP BY user_id

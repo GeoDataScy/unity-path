@@ -1,5 +1,5 @@
--- Update agent_daily_metrics to include follow-up interactions
--- Rule: "Total de atendimentos hoje" = services created today + follow-ups registered today
+-- Revert: agent_daily_metrics counts ONLY services (not follow-ups).
+-- "Total de atendimentos hoje" must match the "Meus Atendimentos Recentes" table count.
 CREATE OR REPLACE FUNCTION public.agent_daily_metrics(
   target_date date DEFAULT (now() AT TIME ZONE 'America/Sao_Paulo')::date
 )
@@ -11,8 +11,6 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   v_uid uuid;
-  v_my_services int := 0;
-  v_my_follow_ups int := 0;
   v_my_count int := 0;
   v_leader_id text;
   v_leader_count int := 0;
@@ -24,36 +22,19 @@ BEGIN
   END IF;
 
   SELECT COUNT(*)::int
-    INTO v_my_services
+    INTO v_my_count
   FROM public.services s
   WHERE s.user_id = v_uid::text
     AND (s.service_date::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date = target_date;
 
-  SELECT COUNT(*)::int
-    INTO v_my_follow_ups
-  FROM public.service_follow_ups f
-  WHERE f.user_id = v_uid::text
-    AND (f.created_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date;
-
-  v_my_count := COALESCE(v_my_services, 0) + COALESCE(v_my_follow_ups, 0);
-
   SELECT t.user_id, t.c
     INTO v_leader_id, v_leader_count
   FROM (
-    SELECT user_id, SUM(c)::int AS c
-    FROM (
-      SELECT s.user_id, COUNT(*)::int AS c
-      FROM public.services s
-      WHERE (s.service_date::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date = target_date
-      GROUP BY s.user_id
-      UNION ALL
-      SELECT f.user_id, COUNT(*)::int AS c
-      FROM public.service_follow_ups f
-      WHERE (f.created_at AT TIME ZONE 'America/Sao_Paulo')::date = target_date
-      GROUP BY f.user_id
-    ) u
-    GROUP BY user_id
-    ORDER BY SUM(c) DESC, user_id ASC
+    SELECT s.user_id, COUNT(*)::int AS c
+    FROM public.services s
+    WHERE (s.service_date::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date = target_date
+    GROUP BY s.user_id
+    ORDER BY COUNT(*) DESC, s.user_id ASC
     LIMIT 1
   ) t;
 
