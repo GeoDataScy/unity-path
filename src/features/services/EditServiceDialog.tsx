@@ -73,6 +73,7 @@ const PRODUCTS = [
 ] as const;
 
 const PLATFORMS = [
+  "Nenhum",
   "Cartpanda",
   "Buygoods",
   "ClickBank",
