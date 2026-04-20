@@ -86,16 +86,20 @@ export function useStatusTracking() {
   );
 
   /**
-   * Rule: after interaction, service stays blocked until 18:00 (São Paulo tz)
-   * of the same day. Creation of the ticket counts as interaction #1.
+   * Rule: after a follow-up interaction, service stays blocked until 18:00 (São Paulo tz)
+   * of the same day. First follow-up is always allowed (ticket creation is not an interaction).
    */
   const canAddInteraction = useCallback(
     (serviceId: string, serviceDate: string | null, hasTrackingCode: boolean = false): { allowed: boolean; nextAllowedAt?: Date; reason?: string } => {
       const entries = grouped[serviceId] ?? [];
-      let lastTime: Date | null = null;
+
+      // No follow-ups yet → first interaction is always allowed
       if (entries.length === 0) {
-        if (serviceDate) lastTime = new Date(serviceDate);
-      } else {
+        return { allowed: true };
+      }
+
+      let lastTime: Date | null = null;
+      {
         const last = entries[entries.length - 1];
         lastTime = new Date(last.recorded_at);
       }
@@ -161,6 +165,7 @@ export function useStatusTracking() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
+      queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
     },
   });
 
