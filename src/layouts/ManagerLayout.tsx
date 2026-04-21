@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
-import { Activity, BarChart3, ClipboardCheck, RefreshCcw } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, ClipboardCheck, RefreshCcw } from "lucide-react";
+import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -100,6 +101,7 @@ export default function ManagerLayout() {
   }, [navigate]);
 
   const agentsQuery = useAgentsQuery(!authLoading);
+  const alertsQuery = useDashboardRefundAlertsQuery();
 
   const outletContext = useMemo<ManagerOutletContext | null>(() => {
     if (authLoading) return null;
@@ -125,6 +127,8 @@ export default function ManagerLayout() {
   const isOnRefunds = location.pathname.startsWith("/dashboard/reembolsos");
   const isOnAcompanhamento = location.pathname.startsWith("/dashboard/acompanhamento");
   const isOnInteracoes = location.pathname.startsWith("/dashboard/interacoes");
+  const isOnAlertas = location.pathname.startsWith("/dashboard/alertas");
+  const overdueCount = alertsQuery.data?.total_overdue ?? 0;
 
   return (
     <div className="min-h-screen flex">
@@ -191,6 +195,24 @@ export default function ManagerLayout() {
               <Activity className="h-4 w-4" />
               <span>Interacoes</span>
             </NavLink>
+
+            <NavLink
+              to="/dashboard/alertas"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
+                  isActive && "bg-white/15",
+                )
+              }
+            >
+              <AlertTriangle className="h-4 w-4" />
+              <span className="flex-1">Alertas</span>
+              {overdueCount > 0 && (
+                <span className="rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                  {overdueCount}
+                </span>
+              )}
+            </NavLink>
           </nav>
 
           <div className="space-y-4">
@@ -228,7 +250,7 @@ export default function ManagerLayout() {
             </Button>
 
             <div className="text-[11px] opacity-70 px-1">
-              {isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+              {isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
             </div>
           </div>
         </div>

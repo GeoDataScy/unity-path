@@ -10,6 +10,7 @@ import ManagerLayout from "./layouts/ManagerLayout";
 import DashboardRefunds from "./pages/DashboardRefunds";
 import DashboardAcompanhamento from "./pages/DashboardAcompanhamento";
 import DashboardInteracoes from "./pages/DashboardInteracoes";
+import DashboardAlertas from "./pages/DashboardAlertas";
 import AgentLayout from "./layouts/AgentLayout";
 import Atendimentos from "./pages/agent/Atendimentos";
 import Reembolsos from "./pages/agent/Reembolsos";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="reembolsos" element={<DashboardRefunds />} />
             <Route path="acompanhamento" element={<DashboardAcompanhamento />} />
             <Route path="interacoes" element={<DashboardInteracoes />} />
+            <Route path="alertas" element={<DashboardAlertas />} />
           </Route>
           <Route path="/workspace" element={<AgentLayout />}>
             <Route index element={<Atendimentos />} />
