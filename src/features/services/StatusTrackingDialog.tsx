@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, FileText, Hash } from "lucide-react";
+import { Clock, FileText, Hash, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ function nowTime() {
 }
 
 export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasTrackingCode, open, onOpenChange }: Props) {
-  const { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction } = useStatusTracking();
+  const { getEntries, getCurrentStatus, addEntryMutation, reopenTicketMutation, canAddInteraction } = useStatusTracking();
   const { toast } = useToast();
 
   const entries = getEntries(serviceId);
@@ -234,9 +234,14 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
         )}
 
         {isConcluded && (
-          <div className="rounded-lg border border-status-done/30 bg-status-done/10 p-4 text-center text-sm text-muted-foreground">
-            Este atendimento foi concluído com <strong>{entries.length}</strong>{" "}
-            {entries.length === 1 ? "interação" : "interações"}.
+          <div className="rounded-lg border border-status-done/30 bg-status-done/10 p-4 text-sm text-muted-foreground">
+            <p className="text-center">
+              Este atendimento foi concluído com <strong>{entries.length}</strong>{" "}
+              {entries.length === 1 ? "interação" : "interações"}.
+            </p>
+            <p className="mt-2 text-center text-xs">
+              Reabra o ticket para registrar uma nova interação.
+            </p>
           </div>
         )}
 
@@ -244,6 +249,24 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
+          {isConcluded && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  await reopenTicketMutation.mutateAsync({ serviceId });
+                  toast({ title: "Ticket reaberto", description: "Agora você pode registrar uma nova interação." });
+                } catch (error: any) {
+                  toast({ title: "Erro ao reabrir", description: error?.message ?? "Não foi possível reabrir o ticket.", variant: "destructive" });
+                }
+              }}
+              disabled={reopenTicketMutation.isPending}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {reopenTicketMutation.isPending ? "Reabrindo..." : "Reabrir Ticket"}
+            </Button>
+          )}
           {!isConcluded && (
             <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
               {addEntryMutation.isPending ? "Registrando..." : "Registrar"}
