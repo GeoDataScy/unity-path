@@ -50,7 +50,7 @@ function nowTime() {
 }
 
 export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasTrackingCode, open, onOpenChange }: Props) {
-  const { getEntries, getCurrentStatus, addEntryMutation, reopenTicketMutation, canAddInteraction } = useStatusTracking();
+  const { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction } = useStatusTracking();
   const { toast } = useToast();
 
   const entries = getEntries(serviceId);
@@ -59,6 +59,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
   const interactionCheck = canAddInteraction(serviceId, serviceDate, hasTrackingCode);
 
   // Form state
+  const [isReopening, setIsReopening] = useState(false);
   const [status, setStatus] = useState<ServiceStatus>("em_andamento");
   const [date, setDate] = useState(nowDate);
   const [time, setTime] = useState(nowTime);
@@ -96,6 +97,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
       setDate(nowDate());
       setTime(nowTime());
       setObservation("");
+      setIsReopening(false);
       onOpenChange(false);
     } catch (error: any) {
       toast({
@@ -106,7 +108,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
     }
   };
 
-  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending && interactionCheck.allowed;
+  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending && (interactionCheck.allowed || isReopening);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,7 +179,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
         )}
 
         {/* Interaction block warning */}
-        {!isConcluded && !interactionCheck.allowed && (
+        {(!isConcluded || isReopening) && !interactionCheck.allowed && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             <p className="font-semibold">Interação bloqueada</p>
             <p className="mt-1 text-xs">A próxima interação com este atendimento só pode ser registrada no dia seguinte.</p>
@@ -185,7 +187,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
         )}
 
         {/* New entry form */}
-        {!isConcluded && interactionCheck.allowed && (
+        {(!isConcluded || isReopening) && interactionCheck.allowed && (
           <div className="grid gap-4 rounded-lg border bg-card p-4">
             <p className="text-sm font-semibold">Novo registro de acompanhamento</p>
 
@@ -233,7 +235,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
           </div>
         )}
 
-        {isConcluded && (
+        {isConcluded && !isReopening && (
           <div className="rounded-lg border border-status-done/30 bg-status-done/10 p-4 text-sm text-muted-foreground">
             <p className="text-center">
               Este atendimento foi concluído com <strong>{entries.length}</strong>{" "}
@@ -249,25 +251,17 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, hasT
           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
-          {isConcluded && (
+          {isConcluded && !isReopening && (
             <Button
               type="button"
               variant="secondary"
-              onClick={async () => {
-                try {
-                  await reopenTicketMutation.mutateAsync({ serviceId });
-                  toast({ title: "Ticket reaberto", description: "Agora você pode registrar uma nova interação." });
-                } catch (error: any) {
-                  toast({ title: "Erro ao reabrir", description: error?.message ?? "Não foi possível reabrir o ticket.", variant: "destructive" });
-                }
-              }}
-              disabled={reopenTicketMutation.isPending}
+              onClick={() => setIsReopening(true)}
             >
               <RotateCcw className="mr-2 h-4 w-4" />
-              {reopenTicketMutation.isPending ? "Reabrindo..." : "Reabrir Ticket"}
+              Reabrir Ticket
             </Button>
           )}
-          {!isConcluded && (
+          {(!isConcluded || isReopening) && (
             <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
               {addEntryMutation.isPending ? "Registrando..." : "Registrar"}
             </Button>

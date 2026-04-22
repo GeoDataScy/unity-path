@@ -135,34 +135,6 @@ export function useStatusTracking() {
     [grouped],
   );
 
-  /** Mutation to reopen a concluded ticket */
-  const reopenTicketMutation = useMutation({
-    mutationFn: async (params: { serviceId: string }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("Sessão expirada");
-
-      const existing = grouped[params.serviceId] ?? [];
-      const followUpNumber = existing.length + 1;
-
-      const { error } = await supabase.from("service_follow_ups").insert({
-        service_id: params.serviceId,
-        user_id: session.user.id,
-        follow_up_number: followUpNumber,
-        status: "em_andamento",
-        recorded_at: new Date().toISOString(),
-        observation: "Ticket reaberto.",
-      });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
-      queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
-    },
-  });
-
   /** Mutation to insert a new follow-up */
   const addEntryMutation = useMutation({
     mutationFn: async (params: {
@@ -197,5 +169,5 @@ export function useStatusTracking() {
     },
   });
 
-  return { getEntries, getCurrentStatus, addEntryMutation, reopenTicketMutation, canAddInteraction };
+  return { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction };
 }
