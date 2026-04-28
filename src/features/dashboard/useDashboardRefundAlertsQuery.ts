@@ -29,6 +29,9 @@ export function useDashboardRefundAlertsQuery() {
   return useQuery({
     queryKey: ["dashboard", "refund-alerts"],
     queryFn: async (): Promise<RefundAlertsData> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return { total_overdue: 0, agents_affected: 0, by_agent: [] };
+
       const { data, error } = await supabase.rpc("manager_refund_alerts");
       if (error) throw error;
       const result = data as unknown as RefundAlertsData;

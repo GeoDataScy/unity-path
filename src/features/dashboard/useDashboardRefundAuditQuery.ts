@@ -27,6 +27,7 @@ export type DashboardRefundAuditRow = {
   reason: string | null;
   items_returned: boolean;
   product: string | null;
+  channel: string | null;
   profiles: { full_name: string | null } | null;
 };
 

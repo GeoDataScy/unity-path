@@ -109,6 +109,7 @@ export type Database = {
       }
       refunds: {
         Row: {
+          channel: string | null
           completion_date: string | null
           created_at: string
           customer_email: string
@@ -124,6 +125,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          channel?: string | null
           completion_date?: string | null
           created_at?: string
           customer_email: string
@@ -139,6 +141,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          channel?: string | null
           completion_date?: string | null
           created_at?: string
           customer_email?: string
@@ -349,6 +352,7 @@ export type Database = {
       my_refunds_with_refunded_value: {
         Args: never
         Returns: {
+          channel: string
           completion_date: string
           created_at: string
           customer_email: string
