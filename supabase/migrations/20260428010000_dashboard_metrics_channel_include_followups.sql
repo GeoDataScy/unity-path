@@ -1,6 +1,6 @@
--- Update by_channel in dashboard_metrics to include follow-up interactions.
--- Follow-ups inherit the channel from their parent service via JOIN.
--- Previously only new ticket registrations were counted per channel.
+-- Update by_channel and by_platform in dashboard_metrics to include follow-up interactions.
+-- Follow-ups inherit channel/platform from their parent service via JOIN.
+-- Previously only new ticket registrations were counted per channel/platform.
 CREATE OR REPLACE FUNCTION public.dashboard_metrics(from_date date, to_date date, agent_id text DEFAULT NULL::text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -107,16 +107,28 @@ BEGIN
     GROUP BY day
   ) t;
 
-  -- By platform: services only
+  -- By platform: services + follow-ups (follow-ups inherit platform from parent service)
   SELECT COALESCE(jsonb_agg(row_to_json(t) ORDER BY t.value DESC, t.name ASC), '[]'::jsonb)
   INTO v_by_platform
   FROM (
-    SELECT COALESCE(s.platform, 'Nao informado') AS name, COUNT(*)::int AS value
-    FROM public.services s
-    WHERE s.service_date::timestamptz >= from_date::timestamptz
-      AND s.service_date::timestamptz <  (to_date::timestamptz + interval '1 day')
-      AND (agent_id IS NULL OR s.user_id = agent_id)
-    GROUP BY COALESCE(s.platform, 'Nao informado')
+    SELECT platform_name AS name, SUM(cnt)::int AS value
+    FROM (
+      SELECT COALESCE(s.platform, 'Nao informado') AS platform_name, COUNT(*)::int AS cnt
+      FROM public.services s
+      WHERE s.service_date::timestamptz >= from_date::timestamptz
+        AND s.service_date::timestamptz <  (to_date::timestamptz + interval '1 day')
+        AND (agent_id IS NULL OR s.user_id = agent_id)
+      GROUP BY COALESCE(s.platform, 'Nao informado')
+      UNION ALL
+      SELECT COALESCE(s.platform, 'Nao informado') AS platform_name, COUNT(*)::int AS cnt
+      FROM public.service_follow_ups f
+      JOIN public.services s ON s.id = f.service_id
+      WHERE (f.recorded_at AT TIME ZONE 'America/Sao_Paulo')::date >= from_date
+        AND (f.recorded_at AT TIME ZONE 'America/Sao_Paulo')::date <= to_date
+        AND (agent_id IS NULL OR f.user_id = agent_id)
+      GROUP BY COALESCE(s.platform, 'Nao informado')
+    ) combined
+    GROUP BY platform_name
   ) t;
 
   -- By channel: services + follow-ups (follow-ups inherit channel from parent service)
