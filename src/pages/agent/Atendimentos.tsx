@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, Package, Pencil, Search, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -165,7 +165,7 @@ export default function Atendimentos() {
 
   // Status tracking
   const [trackingService, setTrackingService] = useState<ServiceItem | null>(null);
-  const { getCurrentStatus, getEntries } = useStatusTracking();
+  const { getCurrentStatus, getEntries, addEntryMutation, canAddInteraction } = useStatusTracking();
 
   /** Agent-only: remap "Em Aberto" → "Novo" with premium badge */
   const getAgentStatus = useCallback(
@@ -183,6 +183,41 @@ export default function Atendimentos() {
   const getInteractionCount = useCallback(
     (serviceId: string) => getEntries(serviceId).length + 1,
     [getEntries],
+  );
+
+  const [concludingId, setConcludingId] = useState<string | null>(null);
+
+  const handleQuickConclude = useCallback(
+    async (s: ServiceItem) => {
+      const check = canAddInteraction(s.id, s.service_date, s.has_tracking_code);
+      if (!check.allowed) {
+        toast({ title: "Não permitido", description: check.reason, variant: "destructive" });
+        return;
+      }
+
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+        .format(now)
+        .replace(" ", "T");
+      const recordedAt = `${parts}-03:00`;
+
+      setConcludingId(s.id);
+      try {
+        await addEntryMutation.mutateAsync({ serviceId: s.id, status: "concluido", recordedAt, observation: "" });
+        toast({ title: "Atendimento concluído", description: "Ticket registrado como concluído." });
+      } finally {
+        setConcludingId(null);
+      }
+    },
+    [canAddInteraction, addEntryMutation, toast],
   );
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
@@ -627,7 +662,25 @@ export default function Atendimentos() {
                     </TableCell>
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
-                    <TableCell>{s.platform ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span>{s.platform ?? "—"}</span>
+                        {getAgentStatus(s.id).variant !== "done" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-green-600 hover:bg-green-50 hover:text-green-700"
+                            title="Concluir atendimento"
+                            aria-label="Concluir atendimento"
+                            disabled={concludingId === s.id}
+                            onClick={() => handleQuickConclude(s)}
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
                         <span>{s.channel ?? "—"}</span>
