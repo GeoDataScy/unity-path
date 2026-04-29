@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -60,10 +61,43 @@ export default function Reembolsos() {
   const [completing, setCompleting] = useState<RefundItem | null>(null);
   const [editing, setEditing] = useState<RefundItem | null>(null);
 
+  const [emailSearch, setEmailSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const { data: refunds = [], isLoading } = useMyRefundsQuery(Boolean(userId));
 
   const openRefunds = useMemo(() => refunds.filter((r) => !r.completion_date), [refunds]);
   const doneRefunds = useMemo(() => refunds.filter((r) => Boolean(r.completion_date)), [refunds]);
+
+  const filteredOpenRefunds = useMemo(() => {
+    let result = openRefunds;
+    if (emailSearch) {
+      const term = emailSearch.toLowerCase();
+      result = result.filter((r) => r.customer_email.toLowerCase().includes(term));
+    }
+    if (dateFrom) result = result.filter((r) => r.request_date >= dateFrom);
+    if (dateTo) result = result.filter((r) => r.request_date <= dateTo);
+    return result;
+  }, [openRefunds, emailSearch, dateFrom, dateTo]);
+
+  const filteredDoneRefunds = useMemo(() => {
+    let result = doneRefunds;
+    if (emailSearch) {
+      const term = emailSearch.toLowerCase();
+      result = result.filter((r) => r.customer_email.toLowerCase().includes(term));
+    }
+    if (dateFrom) result = result.filter((r) => r.request_date >= dateFrom);
+    if (dateTo) result = result.filter((r) => r.request_date <= dateTo);
+    return result;
+  }, [doneRefunds, emailSearch, dateFrom, dateTo]);
+
+  const doneTotalValue = useMemo(
+    () => filteredDoneRefunds.reduce((sum, r) => sum + (r.refunded_value ?? r.refund_value ?? 0), 0),
+    [filteredDoneRefunds],
+  );
+
+  const hasFilters = Boolean(emailSearch || dateFrom || dateTo);
 
   const createMutation = useMutation({
     mutationFn: async (values: NewRefundValues) => {
@@ -201,6 +235,45 @@ export default function Reembolsos() {
           {isLoading && <span className="text-sm text-muted-foreground">Carregando...</span>}
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar por e-mail..."
+                value={emailSearch}
+                onChange={(e) => setEmailSearch(e.target.value)}
+                className="h-9 w-56 pl-8 text-sm"
+              />
+            </div>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-9 w-36 text-sm"
+              title="Data inicial (solicitação)"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-9 w-36 text-sm"
+              title="Data final (solicitação)"
+            />
+            {hasFilters && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 text-xs"
+                onClick={() => { setEmailSearch(""); setDateFrom(""); setDateTo(""); }}
+              >
+                <X className="h-3 w-3" />
+                Limpar filtros
+              </Button>
+            )}
+          </div>
+
           <Tabs defaultValue="open" className="w-full">
             <TabsList>
               <TabsTrigger value="open">Em Aberto</TabsTrigger>
@@ -208,6 +281,14 @@ export default function Reembolsos() {
             </TabsList>
 
             <TabsContent value="open">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {filteredOpenRefunds.length} registro{filteredOpenRefunds.length !== 1 ? "s" : ""}
+                  {hasFilters && openRefunds.length !== filteredOpenRefunds.length && (
+                    <span className="ml-1 text-xs opacity-60">(de {openRefunds.length})</span>
+                  )}
+                </span>
+              </div>
               <div className="rounded-lg border bg-card">
                 <Table>
                   <TableHeader>
@@ -222,14 +303,14 @@ export default function Reembolsos() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {openRefunds.length === 0 ? (
+                    {filteredOpenRefunds.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-muted-foreground">
-                          Nenhum reembolso em aberto.
+                          {hasFilters ? "Nenhum reembolso encontrado com os filtros aplicados." : "Nenhum reembolso em aberto."}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      openRefunds.map((r) => (
+                      filteredOpenRefunds.map((r) => (
                         <TableRow key={r.id}>
                           <TableCell>
                             {(() => {
@@ -265,6 +346,19 @@ export default function Reembolsos() {
             </TabsContent>
 
             <TabsContent value="done">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {filteredDoneRefunds.length} registro{filteredDoneRefunds.length !== 1 ? "s" : ""}
+                  {hasFilters && doneRefunds.length !== filteredDoneRefunds.length && (
+                    <span className="ml-1 text-xs opacity-60">(de {doneRefunds.length})</span>
+                  )}
+                </span>
+                {filteredDoneRefunds.length > 0 && (
+                  <span className="text-sm font-semibold">
+                    Total reembolsado: {formatUsdPtBr(doneTotalValue)}
+                  </span>
+                )}
+              </div>
               <div className="rounded-lg border bg-card">
                 <Table>
                   <TableHeader>
@@ -284,14 +378,14 @@ export default function Reembolsos() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {doneRefunds.length === 0 ? (
+                    {filteredDoneRefunds.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={12} className="text-center text-muted-foreground">
-                          Nenhum reembolso concluído ainda.
+                          {hasFilters ? "Nenhum reembolso encontrado com os filtros aplicados." : "Nenhum reembolso concluído ainda."}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      doneRefunds.map((r) => (
+                      filteredDoneRefunds.map((r) => (
                         <TableRow key={r.id}>
                           <TableCell>
                             {(() => {
