@@ -8,6 +8,7 @@ export type ServiceItem = {
   product: string;
   platform: string | null;
   channel: string | null;
+  status: string;
   created_at: string | null;
   has_tracking_code: boolean;
 };
@@ -33,7 +34,7 @@ export function useMyServicesQuery(enabled: boolean) {
 
       const { data, error } = await supabase
         .from("services")
-        .select("id, client_email, service_date, product, platform, channel, created_at, has_tracking_code")
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 

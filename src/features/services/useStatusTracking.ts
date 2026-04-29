@@ -65,8 +65,14 @@ export function useStatusTracking() {
 
   /** Get the current display status for a service */
   const getCurrentStatus = useCallback(
-    (serviceId: string): { label: string; variant: "open" | "in-progress" | "done" } => {
+    (serviceId: string, serviceStatus?: string): { label: string; variant: "open" | "in-progress" | "done" } => {
       const entries = grouped[serviceId];
+
+      // Service concluded directly (no follow-ups), set via status field
+      if (serviceStatus === "concluido" && (!entries || entries.length === 0)) {
+        return { label: "Concluído", variant: "done" };
+      }
+
       if (!entries || entries.length === 0) {
         return { label: "Em Aberto", variant: "open" };
       }

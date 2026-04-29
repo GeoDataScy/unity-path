@@ -169,8 +169,8 @@ export default function Atendimentos() {
 
   /** Agent-only: remap "Em Aberto" → "Novo" with premium badge */
   const getAgentStatus = useCallback(
-    (serviceId: string) => {
-      const st = getCurrentStatus(serviceId);
+    (serviceId: string, serviceStatus?: string) => {
+      const st = getCurrentStatus(serviceId, serviceStatus);
       if (st.variant === "open") {
         return { label: "Novo", variant: "new" as const };
       }
@@ -289,7 +289,7 @@ export default function Atendimentos() {
   const concludeAfterCreate = useRef(false);
 
   const createMutation = useMutation({
-    mutationFn: async (): Promise<{ existing?: ServiceItem; newId?: string }> => {
+    mutationFn: async (): Promise<{ existing?: ServiceItem }> => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -298,7 +298,7 @@ export default function Atendimentos() {
       // Check if email already exists in this agent's base (any date)
       const { data: existingRows } = await supabase
         .from("services")
-        .select("id, client_email, service_date, product, platform, channel, created_at, has_tracking_code")
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
         .eq("user_id", session.user.id)
         .ilike("client_email", clientEmail.trim())
         .order("created_at", { ascending: false })
@@ -308,23 +308,20 @@ export default function Atendimentos() {
         return { existing: existingRows[0] as ServiceItem };
       }
 
-      const { data: inserted, error } = await supabase
-        .from("services")
-        .insert({
-          client_email: clientEmail.trim(),
-          service_date: toSaoPauloTimestamptz(serviceDate),
-          product,
-          platform,
-          channel,
-          has_tracking_code: hasTrackingCode,
-          status: "registered",
-          user_id: session.user.id,
-        })
-        .select("id")
-        .single();
+      const { error } = await supabase.from("services").insert({
+        client_email: clientEmail.trim(),
+        service_date: toSaoPauloTimestamptz(serviceDate),
+        product,
+        platform,
+        channel,
+        has_tracking_code: hasTrackingCode,
+        // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
+        status: concludeAfterCreate.current ? "concluido" : "registered",
+        user_id: session.user.id,
+      });
 
       if (error) throw error;
-      return { newId: inserted.id };
+      return {};
     },
     onSuccess: async (result) => {
       // If email already exists, open the microgerenciador for the existing ticket
@@ -350,32 +347,11 @@ export default function Atendimentos() {
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
 
-      if (shouldConclude && result.newId) {
-        const now = new Date();
-        const parts = new Intl.DateTimeFormat("sv-SE", {
-          timeZone: "America/Sao_Paulo",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-          .format(now)
-          .replace(" ", "T");
-        await addEntryMutation.mutateAsync({
-          serviceId: result.newId,
-          status: "concluido",
-          recordedAt: `${parts}-03:00`,
-          observation: "",
-        });
-        toast({ title: "Atendimento concluído", description: "Ticket registrado e marcado como concluído." });
-      } else {
-        toast({
-          title: "Atendimento registrado",
-          description: "Seu registro foi salvo com sucesso.",
-        });
-      }
+      toast(
+        shouldConclude
+          ? { title: "Atendimento concluído", description: "Ticket registrado e marcado como concluído." }
+          : { title: "Atendimento registrado", description: "Seu registro foi salvo com sucesso." },
+      );
     },
     onError: (error: any) => {
       concludeAfterCreate.current = false;
@@ -723,7 +699,7 @@ export default function Atendimentos() {
                     <TableCell>
                       <div className="flex items-center gap-1.5">
                         <span>{s.platform ?? "—"}</span>
-                        {getAgentStatus(s.id).variant !== "done" && (
+                        {getAgentStatus(s.id, s.status).variant !== "done" && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -749,7 +725,7 @@ export default function Atendimentos() {
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const st = getAgentStatus(s.id);
+                        const st = getAgentStatus(s.id, s.status);
                         const count = getInteractionCount(s.id);
                         return (
                           <div className="flex items-center gap-1.5">
@@ -861,6 +837,7 @@ export default function Atendimentos() {
           serviceId={trackingService.id}
           clientEmail={trackingService.client_email}
           serviceDate={trackingService.service_date}
+          serviceStatus={trackingService.status}
           hasTrackingCode={trackingService.has_tracking_code}
           open={Boolean(trackingService)}
           onOpenChange={(open) => {
