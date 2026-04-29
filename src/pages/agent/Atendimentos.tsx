@@ -286,8 +286,10 @@ export default function Atendimentos() {
     return trimmed.length > 0 ? trimmed : "Time";
   }, [fullName]);
 
+  const concludeAfterCreate = useRef(false);
+
   const createMutation = useMutation({
-    mutationFn: async (): Promise<{ existing?: ServiceItem }> => {
+    mutationFn: async (): Promise<{ existing?: ServiceItem; newId?: string }> => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -306,23 +308,28 @@ export default function Atendimentos() {
         return { existing: existingRows[0] as ServiceItem };
       }
 
-      const { error } = await supabase.from("services").insert({
-        client_email: clientEmail.trim(),
-        service_date: toSaoPauloTimestamptz(serviceDate),
-        product,
-        platform,
-        channel,
-        has_tracking_code: hasTrackingCode,
-        status: "registered",
-        user_id: session.user.id,
-      });
+      const { data: inserted, error } = await supabase
+        .from("services")
+        .insert({
+          client_email: clientEmail.trim(),
+          service_date: toSaoPauloTimestamptz(serviceDate),
+          product,
+          platform,
+          channel,
+          has_tracking_code: hasTrackingCode,
+          status: "registered",
+          user_id: session.user.id,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
-      return {};
+      return { newId: inserted.id };
     },
     onSuccess: async (result) => {
       // If email already exists, open the microgerenciador for the existing ticket
       if (result.existing) {
+        concludeAfterCreate.current = false;
         toast({
           title: "E-mail já cadastrado",
           description: "Abrindo o acompanhamento do atendimento existente.",
@@ -330,6 +337,9 @@ export default function Atendimentos() {
         setTrackingService(result.existing);
         return;
       }
+
+      const shouldConclude = concludeAfterCreate.current;
+      concludeAfterCreate.current = false;
 
       setClientEmail("");
       setServiceDate("");
@@ -339,12 +349,36 @@ export default function Atendimentos() {
       setHasTrackingCode(false);
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
-      toast({
-        title: "Atendimento registrado",
-        description: "Seu registro foi salvo com sucesso.",
-      });
+
+      if (shouldConclude && result.newId) {
+        const now = new Date();
+        const parts = new Intl.DateTimeFormat("sv-SE", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+          .format(now)
+          .replace(" ", "T");
+        await addEntryMutation.mutateAsync({
+          serviceId: result.newId,
+          status: "concluido",
+          recordedAt: `${parts}-03:00`,
+          observation: "",
+        });
+        toast({ title: "Atendimento concluído", description: "Ticket registrado e marcado como concluído." });
+      } else {
+        toast({
+          title: "Atendimento registrado",
+          description: "Seu registro foi salvo com sucesso.",
+        });
+      }
     },
     onError: (error: any) => {
+      concludeAfterCreate.current = false;
       toast({
         title: "Erro ao registrar",
         description: error?.message ?? "Não foi possível registrar o atendimento.",
@@ -409,6 +443,14 @@ export default function Atendimentos() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || createMutation.isPending) return;
+    concludeAfterCreate.current = false;
+    createMutation.mutate();
+  };
+
+  const handleCreateAndConclude = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!canSubmit || createMutation.isPending) return;
+    concludeAfterCreate.current = true;
     createMutation.mutate();
   };
 
@@ -548,9 +590,25 @@ export default function Atendimentos() {
               </Select>
             </div>
 
-            <div className="flex lg:justify-end">
-              <Button type="submit" className="w-full lg:w-auto" disabled={!canSubmit || createMutation.isPending}>
-                {createMutation.isPending ? "Registrando..." : "Registrar Atendimento"}
+            <div className="flex gap-2 lg:justify-end">
+              <Button type="submit" className="flex-1 lg:flex-none" disabled={!canSubmit || createMutation.isPending}>
+                {createMutation.isPending && !concludeAfterCreate.current ? "Registrando..." : "Registrar"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 gap-1.5 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800 lg:flex-none dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+                disabled={!canSubmit || createMutation.isPending}
+                onClick={handleCreateAndConclude}
+              >
+                {createMutation.isPending && concludeAfterCreate.current ? (
+                  "Concluindo..."
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Concluir
+                  </>
+                )}
               </Button>
             </div>
           </form>
