@@ -61,7 +61,7 @@ export function NewRefundDialog({ open, onOpenChange, onSubmit, submitting }: Pr
     () => ({
       customer_email: "",
       request_date: todayISO(),
-      sales_platform: "Cartpanda",
+      sales_platform: "Nenhum",
       order_id: "",
       product: "",
       channel: "Nenhum",

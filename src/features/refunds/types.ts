@@ -16,7 +16,7 @@ export type RefundItem = {
   channel: string | null;
 };
 
-export const SALES_PLATFORMS = ["Cartpanda", "Buygoods", "Hotmart"] as const;
+export const SALES_PLATFORMS = ["Nenhum", "Cartpanda", "Buygoods", "ClickBank", "Digistore24", "SalesBound", "LogiCall"] as const;
 export type SalesPlatform = (typeof SALES_PLATFORMS)[number];
 
 export const REFUND_PRODUCTS = [

@@ -109,7 +109,7 @@ export default function Reembolsos() {
       const { error } = await supabase.rpc("create_refund", {
         p_customer_email: values.customer_email,
         p_request_date: values.request_date,
-        p_sales_platform: values.sales_platform,
+        p_sales_platform: values.sales_platform === "Nenhum" ? null : values.sales_platform,
         p_order_id: values.order_id,
         p_product: values.product,
         p_channel: values.channel === "Nenhum" ? null : values.channel,
