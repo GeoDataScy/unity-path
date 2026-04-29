@@ -111,7 +111,7 @@ export default function DashboardRefunds() {
         (metrics?.total_count ?? 0) > 0 ? ((metrics?.done_count ?? 0) / (metrics?.total_count ?? 1)) * 100 : 0,
       byAgent: (metrics?.by_agent ?? []).map((x) => ({ name: x.name, value: x.value })),
       byStatus: metrics?.by_status ?? [],
-      byType: metrics?.by_refund_type ?? [],
+      byType: (metrics?.by_refund_type ?? []).slice().sort((a, b) => a.value - b.value),
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannelEfficiency: metrics?.by_channel_efficiency ?? [],
