@@ -624,22 +624,24 @@ export default function Atendimentos() {
               <Button type="submit" className="flex-1 lg:flex-none" disabled={!canSubmit || createMutation.isPending}>
                 {createMutation.isPending && !concludeAfterCreate.current ? "Registrando..." : "Registrar"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 gap-1.5 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800 lg:flex-none dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
-                disabled={!canSubmit || createMutation.isPending}
-                onClick={handleCreateAndConclude}
-              >
-                {createMutation.isPending && concludeAfterCreate.current ? (
-                  "Concluindo..."
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Concluir
-                  </>
-                )}
-              </Button>
+              {channel === "SMS" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 gap-1.5 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800 lg:flex-none dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+                  disabled={!canSubmit || createMutation.isPending}
+                  onClick={handleCreateAndConclude}
+                >
+                  {createMutation.isPending && concludeAfterCreate.current ? (
+                    "Concluindo..."
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Concluir
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>
