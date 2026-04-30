@@ -670,7 +670,7 @@ export default function Atendimentos() {
               )}
             </div>
             <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs">
-              <span className="text-muted-foreground">Total de interações:</span>
+              <span className="text-muted-foreground">Total de atendimentos:</span>
               <span className="font-semibold text-foreground">{totalFilteredInteractions}</span>
             </div>
             <Button
@@ -694,7 +694,7 @@ export default function Atendimentos() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data</TableHead>
+                <TableHead>Data de abertura</TableHead>
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
