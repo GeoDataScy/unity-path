@@ -87,8 +87,8 @@ export default function Reembolsos() {
       const term = emailSearch.toLowerCase();
       result = result.filter((r) => r.customer_email.toLowerCase().includes(term));
     }
-    if (dateFrom) result = result.filter((r) => r.request_date >= dateFrom);
-    if (dateTo) result = result.filter((r) => r.request_date <= dateTo);
+    if (dateFrom) result = result.filter((r) => r.completion_date != null && r.completion_date >= dateFrom);
+    if (dateTo) result = result.filter((r) => r.completion_date != null && r.completion_date <= dateTo);
     return result;
   }, [doneRefunds, emailSearch, dateFrom, dateTo]);
 
