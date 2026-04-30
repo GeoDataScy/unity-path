@@ -81,7 +81,6 @@ const Dashboard = () => {
   });
 
   const followUpQuery = useFollowUpInsightsQuery(fromISO, toISO);
-  const followUpData = followUpQuery.data;
 
   // Table pagination
   const [page, setPage] = useState(1);
@@ -193,27 +192,6 @@ const Dashboard = () => {
     return kpi;
   }, [metrics, allMetrics, agentId, range, fromISO, toISO]);
 
-  const attendanceInteractionSeries = useMemo(() => {
-    if (!metrics) return [];
-
-    // total_tickets = ALL services (LEFT JOIN), open_count = services with NO follow-up
-    // so: services WITH at least one interaction = total_tickets - open_count
-    const interactionMap = new Map(
-      (followUpData?.by_agent ?? []).map((a) => [
-        a.agent_name,
-        { comInteracao: a.total_tickets - a.open_count, semInteracao: a.open_count },
-      ])
-    );
-
-    return metrics.by_agent.map((agent) => {
-      const entry = interactionMap.get(agent.name);
-      return {
-        name: agent.name,
-        comInteracao: entry?.comInteracao ?? 0,
-        semInteracao: entry?.semInteracao ?? agent.value,
-      };
-    });
-  }, [metrics, followUpData]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil((audit?.total_count ?? 0) / pageSize)),
@@ -405,40 +383,6 @@ const Dashboard = () => {
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="value" fill="hsl(var(--ring))" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Attendance vs Interactions */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle>Atendimentos totais vs. com interação por agente</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[360px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : attendanceInteractionSeries.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceInteractionSeries} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={60} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip
-                    formatter={(value: number, name: string) =>
-                      [value, name === "comInteracao" ? "Com interação" : "Sem interação"]
-                    }
-                  />
-                  <Legend
-                    formatter={(value) => (value === "comInteracao" ? "Com interação" : "Sem interação")}
-                  />
-                  <Bar dataKey="comInteracao" name="comInteracao" stackId="a" fill="hsl(var(--primary))" />
-                  <Bar dataKey="semInteracao" name="semInteracao" stackId="a" fill="hsl(var(--muted-foreground))" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
