@@ -136,27 +136,37 @@ export default function DashboardInteracoes() {
     });
   }, [data, agentId]);
 
-  // Pie chart data
+  // Pie chart data — three mutually exclusive slices that sum to total_tickets
   const pieData = useMemo(() => {
     if (!kpi) return [];
+    const openNew = (kpi.new_tickets_count ?? 0) - (kpi.done_count ?? 0);
     return [
-      { name: "Tickets Novos", value: kpi.new_tickets_count, fill: STATUS_COLORS.open },
-      { name: "Interações", value: kpi.interactions_count, fill: STATUS_COLORS.in_progress },
-      { name: "Concluido", value: kpi.done_count, fill: STATUS_COLORS.done },
+      { name: "Tickets Novos", value: Math.max(0, openNew), fill: STATUS_COLORS.open },
+      { name: "Interações", value: kpi.interactions_count ?? 0, fill: STATUS_COLORS.in_progress },
+      { name: "Concluido", value: kpi.done_count ?? 0, fill: STATUS_COLORS.done },
     ].filter((d) => d.value > 0);
   }, [kpi]);
 
   // Stacked bar chart data (by agent)
+  // Three non-overlapping segments that together equal Atendimentos por Agente total:
+  //   Tickets Novos = new services in range that are NOT concluded
+  //   Concluido     = new services in range that ARE concluded
+  //   Interações    = distinct previous-day services with a follow-up in range
   const stackedBarData = useMemo(() => {
     return filteredAgents
       .filter((a) => a.total_tickets > 0 || a.interactions_count > 0)
-      .map((a) => ({
-        name: a.agent_name.split(" ")[0],
-        "Tickets Novos": a.new_tickets_count ?? 0,
-        "Interações": a.interactions_count ?? 0,
-        "Concluido": a.done_count ?? 0,
-        total: (a.new_tickets_count ?? 0) + (a.interactions_count ?? 0),
-      }));
+      .map((a) => {
+        const openNew = Math.max(0, (a.new_tickets_count ?? 0) - (a.done_count ?? 0));
+        const done = a.done_count ?? 0;
+        const interactions = a.interactions_count ?? 0;
+        return {
+          name: a.agent_name.split(" ")[0],
+          "Tickets Novos": openNew,
+          "Interações": interactions,
+          "Concluido": done,
+          total: openNew + done + interactions,
+        };
+      });
   }, [filteredAgents]);
 
   // Sort agents: worst completion rate first (needs attention)
