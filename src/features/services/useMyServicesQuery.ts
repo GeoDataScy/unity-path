@@ -29,18 +29,24 @@ export function useMyServicesQuery(enabled: boolean) {
     queryKey: ["services", "me"],
     enabled,
     queryFn: async (): Promise<ServiceItem[]> => {
-      // RLS already restricts visibility, but we still filter explicitly.
       const userId = await requireSessionUserId();
-
-      const { data, error } = await supabase
-        .from("services")
-        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(10000);
-
-      if (error) throw error;
-      return (data ?? []) as ServiceItem[];
+      const PAGE = 1000;
+      const all: ServiceItem[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("services")
+          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as ServiceItem[];
+        all.push(...rows);
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,

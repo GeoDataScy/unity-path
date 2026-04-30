@@ -24,14 +24,22 @@ export function useFollowUpsQuery(enabled: boolean) {
     queryKey: ["service-follow-ups"],
     enabled,
     queryFn: async (): Promise<FollowUpRow[]> => {
-      const { data, error } = await supabase
-        .from("service_follow_ups")
-        .select("*")
-        .order("follow_up_number", { ascending: true })
-        .limit(10000);
-
-      if (error) throw error;
-      return (data ?? []) as FollowUpRow[];
+      const PAGE = 1000;
+      const all: FollowUpRow[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("service_follow_ups")
+          .select("*")
+          .order("follow_up_number", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as FollowUpRow[];
+        all.push(...rows);
+        if (rows.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
