@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -31,7 +31,7 @@ import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetrics
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
-import { useStatusTracking } from "@/features/services/useStatusTracking";
+import { useStatusTracking, useFollowUpsQuery } from "@/features/services/useStatusTracking";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
@@ -227,28 +227,23 @@ export default function Atendimentos() {
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
+  // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
+  const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
 
-  // When a date filter is active, also fetch IDs of services that had a follow-up
-  // recorded in that date range. This makes interactions count as +1 attendance
-  // on the day they were registered, even if the service is from a previous date.
-  const { data: followUpServiceIds } = useQuery({
-    queryKey: ["followup-service-ids", userId, dateFrom, dateTo],
-    enabled: Boolean(userId) && (!!dateFrom || !!dateTo),
-    queryFn: async (): Promise<Set<string>> => {
-      let q = supabase
-        .from("service_follow_ups")
-        .select("service_id")
-        .eq("user_id", userId!);
-
-      if (dateFrom) q = q.gte("recorded_at", toSaoPauloTimestamptz(dateFrom));
-      if (dateTo)   q = q.lt("recorded_at", toSaoPauloTimestamptz(addOneDayISO(dateTo)));
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return new Set((data ?? []).map((f) => f.service_id as string));
-    },
-    staleTime: 0,
-  });
+  // Build a Set of service IDs that had a follow-up recorded within the active date range.
+  // Computed synchronously from already-loaded data — no extra network round-trip.
+  const followUpServiceIds = useMemo<Set<string>>(() => {
+    if (!dateFrom && !dateTo) return new Set();
+    const fromMs = dateFrom ? new Date(`${dateFrom}T00:00:00-03:00`).getTime() : -Infinity;
+    const toMs   = dateTo   ? new Date(`${addOneDayISO(dateTo)}T00:00:00-03:00`).getTime() : Infinity;
+    const set = new Set<string>();
+    for (const f of allFollowUps) {
+      if (!f.recorded_at) continue;
+      const t = new Date(f.recorded_at).getTime();
+      if (t >= fromMs && t < toMs) set.add(f.service_id);
+    }
+    return set;
+  }, [allFollowUps, dateFrom, dateTo]);
 
   const filteredServices = useMemo(() => {
     let result = services;
@@ -264,7 +259,7 @@ export default function Atendimentos() {
       result = result.filter((s) => {
         const d = s.service_date?.slice(0, 10);
         const inDateRange = (!dateFrom || (d && d >= dateFrom)) && (!dateTo || (d && d <= dateTo));
-        const hasFollowUpInRange = followUpServiceIds?.has(s.id) ?? false;
+        const hasFollowUpInRange = followUpServiceIds.has(s.id);
         return inDateRange || hasFollowUpInRange;
       });
     }
