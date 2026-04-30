@@ -119,8 +119,8 @@ export default function DashboardInteracoes() {
     const agents = filteredAgents;
     return {
       total_services: agents.reduce((s, a) => s + a.total_tickets, 0),
-      open_count: agents.reduce((s, a) => s + a.open_count, 0),
-      in_progress_count: agents.reduce((s, a) => s + a.in_progress_count, 0),
+      new_tickets_count: agents.reduce((s, a) => s + a.new_tickets_count, 0),
+      interactions_count: agents.reduce((s, a) => s + a.interactions_count, 0),
       done_count: agents.reduce((s, a) => s + a.done_count, 0),
       total_interactions: agents.reduce((s, a) => s + a.total_interactions, 0),
     };
@@ -140,8 +140,8 @@ export default function DashboardInteracoes() {
   const pieData = useMemo(() => {
     if (!kpi) return [];
     return [
-      { name: "Em Aberto", value: kpi.open_count, fill: STATUS_COLORS.open },
-      { name: "Em Andamento", value: kpi.in_progress_count, fill: STATUS_COLORS.in_progress },
+      { name: "Tickets Novos", value: kpi.new_tickets_count, fill: STATUS_COLORS.open },
+      { name: "Interações", value: kpi.interactions_count, fill: STATUS_COLORS.in_progress },
       { name: "Concluido", value: kpi.done_count, fill: STATUS_COLORS.done },
     ].filter((d) => d.value > 0);
   }, [kpi]);
@@ -149,13 +149,13 @@ export default function DashboardInteracoes() {
   // Stacked bar chart data (by agent)
   const stackedBarData = useMemo(() => {
     return filteredAgents
-      .filter((a) => a.total_tickets > 0)
+      .filter((a) => a.total_tickets > 0 || a.interactions_count > 0)
       .map((a) => ({
         name: a.agent_name.split(" ")[0],
-        "Em Aberto": a.open_count,
-        "Em Andamento": a.in_progress_count,
+        "Tickets Novos": a.new_tickets_count,
+        "Interações": a.interactions_count,
         "Concluido": a.done_count,
-        total: a.open_count + a.in_progress_count + a.done_count,
+        total: a.new_tickets_count + a.interactions_count,
       }));
   }, [filteredAgents]);
 
@@ -194,19 +194,18 @@ export default function DashboardInteracoes() {
         />
         <KpiCard
           icon={<FolderOpen className="h-4 w-4 text-slate-500" />}
-          label="Em Aberto"
-          value={kpi?.open_count}
+          label="Tickets Novos"
+          value={kpi?.new_tickets_count}
           accent="text-slate-600"
           isLoading={isLoading}
-          subtitle={kpi ? pct(kpi.open_count, kpi.total_services) : undefined}
+          subtitle={kpi && kpi.total_services > 0 ? pct(kpi.new_tickets_count, kpi.total_services) : undefined}
         />
         <KpiCard
           icon={<Loader2 className="h-4 w-4 text-amber-500" />}
-          label="Em Andamento"
-          value={kpi?.in_progress_count}
+          label="Interações"
+          value={kpi?.interactions_count}
           accent="text-amber-600"
           isLoading={isLoading}
-          subtitle={kpi ? pct(kpi.in_progress_count, kpi.total_services) : undefined}
         />
         <KpiCard
           icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
@@ -279,8 +278,8 @@ export default function DashboardInteracoes() {
               <div className="flex gap-1">
                 {([
                   { key: "all", label: "Todos" },
-                  { key: "open", label: "Em Aberto" },
-                  { key: "in_progress", label: "Em Andamento" },
+                  { key: "open", label: "Tickets Novos" },
+                  { key: "in_progress", label: "Interações" },
                   { key: "done", label: "Concluído" },
                 ] as const).map((opt) => (
                   <Button
@@ -319,14 +318,14 @@ export default function DashboardInteracoes() {
                   <Tooltip
                     content={({ active, payload, label }) => {
                       if (!active || !payload || payload.length === 0) return null;
-                      const item = payload[0]?.payload as { "Em Aberto": number; "Em Andamento": number; Concluido: number; total: number } | undefined;
+                      const item = payload[0]?.payload as { "Tickets Novos": number; "Interações": number; Concluido: number; total: number } | undefined;
                       if (!item) return null;
                       return (
                         <div className="rounded-md border bg-background p-2 text-xs shadow-md">
                           <p className="mb-1 font-semibold">{label}</p>
                           <div className="space-y-0.5">
-                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Em Aberto: <span className="font-medium">{item["Em Aberto"]}</span></p>
-                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.in_progress }} />Em Andamento: <span className="font-medium">{item["Em Andamento"]}</span></p>
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Tickets Novos: <span className="font-medium">{item["Tickets Novos"]}</span></p>
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.in_progress }} />Interações: <span className="font-medium">{item["Interações"]}</span></p>
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.done }} />Concluído: <span className="font-medium">{item.Concluido}</span></p>
                             <p className="mt-1 border-t pt-1 font-semibold">Total: {item.total}</p>
                           </div>
@@ -335,11 +334,11 @@ export default function DashboardInteracoes() {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="Em Aberto" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
-                    <LabelList dataKey="Em Aberto" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                  <Bar dataKey="Tickets Novos" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
+                    <LabelList dataKey="Tickets Novos" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
                   </Bar>
-                  <Bar dataKey="Em Andamento" stackId="status" fill={STATUS_COLORS.in_progress}>
-                    <LabelList dataKey="Em Andamento" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                  <Bar dataKey="Interações" stackId="status" fill={STATUS_COLORS.in_progress}>
+                    <LabelList dataKey="Interações" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
                   </Bar>
                   <Bar dataKey="Concluido" stackId="status" fill={STATUS_COLORS.done} radius={[6, 6, 0, 0]}>
                     <LabelList dataKey="Concluido" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
@@ -348,8 +347,8 @@ export default function DashboardInteracoes() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (() => {
-              const dataKey = ticketStatusFilter === "open" ? "Em Aberto"
-                : ticketStatusFilter === "in_progress" ? "Em Andamento"
+              const dataKey = ticketStatusFilter === "open" ? "Tickets Novos"
+                : ticketStatusFilter === "in_progress" ? "Interações"
                 : "Concluido";
               const color = ticketStatusFilter === "in_progress" ? STATUS_COLORS.in_progress
                 : ticketStatusFilter === "done" ? STATUS_COLORS.done
@@ -405,10 +404,10 @@ export default function DashboardInteracoes() {
                     <FolderOpen className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase text-muted-foreground">Mais Tickets em Aberto</p>
+                    <p className="text-xs font-medium uppercase text-muted-foreground">Mais Tickets Novos</p>
                     <p className="text-lg font-semibold">{insights.most_open.agent_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {insights.most_open.open_count} tickets sem interacao
+                      {insights.most_open.open_count} tickets novos
                     </p>
                   </div>
                 </div>
@@ -461,8 +460,8 @@ export default function DashboardInteracoes() {
                   <TableRow>
                     <TableHead className="min-w-[160px]">Agente</TableHead>
                     <TableHead className="text-center">Total</TableHead>
-                    <TableHead className="text-center">Em Aberto</TableHead>
-                    <TableHead className="text-center">Em Andamento</TableHead>
+                    <TableHead className="text-center">Tickets Novos</TableHead>
+                    <TableHead className="text-center">Interações</TableHead>
                     <TableHead className="text-center">Concluidos</TableHead>
                     <TableHead className="text-center">Interacoes</TableHead>
                     <TableHead className="text-center min-w-[120px]">Media Int/Ticket</TableHead>
@@ -614,20 +613,13 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
       <TableCell className="font-medium">{agent.agent_name}</TableCell>
       <TableCell className="text-center font-semibold">{agent.total_tickets}</TableCell>
       <TableCell className="text-center">
-        <UITooltip>
-          <TooltipTrigger asChild>
-            <span className={agent.open_count > 0 ? "text-slate-600 font-medium" : "text-muted-foreground"}>
-              {agent.open_count}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {agent.open_count} tickets sem nenhuma interacao
-          </TooltipContent>
-        </UITooltip>
+        <span className={agent.new_tickets_count > 0 ? "text-slate-600 font-medium" : "text-muted-foreground"}>
+          {agent.new_tickets_count}
+        </span>
       </TableCell>
       <TableCell className="text-center">
-        <span className={agent.in_progress_count > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}>
-          {agent.in_progress_count}
+        <span className={agent.interactions_count > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}>
+          {agent.interactions_count}
         </span>
       </TableCell>
       <TableCell className="text-center">

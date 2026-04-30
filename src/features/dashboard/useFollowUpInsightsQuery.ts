@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface FollowUpKpi {
   total_services: number;
-  open_count: number;
-  in_progress_count: number;
+  new_tickets_count: number;
+  interactions_count: number;
   done_count: number;
   total_interactions: number;
 }
@@ -15,8 +15,8 @@ export interface AgentBreakdown {
   agent_id: string;
   agent_name: string;
   total_tickets: number;
-  open_count: number;
-  in_progress_count: number;
+  new_tickets_count: number;
+  interactions_count: number;
   done_count: number;
   total_interactions: number;
   avg_interactions_to_close: number;
@@ -88,8 +88,8 @@ export function useFollowUpInsightsQuery(fromISO: string, toISO: string) {
       return {
         kpi: result.kpi ?? {
           total_services: 0,
-          open_count: 0,
-          in_progress_count: 0,
+          new_tickets_count: 0,
+          interactions_count: 0,
           done_count: 0,
           total_interactions: 0,
         },
