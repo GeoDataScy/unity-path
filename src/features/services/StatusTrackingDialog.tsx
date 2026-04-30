@@ -67,7 +67,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
   const [observation, setObservation] = useState("");
 
   const handleSubmit = async () => {
-    if (!interactionCheck.allowed) {
+    if (!interactionCheck.allowed && status !== "concluido") {
       toast({
         title: "Interação bloqueada",
         description: interactionCheck.reason ?? "A próxima interação com este atendimento só pode ser registrada no dia seguinte.",
@@ -109,7 +109,9 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
     }
   };
 
-  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending && (interactionCheck.allowed || isReopening);
+  // Concluding is always allowed; regular follow-ups respect the interaction block
+  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending &&
+    (status === "concluido" || interactionCheck.allowed || isReopening);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,16 +181,16 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
           </div>
         )}
 
-        {/* Interaction block warning */}
-        {(!isConcluded || isReopening) && !interactionCheck.allowed && (
+        {/* Interaction block warning — only when trying to add Em Andamento, not when concluding */}
+        {(!isConcluded || isReopening) && !interactionCheck.allowed && status !== "concluido" && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             <p className="font-semibold">Interação bloqueada</p>
-            <p className="mt-1 text-xs">A próxima interação com este atendimento só pode ser registrada no dia seguinte.</p>
+            <p className="mt-1 text-xs">A próxima interação com este atendimento só pode ser registrada no dia seguinte. Você ainda pode concluir o ticket.</p>
           </div>
         )}
 
-        {/* New entry form */}
-        {(!isConcluded || isReopening) && interactionCheck.allowed && (
+        {/* New entry form — always visible for non-concluded tickets so user can conclude */}
+        {(!isConcluded || isReopening) && (
           <div className="grid gap-4 rounded-lg border bg-card p-4">
             <p className="text-sm font-semibold">Novo registro de acompanhamento</p>
 
