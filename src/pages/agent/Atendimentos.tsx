@@ -112,6 +112,17 @@ function toSaoPauloTimestamptz(dateOnly: string) {
   return `${dateOnly}T00:00:00-03:00`;
 }
 
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function isPhoneComplete(v: string) {
+  return /^\d{3}-\d{3}-\d{4}$/.test(v);
+}
+
 function addOneDayISO(dateISO: string): string {
   const [y, m, d] = dateISO.split("-").map(Number);
   return new Date(y, m - 1, d + 1).toLocaleDateString("en-CA");
@@ -305,8 +316,9 @@ export default function Atendimentos() {
   const dailyGoal = supportChannel === "sms" ? 150 : 100;
 
   const canSubmit = useMemo(() => {
-    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform);
-  }, [clientEmail, serviceDate, product, platform]);
+    const emailOk = channel === "SMS" ? isPhoneComplete(clientEmail) : Boolean(clientEmail);
+    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform);
+  }, [clientEmail, serviceDate, product, platform, channel]);
 
   const greetingName = useMemo(() => {
     const trimmed = (fullName ?? "").trim();
@@ -516,31 +528,43 @@ export default function Atendimentos() {
                 type="button"
                 size="sm"
                 variant={channel === ch ? "default" : "outline"}
-                onClick={() => setChannel(ch)}
+                onClick={() => {
+                  if (ch !== "SMS") setHasTrackingCode(false);
+                  if ((ch === "SMS") !== (channel === "SMS")) setClientEmail("");
+                  setChannel(ch);
+                }}
               >
                 {ch}
               </Button>
             ))}
             <div className="ml-4 flex items-center gap-2 border-l pl-4">
-              <Label htmlFor="tracking-code-toggle" className="text-sm text-muted-foreground cursor-pointer">
+              <Label
+                htmlFor="tracking-code-toggle"
+                className={`text-sm cursor-pointer ${channel === "SMS" ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+              >
                 Cód. Rastreio
               </Label>
               <Switch
                 id="tracking-code-toggle"
                 checked={hasTrackingCode}
+                disabled={channel !== "SMS"}
                 onCheckedChange={setHasTrackingCode}
               />
             </div>
           </div>
           <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
             <div className="grid gap-2">
-              <Label htmlFor="clientEmail">E-mail do Cliente</Label>
+              <Label htmlFor="clientEmail">
+                {channel === "SMS" ? "E-mail do Cliente ou Número de Telefone" : "E-mail do Cliente"}
+              </Label>
               <Input
                 id="clientEmail"
-                type="email"
-                placeholder="cliente@email.com"
+                type={channel === "SMS" ? "text" : "email"}
+                placeholder={channel === "SMS" ? "954-662-8786" : "cliente@email.com"}
                 value={clientEmail}
-                onChange={(e) => setClientEmail(e.target.value)}
+                onChange={(e) =>
+                  setClientEmail(channel === "SMS" ? formatPhone(e.target.value) : e.target.value)
+                }
                 required
               />
             </div>
