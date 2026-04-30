@@ -473,7 +473,6 @@ export default function DashboardInteracoes() {
                     <TableHead className="text-center">Tickets Novos</TableHead>
                     <TableHead className="text-center">Interações</TableHead>
                     <TableHead className="text-center">Concluidos</TableHead>
-                    <TableHead className="text-center">Interacoes</TableHead>
                     <TableHead className="text-center min-w-[120px]">Media Int/Ticket</TableHead>
                     <TableHead className="text-center min-w-[160px]">Taxa de Conclusao</TableHead>
                   </TableRow>
@@ -636,9 +635,6 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
         <span className={agent.done_count > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
           {agent.done_count}
         </span>
-      </TableCell>
-      <TableCell className="text-center">
-        <span className="text-violet-600 font-medium">{agent.total_interactions}</span>
       </TableCell>
       <TableCell className="text-center">
         {hasTickets ? (
