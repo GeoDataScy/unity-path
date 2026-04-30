@@ -234,11 +234,10 @@ export default function Atendimentos() {
   // plus a count of individual follow-up events in that range (not unique services).
   // Uses Intl.DateTimeFormat (SP timezone) — same approach as handleQuickConclude.
   // Strips sub-millisecond precision (Supabase returns microseconds which some browsers reject).
-  const { followUpServiceIds, followUpCountInRange } = useMemo(() => {
-    if (!dateFrom && !dateTo) return { followUpServiceIds: new Set<string>(), followUpCountInRange: 0 };
+  const followUpServiceIds = useMemo<Set<string>>(() => {
+    if (!dateFrom && !dateTo) return new Set();
     const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
     const set = new Set<string>();
-    let count = 0;
     for (const f of allFollowUps) {
       if (!f.recorded_at) continue;
       // Normalize: "2026-04-30T17:30:00.123456+00:00" → "2026-04-30T17:30:00+00:00"
@@ -247,10 +246,9 @@ export default function Atendimentos() {
       const spDate = spFmt.format(d); // "YYYY-MM-DD" in SP timezone
       if ((!dateFrom || spDate >= dateFrom) && (!dateTo || spDate <= dateTo)) {
         set.add(f.service_id);
-        count++;
       }
     }
-    return { followUpServiceIds: set, followUpCountInRange: count };
+    return set;
   }, [allFollowUps, dateFrom, dateTo]);
 
   const filteredServices = useMemo(() => {
@@ -285,18 +283,12 @@ export default function Atendimentos() {
   }, [emailSearch, dateFrom, dateTo, filterTrackingCode]);
 
   /** Total interactions in the active period.
-   *  With date filter: new services in range + follow-ups recorded in range (1 event = 1).
-   *  Without date filter: sum all historical interactions per service (legacy behaviour). */
+   *  With date filter: one per unique service in the table (creation or interaction = 1 each).
+   *  Without date filter: sum all historical interactions per service. */
   const totalFilteredInteractions = useMemo(() => {
-    if (dateFrom || dateTo) {
-      const servicesInRange = filteredServices.filter((s) => {
-        const d = s.service_date?.slice(0, 10);
-        return (!dateFrom || (d && d >= dateFrom)) && (!dateTo || (d && d <= dateTo));
-      }).length;
-      return servicesInRange + followUpCountInRange;
-    }
+    if (dateFrom || dateTo) return filteredServices.length;
     return filteredServices.reduce((sum, s) => sum + getInteractionCount(s.id), 0);
-  }, [filteredServices, getInteractionCount, dateFrom, dateTo, followUpCountInRange]);
+  }, [filteredServices, getInteractionCount, dateFrom, dateTo]);
 
   const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE));
   const paginatedServices = useMemo(() => {
