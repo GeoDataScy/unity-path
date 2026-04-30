@@ -23,22 +23,28 @@ CREATE INDEX IF NOT EXISTS idx_service_follow_ups_user_id
 ALTER TABLE public.service_follow_ups ENABLE ROW LEVEL SECURITY;
 
 -- Policy: agents can read their own follow-ups
-CREATE POLICY "Agents can read own follow-ups"
-  ON public.service_follow_ups
-  FOR SELECT
-  USING (user_id = auth.uid()::text);
+DO $$ BEGIN
+  CREATE POLICY "Agents can read own follow-ups"
+    ON public.service_follow_ups
+    FOR SELECT
+    USING (user_id = auth.uid()::text);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Policy: agents can insert their own follow-ups
-CREATE POLICY "Agents can insert own follow-ups"
-  ON public.service_follow_ups
-  FOR INSERT
-  WITH CHECK (user_id = auth.uid()::text);
+DO $$ BEGIN
+  CREATE POLICY "Agents can insert own follow-ups"
+    ON public.service_follow_ups
+    FOR INSERT
+    WITH CHECK (user_id = auth.uid()::text);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Policy: managers can read all follow-ups (for dashboard/reports)
-CREATE POLICY "Managers can read all follow-ups"
-  ON public.service_follow_ups
-  FOR SELECT
-  USING (public.is_manager());
+DO $$ BEGIN
+  CREATE POLICY "Managers can read all follow-ups"
+    ON public.service_follow_ups
+    FOR SELECT
+    USING (public.is_manager());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Grant table access to authenticated users
 GRANT SELECT, INSERT ON public.service_follow_ups TO authenticated;

@@ -1,7 +1,7 @@
 -- Add Gluco Off to products table and services_product_check constraint
 
-INSERT INTO public.products (name)
-VALUES ('Gluco Off')
+INSERT INTO public.products (id, name, updated_at)
+VALUES (gen_random_uuid()::text, 'Gluco Off', now())
 ON CONFLICT (name) DO NOTHING;
 
 ALTER TABLE public.services
