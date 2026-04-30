@@ -231,16 +231,22 @@ export default function Atendimentos() {
   const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
 
   // Build a Set of service IDs that had a follow-up recorded within the active date range.
-  // Computed synchronously from already-loaded data — no extra network round-trip.
+  // Uses Intl.DateTimeFormat (SP timezone) for date conversion — same approach as handleQuickConclude.
+  // Strips sub-millisecond precision from recorded_at before parsing (Supabase returns microseconds
+  // which some browsers reject as Invalid Date).
   const followUpServiceIds = useMemo<Set<string>>(() => {
     if (!dateFrom && !dateTo) return new Set();
-    const fromMs = dateFrom ? new Date(`${dateFrom}T00:00:00-03:00`).getTime() : -Infinity;
-    const toMs   = dateTo   ? new Date(`${addOneDayISO(dateTo)}T00:00:00-03:00`).getTime() : Infinity;
+    const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
     const set = new Set<string>();
     for (const f of allFollowUps) {
       if (!f.recorded_at) continue;
-      const t = new Date(f.recorded_at).getTime();
-      if (t >= fromMs && t < toMs) set.add(f.service_id);
+      // Normalize: "2026-04-30T17:30:00.123456+00:00" → "2026-04-30T17:30:00+00:00"
+      const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
+      if (isNaN(d.getTime())) continue;
+      const spDate = spFmt.format(d); // "YYYY-MM-DD" in SP timezone
+      if ((!dateFrom || spDate >= dateFrom) && (!dateTo || spDate <= dateTo)) {
+        set.add(f.service_id);
+      }
     }
     return set;
   }, [allFollowUps, dateFrom, dateTo]);
