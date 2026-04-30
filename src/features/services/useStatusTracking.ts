@@ -27,7 +27,8 @@ export function useFollowUpsQuery(enabled: boolean) {
       const { data, error } = await supabase
         .from("service_follow_ups")
         .select("*")
-        .order("follow_up_number", { ascending: true });
+        .order("follow_up_number", { ascending: true })
+        .limit(10000);
 
       if (error) throw error;
       return (data ?? []) as FollowUpRow[];

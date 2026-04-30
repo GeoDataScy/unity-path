@@ -36,7 +36,8 @@ export function useMyServicesQuery(enabled: boolean) {
         .from("services")
         .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(10000);
 
       if (error) throw error;
       return (data ?? []) as ServiceItem[];
