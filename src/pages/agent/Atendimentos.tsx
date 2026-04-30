@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -110,6 +110,11 @@ function toSaoPauloTimestamptz(dateOnly: string) {
   // which becomes the previous day in São Paulo. We store midnight São Paulo explicitly.
   // São Paulo has no DST currently, so -03:00 is stable.
   return `${dateOnly}T00:00:00-03:00`;
+}
+
+function addOneDayISO(dateISO: string): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return new Date(y, m - 1, d + 1).toLocaleDateString("en-CA");
 }
 
 function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
@@ -223,6 +228,28 @@ export default function Atendimentos() {
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
 
+  // When a date filter is active, also fetch IDs of services that had a follow-up
+  // recorded in that date range. This makes interactions count as +1 attendance
+  // on the day they were registered, even if the service is from a previous date.
+  const { data: followUpServiceIds } = useQuery({
+    queryKey: ["followup-service-ids", userId, dateFrom, dateTo],
+    enabled: Boolean(userId) && (!!dateFrom || !!dateTo),
+    queryFn: async (): Promise<Set<string>> => {
+      let q = supabase
+        .from("service_follow_ups")
+        .select("service_id")
+        .eq("user_id", userId!);
+
+      if (dateFrom) q = q.gte("recorded_at", toSaoPauloTimestamptz(dateFrom));
+      if (dateTo)   q = q.lt("recorded_at", toSaoPauloTimestamptz(addOneDayISO(dateTo)));
+
+      const { data, error } = await q;
+      if (error) throw error;
+      return new Set((data ?? []).map((f) => f.service_id as string));
+    },
+    staleTime: 0,
+  });
+
   const filteredServices = useMemo(() => {
     let result = services;
 
@@ -231,17 +258,14 @@ export default function Atendimentos() {
       result = result.filter((s) => s.client_email.toLowerCase().includes(term));
     }
 
-    if (dateFrom) {
+    // Include services where service_date is in range OR a follow-up was recorded in range.
+    // Each interaction on a previous ticket counts as +1 attendance on the interaction date.
+    if (dateFrom || dateTo) {
       result = result.filter((s) => {
         const d = s.service_date?.slice(0, 10);
-        return d && d >= dateFrom;
-      });
-    }
-
-    if (dateTo) {
-      result = result.filter((s) => {
-        const d = s.service_date?.slice(0, 10);
-        return d && d <= dateTo;
+        const inDateRange = (!dateFrom || (d && d >= dateFrom)) && (!dateTo || (d && d <= dateTo));
+        const hasFollowUpInRange = followUpServiceIds?.has(s.id) ?? false;
+        return inDateRange || hasFollowUpInRange;
       });
     }
 
@@ -250,7 +274,7 @@ export default function Atendimentos() {
     }
 
     return result;
-  }, [services, emailSearch, dateFrom, dateTo, filterTrackingCode]);
+  }, [services, emailSearch, dateFrom, dateTo, filterTrackingCode, followUpServiceIds]);
 
   // Reset page when filters change
   useEffect(() => {
