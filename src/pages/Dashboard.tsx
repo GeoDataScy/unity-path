@@ -226,7 +226,8 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" /> Total de atendimentos
+              <Users className="h-4 w-4 text-primary" />
+              {agentId === "all" ? "Total de atendimentos (todos)" : `Atendimentos — ${byAgentSeries[0]?.name ?? "agente"}`}
             </CardTitle>
           </CardHeader>
           <CardContent>
