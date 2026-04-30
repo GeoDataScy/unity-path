@@ -152,10 +152,10 @@ export default function DashboardInteracoes() {
       .filter((a) => a.total_tickets > 0 || a.interactions_count > 0)
       .map((a) => ({
         name: a.agent_name.split(" ")[0],
-        "Tickets Novos": a.new_tickets_count,
-        "Interações": a.interactions_count,
-        "Concluido": a.done_count,
-        total: a.new_tickets_count + a.interactions_count,
+        "Tickets Novos": a.new_tickets_count ?? 0,
+        "Interações": a.interactions_count ?? 0,
+        "Concluido": a.done_count ?? 0,
+        total: (a.new_tickets_count ?? 0) + (a.interactions_count ?? 0),
       }));
   }, [filteredAgents]);
 
