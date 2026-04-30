@@ -34,6 +34,7 @@ import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { useDashboardMetricsQuery } from "@/features/dashboard/useDashboardMetricsQuery";
 import { useDashboardAuditQuery } from "@/features/dashboard/useDashboardAuditQuery";
 import { useFollowUpInsightsQuery } from "@/features/dashboard/useFollowUpInsightsQuery";
+import { ChannelDetailModal } from "@/components/dashboard/ChannelDetailModal";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -72,15 +73,18 @@ const Dashboard = () => {
     agentId: agentId === "all" ? undefined : agentId,
   });
 
-  // When a specific agent is selected, fetch ALL agents metrics for benchmark
+  // Fetch ALL agents metrics — for benchmark comparison and always-all-agents channel chart
   const allMetricsQuery = useDashboardMetricsQuery({
-    enabled: agentId !== "all",
+    enabled: true,
     from: fromISO,
     to: toISO,
     agentId: undefined,
   });
 
   const followUpQuery = useFollowUpInsightsQuery(fromISO, toISO);
+
+  // Channel detail modal
+  const [channelModalOpen, setChannelModalOpen] = useState(false);
 
   // Table pagination
   const [page, setPage] = useState(1);
@@ -142,7 +146,7 @@ const Dashboard = () => {
     kpi.byAgentSeries = metrics.by_agent.map(({ name, value }) => ({ name, value }));
     kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
     kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
-    kpi.byChannelSeries = (metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
+    kpi.byChannelSeries = (allMetrics?.by_channel ?? metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
 
     // Fill missing days for area chart continuity
     const dayCounts = new Map<string, number>(
@@ -367,9 +371,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card
+          className="cursor-pointer hover:ring-2 hover:ring-primary/40 transition-shadow"
+          onClick={() => setChannelModalOpen(true)}
+        >
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Atendimentos por canal</CardTitle>
+            <span className="text-xs text-muted-foreground select-none">Clique para detalhar</span>
           </CardHeader>
           <CardContent className="h-[320px]">
             {isLoading ? (
@@ -524,6 +532,13 @@ const Dashboard = () => {
           {(metricsQuery.error as any)?.message || (auditQuery.error as any)?.message || (followUpQuery.error as any)?.message || "Erro ao carregar dados."}
         </p>
       ) : null}
+
+      <ChannelDetailModal
+        open={channelModalOpen}
+        onClose={() => setChannelModalOpen(false)}
+        initialFrom={fromISO}
+        initialTo={toISO}
+      />
     </div>
   );
 };
