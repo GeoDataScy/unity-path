@@ -11,6 +11,7 @@ import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
 import { Activity, AlertTriangle, BarChart3, ClipboardCheck, RefreshCcw } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
+import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -90,7 +91,7 @@ export default function ManagerLayout() {
       }
 
       if (!active) return;
-      setFullName(profile?.full_name ?? null);
+      setFullName(profile?.role === "manager" ? "Ester" : (profile?.full_name ?? null));
       setAuthLoading(false);
     };
 
@@ -255,6 +256,8 @@ export default function ManagerLayout() {
           </div>
         </div>
       </aside>
+
+      <ManagerRefundNotification />
 
       <main className="flex-1 bg-dashboard-surface p-8">
         <div className="mx-auto max-w-7xl">
