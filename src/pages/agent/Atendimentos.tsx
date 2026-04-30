@@ -554,9 +554,12 @@ export default function Atendimentos() {
           </div>
           <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
             <div className="grid gap-2">
-              <Label htmlFor="clientEmail">
-                {channel === "SMS" ? "E-mail do Cliente ou Número de Telefone" : "E-mail do Cliente"}
-              </Label>
+              <div className="flex flex-col gap-0.5">
+                <Label htmlFor="clientEmail">E-mail do Cliente</Label>
+                {channel === "SMS" && (
+                  <span className="text-[11px] text-muted-foreground leading-none">ou número de telefone</span>
+                )}
+              </div>
               <Input
                 id="clientEmail"
                 type={channel === "SMS" ? "text" : "email"}
