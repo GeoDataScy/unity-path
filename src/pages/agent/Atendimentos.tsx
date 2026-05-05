@@ -241,15 +241,18 @@ export default function Atendimentos() {
   // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
   const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
 
-  // Build a Set of service IDs that had a follow-up recorded within the active date range,
-  // plus a count of individual follow-up events in that range (not unique services).
+  // Build a Set of service IDs where THIS agent registered a follow-up within the
+  // active date range. Mirrors the manager's dashboard_metrics logic so both screens
+  // attribute the attendance to the doer of the action (not the ticket owner).
   // Uses Intl.DateTimeFormat (SP timezone) — same approach as handleQuickConclude.
   // Strips sub-millisecond precision (Supabase returns microseconds which some browsers reject).
   const followUpServiceIds = useMemo<Set<string>>(() => {
     if (!dateFrom && !dateTo) return new Set();
+    if (!userId) return new Set();
     const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
     const set = new Set<string>();
     for (const f of allFollowUps) {
+      if (f.user_id !== userId) continue;
       if (!f.recorded_at) continue;
       // Normalize: "2026-04-30T17:30:00.123456+00:00" → "2026-04-30T17:30:00+00:00"
       const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
@@ -260,7 +263,7 @@ export default function Atendimentos() {
       }
     }
     return set;
-  }, [allFollowUps, dateFrom, dateTo]);
+  }, [allFollowUps, dateFrom, dateTo, userId]);
 
   const filteredServices = useMemo(() => {
     let result = services;
@@ -307,14 +310,17 @@ export default function Atendimentos() {
     return filteredServices.slice(start, start + PAGE_SIZE);
   }, [filteredServices, page]);
 
-  /** Unique tickets with activity today (SP timezone) — feeds the daily card,
-   *  overriding the backend my_count so the card matches the table row count. */
+  /** Unique tickets with activity by this agent today (SP timezone) — feeds the
+   *  daily card, overriding the backend my_count so the card matches the table
+   *  row count and the manager's per-agent breakdown. */
   const todayTicketsCount = useMemo(() => {
+    if (!userId) return 0;
     const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
     const today = spFmt.format(new Date());
 
     const followUpToday = new Set<string>();
     for (const f of allFollowUps) {
+      if (f.user_id !== userId) continue;
       if (!f.recorded_at) continue;
       const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
       if (isNaN(d.getTime())) continue;
@@ -325,7 +331,7 @@ export default function Atendimentos() {
       const serviceDate = s.service_date?.slice(0, 10);
       return serviceDate === today || followUpToday.has(s.id);
     }).length;
-  }, [services, allFollowUps]);
+  }, [services, allFollowUps, userId]);
 
   // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
   const supportChannel = useMemo(() => {
