@@ -293,38 +293,13 @@ export default function Atendimentos() {
     setPage(1);
   }, [emailSearch, dateFrom, dateTo, filterTrackingCode]);
 
-  /** Total interactions in the active period — mirrors agent_daily_metrics logic.
-   *  With date filter: services in range + follow-ups in range (tracking-code same-day excluded).
+  /** Total tickets in the active period.
+   *  With date filter: unique services visible in the table (opened OR had follow-up in range).
    *  Without date filter: sum all historical interactions per service. */
   const totalFilteredInteractions = useMemo(() => {
-    if (dateFrom || dateTo) {
-      const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
-      const serviceMap = new Map(services.map(s => [s.id, s]));
-
-      // Services whose service_date falls within the range (not pulled in only via follow-up)
-      const servicesInRange = filteredServices.filter(s => {
-        const d = s.service_date?.slice(0, 10);
-        return (!dateFrom || (d && d >= dateFrom)) && (!dateTo || (d && d <= dateTo));
-      }).length;
-
-      // Follow-ups recorded in range, excluding same-day interactions on tracking-code tickets
-      let followUpsInRange = 0;
-      for (const f of allFollowUps) {
-        if (!f.recorded_at) continue;
-        const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
-        if (isNaN(d.getTime())) continue;
-        const spDate = spFmt.format(d);
-        if ((!dateFrom || spDate >= dateFrom) && (!dateTo || spDate <= dateTo)) {
-          const svc = serviceMap.get(f.service_id);
-          if (svc?.has_tracking_code && svc.service_date?.slice(0, 10) === spDate) continue;
-          followUpsInRange++;
-        }
-      }
-
-      return servicesInRange + followUpsInRange;
-    }
+    if (dateFrom || dateTo) return filteredServices.length;
     return filteredServices.reduce((sum, s) => sum + getInteractionCount(s.id), 0);
-  }, [filteredServices, services, getInteractionCount, allFollowUps, dateFrom, dateTo]);
+  }, [filteredServices, getInteractionCount, dateFrom, dateTo]);
 
   const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE));
   const paginatedServices = useMemo(() => {
