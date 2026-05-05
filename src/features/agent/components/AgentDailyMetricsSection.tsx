@@ -22,6 +22,8 @@ type Props = {
   debugCelebrateNonce?: number;
   /** DEV only: overrides the UI count temporarily (does not affect backend) */
   debugOverrideCount?: number | null;
+  /** Replaces the backend my_count with a value computed on the client (e.g. unique tickets today). */
+  myCountOverride?: number | null;
 };
 
 export function AgentDailyMetricsSection({
@@ -31,9 +33,11 @@ export function AgentDailyMetricsSection({
   goal = 100,
   debugCelebrateNonce,
   debugOverrideCount,
+  myCountOverride,
 }: Props) {
   const CELEBRATION_MS = 9600;
-  const myCount = dailyMetrics?.my_count ?? 0;
+  const backendCount = dailyMetrics?.my_count ?? 0;
+  const myCount = myCountOverride ?? backendCount;
   const effectiveCount = debugOverrideCount ?? myCount;
   const remainingToGoal = Math.max(0, goal - effectiveCount);
 

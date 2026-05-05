@@ -307,6 +307,26 @@ export default function Atendimentos() {
     return filteredServices.slice(start, start + PAGE_SIZE);
   }, [filteredServices, page]);
 
+  /** Unique tickets with activity today (SP timezone) — feeds the daily card,
+   *  overriding the backend my_count so the card matches the table row count. */
+  const todayTicketsCount = useMemo(() => {
+    const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const today = spFmt.format(new Date());
+
+    const followUpToday = new Set<string>();
+    for (const f of allFollowUps) {
+      if (!f.recorded_at) continue;
+      const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
+      if (isNaN(d.getTime())) continue;
+      if (spFmt.format(d) === today) followUpToday.add(f.service_id);
+    }
+
+    return services.filter(s => {
+      const serviceDate = s.service_date?.slice(0, 10);
+      return serviceDate === today || followUpToday.has(s.id);
+    }).length;
+  }, [services, allFollowUps]);
+
   // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
   const supportChannel = useMemo(() => {
     const smsCount = services.filter((s) => s.channel === "SMS").length;
@@ -513,6 +533,7 @@ export default function Atendimentos() {
         goal={dailyGoal}
         debugCelebrateNonce={debugCelebrateNonce}
         debugOverrideCount={debugOverrideCount}
+        myCountOverride={todayTicketsCount}
       />
 
       <Card>
