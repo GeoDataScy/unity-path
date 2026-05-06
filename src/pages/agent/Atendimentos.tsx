@@ -172,10 +172,13 @@ export default function Atendimentos() {
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
   const [hasTrackingCode, setHasTrackingCode] = useState(false);
 
-  // Search & filter state
+  // Search & filter state. Default to "hoje" so the agent sees only today's
+  // activity on opening the page — clean slate at the start of the day,
+  // grows as the day progresses. To inspect older tickets they can search by
+  // e-mail or change the date range.
   const [emailSearch, setEmailSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(() => todayISO());
+  const [dateTo, setDateTo] = useState(() => todayISO());
   const [filterTrackingCode, setFilterTrackingCode] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
@@ -277,9 +280,12 @@ export default function Atendimentos() {
       result = result.filter((s) => s.client_email.toLowerCase().includes(term));
     }
 
+    // Date filter applies only when the agent is NOT searching by e-mail.
+    // Searching by e-mail should locate the ticket regardless of how old it is —
+    // the date range exists to scope daily activity, not to limit search.
     // Include services where service_date is in range OR a follow-up was recorded in range.
     // Each interaction on a previous ticket counts as +1 attendance on the interaction date.
-    if (dateFrom || dateTo) {
+    if (!emailSearch && (dateFrom || dateTo)) {
       result = result.filter((s) => {
         const d = s.service_date?.slice(0, 10);
         const inDateRange = (!dateFrom || (d && d >= dateFrom)) && (!dateTo || (d && d <= dateTo));
@@ -712,11 +718,28 @@ export default function Atendimentos() {
                   type="button"
                   onClick={() => { setDateFrom(""); setDateTo(""); }}
                   className="text-muted-foreground hover:text-foreground"
-                  title="Limpar datas"
+                  title="Ver tudo (limpar datas)"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
+              {(() => {
+                const today = todayISO();
+                const isToday = dateFrom === today && dateTo === today;
+                if (isToday) return null;
+                return (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => { setDateFrom(today); setDateTo(today); }}
+                    title="Voltar para o dia de hoje"
+                  >
+                    Hoje
+                  </Button>
+                );
+              })()}
             </div>
             <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs">
               <span className="text-muted-foreground">Total de atendimentos:</span>
@@ -755,15 +778,35 @@ export default function Atendimentos() {
             <TableBody>
               {paginatedServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    {emailSearch || dateFrom || dateTo
-                      ? "Nenhum atendimento encontrado com os filtros aplicados."
-                      : "Nenhum atendimento registrado ainda."}
+                  <TableCell colSpan={7} className="py-10 text-center">
+                    {(() => {
+                      const today = todayISO();
+                      const isTodayDefault =
+                        dateFrom === today &&
+                        dateTo === today &&
+                        !emailSearch &&
+                        !filterTrackingCode;
+                      if (isTodayDefault) {
+                        return (
+                          <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                            <span className="text-sm font-medium text-foreground">Pronto para começar o dia 🚀</span>
+                            <span className="text-xs">Seu primeiro atendimento de hoje aparecerá aqui assim que registrado.</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <span className="text-sm text-muted-foreground">
+                          {emailSearch || dateFrom || dateTo || filterTrackingCode
+                            ? "Nenhum atendimento encontrado com os filtros aplicados."
+                            : "Nenhum atendimento registrado ainda."}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedServices.map((s) => (
-                  <TableRow key={s.id}>
+                paginatedServices.map((s, idx) => (
+                  <TableRow key={s.id} className={idx % 2 === 1 ? "bg-muted/40" : undefined}>
                     <TableCell>
                       {(() => {
                         const dt = parseServiceDateForDisplay(s.service_date);
