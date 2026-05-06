@@ -105,6 +105,10 @@ function todayISO() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
+function todayBRDisplay() {
+  return new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
 function toSaoPauloTimestamptz(dateOnly: string) {
   // services.service_date is timestamptz; if we send YYYY-MM-DD, Postgres will interpret as 00:00Z,
   // which becomes the previous day in São Paulo. We store midnight São Paulo explicitly.
@@ -162,7 +166,7 @@ export default function Atendimentos() {
 
   // Form state
   const [clientEmail, setClientEmail] = useState("");
-  const [serviceDate, setServiceDate] = useState("");
+  const [serviceDate, setServiceDate] = useState(() => todayISO());
   const [product, setProduct] = useState("");
   const [platform, setPlatform] = useState("");
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
@@ -375,7 +379,7 @@ export default function Atendimentos() {
 
       const { error } = await supabase.from("services").insert({
         client_email: clientEmail.trim(),
-        service_date: toSaoPauloTimestamptz(serviceDate),
+        service_date: toSaoPauloTimestamptz(todayISO()),
         product,
         platform,
         channel,
@@ -404,7 +408,7 @@ export default function Atendimentos() {
       concludeAfterCreate.current = false;
 
       setClientEmail("");
-      setServiceDate("");
+      setServiceDate(todayISO());
       setProduct("");
       setPlatform("");
       setChannel("Email");
@@ -600,18 +604,9 @@ export default function Atendimentos() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="serviceDate">Data do Atendimento</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="serviceDate"
-                  type="date"
-                  value={serviceDate}
-                  onChange={(e) => setServiceDate(e.target.value)}
-                  required
-                />
-                <Button type="button" onClick={() => setServiceDate(todayISO())}>
-                  Hoje
-                </Button>
+              <Label>Data do Atendimento</Label>
+              <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground">
+                Hoje ({todayBRDisplay()})
               </div>
             </div>
 

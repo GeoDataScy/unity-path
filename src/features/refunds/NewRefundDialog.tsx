@@ -24,7 +24,7 @@ import {
 import { SALES_PLATFORMS, REFUND_PRODUCTS } from "@/features/refunds/types";
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
 // No cadastro inicial ("Em aberto"), apenas 4 campos devem ser obrigatórios:

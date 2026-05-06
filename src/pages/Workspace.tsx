@@ -75,7 +75,7 @@ const PRODUCTS = [
 ] as const;
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
 function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
