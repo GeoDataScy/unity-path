@@ -285,50 +285,52 @@ export default function Reembolsos() {
           {isLoading && <span className="text-sm text-muted-foreground">Carregando...</span>}
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar por e-mail..."
-                value={emailSearch}
-                onChange={(e) => setEmailSearch(e.target.value)}
-                className="h-9 w-56 pl-8 text-sm"
-              />
-            </div>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="h-9 w-36 text-sm"
-              title="Data inicial (solicitação)"
-            />
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="h-9 w-36 text-sm"
-              title="Data final (solicitação)"
-            />
-            {hasFilters && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 gap-1.5 text-xs"
-                onClick={() => { setEmailSearch(""); setDateFrom(""); setDateTo(""); }}
-              >
-                <X className="h-3 w-3" />
-                Limpar filtros
-              </Button>
-            )}
-          </div>
-
           <Tabs defaultValue="open" className="w-full">
-            <TabsList>
-              <TabsTrigger value="open">Em Aberto</TabsTrigger>
-              <TabsTrigger value="done">Histórico/Concluídos</TabsTrigger>
-            </TabsList>
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <TabsList className="self-start">
+                <TabsTrigger value="open">Em Aberto</TabsTrigger>
+                <TabsTrigger value="done">Histórico/Concluídos</TabsTrigger>
+              </TabsList>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por e-mail..."
+                    value={emailSearch}
+                    onChange={(e) => setEmailSearch(e.target.value)}
+                    className="h-9 w-56 pl-8 text-sm"
+                  />
+                </div>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-9 w-36 text-sm"
+                  title="Data inicial (solicitação)"
+                />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-9 w-36 text-sm"
+                  title="Data final (solicitação)"
+                />
+                {hasFilters && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 gap-1.5 text-xs"
+                    onClick={() => { setEmailSearch(""); setDateFrom(""); setDateTo(""); }}
+                  >
+                    <X className="h-3 w-3" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </div>
 
             <TabsContent value="open">
               <div className="mb-2 flex items-center justify-between">
