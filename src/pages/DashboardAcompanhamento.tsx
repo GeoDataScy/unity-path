@@ -74,15 +74,16 @@ function useWeeklyMetricsQuery(weeks: WeekRange[]) {
   return useQuery({
     queryKey: ["acompanhamento", "weekly", weeks.map((w) => w.from).join(",")],
     queryFn: async (): Promise<WeeklyMetrics[]> => {
-      const results: WeeklyMetrics[] = [];
-      for (const week of weeks) {
-        const { data, error } = await supabase.rpc("dashboard_metrics", {
-          from_date: week.from,
-          to_date: week.to,
-        });
-        if (error) throw error;
-        results.push(data as WeeklyMetrics);
-      }
+      const results = await Promise.all(
+        weeks.map(async (week) => {
+          const { data, error } = await supabase.rpc("dashboard_metrics", {
+            from_date: week.from,
+            to_date: week.to,
+          });
+          if (error) throw error;
+          return data as WeeklyMetrics;
+        }),
+      );
       return results;
     },
     staleTime: 60_000,
