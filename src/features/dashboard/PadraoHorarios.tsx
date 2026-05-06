@@ -395,20 +395,16 @@ function ExplainDialog({
               <DialogDescription>{content.subtitle}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 text-sm">
-              <Section title="O que isso significa, sem matematiquês:">
+              <Section title="Em poucas palavras">
                 <p className="text-muted-foreground">{content.simple}</p>
               </Section>
-              <Section title="Como o sistema chega nesse número:">
-                <p className="text-muted-foreground">{content.how}</p>
+              <Section title="Como o sistema coleta esses horários">
+                <p className="text-muted-foreground">{content.collection}</p>
               </Section>
-              {content.formula && (
-                <Section title="A fórmula matemática:">
-                  <pre className="overflow-x-auto rounded-md border bg-muted/40 p-3 text-xs leading-relaxed">
-                    {content.formula}
-                  </pre>
-                </Section>
-              )}
-              <Section title="Como ler o resultado:">
+              <Section title="Por que esse número apareceu aqui">
+                <p className="text-muted-foreground">{content.why}</p>
+              </Section>
+              <Section title="Como ler o resultado">
                 <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
                   {content.howToRead.map((tip, i) => (
                     <li key={i}>{tip}</li>
@@ -417,7 +413,7 @@ function ExplainDialog({
               </Section>
               {content.caveat && (
                 <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                  <strong>Importante:</strong> {content.caveat}
+                  <strong>Vale lembrar:</strong> {content.caveat}
                 </div>
               )}
             </div>
@@ -441,8 +437,8 @@ type Explanation = {
   title: string;
   subtitle: string;
   simple: string;
-  how: string;
-  formula?: string;
+  collection: string;
+  why: string;
   howToRead: string[];
   caveat?: string;
 };
@@ -450,104 +446,105 @@ type Explanation = {
 const CONTENTS: Record<"peak" | "start" | "end" | "goal" | "heatmap" | "shift", (goal: number) => Explanation> = {
   heatmap: () => ({
     title: "Mapa de calor — quando o time trabalha",
-    subtitle: "Cada quadradinho representa um dia da semana e uma hora do dia.",
+    subtitle: "Cada quadradinho mostra um dia da semana e uma hora do dia.",
     simple:
-      "Imagine que você anotou em um caderno toda vez que alguém fez um atendimento, e marcou em qual dia da semana e em qual hora. Depois você empilha tudo: terça às 10h tem muitas marcações? O quadradinho fica escuro. Domingo às 4h da manhã tem nenhuma? Fica claro. Esse mapa é exatamente isso, mas o sistema desenha pra você.",
-    how:
-      "O sistema converte cada atendimento e cada interação para o horário de São Paulo, separa por dia da semana (de domingo a sábado) e por hora do dia (de 0h até 23h), e conta quantos eventos caíram em cada combinação. Cada combinação vira um quadradinho colorido — quanto mais eventos, mais escura a cor.",
+      "É como uma agenda visual da semana inteira: linhas são os dias (Segunda, Terça...) e colunas são as horas (0h até 23h). Quanto mais escura a cor do quadrado, mais o time trabalhou naquele momento.",
+    collection:
+      "Toda vez que um agente cadastra um atendimento ou registra uma interação no sistema, fica gravado o horário exato em que aquilo aconteceu. O sistema pega esses horários e converte para o horário de São Paulo, depois separa cada um pelo dia da semana e pela hora do dia.",
+    why:
+      "O sistema empilha todas as ações do período escolhido em 168 quadradinhos (7 dias da semana × 24 horas). Cada vez que uma ação cai em um deles, o quadrado 'esquenta' um pouco. No final, os quadrados mais cheios ficam mais escuros — então é só bater o olho pra ver quando o time mais trabalha.",
     howToRead: [
-      "Linhas mostram o dia da semana (Seg, Ter, Qua...)",
-      "Colunas mostram a hora do dia (0h até 23h)",
-      "Quanto mais escuro o quadrado, mais o time trabalhou naquele momento",
-      "Quadrados claros (quase brancos) = pouco ou nenhum trabalho",
-      "Olhe o padrão geral: existem dias mais fortes? Há horários mortos no meio do dia?",
+      "Linhas = dia da semana (Seg, Ter, Qua...)",
+      "Colunas = hora do dia (0h até 23h)",
+      "Quanto mais escuro, mais ações naquela hora daquele dia",
+      "Quadrados quase brancos = pouco ou nenhum trabalho",
+      "Olhe o padrão geral: dias mais fortes? Horas mortas no meio do dia? Algo na madrugada?",
     ],
     caveat:
-      "Se uma hora isolada está muito quente, pode ser cadastro em massa (alguém empilhou registros). Olhe o padrão geral, não só o quadradinho mais escuro.",
+      "Se um quadrado isolado está muito escuro, pode ser cadastro em massa (alguém empilhou vários tickets de uma vez). Vale olhar o padrão geral, não só o quadrado mais escuro.",
   }),
   peak: () => ({
     title: "Hora de pico do time",
-    subtitle: "A combinação de dia da semana + hora do dia em que o time mais trabalhou.",
+    subtitle: "O dia da semana e a hora em que o time mais trabalhou no período.",
     simple:
-      "É o quadradinho mais escuro do mapa. Mostra exatamente em qual momento da semana o time estava mais ativo no período escolhido.",
-    how:
-      "O sistema percorre todos os 168 quadrados (7 dias × 24 horas) do mapa de calor e escolhe aquele com o maior número de atendimentos+interações.",
-    formula: `pico = MAX(contagem) sobre todos os pares (dia_da_semana, hora_do_dia)`,
+      "É o quadrado mais escuro do mapa de calor. Mostra exatamente em qual momento da semana o time estava com mais movimento.",
+    collection:
+      "O sistema usa o mesmo registro do mapa de calor: cada cadastro de atendimento e cada interação ficam guardados com o horário em que aconteceram, convertidos para o horário de São Paulo.",
+    why:
+      "Depois de contar quantas ações caíram em cada combinação de dia + hora, o sistema simplesmente escolhe a combinação com o maior número de ações. Se 'Quarta às 15h' tem 89 ações e nenhuma outra combinação chegou perto, esse é o pico.",
     howToRead: [
-      "Mostra dia da semana e hora juntos: 'Quarta às 15h'",
-      "Útil pra escalar gente nesse horário (não deixar ninguém faltando)",
-      "Útil pra entender se o time concentra esforço em um único pico (ruim) ou se distribui bem (bom)",
+      "Aparece junto: dia da semana e hora (ex: 'Quarta às 15h')",
+      "Útil pra saber em que momento garantir mais gente disponível",
+      "Se o pico está muito concentrado, talvez o time precise distribuir melhor a carga",
     ],
     caveat:
-      "Pico isolado pode ser cadastro retroativo em massa, especialmente nas primeiras horas da manhã. Cruze com a tela de 'Atendimentos' pra confirmar.",
+      "Picos no início da manhã podem ser cadastro retroativo (atendimentos de ontem registrados hoje cedo). Vale conferir na tela 'Atendimentos' pra ter certeza.",
   }),
   start: () => ({
     title: "Hora típica de início do dia",
     subtitle: "Por volta de que horas o time costuma começar a trabalhar.",
     simple:
-      "Em cada dia que o time teve atividade, o sistema anota a hora do PRIMEIRO atendimento ou interação. Depois pega o valor 'do meio' dessa lista. Esse valor é a hora típica de início.",
-    how:
-      "Para cada dia com atividade no período, registramos o horário da primeira ação. Tiramos a MEDIANA — o valor central — em vez da média comum. Mediana é mais robusta: um dia com início estranho (ex: alguém abriu o sistema às 3h da manhã pra testar) não distorce o resultado.",
-    formula: `inicio = MEDIANA(hora_da_primeira_atividade) por dia`,
+      "É a hora em que, na maioria dos dias, alguém do time fez a primeira ação. Funciona como um 'horário típico de chegada'.",
+    collection:
+      "Cada cadastro de atendimento e cada interação ficam guardados com o horário exato. O sistema, em cada dia que teve atividade, identifica o primeiro horário de cada um — o início do expediente daquele dia.",
+    why:
+      "Em vez de usar a média (que pode ser distorcida por dias estranhos, tipo alguém testando o sistema às 3h da madrugada), o sistema pega o valor 'do meio' da lista. Pra entender: se você ordenar todos os horários de início e olhar o que está bem no centro, esse é o número que aparece. Metade dos dias começou antes desse horário, metade começou depois.",
     howToRead: [
-      "Se o resultado é 09:12, significa que tipicamente alguém do time começa por volta dessa hora",
-      "Mediana = no meio: metade dos dias começou antes, metade começou depois",
-      "Comparar com o expediente esperado ajuda a detectar atrasos crônicos",
+      "Se aparece 09:12, é por volta dessa hora que o time costuma chegar",
+      "Comparar com o horário oficial de expediente ajuda a detectar atrasos frequentes",
+      "Se o filtro está em um agente só, é só dele; se está em 'todos', é o time inteiro",
     ],
     caveat:
-      "Se há cadastros retroativos (lançar tickets de ontem hoje de manhã), pode parecer que o dia começa cedo demais. Olhe junto com a tela de 'Atendimentos' pra confirmar.",
+      "Se há cadastros retroativos (alguém lança hoje cedo um ticket que aconteceu ontem), o início pode parecer mais cedo do que de fato é. Vale cruzar com a tela 'Atendimentos'.",
   }),
   end: () => ({
     title: "Hora típica de fim do dia",
-    subtitle: "Por volta de que horas o time costuma encerrar a atividade.",
+    subtitle: "Por volta de que horas o time costuma encerrar o expediente.",
     simple:
-      "Mesma ideia do início, só que olhando o ÚLTIMO atendimento ou interação de cada dia. O sistema pega a hora da última ação por dia, e mostra o valor 'do meio' dessa lista.",
-    how:
-      "Para cada dia com atividade, registramos o horário da última ação. Tiramos a mediana — o valor central — para evitar que dias atípicos puxem o resultado.",
-    formula: `fim = MEDIANA(hora_da_ultima_atividade) por dia`,
+      "É a hora em que, na maioria dos dias, alguém do time fez a última ação. Funciona como um 'horário típico de saída'.",
+    collection:
+      "Mesmo registro usado nos outros cards: cada ação tem horário gravado. O sistema, em cada dia que teve atividade, identifica a última ação registrada — o fim do expediente daquele dia.",
+    why:
+      "Como no início do dia, o sistema pega o valor 'do meio' da lista (não a média), pra evitar que dias com horários muito atípicos puxem o número pra um lado ou pro outro. Resultado: metade dos dias terminou antes desse horário, metade depois.",
     howToRead: [
-      "Se o resultado é 18:30, é por volta dessa hora que o time costuma parar",
-      "Comparar com a hora esperada de fim ajuda a detectar excesso de horas",
-      "Se o número está muito tarde, vale checar disponibilidade do time",
+      "Se aparece 18:30, é por volta dessa hora que o time costuma encerrar",
+      "Comparar com o horário esperado de saída ajuda a detectar excesso de horas",
+      "Se está bem mais tarde do que o esperado, vale conferir disponibilidade",
     ],
     caveat:
-      "Atividade tarde da noite pode ser cadastro pontual e não significa que o time trabalhou todo o tempo. Use a hora de fim em conjunto com a hora de início para estimar duração de turno.",
+      "Uma ação isolada tarde da noite pode mover o número, sem necessariamente significar que o time ficou trabalhando até tarde. Use junto com o início do dia pra estimar duração de turno.",
   }),
   goal: (goal) => ({
     title: `Hora em que a meta de ${goal} é batida`,
-    subtitle: `Em média, em que momento do dia o agente cruza a meta de ${goal} atendimentos.`,
+    subtitle: `Por volta de que horas o agente atinge ${goal} atendimentos no dia.`,
     simple:
-      `Imagine que cada agente tem uma meta diária — ${goal} atendimentos no caso. O sistema acompanha cada dia e olha em que hora o agente chegou nesses ${goal}. Depois pega o valor 'do meio' dessas horas (mediana). Se o número é 14:35, na maioria dos dias em que a meta foi batida, ela foi batida por volta dessa hora.`,
-    how:
-      `Para cada dia em que o agente teve atividade, ordenamos os atendimentos por hora e contamos quantos tickets DISTINTOS já tinham sido tocados. Quando esse contador chega em ${goal}, registramos a hora. Repetimos pra todos os dias do período e pegamos a mediana. Se o filtro for 'todos os agentes', primeiro calculamos por agente e depois tiramos a mediana entre os agentes.`,
-    formula:
-`Para cada (agente, dia):
-  ordenar atividades por timestamp
-  contar tickets distintos cumulativos
-  hora_meta = primeira hora em que cumulativo = ${goal}
-
-bate_meta = MEDIANA(hora_meta) sobre todos os pares (agente, dia)`,
+      `Cada agente tem uma meta diária. Quando aparece ${goal} aqui, é porque a meta dele é ${goal} atendimentos por dia. Esse card mostra a hora típica em que essa meta cai — em média, durante o dia, em que momento ele bate o número.`,
+    collection:
+      `Toda vez que um agente cadastra um atendimento ou registra interação, o horário fica gravado. Pra cada dia em que ele teve atividade, o sistema enfileira todos esses momentos em ordem. Aí vai contando quantos tickets diferentes ele já tocou — quando o contador chega em ${goal}, anota a hora.`,
+    why:
+      `O sistema repete essa contagem pra cada dia, e no fim pega o valor 'do meio' da lista (não a média) pra evitar que um dia atípico distorça o resultado. Se o filtro for 'todos os agentes', primeiro calcula a hora típica de cada agente e depois junta. A meta é definida pelo canal mais usado pelo agente: SMS = 150, demais (Email/Clickbank) = 100.`,
     howToRead: [
-      `O número mostra a hora típica em que o agente atinge ${goal} atendimentos`,
-      "Quanto mais cedo, mais produtivo é o agente",
-      "Se a meta nunca é batida, o número aparece como '—' e a contagem 'em 0 dias'",
-      "A meta é definida pelo canal majoritário do agente: SMS = 150, demais = 100",
+      `O horário mostrado é uma estimativa típica de quando a meta é atingida`,
+      "Quanto mais cedo, mais rápido o agente atinge o objetivo",
+      "Se a meta nunca foi batida no período, o card mostra '—' e 'em 0 dias'",
+      "A contagem 'em X de Y dias' é importante: se X for muito pequeno, o número é só um indicativo fraco",
     ],
     caveat:
-      "Esta é a hora MEDIANA — metade dos dias batem antes, metade batem depois. Se o time bate meta poucas vezes (poucos dias 'hit'), o número pode ser pouco representativo. Olhe junto com a contagem 'em X de Y dias'.",
+      "Se a meta foi batida em poucos dias dentro do período, o horário típico pode não representar bem a realidade — olhe a contagem 'em X de Y dias' antes de tirar conclusões.",
   }),
   shift: () => ({
     title: "Distribuição por turno",
-    subtitle: "Quanto da atividade total acontece em cada parte do dia.",
+    subtitle: "Quanto da atividade total cai em cada parte do dia.",
     simple:
-      "O dia foi dividido em 4 partes: manhã (5h-12h), tarde (12h-18h), noite (18h-22h) e madrugada (22h-5h). O sistema conta cada atendimento ou interação e calcula a participação percentual de cada turno no total.",
-    how:
-      "Cada atendimento e cada interação é classificado pelo turno em que aconteceu, com base na hora do dia em São Paulo. Depois somamos tudo e calculamos cada turno como porcentagem do total.",
-    formula: `participação(turno) = atividades_do_turno / total_de_atividades × 100%`,
+      "O dia foi dividido em 4 partes: manhã (5h–12h), tarde (12h–18h), noite (18h–22h) e madrugada (22h–5h). O gráfico mostra qual fatia do trabalho do time aconteceu em cada uma.",
+    collection:
+      "Os horários gravados em cada cadastro e em cada interação são usados pra classificar cada ação em uma dessas 4 partes do dia, com base no horário de São Paulo.",
+    why:
+      "O sistema soma quantas ações caíram em cada turno e calcula que porcentagem do total cada um representa. Por exemplo: se metade das ações aconteceu entre 12h e 18h, a tarde aparece com 50%.",
     howToRead: [
-      "Em equipes com horário comercial, é normal ver 80%+ entre Manhã e Tarde",
-      "Atividade significativa em Noite ou Madrugada merece investigação",
-      "Comparar entre períodos diferentes mostra mudanças no padrão de trabalho",
+      "Em times com horário comercial, é esperado que manhã + tarde somem 80% ou mais",
+      "Atividade alta em noite ou madrugada vale uma investigação",
+      "Comparar períodos diferentes mostra se o padrão de trabalho está mudando",
     ],
   }),
 };
