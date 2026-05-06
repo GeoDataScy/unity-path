@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
+import { emitAgentInteraction } from "@/features/agent/check-in/agent-events";
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
@@ -437,6 +438,7 @@ export default function Atendimentos() {
       setHasTrackingCode(false);
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
+      emitAgentInteraction();
 
       toast(
         shouldConclude

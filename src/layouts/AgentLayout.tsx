@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
+import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
 
 export type AgentOutletContext = {
   userId: string;
@@ -119,6 +120,7 @@ export default function AgentLayout() {
       </div>
 
       <PendingRefundsAlert enabled={Boolean(userId)} />
+      {userId && <AgentCheckInController userId={userId} fullName={fullName} />}
     </SidebarProvider>
   );
 }

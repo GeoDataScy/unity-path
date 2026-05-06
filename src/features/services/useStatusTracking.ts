@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { emitAgentInteraction } from "@/features/agent/check-in/agent-events";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -181,6 +182,7 @@ export function useStatusTracking() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
       queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
+      emitAgentInteraction();
     },
   });
 
