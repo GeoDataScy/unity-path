@@ -132,6 +132,22 @@ function addOneDayISO(dateISO: string): string {
   return new Date(y, m - 1, d + 1).toLocaleDateString("en-CA");
 }
 
+function formatCreatedAtTimeSP(value: string | null | undefined): string {
+  if (!value) return "—";
+  // Backend stores created_at without timezone in some rows (e.g. "2026-03-18T19:14:02.436").
+  // Treat naive timestamps as UTC, then convert to São Paulo for display.
+  const ts =
+    /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value}Z`;
+  const dt = new Date(ts);
+  if (Number.isNaN(dt.getTime())) return "—";
+  return dt.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 function parseServiceDateForDisplay(value: string | null | undefined): Date | null {
   if (!value) return null;
 
@@ -767,6 +783,7 @@ export default function Atendimentos() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data de abertura</TableHead>
+                <TableHead className="w-[80px]">Hora</TableHead>
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
@@ -778,7 +795,7 @@ export default function Atendimentos() {
             <TableBody>
               {paginatedServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center">
+                  <TableCell colSpan={8} className="py-10 text-center">
                     {(() => {
                       const today = todayISO();
                       const isTodayDefault =
@@ -812,6 +829,9 @@ export default function Atendimentos() {
                         const dt = parseServiceDateForDisplay(s.service_date);
                         return dt ? format(dt, "dd/MM/yyyy") : "—";
                       })()}
+                    </TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">
+                      {formatCreatedAtTimeSP(s.created_at)}
                     </TableCell>
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
