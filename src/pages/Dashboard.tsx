@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -35,6 +33,7 @@ import { useDashboardMetricsQuery } from "@/features/dashboard/useDashboardMetri
 import { useDashboardAuditQuery } from "@/features/dashboard/useDashboardAuditQuery";
 import { useFollowUpInsightsQuery } from "@/features/dashboard/useFollowUpInsightsQuery";
 import { ChannelDetailModal } from "@/components/dashboard/ChannelDetailModal";
+import { TendenciaTemporal } from "@/features/dashboard/TendenciaTemporal";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -401,34 +400,12 @@ const Dashboard = () => {
 
       {/* Evolution */}
       <section>
-        <Card>
-          <CardHeader>
-            <CardTitle>Tendência temporal</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[340px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : byDaySeries.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={byDaySeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#areaFill)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+        <TendenciaTemporal
+          loading={isLoading}
+          byDay={(metrics?.by_day ?? []).map(({ day, value }) => ({ day, value }))}
+          movingWindow={15}
+          forecastDays={7}
+        />
       </section>
 
       {/* Table */}
