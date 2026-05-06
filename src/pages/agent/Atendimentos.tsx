@@ -560,7 +560,6 @@ export default function Atendimentos() {
                 size="sm"
                 variant={channel === ch ? "default" : "outline"}
                 onClick={() => {
-                  if (ch !== "SMS") setHasTrackingCode(false);
                   if ((ch === "SMS") !== (channel === "SMS")) setClientEmail("");
                   setChannel(ch);
                 }}
@@ -571,14 +570,13 @@ export default function Atendimentos() {
             <div className="ml-4 flex items-center gap-2 border-l pl-4">
               <Label
                 htmlFor="tracking-code-toggle"
-                className={`text-sm cursor-pointer ${channel === "SMS" ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+                className="text-sm cursor-pointer text-muted-foreground"
               >
                 Cód. Rastreio
               </Label>
               <Switch
                 id="tracking-code-toggle"
                 checked={hasTrackingCode}
-                disabled={channel !== "SMS"}
                 onCheckedChange={setHasTrackingCode}
               />
             </div>
