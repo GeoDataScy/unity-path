@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { emitAgentInteraction } from "@/features/agent/check-in/agent-events";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ function groupByService(rows: FollowUpRow[]): Record<string, FollowUpRow[]> {
 
 export function useStatusTracking() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: allFollowUps = [] } = useFollowUpsQuery(true);
   const grouped = groupByService(allFollowUps);
 
@@ -183,6 +185,18 @@ export function useStatusTracking() {
       queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
       queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       emitAgentInteraction();
+    },
+    onError: (error: unknown) => {
+      // Last-chance fallback so failures never go silent — even if the caller
+      // forgot to attach a try/catch. Surface the real cause to the agent.
+      const message =
+        error instanceof Error ? error.message : "Não foi possível registrar a interação.";
+      console.error("[follow-up] insert failed:", error);
+      toast({
+        title: "Erro ao registrar interação",
+        description: message,
+        variant: "destructive",
+      });
     },
   });
 

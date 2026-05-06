@@ -165,10 +165,12 @@ export default function Reembolsos() {
         description: "Seu registro foi salvo com sucesso.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[create-refund] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível salvar o reembolso.";
       toast({
         title: "Erro ao registrar",
-        description: error?.message ?? "Não foi possível salvar o reembolso.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -198,10 +200,12 @@ export default function Reembolsos() {
         description: "O registro foi atualizado.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[complete-refund] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar o reembolso.";
       toast({
         title: "Erro ao concluir",
-        description: error?.message ?? "Não foi possível atualizar o reembolso.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -216,10 +220,12 @@ export default function Reembolsos() {
       await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
       toast({ title: "Reembolso excluído", description: "O registro foi removido." });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[delete-refund] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível excluir o reembolso.";
       toast({
         title: "Erro ao excluir",
-        description: error?.message ?? "Não foi possível excluir o reembolso.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -246,10 +252,12 @@ export default function Reembolsos() {
       await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
       toast({ title: "Reembolso atualizado", description: "As alterações foram salvas." });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[edit-refund] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar o reembolso.";
       toast({
         title: "Erro ao atualizar",
-        description: error?.message ?? "Não foi possível atualizar o reembolso.",
+        description: message,
         variant: "destructive",
       });
     },

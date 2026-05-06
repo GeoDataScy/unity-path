@@ -100,10 +100,14 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
       setObservation("");
       setIsReopening(false);
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
+      console.error("[status-tracking-dialog] insert failed:", error);
+      const message = error instanceof Error
+        ? error.message
+        : "Não foi possível registrar o acompanhamento.";
       toast({
         title: "Erro ao registrar",
-        description: error?.message ?? "Não foi possível registrar o acompanhamento.",
+        description: message,
         variant: "destructive",
       });
     }

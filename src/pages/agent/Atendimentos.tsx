@@ -253,6 +253,18 @@ export default function Atendimentos() {
       try {
         await addEntryMutation.mutateAsync({ serviceId: s.id, status: "concluido", recordedAt, observation: "" });
         toast({ title: "Atendimento concluído", description: "Ticket registrado como concluído." });
+      } catch (error) {
+        // Surface the real failure (network drop, expired session, RLS, etc.)
+        // instead of silently swallowing it — a swallowed error is what makes
+        // the agent believe the action saved when it didn't.
+        console.error("[quick-conclude] failed:", error);
+        const message =
+          error instanceof Error ? error.message : "Não foi possível concluir o atendimento.";
+        toast({
+          title: "Erro ao concluir",
+          description: message,
+          variant: "destructive",
+        });
       } finally {
         setConcludingId(null);
       }
@@ -446,11 +458,13 @@ export default function Atendimentos() {
           : { title: "Atendimento registrado", description: "Seu registro foi salvo com sucesso." },
       );
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       concludeAfterCreate.current = false;
+      console.error("[create-service] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível registrar o atendimento.";
       toast({
         title: "Erro ao registrar",
-        description: error?.message ?? "Não foi possível registrar o atendimento.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -469,10 +483,12 @@ export default function Atendimentos() {
         description: "O registro foi removido.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[delete-service] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível excluir o atendimento.";
       toast({
         title: "Erro ao excluir",
-        description: error?.message ?? "Não foi possível excluir o atendimento.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -500,10 +516,12 @@ export default function Atendimentos() {
         description: "As alterações foram salvas.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      console.error("[edit-service] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar o atendimento.";
       toast({
         title: "Erro ao atualizar",
-        description: error?.message ?? "Não foi possível atualizar o atendimento.",
+        description: message,
         variant: "destructive",
       });
     },
