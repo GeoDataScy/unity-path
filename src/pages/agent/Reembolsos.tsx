@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CheckCircle2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -11,6 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { useMyRefundsQuery } from "@/features/refunds/useMyRefundsQuery";
@@ -98,6 +106,25 @@ export default function Reembolsos() {
   );
 
   const hasFilters = Boolean(emailSearch || dateFrom || dateTo);
+
+  // Pagination — only the "Histórico/Concluídos" tab. "Em Aberto" stays as-is
+  // because it's typically short and benefits from seeing everything at once.
+  const DONE_PAGE_SIZE = 15;
+  const [donePage, setDonePage] = useState(1);
+  const doneTotalPages = Math.max(1, Math.ceil(filteredDoneRefunds.length / DONE_PAGE_SIZE));
+
+  useEffect(() => {
+    setDonePage(1);
+  }, [emailSearch, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (donePage > doneTotalPages) setDonePage(doneTotalPages);
+  }, [donePage, doneTotalPages]);
+
+  const paginatedDoneRefunds = useMemo(() => {
+    const start = (donePage - 1) * DONE_PAGE_SIZE;
+    return filteredDoneRefunds.slice(start, start + DONE_PAGE_SIZE);
+  }, [filteredDoneRefunds, donePage]);
 
   const createMutation = useMutation({
     mutationFn: async (values: NewRefundValues) => {
@@ -385,7 +412,7 @@ export default function Reembolsos() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredDoneRefunds.map((r) => (
+                      paginatedDoneRefunds.map((r) => (
                         <TableRow key={r.id}>
                           <TableCell>
                             {(() => {
@@ -465,6 +492,55 @@ export default function Reembolsos() {
                   </TableBody>
                 </Table>
               </div>
+
+              {filteredDoneRefunds.length > DONE_PAGE_SIZE && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Página {donePage} de {doneTotalPages} • {filteredDoneRefunds.length} registros
+                  </p>
+                  <Pagination className="sm:justify-end">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDonePage((p) => Math.max(1, p - 1));
+                          }}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: doneTotalPages }).slice(0, 7).map((_, idx) => {
+                        const p = idx + 1;
+                        return (
+                          <PaginationItem key={p}>
+                            <PaginationLink
+                              href="#"
+                              isActive={p === donePage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setDonePage(p);
+                              }}
+                            >
+                              {p}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDonePage((p) => Math.min(doneTotalPages, p + 1));
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
