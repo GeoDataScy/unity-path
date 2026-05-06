@@ -107,23 +107,38 @@ export default function Reembolsos() {
 
   const hasFilters = Boolean(emailSearch || dateFrom || dateTo);
 
-  // Pagination — only the "Histórico/Concluídos" tab. "Em Aberto" stays as-is
-  // because it's typically short and benefits from seeing everything at once.
-  const DONE_PAGE_SIZE = 15;
+  // Pagination — same client-side paging applied to both tabs (15 rows/page),
+  // reset on filter change, defensive clamp if the active page exceeds the
+  // total after filtering.
+  const PAGE_SIZE = 15;
+
+  const [openPage, setOpenPage] = useState(1);
+  const openTotalPages = Math.max(1, Math.ceil(filteredOpenRefunds.length / PAGE_SIZE));
+
   const [donePage, setDonePage] = useState(1);
-  const doneTotalPages = Math.max(1, Math.ceil(filteredDoneRefunds.length / DONE_PAGE_SIZE));
+  const doneTotalPages = Math.max(1, Math.ceil(filteredDoneRefunds.length / PAGE_SIZE));
 
   useEffect(() => {
+    setOpenPage(1);
     setDonePage(1);
   }, [emailSearch, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (openPage > openTotalPages) setOpenPage(openTotalPages);
+  }, [openPage, openTotalPages]);
 
   useEffect(() => {
     if (donePage > doneTotalPages) setDonePage(doneTotalPages);
   }, [donePage, doneTotalPages]);
 
+  const paginatedOpenRefunds = useMemo(() => {
+    const start = (openPage - 1) * PAGE_SIZE;
+    return filteredOpenRefunds.slice(start, start + PAGE_SIZE);
+  }, [filteredOpenRefunds, openPage]);
+
   const paginatedDoneRefunds = useMemo(() => {
-    const start = (donePage - 1) * DONE_PAGE_SIZE;
-    return filteredDoneRefunds.slice(start, start + DONE_PAGE_SIZE);
+    const start = (donePage - 1) * PAGE_SIZE;
+    return filteredDoneRefunds.slice(start, start + PAGE_SIZE);
   }, [filteredDoneRefunds, donePage]);
 
   const createMutation = useMutation({
@@ -337,7 +352,7 @@ export default function Reembolsos() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredOpenRefunds.map((r) => (
+                      paginatedOpenRefunds.map((r) => (
                         <TableRow key={r.id}>
                           <TableCell>
                             {(() => {
@@ -370,6 +385,55 @@ export default function Reembolsos() {
                   </TableBody>
                 </Table>
               </div>
+
+              {filteredOpenRefunds.length > PAGE_SIZE && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Página {openPage} de {openTotalPages} • {filteredOpenRefunds.length} registros
+                  </p>
+                  <Pagination className="sm:justify-end">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setOpenPage((p) => Math.max(1, p - 1));
+                          }}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: openTotalPages }).slice(0, 7).map((_, idx) => {
+                        const p = idx + 1;
+                        return (
+                          <PaginationItem key={p}>
+                            <PaginationLink
+                              href="#"
+                              isActive={p === openPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOpenPage(p);
+                              }}
+                            >
+                              {p}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setOpenPage((p) => Math.min(openTotalPages, p + 1));
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="done">
@@ -493,7 +557,7 @@ export default function Reembolsos() {
                 </Table>
               </div>
 
-              {filteredDoneRefunds.length > DONE_PAGE_SIZE && (
+              {filteredDoneRefunds.length > PAGE_SIZE && (
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     Página {donePage} de {doneTotalPages} • {filteredDoneRefunds.length} registros

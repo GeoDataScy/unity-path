@@ -14,9 +14,12 @@ export type AgentMetricsItem = {
 };
 
 export type AgentMyMetrics = {
+  /** DISTINCT services with activity in range (matches Atendimentos.tsx). */
+  total_count: number;
+  /** Legacy alias kept for backward compatibility — equals total_count. */
+  total_interactions: number;
   new_services: number;
   follow_ups: number;
-  total_interactions: number;
   avg_daily: number;
   best_day: string | null;
   best_day_count: number;
@@ -26,9 +29,20 @@ export type AgentMyMetrics = {
   by_channel: AgentMetricsItem[];
   by_platform: AgentMetricsItem[];
   by_product: AgentMetricsItem[];
+  // Team comparison
+  /** Average total across OTHER agents (excludes the current agent). */
+  team_average: number;
+  team_leader_name: string;
+  team_leader_count: number;
+  is_leader: boolean;
+  /** How many % the team average is ABOVE own count. 0 if own >= avg. */
+  gap_to_avg_pct: number;
+  /** True when own_total > 0 and own < team_average * 0.8. */
+  is_below_team_avg_20pct: boolean;
+  // Legacy benchmark fields (point to leader, kept for back-compat)
   benchmark_name: string;
   benchmark_count: number;
-  is_leader: boolean;
+  // Refunds
   refunds_open: number;
   refunds_done: number;
   refunds_total_value: number;

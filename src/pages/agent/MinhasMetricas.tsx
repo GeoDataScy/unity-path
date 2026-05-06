@@ -10,8 +10,6 @@ import {
   Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -22,13 +20,14 @@ import {
   Award,
   BarChart3,
   CheckCircle2,
+  CloudRain,
+  Crown,
   MessageSquare,
   RefreshCw,
   Star,
   TrendingDown,
   TrendingUp,
   Users,
-  Zap,
 } from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
@@ -80,7 +79,7 @@ function fmtUsd(n: number) {
 
 // ── Motivation engine ──────────────────────────────────────────────────────────
 
-type MotivationTone = "leader" | "great" | "good" | "neutral" | "push";
+type MotivationTone = "leader" | "great" | "good" | "neutral" | "sad";
 
 interface MotivationResult {
   title: string;
@@ -88,74 +87,71 @@ interface MotivationResult {
   tone: MotivationTone;
 }
 
-function getMotivation(m: AgentMyMetrics, days: number): MotivationResult {
-  const { total_interactions: total, benchmark_count: bench, benchmark_name: benchName,
-          is_leader, trend_label, trend_pct, avg_daily, new_services } = m;
+function getMotivation(m: AgentMyMetrics): MotivationResult {
+  const {
+    total_interactions: total,
+    team_average,
+    team_leader_count,
+    team_leader_name,
+    is_leader,
+    is_below_team_avg_20pct,
+    gap_to_avg_pct,
+    trend_label,
+    trend_pct,
+  } = m;
 
+  // Empty period — gentle nudge
   if (total === 0) {
     return {
       title: "Bora começar!",
       message: "Nenhuma interação registrada neste período. O primeiro atendimento do dia é o mais importante — vamos lá!",
-      tone: "push",
+      tone: "sad",
     };
   }
 
-  if (is_leader || bench === 0) {
+  // Leader takes precedence over everything else
+  if (is_leader) {
     return {
       title: "Você lidera o período! 🏆",
-      message: `Com ${fmtN(total)} interações você está no topo do time neste período. Mantenha esse ritmo!`,
+      message: `Com ${fmtN(total)} atendimentos você está no topo do time. Mantenha esse ritmo!`,
       tone: "leader",
     };
   }
 
-  const pct = Math.round((total / bench) * 100);
-  const gap = bench - total;
-  const neededAvg = days > 0 ? Math.ceil(bench / days) : 0;
-
-  if (pct >= 90) {
+  // The flagged "20% below the team average" — sad tone with the exact copy
+  if (is_below_team_avg_20pct) {
     return {
-      title: "Incrível! Quase no topo 🎯",
-      message: `Você está a apenas ${fmtN(gap)} interação${gap !== 1 ? "ões" : ""} de superar ${benchName} (${fmtN(bench)}). Empurra mais!`,
+      title: "Hora de acelerar.",
+      message: `O time está ${fmtN(gap_to_avg_pct)}% acima de você. Cada interação conta.`,
+      tone: "sad",
+    };
+  }
+
+  // Above-or-around the team average — encouraging variants
+  if (team_average > 0 && total >= team_average) {
+    const aheadPct = Math.round(((total - team_average) / team_average) * 100);
+    return {
+      title: "Acima da média do time 📈",
+      message: aheadPct > 0
+        ? `Você está ${aheadPct}% acima da média do time (${fmtN(Math.round(team_average))}). Líder do período: ${team_leader_name} com ${fmtN(team_leader_count)}.`
+        : `Você está exatamente na média do time (${fmtN(Math.round(team_average))}). Bora superar?`,
       tone: "great",
     };
   }
 
-  if (pct >= 70 && trend_label === "Evoluindo") {
+  if (trend_label === "Evoluindo") {
     return {
-      title: `Evoluindo ${Math.abs(trend_pct).toFixed(0)}%! 📈`,
-      message: `Você está crescendo e chegando perto do benchmark de ${benchName} (${fmtN(bench)}). Continue assim e vai chegar lá!`,
-      tone: "great",
-    };
-  }
-
-  if (pct >= 70) {
-    return {
-      title: "Bom desempenho!",
-      message: `${pct}% do benchmark. ${benchName} tem ${fmtN(bench)} interações. Média de ${avg_daily.toFixed(1)}/dia — tente chegar a ${neededAvg}/dia.`,
+      title: `Tendência positiva: +${Math.abs(trend_pct).toFixed(0)}% 📊`,
+      message: `Você está crescendo. Continue nesse ritmo para alcançar a média do time (${fmtN(Math.round(team_average))}).`,
       tone: "good",
     };
   }
 
-  if (pct >= 50 && trend_label === "Evoluindo") {
-    return {
-      title: "Tendência positiva! 📊",
-      message: `Você já registrou ${fmtN(new_services)} atendimento${new_services !== 1 ? "s" : ""} novos. Com a tendência crescente, o benchmark (${fmtN(bench)}) está ao alcance.`,
-      tone: "good",
-    };
-  }
-
-  if (pct >= 50) {
-    return {
-      title: "Potencial em construção",
-      message: `Você tem ${fmtN(total)} interações vs ${fmtN(bench)} do benchmark (${benchName}). Uma média de ${neededAvg}/dia é o que precisa para chegar lá.`,
-      tone: "neutral",
-    };
-  }
-
+  // Below average but within the 20% tolerance
   return {
-    title: "Hora de acelerar! 🚀",
-    message: `Cada interação conta. O benchmark do período é ${fmtN(bench)} (${benchName}). ${trend_label === "Evoluindo" ? "A tendência está positiva — mantenha o foco!" : "Foque nos atendimentos novos e nas interações de follow-up!"}`,
-    tone: "push",
+    title: "Próximo da média",
+    message: `Você está com ${fmtN(total)} atendimentos. Média do time: ${fmtN(Math.round(team_average))}. Continue firme!`,
+    tone: "neutral",
   };
 }
 
@@ -204,6 +200,52 @@ function ChartEmpty({ msg = "Nenhum dado no período" }: { msg?: string }) {
   );
 }
 
+// ── Comparison bar (você vs referência) ───────────────────────────────────────
+
+function ComparisonBar({
+  label,
+  yourValue,
+  refValue,
+  youAheadColor,
+  refAheadColor,
+}: {
+  label: string;
+  yourValue: number;
+  refValue: number;
+  youAheadColor: string;
+  refAheadColor: string;
+}) {
+  const max = Math.max(yourValue, refValue, 1);
+  const yourPct = Math.round((yourValue / max) * 100);
+  const refPct = Math.round((refValue / max) * 100);
+  const youAhead = yourValue >= refValue;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="tabular-nums">
+          <span className="font-medium">{fmtN(yourValue)}</span>
+          <span className="mx-1.5 text-muted-foreground">/</span>
+          <span className="text-muted-foreground">{fmtN(Math.round(refValue))}</span>
+        </span>
+      </div>
+      <div className="relative h-2.5 overflow-hidden rounded-full bg-muted">
+        {/* Reference (lighter, full ref value) */}
+        <div
+          className={cn("absolute inset-y-0 left-0 rounded-full opacity-30", youAhead ? "bg-muted-foreground" : refAheadColor)}
+          style={{ width: `${refPct}%` }}
+        />
+        {/* You (solid) */}
+        <div
+          className={cn("absolute inset-y-0 left-0 rounded-full", youAhead ? youAheadColor : refAheadColor)}
+          style={{ width: `${yourPct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function MinhasMetricas() {
@@ -248,13 +290,8 @@ export default function MinhasMetricas() {
 
   const motivation = useMemo(() => {
     if (!m) return null;
-    return getMotivation(m, days);
+    return getMotivation(m);
   }, [m, days]);
-
-  const benchPct = useMemo(() => {
-    if (!m || m.benchmark_count === 0) return 100;
-    return Math.min(Math.round((m.total_interactions / m.benchmark_count) * 100), 100);
-  }, [m]);
 
   const chartSeries = useMemo(() => {
     if (!m) return [];
@@ -267,6 +304,7 @@ export default function MinhasMetricas() {
   }, [m]);
 
   const avgDaily = m ? Number(m.avg_daily ?? 0) : 0;
+  const teamAvgDaily = m && days > 0 ? Number(m.team_average ?? 0) / days : 0;
 
   const trendClass =
     trend.tone === "success"
@@ -280,7 +318,7 @@ export default function MinhasMetricas() {
     great:   "border-green-400 bg-green-50 dark:bg-green-950/30",
     good:    "border-primary/40 bg-primary/5",
     neutral: "border-border bg-card",
-    push:    "border-orange-400 bg-orange-50 dark:bg-orange-950/30",
+    sad:     "border-rose-400/70 bg-rose-50 dark:bg-rose-950/30",
   };
 
   const motivationIcon: Record<MotivationTone, React.ElementType> = {
@@ -288,7 +326,15 @@ export default function MinhasMetricas() {
     great:   Star,
     good:    TrendingUp,
     neutral: BarChart3,
-    push:    Zap,
+    sad:     CloudRain,
+  };
+
+  const motivationIconColor: Record<MotivationTone, string> = {
+    leader:  "text-yellow-500",
+    great:   "text-green-600",
+    good:    "text-primary",
+    neutral: "text-muted-foreground",
+    sad:     "text-rose-500",
   };
 
   return (
@@ -303,8 +349,18 @@ export default function MinhasMetricas() {
             &nbsp;·&nbsp;{days} dia{days !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="w-full md:w-[340px]">
-          <DateRangePicker value={range} onChange={setRange} />
+        <div className="flex w-full flex-col gap-1.5 md:w-[360px]">
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Período (de — até)
+          </label>
+          <DateRangePicker
+            value={range}
+            onChange={setRange}
+            className="border bg-background text-foreground hover:bg-accent"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Clique para escolher a data inicial e final
+          </p>
         </div>
       </header>
 
@@ -315,13 +371,68 @@ export default function MinhasMetricas() {
         <div className={cn("mb-6 flex items-start gap-3 rounded-xl border p-4", motivationBg[motivation.tone])}>
           {(() => {
             const Icon = motivationIcon[motivation.tone];
-            return <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />;
+            return <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", motivationIconColor[motivation.tone])} />;
           })()}
           <div>
             <p className="font-semibold">{motivation.title}</p>
             <p className="text-sm text-muted-foreground">{motivation.message}</p>
           </div>
         </div>
+      )}
+
+      {/* Team comparison card — você vs média vs líder */}
+      {!isLoading && m && (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Users className="h-4 w-4 text-primary" />
+              Comparação com o time no período
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {/* Você */}
+              <div className="rounded-lg border bg-card p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Você</div>
+                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(m.total_interactions)}</div>
+                <div className="text-xs text-muted-foreground">atendimentos</div>
+              </div>
+              {/* Média do time (excluindo você) */}
+              <div className="rounded-lg border bg-card p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Média do time</div>
+                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(Math.round(m.team_average))}</div>
+                <div className="text-xs text-muted-foreground">excluindo você</div>
+              </div>
+              {/* Líder */}
+              <div className="rounded-lg border bg-card p-3">
+                <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                  <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                  Líder
+                </div>
+                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(m.team_leader_count)}</div>
+                <div className="truncate text-xs text-muted-foreground">{m.is_leader ? "Você 🏆" : m.team_leader_name}</div>
+              </div>
+            </div>
+
+            {/* Progress bars: você vs média e você vs líder */}
+            <div className="mt-4 space-y-3">
+              <ComparisonBar
+                label="vs média"
+                yourValue={m.total_interactions}
+                refValue={m.team_average}
+                youAheadColor="bg-emerald-500"
+                refAheadColor="bg-rose-500"
+              />
+              <ComparisonBar
+                label="vs líder"
+                yourValue={m.total_interactions}
+                refValue={m.team_leader_count}
+                youAheadColor="bg-yellow-500"
+                refAheadColor="bg-primary"
+              />
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── KPIs: Atendimentos ─────────────────────────────────────────────── */}
@@ -381,17 +492,20 @@ export default function MinhasMetricas() {
         </Card>
       </section>
 
-      {/* ── KPIs: Reembolsos + Benchmark ──────────────────────────────────── */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* ── KPIs: Reembolsos ─────────────────────────────────────────────── */}
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Reembolsos
+      </h2>
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard
-          label="Reembolsos em aberto"
+          label="Em aberto"
           value={fmtN(m?.refunds_open ?? 0)}
           sub="solicitados no período"
           icon={RefreshCw}
           loading={isLoading}
         />
         <KpiCard
-          label="Reembolsos concluídos"
+          label="Concluídos"
           value={fmtN(m?.refunds_done ?? 0)}
           sub="finalizados no período"
           icon={CheckCircle2}
@@ -404,42 +518,6 @@ export default function MinhasMetricas() {
           icon={BarChart3}
           loading={isLoading}
         />
-
-        {/* Benchmark card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Users className="h-4 w-4 text-primary" />
-              Benchmark do período
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-12 w-full" />
-            ) : m?.is_leader ? (
-              <>
-                <div className="text-xl font-semibold text-yellow-600">Você lidera! 🏆</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">{fmtN(m.benchmark_count)} interações no topo</div>
-              </>
-            ) : (
-              <>
-                <div className="text-base font-semibold">{m?.benchmark_name ?? "—"}</div>
-                <div className="mt-1 flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${benchPct}%` }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-xs font-medium">{benchPct}%</span>
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {fmtN(m?.total_interactions ?? 0)} / {fmtN(m?.benchmark_count ?? 0)} interações
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* ── Melhor dia ────────────────────────────────────────────────────── */}
@@ -487,8 +565,16 @@ export default function MinhasMetricas() {
                     y={avgDaily}
                     stroke="hsl(var(--muted-foreground))"
                     strokeDasharray="6 4"
-                    label={{ value: "Média", position: "insideTopRight", fontSize: 10 }}
+                    label={{ value: "Sua média", position: "insideTopLeft", fontSize: 10 }}
                   />
+                  {teamAvgDaily > 0 && (
+                    <ReferenceLine
+                      y={teamAvgDaily}
+                      stroke="hsl(0 72% 55%)"
+                      strokeDasharray="3 3"
+                      label={{ value: "Média do time", position: "insideTopRight", fontSize: 10, fill: "hsl(0 72% 55%)" }}
+                    />
+                  )}
                   <Line type="monotone" dataKey="total"     stroke="hsl(var(--primary))"    strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                   <Line type="monotone" dataKey="novos"     stroke="hsl(142 71% 45%)"       strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
                   <Line type="monotone" dataKey="followups" stroke="hsl(221 83% 65%)"       strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
@@ -531,42 +617,9 @@ export default function MinhasMetricas() {
         </Card>
       </section>
 
-      {/* Produtos */}
-      <section className="mb-6 grid gap-4 lg:grid-cols-3">
+      {/* Plataforma */}
+      <section className="mb-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Mix de produtos</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : !m?.by_product?.length ? (
-              <ChartEmpty />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtN(v), "Atend."]} />
-                  <Pie
-                    data={m.by_product}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                  >
-                    {(m.by_product ?? []).map((_, i) => (
-                      <Cell key={`c-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Plataforma */}
-        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">Por plataforma</CardTitle>
           </CardHeader>
