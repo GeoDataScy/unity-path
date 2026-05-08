@@ -261,6 +261,86 @@ export type Database = {
           },
         ]
       }
+      training_videos: {
+        Row: {
+          id: string
+          section: string
+          title: string
+          description: string | null
+          video_url: string | null
+          thumbnail_url: string | null
+          duration_seconds: number | null
+          display_order: number
+          is_published: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          section: string
+          title: string
+          description?: string | null
+          video_url?: string | null
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          display_order?: number
+          is_published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          section?: string
+          title?: string
+          description?: string | null
+          video_url?: string | null
+          thumbnail_url?: string | null
+          duration_seconds?: number | null
+          display_order?: number
+          is_published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_video_views: {
+        Row: {
+          id: string
+          user_id: string
+          video_id: string
+          watched_seconds: number
+          completed: boolean
+          last_watched_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          video_id: string
+          watched_seconds?: number
+          completed?: boolean
+          last_watched_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          video_id?: string
+          watched_seconds?: number
+          completed?: boolean
+          last_watched_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "training_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { ClipboardList, HandCoins, LineChart } from "lucide-react";
+import { ClipboardList, GraduationCap, HandCoins, LineChart } from "lucide-react";
 
 import { NavLink } from "@/components/NavLink";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
+  { title: "Comece por aqui", to: "/workspace/comece-aqui", icon: GraduationCap },
   { title: "Atendimentos", to: "/workspace", icon: ClipboardList },
   { title: "Reembolsos", to: "/workspace/reembolsos", icon: HandCoins },
   { title: "Minhas métricas", to: "/workspace/metricas", icon: LineChart },

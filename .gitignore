@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI local state
+supabase/.temp/
+
+# Training videos — uploaded to Supabase Storage, not committed
+*.mp4
+*.webm
+*.mov
