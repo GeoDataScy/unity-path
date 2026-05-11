@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
-import { Activity, AlertTriangle, BarChart3, ClipboardCheck, RefreshCcw } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, ClipboardCheck, FileSpreadsheet, RefreshCcw } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
+import { exportEmptyReport } from "@/lib/reportExport";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -242,6 +243,15 @@ export default function ManagerLayout() {
           </div>
 
           <div className="mt-auto space-y-2">
+            <Button
+              onClick={() => exportEmptyReport(fromISO, toISO)}
+              variant="secondary"
+              className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Extrair Relatório
+            </Button>
+
             <Button
               onClick={handleLogout}
               variant="secondary"
