@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import type { RefundItem } from "@/features/refunds/types";
 
 const PERCENT_OPTIONS = Array.from({ length: 20 }, (_, i) => {
@@ -30,9 +29,28 @@ const PERCENT_OPTIONS = Array.from({ length: 20 }, (_, i) => {
   return `${String(value).padStart(2, "0")}%`;
 }) as unknown as readonly [string, ...string[]];
 
+const REASON_OPTIONS = [
+  "Insatisfação com o produto",
+  "Não reconhece a compra",
+  "Compra duplicada",
+  "Cobrança recorrente",
+  "Produto não funcionou como esperado",
+  "Atraso na entrega/acesso",
+  "Arrependimento de compra",
+  "Dificuldade de uso",
+  "Problemas técnicos",
+  "Compra em excesso",
+  "Outros",
+] as const satisfies readonly [string, ...string[]];
+
 function isValidPercentOption(value: string | null | undefined): value is (typeof PERCENT_OPTIONS)[number] {
   if (!value) return false;
   return (PERCENT_OPTIONS as readonly string[]).includes(value);
+}
+
+function isValidReasonOption(value: string | null | undefined): value is (typeof REASON_OPTIONS)[number] {
+  if (!value) return false;
+  return (REASON_OPTIONS as readonly string[]).includes(value);
 }
 
 function sanitizeUsdInput(raw: string): string {
@@ -55,7 +73,7 @@ const completeSchema = z.object({
     .min(1, "Informe o valor do reembolso")
     .regex(/^\d+(\.\d{1,2})?$/, "Use somente números (ex: 25 ou 25.50)"),
   refund_type: z.enum(PERCENT_OPTIONS, { message: "Selecione um percentual válido" }),
-  reason: z.string().trim().min(1, "Informe o motivo").max(2000, "Máximo de 2000 caracteres"),
+  reason: z.enum(REASON_OPTIONS, { message: "Selecione um motivo" }),
   items_returned: z.boolean(),
 });
 
@@ -75,7 +93,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
       completion_date: refund.completion_date ?? "",
       refund_value: refund.refund_value == null ? "" : refund.refund_value.toFixed(2),
       refund_type: isValidPercentOption(refund.refund_type) ? refund.refund_type : ("" as CompleteRefundValues["refund_type"]),
-      reason: refund.reason ?? "",
+      reason: isValidReasonOption(refund.reason) ? refund.reason : ("" as CompleteRefundValues["reason"]),
       items_returned: Boolean(refund.items_returned),
     }),
     [refund.completion_date, refund.refund_value, refund.refund_type, refund.reason, refund.items_returned],
@@ -177,11 +195,23 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
 
           <div className="grid gap-2">
             <Label htmlFor="complete-reason">Motivo</Label>
-            <Textarea
-              id="complete-reason"
-              placeholder="Descreva o motivo do reembolso"
-              className="min-h-[110px]"
-              {...form.register("reason")}
+            <Controller
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="complete-reason" aria-label="Motivo">
+                    <SelectValue placeholder="Selecione o motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REASON_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
             {form.formState.errors.reason?.message && (
               <p className="text-sm text-destructive">{form.formState.errors.reason.message}</p>
