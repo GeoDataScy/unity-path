@@ -156,7 +156,7 @@ export default function ManagerLayout() {
               }
             >
               <BarChart3 className="h-4 w-4" />
-              <span>Dashboard</span>
+              <span>Atendimentos</span>
             </NavLink>
 
             <NavLink
