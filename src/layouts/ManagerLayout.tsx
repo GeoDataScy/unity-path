@@ -13,6 +13,7 @@ import { Activity, AlertTriangle, BarChart3, ClipboardCheck, FileSpreadsheet, Re
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 import { exportEmptyReport } from "@/lib/reportExport";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -243,6 +244,11 @@ export default function ManagerLayout() {
           </div>
 
           <div className="mt-auto space-y-2">
+            <div className="flex items-center justify-between gap-2 rounded-md bg-white/5 px-3 py-2">
+              <span className="text-xs opacity-80">Tema</span>
+              <ThemeToggle className="h-8 w-8 bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15" />
+            </div>
+
             <Button
               onClick={() => exportEmptyReport(fromISO, toISO)}
               variant="secondary"

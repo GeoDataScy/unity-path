@@ -42,20 +42,20 @@ import { useMyAgentMetricsQuery, type AgentMyMetrics } from "@/features/agent/us
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(221 83% 65%)",
-  "hsl(142 71% 45%)",
-  "hsl(38 92% 50%)",
-  "hsl(var(--muted-foreground))",
-  "hsl(262 80% 60%)",
-  "hsl(0 72% 55%)",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-neutral))",
+  "hsl(var(--chart-7))",
+  "hsl(var(--chart-5))",
 ];
 
 const CHANNEL_COLORS: Record<string, string> = {
-  Email:           "hsl(221 83% 55%)",
-  SMS:             "hsl(142 71% 45%)",
-  Clickbank:       "hsl(38 92% 50%)",
-  "Não informado": "hsl(var(--muted-foreground))",
+  Email:           "hsl(var(--chart-info))",
+  SMS:             "hsl(var(--chart-success))",
+  Clickbank:       "hsl(var(--chart-warning))",
+  "Não informado": "hsl(var(--chart-neutral))",
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

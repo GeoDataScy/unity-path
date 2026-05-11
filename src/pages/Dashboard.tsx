@@ -54,11 +54,14 @@ function formatCompactNumber(n: number) {
 }
 
 const DONUT_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--accent))",
-  "hsl(var(--ring))",
-  "hsl(var(--muted-foreground))",
-  "hsl(var(--foreground))",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--chart-6))",
+  "hsl(var(--chart-7))",
+  "hsl(var(--chart-8))",
 ];
 
 const LEADER_LABEL = "Líder do grupo 🏆";

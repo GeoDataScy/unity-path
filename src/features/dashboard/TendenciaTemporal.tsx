@@ -245,7 +245,7 @@ export function TendenciaTemporal({
                   <Line
                     type="monotone"
                     dataKey="ma"
-                    stroke="hsl(221 83% 55%)"
+                    stroke="hsl(var(--chart-info))"
                     strokeWidth={1.5}
                     strokeDasharray="6 3"
                     dot={false}
@@ -254,7 +254,7 @@ export function TendenciaTemporal({
                   <Line
                     type="monotone"
                     dataKey="reg"
-                    stroke={verdict === "down" ? "hsl(0 72% 55%)" : "hsl(142 71% 45%)"}
+                    stroke={verdict === "down" ? "hsl(var(--chart-danger))" : "hsl(var(--chart-success))"}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}
@@ -262,7 +262,7 @@ export function TendenciaTemporal({
                   <Line
                     type="monotone"
                     dataKey="forecast"
-                    stroke="hsl(38 92% 50%)"
+                    stroke="hsl(var(--chart-warning))"
                     strokeWidth={2}
                     strokeDasharray="3 4"
                     dot={false}

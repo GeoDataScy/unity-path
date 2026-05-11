@@ -240,9 +240,9 @@ function StatusIcon({ status }: { status: WeekStatus }) {
 
 function barColor(count: number, channel: SupportChannel) {
   const goal = GOALS[channel];
-  if (count >= goal.weekly) return "hsl(var(--primary))";
-  if (count >= goal.alertMin) return "#f59e0b";
-  return "#ef4444";
+  if (count >= goal.weekly) return "hsl(var(--chart-success))";
+  if (count >= goal.alertMin) return "hsl(var(--chart-warning))";
+  return "hsl(var(--chart-danger))";
 }
 
 // ----- component -----
@@ -493,7 +493,7 @@ export default function DashboardAcompanhamento() {
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} domain={[0, "auto"]} />
                     <Tooltip />
-                    <ReferenceLine y={agent.weeklyGoal} stroke="#888" strokeDasharray="4 4" label={{ value: `Meta ${agent.weeklyGoal}`, position: "right", fontSize: 10, fill: "#888" }} />
+                    <ReferenceLine y={agent.weeklyGoal} stroke="hsl(var(--chart-axis))" strokeDasharray="4 4" label={{ value: `Meta ${agent.weeklyGoal}`, position: "right", fontSize: 10, fill: "hsl(var(--chart-axis))" }} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                       {agent.weeks.map((w, i) => (
                         <Cell key={i} fill={barColor(w.count, agent.supportChannel)} />

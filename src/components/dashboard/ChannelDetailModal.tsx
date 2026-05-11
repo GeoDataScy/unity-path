@@ -24,22 +24,20 @@ import { useDashboardChannelDetailQuery } from "@/features/dashboard/useDashboar
 // ── colour palette ────────────────────────────────────────────────────────────
 
 const AGENT_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--accent))",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#6366f1",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--chart-6))",
+  "hsl(var(--chart-7))",
+  "hsl(var(--chart-8))",
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  "Tickets Novos": "hsl(var(--primary))",
-  "Interações":    "hsl(var(--accent))",
-  "Concluídos":    "#10b981",
+  "Tickets Novos": "hsl(var(--chart-1))",
+  "Interações":    "hsl(var(--chart-info))",
+  "Concluídos":    "hsl(var(--chart-success))",
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────

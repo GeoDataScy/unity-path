@@ -77,6 +77,27 @@ All colors MUST be HSL.
     /* Azul escuro premium "Novo" (ticket novo do agente) */
     --status-new: 220 60% 25%;
     --status-new-foreground: 220 15% 85%;
+
+    /* Chart palette — usada em Recharts (BarChart, PieChart, LineChart) */
+    --chart-1: 263 70% 62%; /* roxo (primary) */
+    --chart-2: 221 83% 55%; /* azul */
+    --chart-3: 142 71% 45%; /* verde */
+    --chart-4: 38 92% 50%;  /* âmbar */
+    --chart-5: 0 72% 55%;   /* vermelho */
+    --chart-6: 173 80% 40%; /* turquesa */
+    --chart-7: 330 80% 60%; /* rosa */
+    --chart-8: 25 85% 55%;  /* laranja */
+
+    /* Tokens semânticos para charts (status, tendências) */
+    --chart-success: 142 71% 45%;
+    --chart-warning: 38 92% 50%;
+    --chart-danger: 0 72% 55%;
+    --chart-info: 221 83% 55%;
+    --chart-neutral: 220 9% 46%;
+
+    /* Grid e eixos dos charts */
+    --chart-grid: 220 13% 91%;
+    --chart-axis: 220 9% 46%;
   }
 
   .dark {
@@ -108,28 +129,53 @@ All colors MUST be HSL.
     --input: 220 13% 20%;
     --ring: 263 70% 62%;
 
-    /* Dashboard stays consistent even in dark mode */
-    --dashboard-sidebar: 225 26% 14%;
+    /* Dashboard tokens — adaptados para dark */
+    --dashboard-sidebar: 225 26% 10%;
     --dashboard-sidebar-foreground: 0 0% 100%;
-    --dashboard-surface: 210 40% 98%;
+    --dashboard-surface: 220 13% 11%;
 
     /* Sidebar (shadcn) tokens — keep consistent with dashboard */
     --sidebar: var(--dashboard-sidebar);
     --sidebar-foreground: var(--dashboard-sidebar-foreground);
     --sidebar-accent: 0 0% 100%;
     --sidebar-accent-foreground: var(--dashboard-sidebar);
-    --sidebar-border: 0 0% 100%;
+    --sidebar-border: 220 13% 22%;
     --sidebar-ring: var(--ring);
 
-    /* Status tokens keep same hue for dark mode */
-    --status-success: 152 60% 40%;
+    /* Status tokens — mais saturados/luminosos no dark para preservar contraste */
+    --status-open: 44 90% 55%;
+    --status-open-foreground: 220 13% 13%;
+
+    --status-success: 152 65% 50%;
     --status-success-foreground: 0 0% 100%;
 
-    --status-in-progress: 263 70% 62%;
-    --status-in-progress-foreground: 0 0% 100%;
+    --status-in-progress: 263 75% 70%;
+    --status-in-progress-foreground: 220 13% 13%;
 
-    --status-done: 210 70% 50%;
+    --status-done: 210 75% 60%;
     --status-done-foreground: 0 0% 100%;
+
+    --status-new: 220 55% 70%;
+    --status-new-foreground: 220 13% 13%;
+
+    /* Chart palette no dark — tonalidades um pouco mais claras/saturadas */
+    --chart-1: 263 80% 72%;
+    --chart-2: 221 90% 68%;
+    --chart-3: 142 75% 55%;
+    --chart-4: 38 95% 60%;
+    --chart-5: 0 80% 68%;
+    --chart-6: 173 80% 52%;
+    --chart-7: 330 85% 72%;
+    --chart-8: 25 90% 65%;
+
+    --chart-success: 142 75% 55%;
+    --chart-warning: 38 95% 60%;
+    --chart-danger: 0 80% 68%;
+    --chart-info: 221 90% 68%;
+    --chart-neutral: 220 9% 65%;
+
+    --chart-grid: 220 13% 22%;
+    --chart-axis: 220 9% 65%;
   }
 }
 

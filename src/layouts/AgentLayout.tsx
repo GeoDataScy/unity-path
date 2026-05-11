@@ -9,6 +9,7 @@ import logo from "@/assets/logo-xmx.png";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export type AgentOutletContext = {
   userId: string;
@@ -103,13 +104,16 @@ export default function AgentLayout() {
                 </div>
               </div>
 
-              <Button
-                onClick={handleLogout}
-                variant="secondary"
-                className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
-              >
-                Sair
-              </Button>
+              <div className="flex items-center gap-2">
+                <ThemeToggle className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15" />
+                <Button
+                  onClick={handleLogout}
+                  variant="secondary"
+                  className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                >
+                  Sair
+                </Button>
+              </div>
             </div>
           </header>
 

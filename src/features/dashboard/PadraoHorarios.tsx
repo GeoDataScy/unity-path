@@ -65,10 +65,10 @@ export function PadraoHorarios({ loading, data }: Props) {
     const s = data?.shifts_share;
     if (!s) return [];
     const items = [
-      { name: "Manhã (5h-12h)", value: s.morning, fill: "hsl(38 92% 50%)" },
-      { name: "Tarde (12h-18h)", value: s.afternoon, fill: "hsl(221 83% 55%)" },
-      { name: "Noite (18h-22h)", value: s.evening, fill: "hsl(262 80% 60%)" },
-      { name: "Madrugada (22h-5h)", value: s.night, fill: "hsl(220 9% 46%)" },
+      { name: "Manhã (5h-12h)", value: s.morning, fill: "hsl(var(--chart-warning))" },
+      { name: "Tarde (12h-18h)", value: s.afternoon, fill: "hsl(var(--chart-info))" },
+      { name: "Noite (18h-22h)", value: s.evening, fill: "hsl(var(--chart-1))" },
+      { name: "Madrugada (22h-5h)", value: s.night, fill: "hsl(var(--chart-neutral))" },
     ];
     return items.filter((i) => i.value > 0);
   }, [data]);

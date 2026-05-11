@@ -83,6 +83,24 @@ export default {
           },
         },
 
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+          6: "hsl(var(--chart-6))",
+          7: "hsl(var(--chart-7))",
+          8: "hsl(var(--chart-8))",
+          success: "hsl(var(--chart-success))",
+          warning: "hsl(var(--chart-warning))",
+          danger: "hsl(var(--chart-danger))",
+          info: "hsl(var(--chart-info))",
+          neutral: "hsl(var(--chart-neutral))",
+          grid: "hsl(var(--chart-grid))",
+          axis: "hsl(var(--chart-axis))",
+        },
+
         // shadcn sidebar semantic tokens (mapped to dashboard identity)
         sidebar: "hsl(var(--sidebar))",
         "sidebar-foreground": "hsl(var(--sidebar-foreground))",

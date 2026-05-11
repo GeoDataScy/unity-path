@@ -55,20 +55,20 @@ import {
 // ── Colors ──────────────────────────────────────────────────────────────────
 
 const STATUS_COLORS = {
-  open: "#64748b",        // slate
-  in_progress: "#f59e0b", // amber
-  done: "#10b981",        // emerald
+  open: "hsl(var(--chart-neutral))",
+  in_progress: "hsl(var(--chart-warning))",
+  done: "hsl(var(--chart-success))",
 } as const;
 
 const AGENT_BAR_COLORS = [
-  "hsl(var(--primary))",
-  "#f59e0b",
-  "#10b981",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-  "#14b8a6",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "hsl(var(--chart-6))",
+  "hsl(var(--chart-7))",
+  "hsl(var(--chart-8))",
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
