@@ -484,6 +484,10 @@ export type Database = {
         }
         Returns: Json
       }
+      dashboard_status_summary: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["AppRole"]
@@ -656,4 +660,3 @@ export const Constants = {
     },
   },
 } as const
-<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />

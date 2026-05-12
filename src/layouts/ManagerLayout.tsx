@@ -23,8 +23,9 @@ import {
 } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
-import { exportEmptyReport } from "@/lib/reportExport";
+import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useToast } from "@/hooks/use-toast";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
@@ -89,9 +90,11 @@ function NavItem({ to, end, icon, label, collapsed, badge }: NavItemProps) {
 export default function ManagerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   const [authLoading, setAuthLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -173,6 +176,25 @@ export default function ManagerLayout() {
     if (authLoading) return null;
     return { fullName, range, setRange, agentId, setAgentId, fromISO, toISO };
   }, [authLoading, fullName, range, agentId, fromISO, toISO]);
+
+  const handleExportReport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportManagerReport(fromISO, toISO, agentId);
+    } catch (error) {
+      console.error("[export-report] failed:", error);
+      const message =
+        error instanceof Error ? error.message : "Não foi possível gerar o relatório.";
+      toast({
+        title: "Erro ao extrair relatório",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleLogout = () => {
     // Limpa tokens do Supabase diretamente — evita 403 se sessão já expirou no servidor
@@ -317,14 +339,17 @@ export default function ManagerLayout() {
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => exportEmptyReport(fromISO, toISO)}
-                      aria-label="Extrair relatório"
-                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition"
+                      onClick={handleExportReport}
+                      disabled={exporting}
+                      aria-label={exporting ? "Extraindo relatório" : "Extrair relatório"}
+                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition disabled:opacity-60"
                     >
-                      <FileSpreadsheet className="h-4 w-4" />
+                      <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">Extrair relatório</TooltipContent>
+                  <TooltipContent side="right">
+                    {exporting ? "Extraindo..." : "Extrair relatório"}
+                  </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -344,12 +369,13 @@ export default function ManagerLayout() {
             ) : (
               <>
                 <Button
-                  onClick={() => exportEmptyReport(fromISO, toISO)}
+                  onClick={handleExportReport}
+                  disabled={exporting}
                   variant="secondary"
                   className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
                 >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Extrair Relatório
+                  <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
+                  {exporting ? "Extraindo..." : "Extrair Relatório"}
                 </Button>
 
                 <Button
