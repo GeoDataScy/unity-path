@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
+import { CONTACT_REASONS, getContactReason, type ContactReasonCode } from "@/features/services/contact-reasons";
 
 const PRODUCTS = [
   "Arialief",
@@ -188,6 +189,7 @@ export default function Atendimentos() {
   const [platform, setPlatform] = useState("");
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
   const [hasTrackingCode, setHasTrackingCode] = useState(false);
+  const [contactReason, setContactReason] = useState<ContactReasonCode | "">("");
 
   // Search & filter state. Default to "hoje" so the agent sees only today's
   // activity on opening the page — clean slate at the start of the day,
@@ -382,8 +384,8 @@ export default function Atendimentos() {
 
   const canSubmit = useMemo(() => {
     const emailOk = channel === "SMS" ? isPhoneComplete(clientEmail) : Boolean(clientEmail);
-    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform);
-  }, [clientEmail, serviceDate, product, platform, channel]);
+    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && Boolean(contactReason);
+  }, [clientEmail, serviceDate, product, platform, channel, contactReason]);
 
   const greetingName = useMemo(() => {
     const trimmed = (fullName ?? "").trim();
@@ -402,7 +404,7 @@ export default function Atendimentos() {
       // Check if email already exists in this agent's base (any date)
       const { data: existingRows } = await supabase
         .from("services")
-        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason")
         .eq("user_id", session.user.id)
         .ilike("client_email", clientEmail.trim())
         .order("created_at", { ascending: false })
@@ -419,6 +421,7 @@ export default function Atendimentos() {
         platform,
         channel,
         has_tracking_code: hasTrackingCode,
+        contact_reason: contactReason || null,
         // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
         status: concludeAfterCreate.current ? "concluido" : "registered",
         user_id: session.user.id,
@@ -448,6 +451,7 @@ export default function Atendimentos() {
       setPlatform("");
       setChannel("Email");
       setHasTrackingCode(false);
+      setContactReason("");
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       emitAgentInteraction();
@@ -495,7 +499,7 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string; channel: string }) => {
+    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string; channel: string; contact_reason: string | null }) => {
       const { error } = await supabase
         .from("services")
         .update({
@@ -504,6 +508,7 @@ export default function Atendimentos() {
           product: payload.product,
           platform: payload.platform,
           channel: payload.channel,
+          contact_reason: payload.contact_reason,
         })
         .eq("id", payload.id);
 
@@ -623,7 +628,7 @@ export default function Atendimentos() {
               />
             </div>
           </div>
-          <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-5 lg:items-end">
+          <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-6 lg:items-end">
             <div className="grid gap-2">
               <div className="flex flex-col gap-0.5">
                 <Label htmlFor="clientEmail">E-mail do Cliente</Label>
@@ -676,6 +681,28 @@ export default function Atendimentos() {
                   {PLATFORMS.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Motivo de contato</Label>
+              <Select
+                value={contactReason}
+                onValueChange={(v) => setContactReason(v as ContactReasonCode)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_REASONS.map((r) => (
+                    <SelectItem key={r.code} value={r.code}>
+                      <span className="flex items-center gap-2">
+                        <span className={`inline-block h-2 w-2 rounded-full ${r.dot}`} />
+                        {r.label}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -842,13 +869,24 @@ export default function Atendimentos() {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedServices.map((s, idx) => (
+                paginatedServices.map((s, idx) => {
+                  const reason = getContactReason(s.contact_reason);
+                  return (
                   <TableRow key={s.id} className={idx % 2 === 1 ? "bg-muted/40" : undefined}>
                     <TableCell>
-                      {(() => {
-                        const dt = parseServiceDateForDisplay(s.service_date);
-                        return dt ? format(dt, "dd/MM/yyyy") : "—";
-                      })()}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-2 w-2 shrink-0 rounded-full ${reason ? reason.dot : "bg-transparent ring-1 ring-border"}`}
+                          title={reason ? `Motivo: ${reason.label}` : "Sem motivo registrado"}
+                          aria-label={reason ? `Motivo: ${reason.label}` : "Sem motivo registrado"}
+                        />
+                        <span>
+                          {(() => {
+                            const dt = parseServiceDateForDisplay(s.service_date);
+                            return dt ? format(dt, "dd/MM/yyyy") : "—";
+                          })()}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="tabular-nums text-muted-foreground">
                       {formatCreatedAtTimeSP(s.created_at)}
@@ -922,7 +960,8 @@ export default function Atendimentos() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

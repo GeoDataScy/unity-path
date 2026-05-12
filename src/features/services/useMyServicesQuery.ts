@@ -11,6 +11,7 @@ export type ServiceItem = {
   status: string;
   created_at: string | null;
   has_tracking_code: boolean;
+  contact_reason: string | null;
 };
 
 async function requireSessionUserId(): Promise<string> {
@@ -36,7 +37,7 @@ export function useMyServicesQuery(enabled: boolean) {
       while (true) {
         const { data, error } = await supabase
           .from("services")
-          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code")
+          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);

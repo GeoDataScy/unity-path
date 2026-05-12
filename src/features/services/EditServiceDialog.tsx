@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ServiceItem } from "@/features/services/useMyServicesQuery";
+import { CONTACT_REASONS, type ContactReasonCode } from "@/features/services/contact-reasons";
 
 const PRODUCTS = [
   "Arialief",
@@ -88,7 +89,7 @@ type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; service_date: string; product: string; platform: string; channel: string }) => Promise<void>;
+  onSave: (next: { client_email: string; service_date: string; product: string; platform: string; channel: string; contact_reason: string | null }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
@@ -101,6 +102,9 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const [product, setProduct] = useState(service.product);
   const [platform, setPlatform] = useState(service.platform ?? "");
   const [channel, setChannel] = useState(service.channel ?? "Nenhum");
+  const [contactReason, setContactReason] = useState<ContactReasonCode | "">(
+    (service.contact_reason as ContactReasonCode | null) ?? "",
+  );
 
   const canSave = useMemo(() => {
     return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && !saving;
@@ -109,7 +113,14 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ client_email: clientEmail, service_date: serviceDate, product, platform, channel });
+      await onSave({
+        client_email: clientEmail,
+        service_date: serviceDate,
+        product,
+        platform,
+        channel,
+        contact_reason: contactReason || null,
+      });
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -188,6 +199,28 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
                 {CHANNELS.map((ch) => (
                   <SelectItem key={ch} value={ch}>
                     {ch}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Motivo de contato</Label>
+            <Select
+              value={contactReason}
+              onValueChange={(v) => setContactReason(v as ContactReasonCode)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTACT_REASONS.map((r) => (
+                  <SelectItem key={r.code} value={r.code}>
+                    <span className="flex items-center gap-2">
+                      <span className={`inline-block h-2 w-2 rounded-full ${r.dot}`} />
+                      {r.label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
