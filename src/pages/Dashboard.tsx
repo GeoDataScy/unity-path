@@ -65,6 +65,17 @@ const DONUT_COLORS = [
 
 const LEADER_LABEL = "Líder do grupo 🏆";
 
+// Agentes ocultos do gráfico "Atendimentos por agente" e do cálculo de líder
+// do grupo. Match por substring case-insensitive — cobre variações de nome
+// (ex: "Geovani Rosa Silva", "Agente Teste", "AGENTE TESTE").
+const HIDDEN_AGENT_NAME_PATTERNS = ["geovani", "agente teste"] as const;
+
+function isHiddenAgent(name: string | null | undefined) {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  return HIDDEN_AGENT_NAME_PATTERNS.some((p) => lower.includes(p));
+}
+
 const Dashboard = () => {
   const { fullName, range, fromISO, toISO, agentId } = useOutletContext<ManagerOutletContext>();
 
@@ -153,7 +164,9 @@ const Dashboard = () => {
     kpi.kpiTotal = metrics.total_count;
     kpi.kpiDailyAvg = metrics.total_count / daysSelected;
 
-    kpi.byAgentSeries = metrics.by_agent.map(({ name, value }) => ({ name, value }));
+    kpi.byAgentSeries = metrics.by_agent
+      .filter(({ name }) => !isHiddenAgent(name))
+      .map(({ name, value }) => ({ name, value }));
     kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
     kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
     kpi.byChannelSeries = (allMetrics?.by_channel ?? metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
@@ -180,7 +193,7 @@ const Dashboard = () => {
     } else {
       // Benchmark mode: compare selected agent vs leader from ALL agents
       if (allMetrics) {
-        const leader = allMetrics.by_agent[0];
+        const leader = allMetrics.by_agent.find((a) => !isHiddenAgent(a.name));
         const selectedAgent = kpi.byAgentSeries[0];
 
         if (leader && selectedAgent) {
