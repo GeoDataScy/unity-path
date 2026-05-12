@@ -6,14 +6,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
-import { Activity, AlertTriangle, BarChart3, ClipboardCheck, FileSpreadsheet, RefreshCcw } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  ClipboardCheck,
+  FileSpreadsheet,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  RefreshCcw,
+} from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 import { exportEmptyReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+
+const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -32,12 +45,62 @@ export type ManagerOutletContext = {
   toISO: string;
 };
 
+type NavItemProps = {
+  to: string;
+  end?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+  badge?: React.ReactNode;
+};
+
+function NavItem({ to, end, icon, label, collapsed, badge }: NavItemProps) {
+  const content = (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-2 rounded-md text-sm bg-white/0 hover:bg-white/10 transition",
+          collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
+          isActive && "bg-white/15",
+        )
+      }
+    >
+      <span className="relative">
+        {icon}
+        {collapsed && badge}
+      </span>
+      {!collapsed && <span className="flex-1">{label}</span>}
+      {!collapsed && badge}
+    </NavLink>
+  );
+
+  if (!collapsed) return content;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export default function ManagerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [authLoading, setAuthLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
+
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   // Default: 1st of current month → today
   const [range, setRange] = useState<DateRange | undefined>(() => {
@@ -133,147 +196,185 @@ export default function ManagerLayout() {
   const isOnAlertas = location.pathname.startsWith("/dashboard/alertas");
   const overdueCount = alertsQuery.data?.total_overdue ?? 0;
 
+  const alertsBadge = overdueCount > 0 ? (
+    collapsed ? (
+      <span className="absolute -right-1 -top-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
+        {overdueCount > 9 ? "9+" : overdueCount}
+      </span>
+    ) : (
+      <span className="rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[20px] h-5 flex items-center justify-center px-1.5">
+        {overdueCount}
+      </span>
+    )
+  ) : null;
+
   return (
     <div className="min-h-screen flex">
-      <aside className="w-[260px] shrink-0 sticky top-0 h-screen bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10">
-        <div className="h-full flex flex-col p-4 gap-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo da empresa" className="h-8 w-auto" loading="lazy" />
-            <div className="leading-tight">
-              <div className="text-sm font-semibold">Painel da Gestora</div>
-              <div className="text-xs opacity-80">Analytics</div>
+      <aside
+        className={cn(
+          "shrink-0 sticky top-0 h-screen bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
+          collapsed ? "w-16" : "w-[260px]",
+        )}
+      >
+        <div className={cn("h-full flex flex-col gap-6", collapsed ? "p-2" : "p-4")}>
+          <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "justify-between gap-2")}>
+            <div className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}>
+              <img src={logo} alt="Logo da empresa" className="h-8 w-auto shrink-0" loading="lazy" />
+              {!collapsed && (
+                <div className="leading-tight truncate">
+                  <div className="text-sm font-semibold">Painel da Gestora</div>
+                  <div className="text-xs opacity-80">Analytics</div>
+                </div>
+              )}
             </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setCollapsed((v) => !v)}
+                  aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/0 hover:bg-white/10 transition shrink-0"
+                >
+                  {collapsed ? (
+                    <PanelLeftOpen className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {collapsed ? "Expandir menu" : "Encolher menu"}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
-          <nav className="space-y-2">
-            <NavLink
+          <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
+            <NavItem
               to="/dashboard"
               end
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
-                  isActive && "bg-white/15",
-                )
-              }
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span>Atendimentos</span>
-            </NavLink>
-
-            <NavLink
+              icon={<BarChart3 className="h-4 w-4" />}
+              label="Atendimentos"
+              collapsed={collapsed}
+            />
+            <NavItem
               to="/dashboard/reembolsos"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
-                  isActive && "bg-white/15",
-                )
-              }
-            >
-              <RefreshCcw className="h-4 w-4" />
-              <span>Reembolsos</span>
-            </NavLink>
-
-            <NavLink
+              icon={<RefreshCcw className="h-4 w-4" />}
+              label="Reembolsos"
+              collapsed={collapsed}
+            />
+            <NavItem
               to="/dashboard/acompanhamento"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
-                  isActive && "bg-white/15",
-                )
-              }
-            >
-              <ClipboardCheck className="h-4 w-4" />
-              <span>Acompanhamento</span>
-            </NavLink>
-
-            <NavLink
+              icon={<ClipboardCheck className="h-4 w-4" />}
+              label="Acompanhamento"
+              collapsed={collapsed}
+            />
+            <NavItem
               to="/dashboard/interacoes"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
-                  isActive && "bg-white/15",
-                )
-              }
-            >
-              <Activity className="h-4 w-4" />
-              <span>Interacoes</span>
-            </NavLink>
-
-            <NavLink
+              icon={<Activity className="h-4 w-4" />}
+              label="Interacoes"
+              collapsed={collapsed}
+            />
+            <NavItem
               to="/dashboard/alertas"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm bg-white/0 hover:bg-white/10 transition",
-                  isActive && "bg-white/15",
-                )
-              }
-            >
-              <AlertTriangle className="h-4 w-4" />
-              <span className="flex-1">Alertas</span>
-              {overdueCount > 0 && (
-                <span className="rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                  {overdueCount}
-                </span>
-              )}
-            </NavLink>
+              icon={<AlertTriangle className="h-4 w-4" />}
+              label="Alertas"
+              collapsed={collapsed}
+              badge={alertsBadge}
+            />
           </nav>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
-              <DateRangePicker value={range} onChange={setRange} />
-              <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
+          {!collapsed && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
+                <DateRangePicker value={range} onChange={setRange} />
+                <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
+                <Select value={agentId} onValueChange={setAgentId}>
+                  <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50">
+                    <SelectItem value="all">Todos</SelectItem>
+                    {(agentsQuery.data ?? []).map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
-              <Select value={agentId} onValueChange={setAgentId}>
-                <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent className="z-50">
-                  <SelectItem value="all">Todos</SelectItem>
-                  {(agentsQuery.data ?? []).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <div className={cn("mt-auto", collapsed ? "space-y-1" : "space-y-2")}>
+            {collapsed ? (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => exportEmptyReport(fromISO, toISO)}
+                      aria-label="Extrair relatório"
+                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Extrair relatório</TooltipContent>
+                </Tooltip>
 
-          <div className="mt-auto space-y-2">
-            <div className="flex items-center justify-between gap-2 rounded-md bg-white/5 px-3 py-2">
-              <span className="text-xs opacity-80">Tema</span>
-              <ThemeToggle className="h-8 w-8 bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15" />
-            </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      aria-label="Sair"
+                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Sair</TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={() => exportEmptyReport(fromISO, toISO)}
+                  variant="secondary"
+                  className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Extrair Relatório
+                </Button>
 
-            <Button
-              onClick={() => exportEmptyReport(fromISO, toISO)}
-              variant="secondary"
-              className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Extrair Relatório
-            </Button>
+                <Button
+                  onClick={handleLogout}
+                  variant="secondary"
+                  className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                >
+                  Logout
+                </Button>
 
-            <Button
-              onClick={handleLogout}
-              variant="secondary"
-              className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
-            >
-              Logout
-            </Button>
-
-            <div className="text-[11px] opacity-70 px-1">
-              {isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
-            </div>
+                <div className="text-[11px] opacity-70 px-1">
+                  {isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </aside>
 
       <ManagerRefundNotification />
+
+      <ThemeToggle
+        variant="ghost"
+        className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
+      />
 
       <main className="flex-1 bg-dashboard-surface p-8">
         <div className="mx-auto max-w-7xl">
