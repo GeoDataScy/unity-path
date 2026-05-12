@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -335,23 +334,50 @@ const Dashboard = () => {
             ) : byProductSeries.length === 0 ? (
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip />
-                  <Pie
-                    data={byProductSeries}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={2}
-                  >
-                    {byProductSeries.map((_, i) => (
-                      <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="h-full flex items-center gap-4">
+                <div className="flex-1 h-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Tooltip
+                        formatter={(value: number, name: string) => [formatCompactNumber(value), name]}
+                      />
+                      <Pie
+                        data={byProductSeries}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={2}
+                      >
+                        {byProductSeries.map((_, i) => (
+                          <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="flex flex-col gap-1.5 text-xs min-w-[160px] max-h-full overflow-auto pr-1">
+                  {(() => {
+                    const total = byProductSeries.reduce((sum, p) => sum + p.value, 0);
+                    return byProductSeries.map((p, i) => {
+                      const pct = total > 0 ? (p.value / total) * 100 : 0;
+                      return (
+                        <li key={p.name} className="flex items-center gap-2">
+                          <span
+                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                          />
+                          <span className="flex-1 truncate" title={p.name}>{p.name}</span>
+                          <span className="tabular-nums text-muted-foreground">{formatCompactNumber(p.value)}</span>
+                          <span className="tabular-nums text-[10px] text-muted-foreground w-10 text-right">
+                            {pct.toFixed(1)}%
+                          </span>
+                        </li>
+                      );
+                    });
+                  })()}
+                </ul>
+              </div>
             )}
           </CardContent>
         </Card>
