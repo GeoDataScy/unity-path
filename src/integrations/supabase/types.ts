@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       agent_daily_service_counts: {
@@ -293,6 +268,70 @@ export type Database = {
           },
         ]
       }
+      ticket_transfers: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          recipient_seen_at: string | null
+          requester_seen_at: string | null
+          responded_at: string | null
+          response_note: string | null
+          service_id: string
+          status: string
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          recipient_seen_at?: string | null
+          requester_seen_at?: string | null
+          responded_at?: string | null
+          response_note?: string | null
+          service_id: string
+          status?: string
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          recipient_seen_at?: string | null
+          requester_seen_at?: string | null
+          responded_at?: string | null
+          response_note?: string | null
+          service_id?: string
+          status?: string
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_transfers_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_transfers_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_transfers_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_video_views: {
         Row: {
           completed: boolean
@@ -488,6 +527,21 @@ export type Database = {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
       }
+      find_ticket_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          agent_name: string
+          channel: string
+          client_email: string
+          created_at: string
+          id: string
+          platform: string
+          product: string
+          service_date: string
+          status: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["AppRole"]
@@ -515,6 +569,42 @@ export type Database = {
           request_date: string
           sales_platform: string
           user_id: string
+        }[]
+      }
+      my_transfer_history: {
+        Args: never
+        Returns: {
+          client_email: string
+          created_at: string
+          message: string
+          other_agent_id: string
+          other_agent_name: string
+          product: string
+          responded_at: string
+          response_note: string
+          role: string
+          service_id: string
+          service_status: string
+          transfer_id: string
+          transfer_status: string
+        }[]
+      }
+      my_transfer_notifications: {
+        Args: never
+        Returns: {
+          client_email: string
+          created_at: string
+          message: string
+          other_agent_id: string
+          other_agent_name: string
+          product: string
+          responded_at: string
+          response_note: string
+          role: string
+          service_id: string
+          service_status: string
+          transfer_id: string
+          transfer_status: string
         }[]
       }
       refresh_agent_daily_service_count: {
@@ -650,13 +740,16 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
-      app_role: ["agent", "manager"],
-      AppRole: ["agent", "manager"],
+      app_role: [
+        "agent",
+        "manager",
+      ],
+      AppRole: [
+        "agent",
+        "manager",
+      ],
     },
   },
 } as const

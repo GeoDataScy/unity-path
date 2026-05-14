@@ -17,6 +17,7 @@ import Atendimentos from "./pages/agent/Atendimentos";
 import Reembolsos from "./pages/agent/Reembolsos";
 import MinhasMetricas from "./pages/agent/MinhasMetricas";
 import ComeceAqui from "./pages/agent/ComeceAqui";
+import Transferencias from "./pages/agent/Transferencias";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="comece-aqui" element={<ComeceAqui />} />
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="metricas" element={<MinhasMetricas />} />
+            <Route path="transferencias" element={<Transferencias />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

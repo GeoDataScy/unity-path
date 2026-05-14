@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import { Switch } from "@/components/ui/switch";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
 import { CONTACT_REASONS, getContactReason, type ContactReasonCode } from "@/features/services/contact-reasons";
+import { TransferTicketDialog, type DuplicateTicket } from "@/features/transfers/TransferTicketDialog";
 
 const PRODUCTS = [
   "Arialief",
@@ -178,6 +179,7 @@ export default function Atendimentos() {
   const { userId, fullName } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // DEV-only: simulate the exact “hit 100” celebration without backend changes
   const [debugCelebrateNonce, setDebugCelebrateNonce] = useState(0);
@@ -209,6 +211,8 @@ export default function Atendimentos() {
 
   // Status tracking
   const [trackingService, setTrackingService] = useState<ServiceItem | null>(null);
+  // Cross-agent duplicate: shows TransferTicketDialog when the email belongs to another agent's open ticket
+  const [transferTarget, setTransferTarget] = useState<DuplicateTicket | null>(null);
   const { getCurrentStatus, getEntries, addEntryMutation, canAddInteraction } = useStatusTracking();
 
   /** Agent-only: remap "Em Aberto" → "Novo" with premium badge */
@@ -280,6 +284,19 @@ export default function Atendimentos() {
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
   // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
   const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
+
+  // When the agent accepts a transfer notification, NotificationsBell redirects here with
+  // ?openTicket=<service_id>. Open the tracking dialog for that ticket and clean the URL.
+  useEffect(() => {
+    const openId = searchParams.get("openTicket");
+    if (!openId || services.length === 0) return;
+    const target = services.find((s) => s.id === openId);
+    if (target) {
+      setTrackingService(target);
+      searchParams.delete("openTicket");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, services, setSearchParams]);
 
   // Build a Set of service IDs where THIS agent registered a follow-up within the
   // active date range. Mirrors the manager's dashboard_metrics logic so both screens
@@ -397,23 +414,32 @@ export default function Atendimentos() {
   const concludeAfterCreate = useRef(false);
 
   const createMutation = useMutation({
-    mutationFn: async (): Promise<{ existing?: ServiceItem }> => {
+    mutationFn: async (): Promise<
+      | { kind: "created" }
+      | { kind: "mine"; serviceId: string }
+      | { kind: "other_agent"; ticket: DuplicateTicket }
+    > => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
-      // Check if email already exists in this agent's base (any date)
-      const { data: existingRows } = await supabase
-        .from("services")
-        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason")
-        .eq("user_id", session.user.id)
-        .ilike("client_email", clientEmail.trim())
-        .order("created_at", { ascending: false })
-        .limit(1);
+      // Cross-agent duplicate check via RPC (SECURITY DEFINER bypasses RLS).
+      // Returns the most recent NON-concluded ticket for this client_email, if any.
+      const { data: foundRows, error: rpcError } = await supabase.rpc("find_ticket_by_email", {
+        p_email: clientEmail.trim(),
+      });
+      if (rpcError) throw rpcError;
 
-      if (existingRows && existingRows.length > 0) {
-        return { existing: existingRows[0] as ServiceItem };
+      const found = (foundRows?.[0] ?? null) as DuplicateTicket | null;
+
+      if (found) {
+        if (found.user_id === session.user.id) {
+          // Existing ticket belongs to me — keep current UX (open tracking).
+          return { kind: "mine", serviceId: found.id };
+        }
+        // Belongs to another agent — block insert and surface the transfer dialog.
+        return { kind: "other_agent", ticket: found };
       }
 
       const { error } = await supabase.from("services").insert({
@@ -430,17 +456,23 @@ export default function Atendimentos() {
       });
 
       if (error) throw error;
-      return {};
+      return { kind: "created" };
     },
     onSuccess: async (result) => {
-      // If email already exists, open the microgerenciador for the existing ticket
-      if (result.existing) {
+      if (result.kind === "mine") {
         concludeAfterCreate.current = false;
+        const mine = services.find((s) => s.id === result.serviceId);
         toast({
           title: "E-mail já cadastrado",
           description: "Abrindo o acompanhamento do atendimento existente.",
         });
-        setTrackingService(result.existing);
+        if (mine) setTrackingService(mine);
+        return;
+      }
+
+      if (result.kind === "other_agent") {
+        concludeAfterCreate.current = false;
+        setTransferTarget(result.ticket);
         return;
       }
 
@@ -1045,6 +1077,23 @@ export default function Atendimentos() {
           }}
         />
       )}
+
+      <TransferTicketDialog
+        open={Boolean(transferTarget)}
+        onOpenChange={(open) => {
+          if (!open) setTransferTarget(null);
+        }}
+        ticket={transferTarget}
+        onTransferred={() => {
+          // Clear the form so the agent can move on; the ticket stays with the original owner.
+          setClientEmail("");
+          setProduct("");
+          setPlatform("");
+          setChannel("Email");
+          setHasTrackingCode(false);
+          setContactReason("");
+        }}
+      />
     </main>
   );
 }

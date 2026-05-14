@@ -10,6 +10,7 @@ import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 
 export type AgentOutletContext = {
   userId: string;
@@ -105,6 +106,7 @@ export default function AgentLayout() {
               </div>
 
               <div className="flex items-center gap-2">
+                <NotificationsBell enabled={Boolean(userId)} />
                 <ThemeToggle className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15" />
                 <Button
                   onClick={handleLogout}
