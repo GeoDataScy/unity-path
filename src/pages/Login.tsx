@@ -6,10 +6,27 @@ import { InputLogin } from "@/components/ui/input-login";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo-xmx.png";
 
+function isNetworkError(error: unknown): boolean {
+  if (!error) return false;
+  const msg = (error as { message?: string }).message ?? "";
+  const name = (error as { name?: string }).name ?? "";
+  return (
+    /failed to fetch/i.test(msg) ||
+    /network/i.test(msg) ||
+    /load failed/i.test(msg) ||
+    name === "AuthRetryableFetchError" ||
+    name === "TypeError"
+  );
+}
+
+const NETWORK_ERROR_MESSAGE =
+  "Não conseguimos conectar ao servidor. Verifique sua internet, desative VPN/antivírus/extensões e tente novamente. Se persistir, troque o DNS da sua rede para 1.1.1.1 ou 8.8.8.8.";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [reachable, setReachable] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,6 +49,22 @@ const Login = () => {
       }
       redirectUser(session.user.id);
     });
+
+    // Healthcheck: ping Supabase REST root to detect DNS/network blocks before user tries to log in.
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    if (supabaseUrl) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      fetch(`${supabaseUrl}/auth/v1/health`, { signal: ctrl.signal, mode: "cors" })
+        .then(() => setReachable(true))
+        .catch(() => setReachable(false))
+        .finally(() => clearTimeout(timer));
+      return () => {
+        clearTimeout(timer);
+        ctrl.abort();
+        subscription.unsubscribe();
+      };
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -63,6 +96,16 @@ const Login = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      toast({
+        title: "Sem conexão",
+        description: "Você parece estar offline. Verifique sua internet e tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -81,9 +124,12 @@ const Login = () => {
         });
       }
     } catch (error: any) {
+      const description = isNetworkError(error)
+        ? NETWORK_ERROR_MESSAGE
+        : error?.message || "Ocorreu um erro durante a autenticação.";
       toast({
-        title: "Erro",
-        description: error.message || "Ocorreu um erro durante a autenticação.",
+        title: isNetworkError(error) ? "Falha de conexão" : "Erro",
+        description,
         variant: "destructive",
       });
     } finally {
@@ -106,6 +152,16 @@ const Login = () => {
               <h1 className="text-2xl font-semibold text-white">Bem-vindo de volta</h1>
               <p className="text-sm text-muted-foreground/80">Faça login para continuar</p>
             </div>
+
+            {reachable === false && (
+              <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-100">
+                <p className="font-medium">Não conseguimos alcançar o servidor.</p>
+                <p className="mt-1 text-amber-100/80">
+                  Sua rede está bloqueando o acesso. Desative VPN/antivírus, troque o DNS
+                  para 1.1.1.1 ou 8.8.8.8, ou tente em outra rede (ex.: 4G do celular).
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
