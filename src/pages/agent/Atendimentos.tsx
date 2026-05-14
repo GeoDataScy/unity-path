@@ -90,6 +90,8 @@ const PRODUCTS = [
   "NerveEase",
   "Steelpower",
   "Gluco Off",
+  "Cognivex",
+  "Nad Dermal+",
 ] as const;
 
 const PLATFORMS = [
