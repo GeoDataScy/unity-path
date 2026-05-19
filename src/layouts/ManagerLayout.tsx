@@ -26,6 +26,7 @@ import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNot
 import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
+import { isBlockedUser } from "@/lib/blockedUsers";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
@@ -138,6 +139,12 @@ export default function ManagerLayout() {
       if (error || !session) {
         if (error) await supabase.auth.signOut({ scope: "local" });
         navigate("/login", { replace: true });
+        return;
+      }
+
+      if (isBlockedUser(session.user.id)) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/blocked", { replace: true });
         return;
       }
 

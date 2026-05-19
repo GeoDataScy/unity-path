@@ -11,6 +11,7 @@ import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
+import { isBlockedUser } from "@/lib/blockedUsers";
 
 export type AgentOutletContext = {
   userId: string;
@@ -37,6 +38,12 @@ export default function AgentLayout() {
       if (error || !session) {
         if (error) await supabase.auth.signOut({ scope: "local" });
         navigate("/login", { replace: true });
+        return;
+      }
+
+      if (isBlockedUser(session.user.id)) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/blocked", { replace: true });
         return;
       }
 

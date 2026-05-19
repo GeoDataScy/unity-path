@@ -18,6 +18,7 @@ import Reembolsos from "./pages/agent/Reembolsos";
 import MinhasMetricas from "./pages/agent/MinhasMetricas";
 import ComeceAqui from "./pages/agent/ComeceAqui";
 import Transferencias from "./pages/agent/Transferencias";
+import Blocked from "./pages/Blocked";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/blocked" element={<Blocked />} />
           <Route path="/dashboard" element={<ManagerLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />

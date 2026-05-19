@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { InputLogin } from "@/components/ui/input-login";
 import { useToast } from "@/hooks/use-toast";
+import { isBlockedUser } from "@/lib/blockedUsers";
 import logo from "@/assets/logo-xmx.png";
 
 function isNetworkError(error: unknown): boolean {
@@ -70,6 +71,12 @@ const Login = () => {
   }, []);
 
   const redirectUser = async (userId: string) => {
+    if (isBlockedUser(userId)) {
+      await supabase.auth.signOut({ scope: "local" });
+      navigate("/blocked", { replace: true });
+      return;
+    }
+
     try {
       const { data: profile, error } = await supabase
         .from("profiles")
