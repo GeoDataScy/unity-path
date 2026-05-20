@@ -21,6 +21,7 @@ export type DashboardRefundMetrics = {
   by_refund_type: Array<{ name: string; value: number }>;
   by_product: Array<{ name: string; value: number }>;
   by_channel: Array<{ name: string; value: number }>;
+  by_platform: Array<{ name: string; value: number }>;
   by_channel_efficiency: Array<{
     channel: string;
     total_done: number;

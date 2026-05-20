@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, CircleDot, Filter, Package, PackageCheck } from "lucide-react";
+import { BarChart3, CircleDot, Filter, Package, PackageCheck, Store } from "lucide-react";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,9 +121,18 @@ export default function DashboardRefunds() {
       }),
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
+      byPlatform: (metrics?.by_platform ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannelEfficiency: metrics?.by_channel_efficiency ?? [],
     };
   }, [metrics]);
+
+  const platformTotal = useMemo(
+    () => kpis.byPlatform.reduce((sum, item) => sum + item.value, 0),
+    [kpis.byPlatform],
+  );
+
+  const productLabel =
+    product === "all" ? null : product === "null" ? "Sem produto informado" : product;
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((audit?.total_count ?? 0) / pageSize)), [audit?.total_count]);
   const pageRows = audit?.rows ?? [];
@@ -372,6 +381,79 @@ export default function DashboardRefunds() {
                     {kpis.byType.map((_, i) => (
                       <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
                     ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-primary" />
+                  Reembolsos por plataforma
+                </CardTitle>
+                {productLabel && (
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={productLabel}>
+                    Produto: <span className="font-medium text-foreground">{productLabel}</span>
+                  </p>
+                )}
+              </div>
+              {!isLoading && kpis.byPlatform.length > 0 && (
+                <div className="shrink-0 rounded-md border bg-muted/40 px-2.5 py-1 text-right">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
+                  <p className="text-base font-semibold tabular-nums leading-tight">
+                    {platformTotal.toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="h-[380px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : kpis.byPlatform.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Store className="h-6 w-6 opacity-40" />
+                <p className="text-sm">Nenhum reembolso encontrado{productLabel ? ` para "${productLabel}"` : ""} neste período</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={kpis.byPlatform}
+                  layout="vertical"
+                  margin={{ top: 8, right: 32, left: 8, bottom: 8 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={90}
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                    formatter={(value: number) => {
+                      const pct = platformTotal > 0 ? ((value / platformTotal) * 100).toFixed(1) : "0";
+                      return [`${value.toLocaleString("pt-BR")} (${pct}%)`, "Reembolsos"];
+                    }}
+                  />
+                  <Bar dataKey="value" name="Reembolsos" radius={[0, 6, 6, 0]} barSize={22}>
+                    {kpis.byPlatform.map((_, i) => (
+                      <Cell key={`pf-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      style={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                      formatter={(v: number) => v.toLocaleString("pt-BR")}
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
