@@ -20,13 +20,14 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCcw,
+  Users,
 } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
-import { isBlockedUser } from "@/lib/blockedUsers";
+import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
@@ -142,10 +143,15 @@ export default function ManagerLayout() {
         return;
       }
 
-      if (isBlockedUser(session.user.id)) {
-        await supabase.auth.signOut({ scope: "local" });
-        navigate("/blocked", { replace: true });
-        return;
+      try {
+        const status = await getMeStatus();
+        if (!status.is_active) {
+          await supabase.auth.signOut({ scope: "local" });
+          navigate("/blocked", { replace: true });
+          return;
+        }
+      } catch {
+        // me_status failed (network) — fall through; profile check below still gates access.
       }
 
       const { data: profile, error: profileError } = await supabase
@@ -186,10 +192,6 @@ export default function ManagerLayout() {
       if (!active) return;
       if (event === "SIGNED_OUT" || !session) {
         handleBlockedOrSignedOut("login");
-        return;
-      }
-      if (isBlockedUser(session.user.id)) {
-        handleBlockedOrSignedOut("blocked");
       }
     });
 
@@ -204,10 +206,21 @@ export default function ManagerLayout() {
         handleBlockedOrSignedOut("login");
         return;
       }
-      if (isBlockedUser(user.id)) {
-        handleBlockedOrSignedOut("blocked");
+      try {
+        const status = await getMeStatus();
+        if (!active) return;
+        if (!status.is_active) {
+          await recordAuthEvent("force_logout", { reason: status.reason }).catch(() => {});
+          handleBlockedOrSignedOut("blocked");
+          return;
+        }
+      } catch {
+        // ignore — transient errors should not log the user out
       }
+      sendHeartbeat().catch(() => {});
     };
+
+    sendHeartbeat().catch(() => {});
 
     const intervalId = window.setInterval(revalidate, 30_000);
     const onVisibility = () => {
@@ -252,7 +265,8 @@ export default function ManagerLayout() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await recordAuthEvent("logout").catch(() => {});
     // Limpa tokens do Supabase diretamente — evita 403 se sessão já expirou no servidor
     for (const key of Object.keys(localStorage)) {
       if (key.startsWith("sb-")) localStorage.removeItem(key);
@@ -358,6 +372,12 @@ export default function ManagerLayout() {
               label="Alertas"
               collapsed={collapsed}
               badge={alertsBadge}
+            />
+            <NavItem
+              to="/dashboard/usuarios"
+              icon={<Users className="h-4 w-4" />}
+              label="Usuários"
+              collapsed={collapsed}
             />
           </nav>
 

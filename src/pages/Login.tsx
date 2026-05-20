@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { InputLogin } from "@/components/ui/input-login";
 import { useToast } from "@/hooks/use-toast";
-import { isBlockedUser } from "@/lib/blockedUsers";
+import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
 import logo from "@/assets/logo-xmx.png";
 
 function isNetworkError(error: unknown): boolean {
@@ -71,10 +71,15 @@ const Login = () => {
   }, []);
 
   const redirectUser = async (userId: string) => {
-    if (isBlockedUser(userId)) {
-      await supabase.auth.signOut({ scope: "local" });
-      navigate("/blocked", { replace: true });
-      return;
+    try {
+      const status = await getMeStatus();
+      if (!status.is_active) {
+        await supabase.auth.signOut({ scope: "local" });
+        navigate("/blocked", { replace: true });
+        return;
+      }
+    } catch {
+      // If me_status fails, fall through and rely on the profile fetch below.
     }
 
     try {
@@ -85,6 +90,9 @@ const Login = () => {
         .single();
 
       if (error) throw error;
+
+      // Best-effort: record login event. Non-blocking.
+      recordAuthEvent("login").catch(() => {});
 
       if (profile?.role === "manager") {
         navigate("/dashboard");

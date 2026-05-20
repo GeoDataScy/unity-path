@@ -11,7 +11,7 @@ import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
-import { isBlockedUser } from "@/lib/blockedUsers";
+import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 
 export type AgentOutletContext = {
   userId: string;
@@ -41,10 +41,15 @@ export default function AgentLayout() {
         return;
       }
 
-      if (isBlockedUser(session.user.id)) {
-        await supabase.auth.signOut({ scope: "local" });
-        navigate("/blocked", { replace: true });
-        return;
+      try {
+        const status = await getMeStatus();
+        if (!status.is_active) {
+          await supabase.auth.signOut({ scope: "local" });
+          navigate("/blocked", { replace: true });
+          return;
+        }
+      } catch {
+        // me_status failed (network) — fall through; profile check below still gates access.
       }
 
       const { data: profile, error: profileError } = await supabase
@@ -86,10 +91,6 @@ export default function AgentLayout() {
       if (!active) return;
       if (event === "SIGNED_OUT" || !session) {
         handleBlockedOrSignedOut("login");
-        return;
-      }
-      if (isBlockedUser(session.user.id)) {
-        handleBlockedOrSignedOut("blocked");
       }
     });
 
@@ -104,10 +105,23 @@ export default function AgentLayout() {
         handleBlockedOrSignedOut("login");
         return;
       }
-      if (isBlockedUser(user.id)) {
-        handleBlockedOrSignedOut("blocked");
+      try {
+        const status = await getMeStatus();
+        if (!active) return;
+        if (!status.is_active) {
+          await recordAuthEvent("force_logout", { reason: status.reason }).catch(() => {});
+          handleBlockedOrSignedOut("blocked");
+          return;
+        }
+      } catch {
+        // ignore — transient errors should not log the user out
       }
+      sendHeartbeat().catch(() => {});
     };
+
+    // Fire one heartbeat immediately so the manager sees the user online without
+    // waiting 30s for the first tick.
+    sendHeartbeat().catch(() => {});
 
     const intervalId = window.setInterval(revalidate, 30_000);
     const onVisibility = () => {
@@ -130,7 +144,8 @@ export default function AgentLayout() {
     return { userId, fullName };
   }, [userId, fullName]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await recordAuthEvent("logout").catch(() => {});
     for (const key of Object.keys(localStorage)) {
       if (key.startsWith("sb-")) localStorage.removeItem(key);
     }
