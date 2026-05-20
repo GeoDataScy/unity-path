@@ -171,8 +171,57 @@ export default function ManagerLayout() {
     };
 
     checkAuth();
+
+    const handleBlockedOrSignedOut = async (target: "login" | "blocked") => {
+      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith("sb-")) localStorage.removeItem(key);
+      }
+      navigate(target === "blocked" ? "/blocked" : "/login", { replace: true });
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      if (event === "SIGNED_OUT" || !session) {
+        handleBlockedOrSignedOut("login");
+        return;
+      }
+      if (isBlockedUser(session.user.id)) {
+        handleBlockedOrSignedOut("blocked");
+      }
+    });
+
+    const revalidate = async () => {
+      if (!active) return;
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (!active) return;
+      if (error || !user) {
+        handleBlockedOrSignedOut("login");
+        return;
+      }
+      if (isBlockedUser(user.id)) {
+        handleBlockedOrSignedOut("blocked");
+      }
+    };
+
+    const intervalId = window.setInterval(revalidate, 30_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") revalidate();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", revalidate);
+
     return () => {
       active = false;
+      subscription.unsubscribe();
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", revalidate);
     };
   }, [navigate]);
 
