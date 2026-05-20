@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, CircleDot, Filter, Package, PackageCheck, Store } from "lucide-react";
+import { BarChart3, CircleDot, Filter, MessageSquareText, Package, PackageCheck, Store } from "lucide-react";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,9 +122,29 @@ export default function DashboardRefunds() {
       byProduct: (metrics?.by_product ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannel: (metrics?.by_channel ?? []).map((x) => ({ name: x.name, value: x.value })),
       byPlatform: (metrics?.by_platform ?? []).map((x) => ({ name: x.name, value: x.value })),
+      byReason: (metrics?.by_reason ?? []).map((x) => ({ name: x.name, value: x.value })),
       byChannelEfficiency: metrics?.by_channel_efficiency ?? [],
     };
   }, [metrics]);
+
+  const reasonTotal = useMemo(
+    () => kpis.byReason.reduce((sum, item) => sum + item.value, 0),
+    [kpis.byReason],
+  );
+
+  const reasonChartData = useMemo(
+    () =>
+      kpis.byReason
+        .slice()
+        .sort((a, b) => b.value - a.value)
+        .map((item) => ({
+          ...item,
+          pct: reasonTotal > 0 ? (item.value / reasonTotal) * 100 : 0,
+        })),
+    [kpis.byReason, reasonTotal],
+  );
+
+  const topReason = reasonChartData[0];
 
   const platformTotal = useMemo(
     () => kpis.byPlatform.reduce((sum, item) => sum + item.value, 0),
@@ -453,6 +473,94 @@ export default function DashboardRefunds() {
                       position="right"
                       style={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
                       formatter={(v: number) => v.toLocaleString("pt-BR")}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquareText className="h-4 w-4 text-primary" />
+                  Motivos de reembolso
+                </CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Histórico normalizado em 15 categorias — texto livre antigo reclassificado automaticamente.
+                </p>
+              </div>
+
+              {!isLoading && topReason && reasonTotal > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-md border bg-muted/40 px-3 py-1.5">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mais comum</p>
+                    <p className="text-sm font-medium leading-tight" title={topReason.name}>
+                      {topReason.name}
+                      <span className="ml-1.5 text-muted-foreground">
+                        ({((topReason.value / reasonTotal) * 100).toFixed(0)}%)
+                      </span>
+                    </p>
+                  </div>
+                  <div className="rounded-md border bg-muted/40 px-3 py-1.5 text-right">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Classificados</p>
+                    <p className="text-sm font-semibold tabular-nums leading-tight">
+                      {reasonTotal.toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="h-[520px]">
+            {isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : reasonChartData.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <MessageSquareText className="h-6 w-6 opacity-40" />
+                <p className="text-sm">Nenhum motivo encontrado neste período</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={reasonChartData}
+                  layout="vertical"
+                  margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
+                  barCategoryGap={6}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={240}
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                    formatter={(value: number, _name, item: any) => {
+                      const pct = item?.payload?.pct ?? 0;
+                      return [`${value.toLocaleString("pt-BR")} (${pct.toFixed(1)}%)`, "Reembolsos"];
+                    }}
+                  />
+                  <Bar dataKey="value" name="Reembolsos" radius={[0, 6, 6, 0]} barSize={20}>
+                    {reasonChartData.map((_, i) => (
+                      <Cell key={`reason-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      style={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                      formatter={(v: number) => {
+                        const pct = reasonTotal > 0 ? ((v / reasonTotal) * 100).toFixed(1) : "0";
+                        return `${v.toLocaleString("pt-BR")} • ${pct}%`;
+                      }}
                     />
                   </Bar>
                 </BarChart>

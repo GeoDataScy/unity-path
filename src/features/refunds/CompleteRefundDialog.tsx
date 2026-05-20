@@ -40,6 +40,10 @@ const REASON_OPTIONS = [
   "Dificuldade de uso",
   "Problemas técnicos",
   "Compra em excesso",
+  "Indicação médica / efeitos colaterais",
+  "Risco de chargeback",
+  "Reclamação VSL / Propaganda",
+  "Follow up (sem motivo declarado)",
   "Outros",
 ] as const satisfies readonly [string, ...string[]];
 
