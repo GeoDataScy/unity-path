@@ -408,7 +408,12 @@ export default function Atendimentos() {
 
     return services.filter(s => {
       const serviceDate = s.service_date?.slice(0, 10);
-      return serviceDate === today || followUpToday.has(s.id);
+      // Quando canViewAllTickets, services contém tickets de todos os agentes.
+      // O contador deve representar O TRABALHO DELA: tickets que ela abriu hoje +
+      // tickets em que ela registrou follow-up hoje. Não inflar com tickets que
+      // outros agentes abriram.
+      const openedByMeToday = s.user_id === userId && serviceDate === today;
+      return openedByMeToday || followUpToday.has(s.id);
     }).length;
   }, [services, allFollowUps, userId]);
 
@@ -480,7 +485,25 @@ export default function Atendimentos() {
     onSuccess: async (result) => {
       if (result.kind === "mine") {
         concludeAfterCreate.current = false;
-        const mine = services.find((s) => s.id === result.serviceId);
+
+        // Fallback: pode ser ticket de outro agente que ainda não está no array local
+        // (cache da query). Busca direto por id — RLS permite quando canViewAllTickets.
+        let mine = services.find((s) => s.id === result.serviceId);
+        if (!mine) {
+          const { data, error } = await supabase
+            .from("services")
+            .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+            .eq("id", result.serviceId)
+            .maybeSingle();
+          if (error) {
+            console.error("[create-service] fetch existing ticket failed:", error);
+          } else if (data) {
+            mine = data as ServiceItem;
+            // Garante que esse ticket apareça na tabela depois que o dialog fechar
+            await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+          }
+        }
+
         toast({
           title: "E-mail já cadastrado",
           description: "Abrindo o acompanhamento do atendimento existente.",
