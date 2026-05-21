@@ -12,6 +12,7 @@ export type ServiceItem = {
   created_at: string | null;
   has_tracking_code: boolean;
   contact_reason: string | null;
+  user_id: string;
 };
 
 async function requireSessionUserId(): Promise<string> {
@@ -25,9 +26,9 @@ async function requireSessionUserId(): Promise<string> {
   return session.user.id;
 }
 
-export function useMyServicesQuery(enabled: boolean) {
+export function useMyServicesQuery(enabled: boolean, isSupervisor = false) {
   return useQuery({
-    queryKey: ["services", "me"],
+    queryKey: ["services", "me", isSupervisor ? "supervisor" : "self"],
     enabled,
     queryFn: async (): Promise<ServiceItem[]> => {
       const userId = await requireSessionUserId();
@@ -35,12 +36,15 @@ export function useMyServicesQuery(enabled: boolean) {
       const all: ServiceItem[] = [];
       let from = 0;
       while (true) {
-        const { data, error } = await supabase
+        let query = supabase
           .from("services")
-          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason")
-          .eq("user_id", userId)
+          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
+        if (!isSupervisor) {
+          query = query.eq("user_id", userId);
+        }
+        const { data, error } = await query;
         if (error) throw error;
         const rows = (data ?? []) as ServiceItem[];
         all.push(...rows);

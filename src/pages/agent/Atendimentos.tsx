@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
@@ -176,7 +176,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName } = useOutletContext<AgentOutletContext>();
+  const { userId, fullName, isSupervisor } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -280,10 +280,29 @@ export default function Atendimentos() {
     [canAddInteraction, addEntryMutation, toast],
   );
 
-  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId));
+  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), isSupervisor);
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
   // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
   const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
+
+  // Map id -> full_name for displaying ticket owner when supervisor (RLS gates this query for non-supervisors).
+  const { data: agentNamesMap = {} } = useQuery<Record<string, string>>({
+    queryKey: ["profiles", "agent-names"],
+    enabled: Boolean(userId) && isSupervisor,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "agent");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const row of data ?? []) {
+        if (row?.id) map[row.id] = row.full_name ?? "—";
+      }
+      return map;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   // When the agent accepts a transfer notification, NotificationsBell redirects here with
   // ?openTicket=<service_id>. Open the tracking dialog for that ticket and clean the URL.
@@ -865,6 +884,7 @@ export default function Atendimentos() {
               <TableRow>
                 <TableHead>Data de abertura</TableHead>
                 <TableHead className="w-[80px]">Hora</TableHead>
+                {isSupervisor && <TableHead>Agente</TableHead>}
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
@@ -876,7 +896,7 @@ export default function Atendimentos() {
             <TableBody>
               {paginatedServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center">
+                  <TableCell colSpan={isSupervisor ? 9 : 8} className="py-10 text-center">
                     {(() => {
                       const today = todayISO();
                       const isTodayDefault =
@@ -925,6 +945,15 @@ export default function Atendimentos() {
                     <TableCell className="tabular-nums text-muted-foreground">
                       {formatCreatedAtTimeSP(s.created_at)}
                     </TableCell>
+                    {isSupervisor && (
+                      <TableCell className="text-sm">
+                        {s.user_id === userId ? (
+                          <span className="text-muted-foreground">Você</span>
+                        ) : (
+                          <span className="font-medium">{agentNamesMap[s.user_id] ?? "—"}</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{s.client_email}</TableCell>
                     <TableCell>{s.product}</TableCell>
                     <TableCell>
@@ -985,12 +1014,14 @@ export default function Atendimentos() {
                           <Pencil className="text-muted-foreground" />
                         </Button>
 
-                        <DeleteServiceAlert
-                          disabled={deleteMutation.isPending}
-                          onConfirm={async () => {
-                            await deleteMutation.mutateAsync(s.id);
-                          }}
-                        />
+                        {s.user_id === userId && (
+                          <DeleteServiceAlert
+                            disabled={deleteMutation.isPending}
+                            onConfirm={async () => {
+                              await deleteMutation.mutateAsync(s.id);
+                            }}
+                          />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

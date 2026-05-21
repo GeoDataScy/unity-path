@@ -43,6 +43,54 @@ export type Database = {
           },
         ]
       }
+      agent_heartbeats: {
+        Row: {
+          last_seen_at: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      auth_events: {
+        Row: {
+          actor_id: string | null
+          event_type: string
+          id: number
+          metadata: Json | null
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          event_type: string
+          id?: number
+          metadata?: Json | null
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          event_type?: string
+          id?: number
+          metadata?: Json | null
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -94,29 +142,76 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          deactivated_at: string | null
+          deactivated_by: string | null
           email: string
           full_name: string | null
           id: string
+          is_active: boolean
+          is_supervisor: boolean
           role: Database["public"]["Enums"]["AppRole"]
           support_channel: string
         }
         Insert: {
           created_at?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
           email: string
           full_name?: string | null
           id?: string
+          is_active?: boolean
+          is_supervisor?: boolean
           role?: Database["public"]["Enums"]["AppRole"]
           support_channel?: string
         }
         Update: {
           created_at?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          is_active?: boolean
+          is_supervisor?: boolean
           role?: Database["public"]["Enums"]["AppRole"]
           support_channel?: string
         }
         Relationships: []
+      }
+      refund_reason_classifications: {
+        Row: {
+          category: string
+          classification_method: string
+          classified_at: string
+          original_reason: string | null
+          refund_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          classification_method?: string
+          classified_at?: string
+          original_reason?: string | null
+          refund_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          classification_method?: string
+          classified_at?: string
+          original_reason?: string | null
+          refund_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_reason_classifications_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: true
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       refunds: {
         Row: {
@@ -439,6 +534,7 @@ export type Database = {
     }
     Functions: {
       agent_daily_metrics: { Args: { target_date?: string }; Returns: Json }
+      agent_heartbeat: { Args: { p_user_agent?: string }; Returns: undefined }
       agent_metrics_range: {
         Args: { from_date: string; to_date: string }
         Returns: Json
@@ -451,6 +547,7 @@ export type Database = {
         Args: { from_date: string; to_date: string; top_n?: number }
         Returns: Json
       }
+      classify_refund_reason: { Args: { p_reason: string }; Returns: string }
       create_refund:
         | {
             Args: {
@@ -485,6 +582,10 @@ export type Database = {
       }
       dashboard_channel_detail: {
         Args: { p_from_date?: string; p_to_date?: string }
+        Returns: Json
+      }
+      dashboard_export_extras: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
       }
       dashboard_follow_up_detail: {
@@ -550,7 +651,18 @@ export type Database = {
         Returns: boolean
       }
       is_manager: { Args: never; Returns: boolean }
+      is_supervisor: { Args: never; Returns: boolean }
+      manager_delete_auth_user: {
+        Args: { p_confirm_email: string; p_target_user_id: string }
+        Returns: undefined
+      }
+      manager_list_users: { Args: never; Returns: Json }
       manager_refund_alerts: { Args: never; Returns: Json }
+      manager_set_user_active: {
+        Args: { p_active: boolean; p_target_user_id: string }
+        Returns: undefined
+      }
+      me_status: { Args: never; Returns: Json }
       my_refunds_with_refunded_value: {
         Args: never
         Returns: {
@@ -606,6 +718,14 @@ export type Database = {
           transfer_id: string
           transfer_status: string
         }[]
+      }
+      record_auth_event: {
+        Args: {
+          p_event_type: string
+          p_metadata?: Json
+          p_target_user_id?: string
+        }
+        Returns: undefined
       }
       refresh_agent_daily_service_count: {
         Args: { p_day: string; p_user_id: string }
@@ -742,14 +862,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "agent",
-        "manager",
-      ],
-      AppRole: [
-        "agent",
-        "manager",
-      ],
+      app_role: ["agent", "manager"],
+      AppRole: ["agent", "manager"],
     },
   },
 } as const

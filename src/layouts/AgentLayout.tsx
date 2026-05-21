@@ -16,6 +16,7 @@ import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 export type AgentOutletContext = {
   userId: string;
   fullName: string | null;
+  isSupervisor: boolean;
 };
 
 export default function AgentLayout() {
@@ -25,6 +26,7 @@ export default function AgentLayout() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [isSupervisor, setIsSupervisor] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -54,7 +56,7 @@ export default function AgentLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, is_supervisor")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -72,6 +74,7 @@ export default function AgentLayout() {
       if (!active) return;
       setUserId(session.user.id);
       setFullName(profile?.full_name ?? null);
+      setIsSupervisor(Boolean(profile?.is_supervisor));
       setLoading(false);
     };
 
@@ -141,8 +144,8 @@ export default function AgentLayout() {
 
   const outletContext = useMemo<AgentOutletContext | null>(() => {
     if (!userId) return null;
-    return { userId, fullName };
-  }, [userId, fullName]);
+    return { userId, fullName, isSupervisor };
+  }, [userId, fullName, isSupervisor]);
 
   const handleLogout = async () => {
     await recordAuthEvent("logout").catch(() => {});
