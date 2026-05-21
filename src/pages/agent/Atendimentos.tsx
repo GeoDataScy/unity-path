@@ -176,7 +176,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName, isSupervisor } = useOutletContext<AgentOutletContext>();
+  const { userId, fullName, canViewAllTickets } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -280,7 +280,7 @@ export default function Atendimentos() {
     [canAddInteraction, addEntryMutation, toast],
   );
 
-  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), isSupervisor);
+  const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), canViewAllTickets);
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
   // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
   const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
@@ -288,7 +288,7 @@ export default function Atendimentos() {
   // Map id -> full_name for displaying ticket owner when supervisor (RLS gates this query for non-supervisors).
   const { data: agentNamesMap = {} } = useQuery<Record<string, string>>({
     queryKey: ["profiles", "agent-names"],
-    enabled: Boolean(userId) && isSupervisor,
+    enabled: Boolean(userId) && canViewAllTickets,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -453,11 +453,11 @@ export default function Atendimentos() {
       const found = (foundRows?.[0] ?? null) as DuplicateTicket | null;
 
       if (found) {
-        if (found.user_id === session.user.id) {
-          // Existing ticket belongs to me — keep current UX (open tracking).
+        // Supervisor enxerga e trata tickets de qualquer agente, então em vez de bloquear,
+        // abre direto o acompanhamento do ticket existente (mesma UX de "já é meu").
+        if (found.user_id === session.user.id || canViewAllTickets) {
           return { kind: "mine", serviceId: found.id };
         }
-        // Belongs to another agent — block insert and surface the transfer dialog.
         return { kind: "other_agent", ticket: found };
       }
 
@@ -884,7 +884,7 @@ export default function Atendimentos() {
               <TableRow>
                 <TableHead>Data de abertura</TableHead>
                 <TableHead className="w-[80px]">Hora</TableHead>
-                {isSupervisor && <TableHead>Agente</TableHead>}
+                {canViewAllTickets && <TableHead>Agente</TableHead>}
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
@@ -896,7 +896,7 @@ export default function Atendimentos() {
             <TableBody>
               {paginatedServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isSupervisor ? 9 : 8} className="py-10 text-center">
+                  <TableCell colSpan={canViewAllTickets ? 9 : 8} className="py-10 text-center">
                     {(() => {
                       const today = todayISO();
                       const isTodayDefault =
@@ -945,7 +945,7 @@ export default function Atendimentos() {
                     <TableCell className="tabular-nums text-muted-foreground">
                       {formatCreatedAtTimeSP(s.created_at)}
                     </TableCell>
-                    {isSupervisor && (
+                    {canViewAllTickets && (
                       <TableCell className="text-sm">
                         {s.user_id === userId ? (
                           <span className="text-muted-foreground">Você</span>

@@ -141,6 +141,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_view_all_tickets: boolean
           created_at: string | null
           deactivated_at: string | null
           deactivated_by: string | null
@@ -148,11 +149,11 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
-          is_supervisor: boolean
           role: Database["public"]["Enums"]["AppRole"]
           support_channel: string
         }
         Insert: {
+          can_view_all_tickets?: boolean
           created_at?: string | null
           deactivated_at?: string | null
           deactivated_by?: string | null
@@ -160,11 +161,11 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
-          is_supervisor?: boolean
           role?: Database["public"]["Enums"]["AppRole"]
           support_channel?: string
         }
         Update: {
+          can_view_all_tickets?: boolean
           created_at?: string | null
           deactivated_at?: string | null
           deactivated_by?: string | null
@@ -172,7 +173,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
-          is_supervisor?: boolean
           role?: Database["public"]["Enums"]["AppRole"]
           support_channel?: string
         }
@@ -650,8 +650,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_view_all_tickets: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
-      is_supervisor: { Args: never; Returns: boolean }
       manager_delete_auth_user: {
         Args: { p_confirm_email: string; p_target_user_id: string }
         Returns: undefined

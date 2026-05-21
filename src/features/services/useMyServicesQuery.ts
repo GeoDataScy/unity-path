@@ -26,9 +26,9 @@ async function requireSessionUserId(): Promise<string> {
   return session.user.id;
 }
 
-export function useMyServicesQuery(enabled: boolean, isSupervisor = false) {
+export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false) {
   return useQuery({
-    queryKey: ["services", "me", isSupervisor ? "supervisor" : "self"],
+    queryKey: ["services", "me", canViewAllTickets ? "all" : "self"],
     enabled,
     queryFn: async (): Promise<ServiceItem[]> => {
       const userId = await requireSessionUserId();
@@ -41,7 +41,7 @@ export function useMyServicesQuery(enabled: boolean, isSupervisor = false) {
           .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
-        if (!isSupervisor) {
+        if (!canViewAllTickets) {
           query = query.eq("user_id", userId);
         }
         const { data, error } = await query;
