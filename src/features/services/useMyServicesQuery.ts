@@ -26,9 +26,23 @@ async function requireSessionUserId(): Promise<string> {
   return session.user.id;
 }
 
-export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false) {
+// Janela default para a tabela "Meus Atendimentos Recentes". Agentes ativos
+// acumulam milhares de tickets — carregar tudo a cada refetch trava a UI por
+// vários segundos. 30 dias cobre 99% do dia-a-dia; busca por e-mail mais antigo
+// usa a RPC find_ticket_by_email no momento do registro.
+const DEFAULT_DAYS_BACK = 30;
+
+function cutoffDateISO(daysBack: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysBack);
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false, daysBack = DEFAULT_DAYS_BACK) {
+  const cutoff = cutoffDateISO(daysBack);
+
   return useQuery({
-    queryKey: ["services", "me", canViewAllTickets ? "all" : "self"],
+    queryKey: ["services", "me", canViewAllTickets ? "all" : "self", cutoff],
     enabled,
     queryFn: async (): Promise<ServiceItem[]> => {
       const userId = await requireSessionUserId();
@@ -39,6 +53,8 @@ export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false) 
         let query = supabase
           .from("services")
           .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+          // service_date é text mas armazena ISO "YYYY-MM-DD..." — comparação lexicográfica funciona.
+          .gte("service_date", cutoff)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
         if (!canViewAllTickets) {

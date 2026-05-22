@@ -411,7 +411,7 @@ export default function Atendimentos() {
 
   const createMutation = useMutation({
     mutationFn: async (): Promise<
-      | { kind: "created" }
+      | { kind: "created"; ticket: ServiceItem }
       | { kind: "mine"; serviceId: string }
       | { kind: "other_agent"; ticket: DuplicateTicket }
     > => {
@@ -442,21 +442,25 @@ export default function Atendimentos() {
         }
       }
 
-      const { error } = await supabase.from("services").insert({
-        client_email: clientEmail.trim(),
-        service_date: toSaoPauloTimestamptz(todayISO()),
-        product,
-        platform,
-        channel,
-        has_tracking_code: hasTrackingCode,
-        contact_reason: contactReason || null,
-        // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
-        status: concludeAfterCreate.current ? "concluido" : "registered",
-        user_id: session.user.id,
-      });
+      const { data: inserted, error } = await supabase
+        .from("services")
+        .insert({
+          client_email: clientEmail.trim(),
+          service_date: toSaoPauloTimestamptz(todayISO()),
+          product,
+          platform,
+          channel,
+          has_tracking_code: hasTrackingCode,
+          contact_reason: contactReason || null,
+          // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
+          status: concludeAfterCreate.current ? "concluido" : "registered",
+          user_id: session.user.id,
+        })
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+        .single();
 
       if (error) throw error;
-      return { kind: "created" };
+      return { kind: "created", ticket: inserted as ServiceItem };
     },
     onSuccess: async (result) => {
       if (result.kind === "mine") {
@@ -504,6 +508,15 @@ export default function Atendimentos() {
       setChannel("Email");
       setHasTrackingCode(false);
       setContactReason("");
+
+      // Optimistic update: prepend o ticket recém-criado em todas as variações da
+      // query (chave inclui sufixo de cutoff de data). A tabela atualiza instantâneo
+      // mesmo se o refetch demorar.
+      queryClient.setQueriesData<ServiceItem[]>(
+        { queryKey: ["services", "me"] },
+        (prev) => (prev ? [result.ticket, ...prev.filter((s) => s.id !== result.ticket.id)] : [result.ticket]),
+      );
+
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       emitAgentInteraction();
