@@ -389,34 +389,6 @@ export default function Atendimentos() {
     return filteredServices.slice(start, start + PAGE_SIZE);
   }, [filteredServices, page]);
 
-  /** Unique tickets with activity by this agent today (SP timezone) — feeds the
-   *  daily card, overriding the backend my_count so the card matches the table
-   *  row count and the manager's per-agent breakdown. */
-  const todayTicketsCount = useMemo(() => {
-    if (!userId) return 0;
-    const spFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" });
-    const today = spFmt.format(new Date());
-
-    const followUpToday = new Set<string>();
-    for (const f of allFollowUps) {
-      if (f.user_id !== userId) continue;
-      if (!f.recorded_at) continue;
-      const d = new Date(f.recorded_at.replace(/\.\d+/, ""));
-      if (isNaN(d.getTime())) continue;
-      if (spFmt.format(d) === today) followUpToday.add(f.service_id);
-    }
-
-    return services.filter(s => {
-      const serviceDate = s.service_date?.slice(0, 10);
-      // Quando canViewAllTickets, services contém tickets de todos os agentes.
-      // O contador deve representar O TRABALHO DELA: tickets que ela abriu hoje +
-      // tickets em que ela registrou follow-up hoje. Não inflar com tickets que
-      // outros agentes abriram.
-      const openedByMeToday = s.user_id === userId && serviceDate === today;
-      return openedByMeToday || followUpToday.has(s.id);
-    }).length;
-  }, [services, allFollowUps, userId]);
-
   // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
   const supportChannel = useMemo(() => {
     const smsCount = services.filter((s) => s.channel === "SMS").length;
@@ -666,7 +638,6 @@ export default function Atendimentos() {
         goal={dailyGoal}
         debugCelebrateNonce={debugCelebrateNonce}
         debugOverrideCount={debugOverrideCount}
-        myCountOverride={todayTicketsCount}
       />
 
       <Card>
