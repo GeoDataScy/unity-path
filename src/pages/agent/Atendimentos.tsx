@@ -176,7 +176,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName, canViewAllTickets } = useOutletContext<AgentOutletContext>();
+  const { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -435,7 +435,11 @@ export default function Atendimentos() {
         if (found.user_id === session.user.id || canViewAllTickets) {
           return { kind: "mine", serviceId: found.id };
         }
-        return { kind: "other_agent", ticket: found };
+        // Agente com permissão de duplicar emails cross-agent: ignora o ticket alheio
+        // e segue para criar o ticket próprio, mesmo havendo duplicidade no banco.
+        if (!canRegisterDuplicateEmails) {
+          return { kind: "other_agent", ticket: found };
+        }
       }
 
       const { error } = await supabase.from("services").insert({

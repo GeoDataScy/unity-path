@@ -141,6 +141,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_register_duplicate_emails: boolean
           can_view_all_tickets: boolean
           created_at: string | null
           deactivated_at: string | null
@@ -153,6 +154,7 @@ export type Database = {
           support_channel: string
         }
         Insert: {
+          can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
           created_at?: string | null
           deactivated_at?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           support_channel?: string
         }
         Update: {
+          can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
           created_at?: string | null
           deactivated_at?: string | null
