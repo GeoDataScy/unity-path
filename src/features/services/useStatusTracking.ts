@@ -158,7 +158,6 @@ export function useStatusTracking() {
     mutationFn: async (params: {
       serviceId: string;
       status: ServiceStatus;
-      recordedAt: string; // ISO timestamptz
       observation: string;
     }) => {
       const {
@@ -166,16 +165,16 @@ export function useStatusTracking() {
       } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
-      // Calculate follow_up_number
       const existing = grouped[params.serviceId] ?? [];
       const followUpNumber = existing.length + 1;
 
+      // recorded_at is pinned to now() by a BEFORE INSERT trigger on the server,
+      // so the past stays immutable regardless of what we send from the client.
       const { error } = await supabase.from("service_follow_ups").insert({
         service_id: params.serviceId,
         user_id: session.user.id,
         follow_up_number: followUpNumber,
         status: params.status,
-        recorded_at: params.recordedAt,
         observation: params.observation,
       });
 

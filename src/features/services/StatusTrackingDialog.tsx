@@ -3,7 +3,6 @@ import { Clock, FileText, Hash, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -37,19 +36,6 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-function nowDate() {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-}
-
-function nowTime() {
-  return new Date().toLocaleTimeString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
 export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serviceStatus, hasTrackingCode, open, onOpenChange }: Props) {
   const { getEntries, getCurrentStatus, addEntryMutation, canAddInteraction } = useStatusTracking();
   const { toast } = useToast();
@@ -59,11 +45,9 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
   const isConcluded = currentStatus.variant === "done";
   const interactionCheck = canAddInteraction(serviceId, serviceDate, hasTrackingCode);
 
-  // Form state
+  // Form state — recorded_at is pinned to now() by the database, so no date/time inputs.
   const [isReopening, setIsReopening] = useState(false);
   const [status, setStatus] = useState<ServiceStatus>("em_andamento");
-  const [date, setDate] = useState(nowDate);
-  const [time, setTime] = useState(nowTime);
   const [observation, setObservation] = useState("");
 
   const handleSubmit = async () => {
@@ -76,13 +60,10 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
       return;
     }
 
-    const recordedAt = `${date}T${time}:00-03:00`;
-
     try {
       await addEntryMutation.mutateAsync({
         serviceId,
         status,
-        recordedAt,
         observation,
       });
 
@@ -93,10 +74,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
           : "Nova interação registrada com sucesso.",
       });
 
-      // Reset form
       setStatus("em_andamento");
-      setDate(nowDate());
-      setTime(nowTime());
       setObservation("");
       setIsReopening(false);
       onOpenChange(false);
@@ -113,8 +91,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
     }
   };
 
-  // Concluding is always allowed; regular follow-ups respect the interaction block
-  const canSubmit = Boolean(date) && Boolean(time) && !addEntryMutation.isPending &&
+  const canSubmit = !addEntryMutation.isPending &&
     (status === "concluido" || interactionCheck.allowed || isReopening);
 
   return (
@@ -209,25 +186,6 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
                   <SelectItem value="concluido">Concluído</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Data</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Hora</Label>
-                <Input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-              </div>
             </div>
 
             <div className="grid gap-2">

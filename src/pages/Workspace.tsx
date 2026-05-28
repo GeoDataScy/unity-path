@@ -229,12 +229,13 @@ const Workspace = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string }) => {
+    mutationFn: async (payload: { id: string; client_email: string; product: string }) => {
+      // service_date is frozen by a database trigger; manager corrections go
+      // through manager_correct_service_date.
       const { error } = await supabase
         .from("services")
         .update({
           client_email: payload.client_email,
-          service_date: payload.service_date,
           product: payload.product,
         })
         .eq("id", payload.id);

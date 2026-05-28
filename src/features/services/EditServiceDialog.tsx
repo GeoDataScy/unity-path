@@ -91,16 +91,12 @@ type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; service_date: string; product: string; platform: string; channel: string; contact_reason: string | null }) => Promise<void>;
+  onSave: (next: { client_email: string; product: string; platform: string; channel: string; contact_reason: string | null }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
   const [saving, setSaving] = useState(false);
   const [clientEmail, setClientEmail] = useState(service.client_email);
-  const [serviceDate, setServiceDate] = useState(() => {
-    // Ensure the <input type="date"> receives YYYY-MM-DD (not an ISO timestamp).
-    return service.service_date?.includes("T") ? service.service_date.slice(0, 10) : service.service_date;
-  });
   const [product, setProduct] = useState(service.product);
   const [platform, setPlatform] = useState(service.platform ?? "");
   const [channel, setChannel] = useState(service.channel ?? "Nenhum");
@@ -109,15 +105,14 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   );
 
   const canSave = useMemo(() => {
-    return Boolean(clientEmail) && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && !saving;
-  }, [clientEmail, serviceDate, product, platform, saving]);
+    return Boolean(clientEmail) && Boolean(product) && Boolean(platform) && !saving;
+  }, [clientEmail, product, platform, saving]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await onSave({
         client_email: clientEmail,
-        service_date: serviceDate,
         product,
         platform,
         channel,
@@ -146,16 +141,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
               value={clientEmail}
               onChange={(e) => setClientEmail(e.target.value)}
               placeholder="cliente@email.com"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-service-date">Data do Atendimento</Label>
-            <Input
-              id="edit-service-date"
-              type="date"
-              value={serviceDate}
-              onChange={(e) => setServiceDate(e.target.value)}
             />
           </div>
 
