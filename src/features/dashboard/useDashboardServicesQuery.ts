@@ -34,9 +34,11 @@ export function useDashboardServicesQuery({ enabled, from, to, agentId }: Params
       await requireSession();
 
       // Real data only. Keep server-side filtering for performance.
+      // services tem 2 FKs para profiles (user_id e current_owner_id). Como o gestor
+      // quer ver o criador para auditoria histórica, embed explícito via services_user_id_fkey.
       let q = supabase
         .from("services")
-        .select("*, profiles(full_name)")
+        .select("*, profiles!services_user_id_fkey(full_name)")
         .gte("service_date", from)
         .lte("service_date", to)
         .order("service_date", { ascending: false });

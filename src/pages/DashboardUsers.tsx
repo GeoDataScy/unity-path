@@ -6,6 +6,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Circle,
+  Inbox,
   LogIn,
   LogOut,
   Search,
@@ -43,6 +44,7 @@ import {
   useManagerUsersQuery,
   useSetUserActiveMutation,
 } from "@/features/dashboard/useManagerUsersQuery";
+import { ReassignTicketsDialog } from "@/features/dashboard/ReassignTicketsDialog";
 
 type StatusFilter = "all" | "active" | "inactive" | "online" | "deleted";
 
@@ -145,6 +147,7 @@ export default function DashboardUsers() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ManagerUser | null>(null);
   const [confirmEmail, setConfirmEmail] = useState("");
+  const [reassignTarget, setReassignTarget] = useState<ManagerUser | null>(null);
 
   const users = usersQuery.data ?? [];
 
@@ -326,6 +329,11 @@ export default function DashboardUsers() {
                       <TableHead>Papel</TableHead>
                       <TableHead>
                         <span className="inline-flex items-center gap-1">
+                          <Inbox className="h-3.5 w-3.5" /> Em aberto
+                        </span>
+                      </TableHead>
+                      <TableHead>
+                        <span className="inline-flex items-center gap-1">
                           <LogIn className="h-3.5 w-3.5" /> Último login
                         </span>
                       </TableHead>
@@ -356,6 +364,20 @@ export default function DashboardUsers() {
                             </Badge>
                           </TableCell>
                           <TableCell>
+                            {isManager ? (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            ) : user.open_tickets_count > 0 ? (
+                              <Badge
+                                variant={user.is_active ? "outline" : "destructive"}
+                                className="tabular-nums"
+                              >
+                                {user.open_tickets_count}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="text-sm">{formatRelative(user.last_sign_in_at)}</span>
@@ -376,6 +398,16 @@ export default function DashboardUsers() {
                               <span className="text-xs text-muted-foreground italic">Sem ações disponíveis</span>
                             ) : (
                               <div className="inline-flex items-center gap-2">
+                                {!isManager && user.open_tickets_count > 0 && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setReassignTarget(user)}
+                                    title="Redistribuir tickets em aberto"
+                                  >
+                                    <Inbox className="mr-1.5 h-3.5 w-3.5" /> Redistribuir
+                                  </Button>
+                                )}
                                 <Button
                                   variant={user.is_active ? "outline" : "default"}
                                   size="sm"
@@ -418,6 +450,15 @@ export default function DashboardUsers() {
             )}
           </CardContent>
         </Card>
+
+        <ReassignTicketsDialog
+          open={reassignTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setReassignTarget(null);
+          }}
+          sourceAgent={reassignTarget}
+          allUsers={users}
+        />
 
         <AlertDialog
           open={deleteTarget !== null}

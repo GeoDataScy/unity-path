@@ -243,23 +243,9 @@ export default function Atendimentos() {
         return;
       }
 
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat("sv-SE", {
-        timeZone: "America/Sao_Paulo",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-        .format(now)
-        .replace(" ", "T");
-      const recordedAt = `${parts}-03:00`;
-
       setConcludingId(s.id);
       try {
-        await addEntryMutation.mutateAsync({ serviceId: s.id, status: "concluido", recordedAt, observation: "" });
+        await addEntryMutation.mutateAsync({ serviceId: s.id, status: "concluido", observation: "" });
         toast({ title: "Atendimento concluído", description: "Ticket registrado como concluído." });
       } catch (error) {
         // Surface the real failure (network drop, expired session, RLS, etc.)
@@ -430,9 +416,11 @@ export default function Atendimentos() {
       const found = (foundRows?.[0] ?? null) as DuplicateTicket | null;
 
       if (found) {
-        // Supervisor enxerga e trata tickets de qualquer agente, então em vez de bloquear,
-        // abre direto o acompanhamento do ticket existente (mesma UX de "já é meu").
-        if (found.user_id === session.user.id || canViewAllTickets) {
+        // "mine" = sou o dono operacional atual (current_owner). Cobre o caso de
+        // ticket redistribuído pelo gestor: o criador pode ser outro, mas se eu
+        // sou o current_owner agora, abro direto como meu. Supervisor (can_view_all)
+        // continua entrando aqui para qualquer ticket.
+        if (found.current_owner_id === session.user.id || canViewAllTickets) {
           return { kind: "mine", serviceId: found.id };
         }
         // Agente com permissão de duplicar emails cross-agent: ignora o ticket alheio
@@ -456,7 +444,7 @@ export default function Atendimentos() {
           status: concludeAfterCreate.current ? "concluido" : "registered",
           user_id: session.user.id,
         })
-        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
         .single();
 
       if (error) throw error;
@@ -472,7 +460,7 @@ export default function Atendimentos() {
         if (!mine) {
           const { data, error } = await supabase
             .from("services")
-            .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+            .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
             .eq("id", result.serviceId)
             .maybeSingle();
           if (error) {
@@ -564,12 +552,13 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; service_date: string; product: string; platform: string; channel: string; contact_reason: string | null }) => {
+    mutationFn: async (payload: { id: string; client_email: string; product: string; platform: string; channel: string; contact_reason: string | null }) => {
+      // service_date is frozen by a database trigger; we never send it from the
+      // edit flow. Manager corrections go through manager_correct_service_date.
       const { error } = await supabase
         .from("services")
         .update({
           client_email: payload.client_email,
-          service_date: toSaoPauloTimestamptz(payload.service_date),
           product: payload.product,
           platform: payload.platform,
           channel: payload.channel,
@@ -1025,7 +1014,7 @@ export default function Atendimentos() {
                           <Pencil className="text-muted-foreground" />
                         </Button>
 
-                        {s.user_id === userId && (
+                        {s.current_owner_id === userId && (
                           <DeleteServiceAlert
                             disabled={deleteMutation.isPending}
                             onConfirm={async () => {

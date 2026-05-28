@@ -13,6 +13,7 @@ export type ServiceItem = {
   has_tracking_code: boolean;
   contact_reason: string | null;
   user_id: string;
+  current_owner_id: string;
 };
 
 async function requireSessionUserId(): Promise<string> {
@@ -52,13 +53,15 @@ export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false, 
       while (true) {
         let query = supabase
           .from("services")
-          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id")
+          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
           // service_date é text mas armazena ISO "YYYY-MM-DD..." — comparação lexicográfica funciona.
           .gte("service_date", cutoff)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
         if (!canViewAllTickets) {
-          query = query.eq("user_id", userId);
+          // current_owner_id = quem está atendendo agora (muda quando manager redistribui).
+          // user_id = criador imutável, preservado para crédito histórico em métricas.
+          query = query.eq("current_owner_id", userId);
         }
         const { data, error } = await query;
         if (error) throw error;

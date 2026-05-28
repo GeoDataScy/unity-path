@@ -275,6 +275,44 @@ export type Database = {
           },
         ]
       }
+      service_date_corrections: {
+        Row: {
+          corrected_at: string
+          corrected_by: string
+          id: string
+          new_date: string
+          previous_date: string
+          reason: string
+          service_id: string
+        }
+        Insert: {
+          corrected_at?: string
+          corrected_by: string
+          id?: string
+          new_date: string
+          previous_date: string
+          reason: string
+          service_id: string
+        }
+        Update: {
+          corrected_at?: string
+          corrected_by?: string
+          id?: string
+          new_date?: string
+          previous_date?: string
+          reason?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_date_corrections_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_follow_ups: {
         Row: {
           created_at: string
@@ -322,6 +360,7 @@ export type Database = {
           client_email: string
           contact_reason: string | null
           created_at: string | null
+          current_owner_id: string
           has_tracking_code: boolean
           id: string
           platform: string | null
@@ -335,6 +374,7 @@ export type Database = {
           client_email: string
           contact_reason?: string | null
           created_at?: string | null
+          current_owner_id?: string
           has_tracking_code?: boolean
           id?: string
           platform?: string | null
@@ -348,6 +388,7 @@ export type Database = {
           client_email?: string
           contact_reason?: string | null
           created_at?: string | null
+          current_owner_id?: string
           has_tracking_code?: boolean
           id?: string
           platform?: string | null
@@ -357,6 +398,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "services_current_owner_id_fkey"
+            columns: ["current_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "services_user_id_fkey"
             columns: ["user_id"]
@@ -368,6 +416,7 @@ export type Database = {
       }
       ticket_transfers: {
         Row: {
+          assigned_by_manager_id: string | null
           created_at: string
           from_user_id: string
           id: string
@@ -381,6 +430,7 @@ export type Database = {
           to_user_id: string
         }
         Insert: {
+          assigned_by_manager_id?: string | null
           created_at?: string
           from_user_id: string
           id?: string
@@ -394,6 +444,7 @@ export type Database = {
           to_user_id: string
         }
         Update: {
+          assigned_by_manager_id?: string | null
           created_at?: string
           from_user_id?: string
           id?: string
@@ -407,6 +458,13 @@ export type Database = {
           to_user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_transfers_assigned_by_manager_id_fkey"
+            columns: ["assigned_by_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ticket_transfers_from_user_id_fkey"
             columns: ["from_user_id"]
@@ -536,6 +594,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _interaction_events: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
+        Returns: {
+          channel: string
+          day: string
+          kind: string
+          platform: string
+          product: string
+          service_id: string
+          user_id: string
+        }[]
+      }
       agent_daily_metrics: { Args: { target_date?: string }; Returns: Json }
       agent_heartbeat: { Args: { p_user_agent?: string }; Returns: undefined }
       agent_metrics_range: {
@@ -550,6 +620,7 @@ export type Database = {
         Args: { from_date: string; to_date: string; top_n?: number }
         Returns: Json
       }
+      can_view_all_tickets: { Args: never; Returns: boolean }
       classify_refund_reason: { Args: { p_reason: string }; Returns: string }
       create_refund:
         | {
@@ -638,6 +709,8 @@ export type Database = {
           channel: string
           client_email: string
           created_at: string
+          current_owner_id: string
+          current_owner_name: string
           id: string
           platform: string
           product: string
@@ -653,13 +726,21 @@ export type Database = {
         }
         Returns: boolean
       }
-      can_view_all_tickets: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
+      manager_correct_service_date: {
+        Args: { p_new_date: string; p_reason: string; p_service_id: string }
+        Returns: Json
+      }
       manager_delete_auth_user: {
         Args: { p_confirm_email: string; p_target_user_id: string }
         Returns: undefined
       }
+      manager_list_open_tickets_by_agent: {
+        Args: { p_agent_id: string }
+        Returns: Json
+      }
       manager_list_users: { Args: never; Returns: Json }
+      manager_reassign_tickets: { Args: { p_assignments: Json }; Returns: Json }
       manager_refund_alerts: { Args: never; Returns: Json }
       manager_set_user_active: {
         Args: { p_active: boolean; p_target_user_id: string }

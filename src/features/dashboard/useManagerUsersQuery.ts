@@ -20,6 +20,7 @@ export type ManagerUser = {
   last_seen_at: string | null;
   is_online: boolean;
   last_logout_at: string | null;
+  open_tickets_count: number;
 };
 
 const USERS_QUERY_KEY = ["dashboard", "users"] as const;

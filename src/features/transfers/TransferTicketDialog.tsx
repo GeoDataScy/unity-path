@@ -17,7 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 export type DuplicateTicket = {
   id: string;
   user_id: string;
+  current_owner_id: string;
   agent_name: string | null;
+  current_owner_name: string | null;
   client_email: string;
   product: string;
   platform: string | null;
