@@ -8,11 +8,14 @@ export type TransferHistoryItem = {
   client_email: string;
   product: string;
   service_status: string;
+  service_date: string;
+  has_tracking_code: boolean;
   transfer_status: "pending" | "accepted" | "declined" | "cancelled";
   message: string | null;
   response_note: string | null;
   other_agent_id: string;
   other_agent_name: string | null;
+  assigned_by_manager_id: string | null;
   created_at: string;
   responded_at: string | null;
 };

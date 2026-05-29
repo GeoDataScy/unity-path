@@ -183,6 +183,10 @@ export function useStatusTracking() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
       queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
+      // Garante que "Meus Atendimentos Recentes" atualize na hora — necessário
+      // para tickets antigos redistribuídos pelo gestor, cujo service_date
+      // cairia fora da janela de 30 dias se filtrássemos só por criação.
+      queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       emitAgentInteraction();
     },
     onError: (error: unknown) => {

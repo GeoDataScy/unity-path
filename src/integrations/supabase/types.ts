@@ -747,6 +747,23 @@ export type Database = {
         Returns: undefined
       }
       me_status: { Args: never; Returns: Json }
+      my_recent_services: {
+        Args: { p_days_back?: number }
+        Returns: {
+          channel: string
+          client_email: string
+          contact_reason: string
+          created_at: string
+          current_owner_id: string
+          has_tracking_code: boolean
+          id: string
+          platform: string
+          product: string
+          service_date: string
+          status: string
+          user_id: string
+        }[]
+      }
       my_refunds_with_refunded_value: {
         Args: never
         Returns: {
@@ -770,8 +787,10 @@ export type Database = {
       my_transfer_history: {
         Args: never
         Returns: {
+          assigned_by_manager_id: string
           client_email: string
           created_at: string
+          has_tracking_code: boolean
           message: string
           other_agent_id: string
           other_agent_name: string
@@ -779,6 +798,7 @@ export type Database = {
           responded_at: string
           response_note: string
           role: string
+          service_date: string
           service_id: string
           service_status: string
           transfer_id: string

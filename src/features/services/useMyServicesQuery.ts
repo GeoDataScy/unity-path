@@ -16,61 +16,25 @@ export type ServiceItem = {
   current_owner_id: string;
 };
 
-async function requireSessionUserId(): Promise<string> {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) throw error;
-  if (!session?.user?.id) throw new Error("Sessão inválida");
-  return session.user.id;
-}
-
-// Janela default para a tabela "Meus Atendimentos Recentes". Agentes ativos
-// acumulam milhares de tickets — carregar tudo a cada refetch trava a UI por
-// vários segundos. 30 dias cobre 99% do dia-a-dia; busca por e-mail mais antigo
-// usa a RPC find_ticket_by_email no momento do registro.
+// Janela default para "Meus Atendimentos Recentes". 30 dias é o cap operacional
+// — carregar tudo em agentes ativos travava a UI. A janela considera tanto a
+// data de criação do ticket quanto a última interação, garantindo que tickets
+// antigos redistribuídos pelo gestor apareçam ao receber novo follow-up.
 const DEFAULT_DAYS_BACK = 30;
 
-function cutoffDateISO(daysBack: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysBack);
-  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-}
-
-export function useMyServicesQuery(enabled: boolean, canViewAllTickets = false, daysBack = DEFAULT_DAYS_BACK) {
-  const cutoff = cutoffDateISO(daysBack);
-
+export function useMyServicesQuery(enabled: boolean, _canViewAllTickets = false, daysBack = DEFAULT_DAYS_BACK) {
   return useQuery({
-    queryKey: ["services", "me", canViewAllTickets ? "all" : "self", cutoff],
+    queryKey: ["services", "me", daysBack],
     enabled,
     queryFn: async (): Promise<ServiceItem[]> => {
-      const userId = await requireSessionUserId();
-      const PAGE = 1000;
-      const all: ServiceItem[] = [];
-      let from = 0;
-      while (true) {
-        let query = supabase
-          .from("services")
-          .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
-          // service_date é text mas armazena ISO "YYYY-MM-DD..." — comparação lexicográfica funciona.
-          .gte("service_date", cutoff)
-          .order("created_at", { ascending: false })
-          .range(from, from + PAGE - 1);
-        if (!canViewAllTickets) {
-          // current_owner_id = quem está atendendo agora (muda quando manager redistribui).
-          // user_id = criador imutável, preservado para crédito histórico em métricas.
-          query = query.eq("current_owner_id", userId);
-        }
-        const { data, error } = await query;
-        if (error) throw error;
-        const rows = (data ?? []) as ServiceItem[];
-        all.push(...rows);
-        if (rows.length < PAGE) break;
-        from += PAGE;
-      }
-      return all;
+      // canViewAllTickets é resolvido server-side pela RPC (lê profiles.role
+      // e profiles.can_view_all_tickets do JWT), então o segundo parâmetro
+      // do hook fica apenas como marcador legado para callers existentes.
+      const { data, error } = await supabase.rpc("my_recent_services", {
+        p_days_back: daysBack,
+      });
+      if (error) throw error;
+      return (data ?? []) as ServiceItem[];
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
