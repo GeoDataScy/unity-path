@@ -187,18 +187,43 @@ export function useStatusTracking() {
 
       if (error) throw error;
     },
+    // Atualização otimista: insere o follow-up no cache imediatamente, para o
+    // status e o contador (#N) na tabela "Meus Atendimentos" mudarem na hora —
+    // sem esperar o recarregamento de TODOS os follow-ups do agente (que, com
+    // milhares de registros, levava alguns segundos e dava a impressão de "não
+    // salvou / não mudou o status").
+    onMutate: async (params) => {
+      await queryClient.cancelQueries({ queryKey: ["service-follow-ups"] });
+      const previous = queryClient.getQueryData<FollowUpRow[]>(["service-follow-ups"]);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const existing = grouped[params.serviceId] ?? [];
+      const nowISO = new Date().toISOString();
+      const optimisticRow: FollowUpRow = {
+        id: `optimistic-${params.serviceId}-${nowISO}`,
+        service_id: params.serviceId,
+        user_id: session?.user.id ?? "",
+        follow_up_number: existing.length + 1,
+        status: params.status,
+        recorded_at: nowISO,
+        observation: params.observation,
+        created_at: nowISO,
+      };
+      queryClient.setQueryData<FollowUpRow[]>(["service-follow-ups"], (old) =>
+        old ? [...old, optimisticRow] : [optimisticRow],
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
-      queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
-      // Garante que "Meus Atendimentos Recentes" atualize na hora — necessário
-      // para tickets antigos redistribuídos pelo gestor, cujo service_date
-      // cairia fora da janela de 30 dias se filtrássemos só por criação.
-      queryClient.invalidateQueries({ queryKey: ["services", "me"] });
       emitAgentInteraction();
     },
-    onError: (error: unknown) => {
-      // Last-chance fallback so failures never go silent — even if the caller
-      // forgot to attach a try/catch. Surface the real cause to the agent.
+    onError: (error: unknown, _params, context) => {
+      // Desfaz a atualização otimista e mostra a causa real (rede, sessão, RLS…).
+      const ctx = context as { previous?: FollowUpRow[] } | undefined;
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(["service-follow-ups"], ctx.previous);
+      }
       const message =
         error instanceof Error ? error.message : "Não foi possível registrar a interação.";
       console.error("[follow-up] insert failed:", error);
@@ -207,6 +232,13 @@ export function useStatusTracking() {
         description: message,
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Reconcilia com o servidor (troca a linha otimista pela real) e atualiza
+      // métricas + a lista de atendimentos recentes.
+      queryClient.invalidateQueries({ queryKey: ["service-follow-ups"] });
+      queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["services", "me"] });
     },
   });
 
