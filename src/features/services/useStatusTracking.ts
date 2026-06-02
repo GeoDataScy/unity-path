@@ -30,10 +30,17 @@ export function useFollowUpsQuery(enabled: boolean) {
       const all: FollowUpRow[] = [];
       let from = 0;
       while (true) {
+        // Ordenação DETERMINÍSTICA para paginação estável: recorded_at sozinho
+        // não é único (e follow_up_number repete em milhares de linhas), então
+        // o OFFSET pulava/duplicava registros na fronteira das páginas a partir
+        // de 1000 follow-ups — fazendo o histórico de alguns tickets sumir.
+        // O desempate por `id` (único) garante páginas estáveis. A ordem
+        // cronológica é preservada (consumidores usam o último item = mais recente).
         const { data, error } = await supabase
           .from("service_follow_ups")
           .select("*")
-          .order("follow_up_number", { ascending: true })
+          .order("recorded_at", { ascending: true })
+          .order("id", { ascending: true })
           .range(from, from + PAGE - 1);
         if (error) throw error;
         const rows = (data ?? []) as FollowUpRow[];
