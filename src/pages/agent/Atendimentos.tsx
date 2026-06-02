@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
 import { emitAgentInteraction } from "@/features/agent/check-in/agent-events";
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
+import { useMyAgentMetricsQuery } from "@/features/agent/useMyAgentMetricsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
@@ -361,13 +362,23 @@ export default function Atendimentos() {
     setPage(1);
   }, [emailSearch, dateFrom, dateTo, filterTrackingCode]);
 
-  /** Total tickets in the active period.
-   *  With date filter: unique services visible in the table (opened OR had follow-up in range).
-   *  Without date filter: sum all historical interactions per service. */
-  const totalFilteredInteractions = useMemo(() => {
-    if (dateFrom || dateTo) return filteredServices.length;
-    return filteredServices.reduce((sum, s) => sum + getInteractionCount(s.id), 0);
-  }, [filteredServices, getInteractionCount, dateFrom, dateTo]);
+  /** "Total de atendimentos" do período = número de INTERAÇÕES (criações +
+   *  follow-ups), pela mesma fonte de verdade do card de cima e do dashboard do
+   *  gestor (agent_my_metrics -> _interaction_events). Assim os dois cards batem.
+   *  Quando o agente está buscando por e-mail ou filtrando por cód. de rastreio,
+   *  a RPC (que não conhece esses filtros) não se aplica — aí mostramos a
+   *  contagem da própria tabela filtrada, como "resultados encontrados". */
+  const rangeMetricsFrom = dateFrom || "2025-01-01";
+  const rangeMetricsTo = dateTo || todayISO();
+  const isFilteringTable = Boolean(emailSearch) || filterTrackingCode;
+  const { data: rangeMetrics } = useMyAgentMetricsQuery({
+    enabled: Boolean(userId) && !isFilteringTable,
+    from: rangeMetricsFrom,
+    to: rangeMetricsTo,
+  });
+  const totalFilteredInteractions = isFilteringTable
+    ? filteredServices.length
+    : rangeMetrics?.total_count ?? 0;
 
   const totalPages = Math.max(1, Math.ceil(filteredServices.length / PAGE_SIZE));
   const paginatedServices = useMemo(() => {
