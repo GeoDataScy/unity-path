@@ -73,6 +73,7 @@ const PRODUCTS = [
   "Gluco Off",
   "Cognivex",
   "Nad Dermal+",
+  "Alpharock",
 ] as const;
 
 const PLATFORMS = [

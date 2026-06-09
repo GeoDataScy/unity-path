@@ -72,6 +72,7 @@ const PRODUCTS = [
   "Erectozyn",
   "Thewellnesswize",
   "VIP.Shipping",
+  "Alpharock",
 ] as const;
 
 function todayISO() {
