@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, ChevronsUpDown } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -152,6 +153,8 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [destinations, setDestinations] = useState<Record<string, string>>({});
   const [bulkTarget, setBulkTarget] = useState<string | null>(null);
+  // Busca por email do cliente para localizar um ticket específico.
+  const [emailSearch, setEmailSearch] = useState("");
 
   // Reset state quando muda o agente fonte ou abre/fecha o dialog.
   useEffect(() => {
@@ -159,6 +162,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
       setSelected(new Set());
       setDestinations({});
       setBulkTarget(null);
+      setEmailSearch("");
     }
   }, [open, sourceAgentId]);
 
@@ -177,16 +181,35 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   }, [allUsers, sourceAgentId]);
 
-  const ticketIds = useMemo(() => tickets.map((t) => t.service_id), [tickets]);
-  const allSelected = ticketIds.length > 0 && selected.size === ticketIds.length;
-  const someSelected = selected.size > 0 && !allSelected;
+  // Tickets visíveis após a busca por email (filtro client-side).
+  const filteredTickets = useMemo(() => {
+    const term = emailSearch.trim().toLowerCase();
+    if (!term) return tickets;
+    return tickets.filter((t) => t.client_email?.toLowerCase().includes(term));
+  }, [tickets, emailSearch]);
 
+  const filteredIds = useMemo(
+    () => filteredTickets.map((t) => t.service_id),
+    [filteredTickets],
+  );
+  const selectedVisibleCount = useMemo(
+    () => filteredIds.reduce((n, id) => (selected.has(id) ? n + 1 : n), 0),
+    [filteredIds, selected],
+  );
+  const allSelected = filteredIds.length > 0 && selectedVisibleCount === filteredIds.length;
+  const someSelected = selectedVisibleCount > 0 && !allSelected;
+
+  // Seleciona/desmarca apenas os tickets visíveis (respeita o filtro de busca).
   function toggleAll() {
-    if (allSelected) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(ticketIds));
-    }
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        filteredIds.forEach((id) => next.delete(id));
+      } else {
+        filteredIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
   }
 
   function toggleOne(id: string) {
@@ -294,6 +317,27 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
               </div>
             )}
 
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={emailSearch}
+                onChange={(e) => setEmailSearch(e.target.value)}
+                placeholder="Pesquisar ticket pelo email do cliente…"
+                className="pl-9 pr-9"
+                aria-label="Pesquisar ticket pelo email do cliente"
+              />
+              {emailSearch && (
+                <button
+                  type="button"
+                  onClick={() => setEmailSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             <div className="flex flex-wrap items-center gap-3 border-y py-3">
               <div className="flex items-center gap-2 text-sm">
                 <Checkbox
@@ -302,7 +346,9 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                   aria-label="Selecionar todos"
                 />
                 <span>
-                  {selected.size} de {tickets.length} selecionado{selected.size === 1 ? "" : "s"}
+                  {selectedVisibleCount} de {filteredTickets.length} selecionado
+                  {selectedVisibleCount === 1 ? "" : "s"}
+                  {emailSearch.trim() ? " (filtrado)" : ""}
                 </span>
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -340,7 +386,14 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tickets.map((t) => (
+                  {filteredTickets.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                        Nenhum ticket em aberto para o email &quot;{emailSearch.trim()}&quot;.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTickets.map((t) => (
                     <TableRow key={t.service_id}>
                       <TableCell>
                         <Checkbox
@@ -380,7 +433,8 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                         />
                       </TableCell>
                     </TableRow>
-                  ))}
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </ScrollArea>
