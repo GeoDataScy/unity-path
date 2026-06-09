@@ -100,6 +100,7 @@ const PRODUCTS = [
 const PLATFORMS = [
   "Nenhum",
   "Cartpanda",
+  "CartCandy",
   "Buygoods",
   "ClickBank",
   "Digistore24",
