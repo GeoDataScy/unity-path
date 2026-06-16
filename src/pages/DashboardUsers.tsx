@@ -349,6 +349,20 @@ export default function DashboardUsers() {
                     {filtered.map((user) => {
                       const isManager = user.role === "manager";
                       const isDeleted = user.auth_account_deleted;
+                      // Redistribuir vale para qualquer agente com tickets em aberto,
+                      // inclusive contas já excluídas no auth (ex.: Aguida, Maria) —
+                      // só assim esses tickets "presos" voltam a ter um dono ativo.
+                      const reassignButton =
+                        !isManager && user.open_tickets_count > 0 ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setReassignTarget(user)}
+                            title="Redistribuir tickets em aberto"
+                          >
+                            <Inbox className="mr-1.5 h-3.5 w-3.5" /> Redistribuir
+                          </Button>
+                        ) : null;
                       return (
                         <TableRow key={user.id} className={isDeleted ? "opacity-60" : ""}>
                           <TableCell><StatusDot user={user} /></TableCell>
@@ -395,19 +409,12 @@ export default function DashboardUsers() {
                           </TableCell>
                           <TableCell className="text-right">
                             {isDeleted ? (
-                              <span className="text-xs text-muted-foreground italic">Sem ações disponíveis</span>
+                              reassignButton ?? (
+                                <span className="text-xs text-muted-foreground italic">Sem ações disponíveis</span>
+                              )
                             ) : (
                               <div className="inline-flex items-center gap-2">
-                                {!isManager && user.open_tickets_count > 0 && (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => setReassignTarget(user)}
-                                    title="Redistribuir tickets em aberto"
-                                  >
-                                    <Inbox className="mr-1.5 h-3.5 w-3.5" /> Redistribuir
-                                  </Button>
-                                )}
+                                {reassignButton}
                                 <Button
                                   variant={user.is_active ? "outline" : "default"}
                                   size="sm"
