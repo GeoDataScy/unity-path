@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
@@ -45,6 +46,7 @@ import {
   useSetUserActiveMutation,
 } from "@/features/dashboard/useManagerUsersQuery";
 import { ReassignTicketsDialog } from "@/features/dashboard/ReassignTicketsDialog";
+import { HeldOrdersManagerTab } from "@/features/held-orders/HeldOrdersManagerTab";
 
 type StatusFilter = "all" | "active" | "inactive" | "online" | "deleted";
 
@@ -229,6 +231,13 @@ export default function DashboardUsers() {
           </div>
         </header>
 
+        <Tabs defaultValue="usuarios" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+            <TabsTrigger value="pedidos">Pedidos em Espera</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="usuarios" className="space-y-6">
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
@@ -457,6 +466,12 @@ export default function DashboardUsers() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="pedidos">
+            <HeldOrdersManagerTab />
+          </TabsContent>
+        </Tabs>
 
         <ReassignTicketsDialog
           open={reassignTarget !== null}

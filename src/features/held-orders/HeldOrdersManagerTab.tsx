@@ -1,0 +1,311 @@
+import { useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Inbox,
+  PackageSearch,
+  Search,
+  Send,
+  Upload,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useManagerUsersQuery } from "@/features/dashboard/useManagerUsersQuery";
+import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
+import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
+import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
+import type { ManagerHeldOrder } from "./types";
+
+type StatusFilter = "all" | "pending" | "confirmed";
+
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  // order_date vem como YYYY-MM-DD.
+  const [y, m, d] = value.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : value;
+}
+
+export function HeldOrdersManagerTab() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const usersQuery = useManagerUsersQuery();
+  const ordersQuery = useManagerHeldOrdersQuery({
+    statusFilter,
+    // "unassigned" não é expresso pelo RPC (que filtra por agent_id específico);
+    // busca tudo e filtra no cliente abaixo.
+    agentId: agentFilter === "all" || agentFilter === "unassigned" ? null : agentFilter,
+  });
+
+  const result = ordersQuery.data;
+  const allRows = useMemo(() => result?.rows ?? [], [result]);
+  const summary = result?.summary_by_agent ?? [];
+
+  // Filtro "não atribuído" e busca textual são aplicados no cliente (o RPC já
+  // filtrou status e agente específico).
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return allRows.filter((o) => {
+      if (agentFilter === "unassigned" && o.assigned_to) return false;
+      if (!term) return true;
+      const hay = `${o.order_number} ${o.dyna_code} ${o.email ?? ""} ${o.customer_name ?? ""}`.toLowerCase();
+      return hay.includes(term);
+    });
+  }, [allRows, agentFilter, search]);
+
+  const totals = useMemo(() => {
+    const pending = allRows.filter((o) => o.status === "pending").length;
+    const confirmed = allRows.filter((o) => o.status === "confirmed").length;
+    const unassigned = allRows.filter((o) => !o.assigned_to).length;
+    return { total: allRows.length, pending, confirmed, unassigned };
+  }, [allRows]);
+
+  // Só pedidos pendentes podem ser selecionados para distribuir.
+  const selectablePendingIds = useMemo(
+    () => rows.filter((o) => o.status === "pending").map((o) => o.id),
+    [rows],
+  );
+  const allSelected = selectablePendingIds.length > 0 && selectablePendingIds.every((id) => selected.has(id));
+
+  const toggleAll = () => {
+    setSelected((prev) => {
+      if (selectablePendingIds.every((id) => prev.has(id))) return new Set();
+      return new Set(selectablePendingIds);
+    });
+  };
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedIds = useMemo(() => Array.from(selected), [selected]);
+
+  return (
+    <div className="space-y-6">
+      {/* Resumo */}
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <PackageSearch className="h-4 w-4 text-primary" /> Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.total}</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Clock className="h-4 w-4 text-amber-500" /> Pendentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.pending}</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Confirmados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.confirmed}</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Inbox className="h-4 w-4 text-muted-foreground" /> Sem agente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.unassigned}</div>}
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Resumo por agente */}
+      {summary.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Por agente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {summary.map((s) => (
+                <div key={s.agent_id} className="rounded-md border px-3 py-1.5 text-sm">
+                  <span className="font-medium">{s.full_name ?? "Sem nome"}</span>{" "}
+                  <span className="text-amber-600 dark:text-amber-400 tabular-nums">{s.pending} pend.</span>{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{s.confirmed} conf.</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabela */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>Pedidos em espera</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar pedido, e-mail, loja..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-60 pl-8"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos status</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="confirmed">Confirmados</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={agentFilter} onValueChange={setAgentFilter}>
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos agentes</SelectItem>
+                  <SelectItem value="unassigned">Sem agente</SelectItem>
+                  {(usersQuery.data ?? [])
+                    .filter((u) => u.role !== "manager")
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name ?? u.email}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <Upload className="mr-1.5 h-4 w-4" /> Importar CSV
+              </Button>
+              <Button onClick={() => setAssignOpen(true)} disabled={selectedIds.length === 0}>
+                <Send className="mr-1.5 h-4 w-4" /> Distribuir{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {ordersQuery.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : ordersQuery.isError ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+              <AlertCircle className="h-6 w-6" />
+              <p>Não foi possível carregar os pedidos.</p>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground">Nenhum pedido encontrado.</div>
+          ) : (
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={toggleAll}
+                        aria-label="Selecionar todos pendentes"
+                        disabled={selectablePendingIds.length === 0}
+                      />
+                    </TableHead>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Loja</TableHead>
+                    <TableHead>Motivo</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Agente</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((o: ManagerHeldOrder) => {
+                    const isPending = o.status === "pending";
+                    return (
+                      <TableRow key={o.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(o.id)}
+                            onCheckedChange={() => toggleOne(o.id)}
+                            disabled={!isPending}
+                            aria-label={`Selecionar pedido ${o.order_number}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{o.dyna_code}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[220px] truncate text-sm text-muted-foreground" title={o.reason ?? ""}>
+                          {o.reason ?? "—"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">{o.customer_name ?? "—"}</span>
+                            {o.email && <span className="text-xs text-muted-foreground">{o.email}</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm tabular-nums">{formatDate(o.order_date)}</TableCell>
+                        <TableCell className="text-sm">
+                          {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
+                        </TableCell>
+                        <TableCell>
+                          {isPending ? (
+                            <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+                              Pendente
+                            </Badge>
+                          ) : (
+                            <Badge variant="success">Confirmado</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <ImportHeldOrdersDialog open={importOpen} onOpenChange={setImportOpen} />
+      <AssignHeldOrdersDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        orderIds={selectedIds}
+        agents={usersQuery.data ?? []}
+        onAssigned={() => setSelected(new Set())}
+      />
+    </div>
+  );
+}

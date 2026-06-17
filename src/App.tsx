@@ -15,6 +15,7 @@ import DashboardAlertas from "./pages/DashboardAlertas";
 import DashboardUsers from "./pages/DashboardUsers";
 import AgentLayout from "./layouts/AgentLayout";
 import Atendimentos from "./pages/agent/Atendimentos";
+import PedidosEspera from "./pages/agent/PedidosEspera";
 import Reembolsos from "./pages/agent/Reembolsos";
 import MinhasMetricas from "./pages/agent/MinhasMetricas";
 import ComeceAqui from "./pages/agent/ComeceAqui";
@@ -45,6 +46,7 @@ const App = () => (
           </Route>
           <Route path="/workspace" element={<AgentLayout />}>
             <Route index element={<Atendimentos />} />
+            <Route path="pedidos-espera" element={<PedidosEspera />} />
             <Route path="comece-aqui" element={<ComeceAqui />} />
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="metricas" element={<MinhasMetricas />} />
