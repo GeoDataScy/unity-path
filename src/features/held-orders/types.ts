@@ -23,6 +23,11 @@ export type MyHeldOrder = {
   street3: string | null;
   age: string | null;
   items: string | null;
+  // Campos do formato de devoluções (Returned Shipments); nulos para On Holds.
+  rma: string | null;
+  restocked_items: string | null;
+  damaged_items: string | null;
+  comments: string | null;
   status: HeldOrderStatus;
   confirmed_at: string | null;
 };
@@ -72,5 +77,9 @@ export type HeldOrderImportRow = {
   postal_code?: string;
   age?: string;
   items?: string;
+  rma?: string;
+  restocked_items?: string;
+  damaged_items?: string;
+  comments?: string;
   source_file?: string;
 };

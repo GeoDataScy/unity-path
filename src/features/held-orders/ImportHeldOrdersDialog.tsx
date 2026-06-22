@@ -44,8 +44,8 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
     const parsed: ParsedFile[] = [];
     for (const file of Array.from(fileList)) {
       try {
-        const text = await file.text();
-        const rows = parseHeldOrdersCsv(text, file.name);
+        const buffer = await file.arrayBuffer();
+        const rows = parseHeldOrdersCsv(buffer, file.name);
         parsed.push({ name: file.name, rows });
       } catch (e) {
         parsed.push({ name: file.name, rows: [], error: e instanceof Error ? e.message : "Falha ao ler" });
@@ -62,7 +62,7 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
   const handleImport = async () => {
     const rows = files.flatMap((f) => f.rows);
     if (rows.length === 0) {
-      toast({ title: "Nada para importar", description: "Selecione um CSV válido.", variant: "destructive" });
+      toast({ title: "Nada para importar", description: "Selecione um arquivo CSV ou Excel válido.", variant: "destructive" });
       return;
     }
     try {
@@ -96,8 +96,8 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
             <FileUp className="h-5 w-5 text-primary" /> Importar pedidos em espera
           </DialogTitle>
           <DialogDescription>
-            Selecione um ou mais arquivos <code>LSD###_AAAA-MM-DD_On_Holds_Details.csv</code>. Pedidos já
-            importados (mesmo dyna_code + pedido) são ignorados automaticamente.
+            Selecione um ou mais arquivos <code>On_Holds_Details</code> (CSV ou Excel <code>.xlsx</code>).
+            Pedidos já importados (mesmo dyna_code + pedido) são ignorados automaticamente.
           </DialogDescription>
         </DialogHeader>
 
@@ -105,13 +105,13 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet"
             multiple
             className="hidden"
             onChange={(e) => handleSelect(e.target.files)}
           />
           <Button variant="outline" className="w-full" onClick={() => inputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" /> Escolher arquivos CSV
+            <Upload className="mr-2 h-4 w-4" /> Escolher arquivos (CSV ou Excel)
           </Button>
 
           {files.length > 0 && (

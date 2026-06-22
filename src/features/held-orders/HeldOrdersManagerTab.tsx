@@ -22,6 +22,7 @@ import { useManagerUsersQuery } from "@/features/dashboard/useManagerUsersQuery"
 import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
 import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
+import { RETURNS_DYNA_CODE } from "./parseHeldOrdersCsv";
 import type { ManagerHeldOrder } from "./types";
 
 type StatusFilter = "all" | "pending" | "confirmed";
@@ -205,7 +206,7 @@ export function HeldOrdersManagerTab() {
                 </SelectContent>
               </Select>
               <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <Upload className="mr-1.5 h-4 w-4" /> Importar CSV
+                <Upload className="mr-1.5 h-4 w-4" /> Importar arquivo
               </Button>
               <Button onClick={() => setAssignOpen(true)} disabled={selectedIds.length === 0}>
                 <Send className="mr-1.5 h-4 w-4" /> Distribuir{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
@@ -262,9 +263,16 @@ export function HeldOrdersManagerTab() {
                             aria-label={`Selecionar pedido ${o.order_number}`}
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {o.order_number}
+                          {o.rma && (
+                            <span className="block text-xs text-muted-foreground">RMA: {o.rma}</span>
+                          )}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{o.dyna_code}</Badge>
+                          <Badge variant="secondary">
+                            {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
+                          </Badge>
                         </TableCell>
                         <TableCell className="max-w-[220px] truncate text-sm text-muted-foreground" title={o.reason ?? ""}>
                           {o.reason ?? "—"}

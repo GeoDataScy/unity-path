@@ -15,6 +15,7 @@ import {
   useMyHeldOrdersMetricsQuery,
   useMyHeldOrdersQuery,
 } from "@/features/held-orders/useMyHeldOrdersQuery";
+import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
 import type { MyHeldOrder } from "@/features/held-orders/types";
 
 function fullAddress(o: MyHeldOrder): string {
@@ -179,7 +180,12 @@ export default function PedidosEspera() {
                   <div className="min-w-0 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-sm font-medium">{o.order_number}</span>
-                      <Badge variant="secondary">{o.dyna_code}</Badge>
+                      <Badge variant="secondary">
+                        {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
+                      </Badge>
+                      {o.rma && (
+                        <span className="text-xs text-muted-foreground">RMA: {o.rma}</span>
+                      )}
                       {o.reason && (
                         <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
                           {o.reason}
@@ -205,6 +211,15 @@ export default function PedidosEspera() {
                       <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Package className="mt-0.5 h-3 w-3 shrink-0" />
                         <span>{o.items}</span>
+                      </div>
+                    )}
+                    {(o.restocked_items || o.damaged_items || o.comments) && (
+                      <div className="space-y-0.5 text-xs text-muted-foreground">
+                        {o.restocked_items && <div>Recolocados: {o.restocked_items}</div>}
+                        {o.damaged_items && (
+                          <div className="text-destructive">Danificados: {o.damaged_items}</div>
+                        )}
+                        {o.comments && <div>Obs.: {o.comments}</div>}
                       </div>
                     )}
                   </div>
