@@ -8,7 +8,7 @@ export type HeldOrderStatus = "pending" | "confirmed";
 export type MyHeldOrder = {
   id: string;
   dyna_code: string;
-  order_number: string;
+  order_number: string | null;
   merged_orders: string | null;
   reason: string | null;
   order_date: string | null;
@@ -61,8 +61,8 @@ export type HeldOrdersDailyMetrics = {
 
 /** Uma linha do CSV já normalizada para o RPC de import. */
 export type HeldOrderImportRow = {
-  dyna_code: string;
-  order_number: string;
+  dyna_code?: string;
+  order_number?: string;
   merged_orders?: string;
   reason?: string;
   order_date?: string;

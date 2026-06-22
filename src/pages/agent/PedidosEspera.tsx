@@ -59,7 +59,7 @@ export default function PedidosEspera() {
       await confirmMutation.mutateAsync(order.id);
       toast({
         title: "Atendimento confirmado",
-        description: `Pedido ${order.order_number} (${order.dyna_code}).`,
+        description: `Pedido ${order.order_number ?? "sem número"} (${order.dyna_code}).`,
       });
     } catch (e) {
       toast({
@@ -179,7 +179,9 @@ export default function PedidosEspera() {
                 >
                   <div className="min-w-0 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-medium">{o.order_number}</span>
+                      <span className="font-mono text-sm font-medium">
+                        {o.order_number ?? "Sem número"}
+                      </span>
                       <Badge variant="secondary">
                         {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
                       </Badge>

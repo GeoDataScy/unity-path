@@ -140,17 +140,24 @@ export function parseHeldOrdersCsv(
     if (!cols || cols.every((c) => cellToText(c) === "")) continue;
 
     const row: Partial<HeldOrderImportRow> = { source_file: sourceFile };
-    // Devoluções não têm loja: usa uma constante para manter a chave (dyna_code, order_number).
+    // Devoluções não têm loja: usa uma constante para manter a chave de dedupe.
     if (isReturns) row.dyna_code = RETURNS_DYNA_CODE;
 
+    // Importa qualquer linha que tenha ALGUM dado de qualquer coluna mapeada;
+    // colunas vazias simplesmente não entram (ficam NULL no banco). O número do
+    // pedido (order_number) deixa de ser obrigatório.
+    let hasData = false;
     headers.forEach((h, idx) => {
       const key = map[h];
       if (!key) return;
       const value = DATE_KEYS.has(key) ? cellToDate(cols[idx]) : cellToText(cols[idx]);
-      if (value) row[key] = value;
+      if (value) {
+        row[key] = value;
+        hasData = true;
+      }
     });
 
-    if (row.dyna_code && row.order_number) {
+    if (hasData) {
       rows.push(row as HeldOrderImportRow);
     }
   }

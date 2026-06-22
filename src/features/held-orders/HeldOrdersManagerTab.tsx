@@ -61,7 +61,7 @@ export function HeldOrdersManagerTab() {
     return allRows.filter((o) => {
       if (agentFilter === "unassigned" && o.assigned_to) return false;
       if (!term) return true;
-      const hay = `${o.order_number} ${o.dyna_code} ${o.email ?? ""} ${o.customer_name ?? ""}`.toLowerCase();
+      const hay = `${o.order_number ?? ""} ${o.dyna_code} ${o.email ?? ""} ${o.customer_name ?? ""}`.toLowerCase();
       return hay.includes(term);
     });
   }, [allRows, agentFilter, search]);
@@ -264,7 +264,7 @@ export function HeldOrdersManagerTab() {
                           />
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {o.order_number}
+                          {o.order_number ?? <span className="text-muted-foreground italic">sem número</span>}
                           {o.rma && (
                             <span className="block text-xs text-muted-foreground">RMA: {o.rma}</span>
                           )}

@@ -69,6 +69,20 @@ describe("parseHeldOrdersCsv", () => {
     expect(rows[0].items).toBe("Presgera x 3");
   });
 
+  it("importa linhas SEM order_number desde que tenham algum dado", () => {
+    const csv =
+      "Order Number,Return Date,RMA #,Ship Name,Email,Returned Items,Restocked Items,Damaged,Reason,Comments\n" +
+      ",2026-06-17,,Sem Numero,x@y.com,Presgera x 2,,,Return,\n" + // sem order_number, mas com dados
+      ",,,,,,,,,\n"; // totalmente vazia -> ignorada
+
+    const rows = parseHeldOrdersCsv(csvBytes(csv), "presgera-returns.xls");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].order_number).toBeUndefined();
+    expect(rows[0].dyna_code).toBe(RETURNS_DYNA_CODE);
+    expect(rows[0].name).toBe("Sem Numero");
+    expect(rows[0].items).toBe("Presgera x 2");
+  });
+
   it("retorna vazio para um arquivo sem cabeçalho reconhecido", () => {
     const rows = parseHeldOrdersCsv(csvBytes("foo,bar\n1,2\n"), "x.csv");
     expect(rows).toHaveLength(0);
