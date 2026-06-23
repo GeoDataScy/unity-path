@@ -69,7 +69,7 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
       const result = await importMutation.mutateAsync(rows);
       toast({
         title: "Importação concluída",
-        description: `${result.inserted} novo(s) pedido(s) importado(s). ${result.skipped} já existia(m) ou inválido(s).`,
+        description: `${result.inserted} pedido(s) importado(s).${result.skipped ? ` ${result.skipped} linha(s) vazia(s) ignorada(s).` : ""}`,
       });
       reset();
       onOpenChange(false);
@@ -96,8 +96,8 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
             <FileUp className="h-5 w-5 text-primary" /> Importar pedidos em espera
           </DialogTitle>
           <DialogDescription>
-            Selecione um ou mais arquivos <code>On_Holds_Details</code> (CSV ou Excel <code>.xlsx</code>).
-            Pedidos já importados (mesmo dyna_code + pedido) são ignorados automaticamente.
+            Selecione um ou mais arquivos <code>On_Holds_Details</code> ou de devoluções (CSV ou Excel <code>.xlsx</code>/<code>.xls</code>).
+            Todas as linhas são importadas, repetidas ou não — apenas linhas em branco são ignoradas.
           </DialogDescription>
         </DialogHeader>
 
