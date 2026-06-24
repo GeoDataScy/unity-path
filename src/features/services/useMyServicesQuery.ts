@@ -36,7 +36,11 @@ export function useMyServicesQuery(enabled: boolean, _canViewAllTickets = false,
       if (error) throw error;
       return (data ?? []) as ServiceItem[];
     },
-    staleTime: 0,
+    // staleTime > 0 evita re-buscar a lista inteira a cada foco da janela: o
+    // refetchOnWindowFocus só dispara quando os dados estão "velhos" (>30s).
+    // Mutações (novo atendimento/follow-up) invalidam a query e refazem na hora,
+    // então a frescura em ações do próprio agente é preservada.
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
 }

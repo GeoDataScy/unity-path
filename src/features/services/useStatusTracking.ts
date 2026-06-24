@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +50,11 @@ export function useFollowUpsQuery(enabled: boolean) {
       }
       return all;
     },
-    staleTime: 0,
+    // Esta query pagina TODO o histórico de follow-ups do agente (vários
+    // requests sequenciais). Com staleTime > 0 ela não é re-baixada inteira a
+    // cada foco da janela — só quando "velha" (>60s). Mutações de follow-up
+    // invalidam a query e forçam o recarregamento imediato quando necessário.
+    staleTime: 60_000,
     refetchOnWindowFocus: true,
   });
 }
@@ -72,7 +76,9 @@ export function useStatusTracking() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allFollowUps = [] } = useFollowUpsQuery(true);
-  const grouped = groupByService(allFollowUps);
+  // Memoizado: sem isto, o mapa de TODOS os follow-ups do agente era
+  // reconstruído a cada render (pesado em contas com milhares de interações).
+  const grouped = useMemo(() => groupByService(allFollowUps), [allFollowUps]);
 
   /** Get all follow-up entries for a service */
   const getEntries = useCallback(
