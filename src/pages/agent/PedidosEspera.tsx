@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Clock, MapPin, Package, PackageSearch } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, MapPin, MessageSquare, Package, PackageSearch } from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { Badge } from "@/components/ui/badge";
@@ -8,15 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import {
-  useConfirmHeldOrderMutation,
-  useMyHeldOrdersMetricsQuery,
-  useMyHeldOrdersQuery,
-} from "@/features/held-orders/useMyHeldOrdersQuery";
+import { useMyHeldOrdersMetricsQuery, useMyHeldOrdersQuery } from "@/features/held-orders/useMyHeldOrdersQuery";
+import { HeldOrderTrackingDialog } from "@/features/held-orders/HeldOrderTrackingDialog";
 import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
-import type { MyHeldOrder } from "@/features/held-orders/types";
+import {
+  HELD_ORDER_AGENT_STATUS_LABEL,
+  type HeldOrderAgentStatus,
+  type MyHeldOrder,
+} from "@/features/held-orders/types";
+
+const STATUS_BADGE: Record<HeldOrderAgentStatus, "new" | "in-progress" | "done"> = {
+  novo: "new",
+  em_andamento: "in-progress",
+  concluido: "done",
+};
+
+type StatusFilter = "all" | HeldOrderAgentStatus;
+
+const FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "novo", label: "Novo" },
+  { value: "em_andamento", label: "Em Andamento" },
+  { value: "concluido", label: "Concluído" },
+];
 
 function fullAddress(o: MyHeldOrder): string {
   return [o.street1, o.street2, o.street3, o.city, o.state, o.postal_code, o.country]
@@ -27,19 +41,23 @@ function fullAddress(o: MyHeldOrder): string {
 
 export default function PedidosEspera() {
   const { userId } = useOutletContext<AgentOutletContext>();
-  const { toast } = useToast();
 
-  const ordersQuery = useMyHeldOrdersQuery(Boolean(userId), "pending");
+  const ordersQuery = useMyHeldOrdersQuery(Boolean(userId), "all");
   const metricsQuery = useMyHeldOrdersMetricsQuery(Boolean(userId));
-  const confirmMutation = useConfirmHeldOrderMutation();
 
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [selected, setSelected] = useState<MyHeldOrder | null>(null);
 
   const orders = ordersQuery.data ?? [];
   const metrics = metricsQuery.data;
   const goal = metrics?.goal ?? 30;
   const confirmedToday = metrics?.confirmed_today ?? 0;
   const remaining = Math.max(0, goal - confirmedToday);
+
+  const filtered = useMemo(
+    () => (filter === "all" ? orders : orders.filter((o) => o.agent_status === filter)),
+    [orders, filter],
+  );
 
   const progress = useMemo(() => {
     if (goal <= 0) return 0;
@@ -53,25 +71,6 @@ export default function PedidosEspera() {
     return "bg-status-success";
   }, [confirmedToday, goal]);
 
-  const handleConfirm = async (order: MyHeldOrder) => {
-    setConfirmingId(order.id);
-    try {
-      await confirmMutation.mutateAsync(order.id);
-      toast({
-        title: "Atendimento confirmado",
-        description: `Pedido ${order.order_number ?? "sem número"} (${order.dyna_code}).`,
-      });
-    } catch (e) {
-      toast({
-        title: "Erro ao confirmar",
-        description: e instanceof Error ? e.message : "Não foi possível confirmar.",
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmingId(null);
-    }
-  };
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <header className="mb-6">
@@ -79,7 +78,8 @@ export default function PedidosEspera() {
           <PackageSearch className="h-7 w-7 text-primary" /> Pedidos em Espera
         </h1>
         <p className="text-sm text-muted-foreground">
-          Confirme o atendimento de cada pedido retido atribuído a você. Cada confirmação conta para a sua meta diária.
+          Gerencie cada pedido retido atribuído a você. Clique em um pedido para mudar o status e
+          registrar o que foi feito. Concluir um pedido conta para a sua meta diária.
         </p>
       </header>
 
@@ -88,7 +88,7 @@ export default function PedidosEspera() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base font-semibold">Confirmados hoje</CardTitle>
+              <CardTitle className="text-base font-semibold">Concluídos hoje</CardTitle>
               {!metricsQuery.isLoading && confirmedToday >= goal && <Badge variant="success">🏆 Meta Batida!</Badge>}
             </div>
           </CardHeader>
@@ -124,10 +124,10 @@ export default function PedidosEspera() {
               <Skeleton className="h-10 w-24" />
             ) : (
               <div className="text-4xl font-semibold tabular-nums">
-                {(metrics?.pending ?? orders.length).toLocaleString("pt-BR")}
+                {(metrics?.pending ?? 0).toLocaleString("pt-BR")}
               </div>
             )}
-            <p className="mt-2 text-sm text-muted-foreground">Aguardando confirmação</p>
+            <p className="mt-2 text-sm text-muted-foreground">Ainda não concluídos</p>
           </CardContent>
         </Card>
       </section>
@@ -148,10 +148,26 @@ export default function PedidosEspera() {
         )}
       </div>
 
-      {/* Lista de pedidos pendentes */}
+      {/* Lista de pedidos */}
       <Card>
-        <CardHeader>
+        <CardHeader className="gap-3">
           <CardTitle>Pedidos atribuídos a você</CardTitle>
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => {
+              const count = f.value === "all" ? orders.length : orders.filter((o) => o.agent_status === f.value).length;
+              return (
+                <Button
+                  key={f.value}
+                  size="sm"
+                  variant={filter === f.value ? "default" : "outline"}
+                  onClick={() => setFilter(f.value)}
+                >
+                  {f.label}
+                  <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
+                </Button>
+              );
+            })}
+          </div>
         </CardHeader>
         <CardContent>
           {ordersQuery.isLoading ? (
@@ -165,17 +181,19 @@ export default function PedidosEspera() {
               <AlertCircle className="h-6 w-6" />
               <p>Não foi possível carregar os pedidos.</p>
             </div>
-          ) : orders.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
               <CheckCircle2 className="h-8 w-8 text-status-success" />
-              <p>Nenhum pedido pendente. Bom trabalho!</p>
+              <p>{orders.length === 0 ? "Nenhum pedido atribuído a você." : "Nenhum pedido neste filtro."}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {orders.map((o) => (
-                <div
+              {filtered.map((o) => (
+                <button
                   key={o.id}
-                  className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-start sm:justify-between"
+                  type="button"
+                  onClick={() => setSelected(o)}
+                  className="flex w-full flex-col gap-3 rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/40 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="min-w-0 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
@@ -185,9 +203,7 @@ export default function PedidosEspera() {
                       <Badge variant="secondary">
                         {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
                       </Badge>
-                      {o.rma && (
-                        <span className="text-xs text-muted-foreground">RMA: {o.rma}</span>
-                      )}
+                      {o.rma && <span className="text-xs text-muted-foreground">RMA: {o.rma}</span>}
                       {o.reason && (
                         <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
                           {o.reason}
@@ -215,32 +231,32 @@ export default function PedidosEspera() {
                         <span>{o.items}</span>
                       </div>
                     )}
-                    {(o.restocked_items || o.damaged_items || o.comments) && (
-                      <div className="space-y-0.5 text-xs text-muted-foreground">
-                        {o.restocked_items && <div>Recolocados: {o.restocked_items}</div>}
-                        {o.damaged_items && (
-                          <div className="text-destructive">Danificados: {o.damaged_items}</div>
-                        )}
-                        {o.comments && <div>Obs.: {o.comments}</div>}
-                      </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end">
+                    <Badge variant={STATUS_BADGE[o.agent_status]}>
+                      {HELD_ORDER_AGENT_STATUS_LABEL[o.agent_status]}
+                    </Badge>
+                    {o.event_count > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" />
+                        {o.event_count}
+                      </span>
                     )}
                   </div>
-                  <div className="shrink-0">
-                    <Button
-                      onClick={() => handleConfirm(o)}
-                      disabled={confirmMutation.isPending && confirmingId === o.id}
-                      className={cn("w-full sm:w-auto")}
-                    >
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                      {confirmMutation.isPending && confirmingId === o.id ? "Confirmando..." : "Confirmar"}
-                    </Button>
-                  </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <HeldOrderTrackingDialog
+        order={selected}
+        open={Boolean(selected)}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,24 @@
 
 export type HeldOrderStatus = "pending" | "confirmed";
 
+/** Status que o AGENTE gerencia (3 estados). Distinto de `status` (legado, lido pelo manager). */
+export type HeldOrderAgentStatus = "novo" | "em_andamento" | "concluido";
+
+export const HELD_ORDER_AGENT_STATUS_LABEL: Record<HeldOrderAgentStatus, string> = {
+  novo: "Novo",
+  em_andamento: "Em Andamento",
+  concluido: "Concluído",
+};
+
+/** Uma entrada do histórico (timeline) de um pedido. */
+export type HeldOrderEvent = {
+  id: string;
+  status: HeldOrderAgentStatus;
+  note: string;
+  recorded_at: string;
+  user_name: string | null;
+};
+
 /** Pedido como retornado para o AGENTE (my_held_orders). */
 export type MyHeldOrder = {
   id: string;
@@ -29,7 +47,9 @@ export type MyHeldOrder = {
   damaged_items: string | null;
   comments: string | null;
   status: HeldOrderStatus;
+  agent_status: HeldOrderAgentStatus;
   confirmed_at: string | null;
+  event_count: number;
 };
 
 /** Pedido como retornado para o MANAGER (manager_list_held_orders.rows). */
