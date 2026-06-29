@@ -31,3 +31,13 @@ supabase/.temp/
 *.webm
 *.mov
 .vercel
+
+# Planilhas / relatórios / dados de trabalho — não fazem parte do código
+*.xls
+*.xlsx
+*.pdf
+/0515/
+/Como pedir ajuda/
+/ana_vidotti/
+/novos_atendimentos_modelo/
+/planilhas/

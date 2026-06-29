@@ -1,0 +1,96 @@
+-- Adiciona 13 novos produtos à tabela products e à constraint services_product_check:
+-- Hair Bloom, Guardon, Joint Mend, Keskara, Lipolegs, LipoShape, Mind Recall,
+-- Mind Wake, Prostate Vital, Quiet Nerves, Quiet Rest, RingSilence, FlowStrong
+
+INSERT INTO public.products (id, name, updated_at)
+VALUES
+  (gen_random_uuid()::text, 'Hair Bloom', now()),
+  (gen_random_uuid()::text, 'Guardon', now()),
+  (gen_random_uuid()::text, 'Joint Mend', now()),
+  (gen_random_uuid()::text, 'Keskara', now()),
+  (gen_random_uuid()::text, 'Lipolegs', now()),
+  (gen_random_uuid()::text, 'LipoShape', now()),
+  (gen_random_uuid()::text, 'Mind Recall', now()),
+  (gen_random_uuid()::text, 'Mind Wake', now()),
+  (gen_random_uuid()::text, 'Prostate Vital', now()),
+  (gen_random_uuid()::text, 'Quiet Nerves', now()),
+  (gen_random_uuid()::text, 'Quiet Rest', now()),
+  (gen_random_uuid()::text, 'RingSilence', now()),
+  (gen_random_uuid()::text, 'FlowStrong', now())
+ON CONFLICT (name) DO NOTHING;
+
+ALTER TABLE public.services
+  DROP CONSTRAINT IF EXISTS services_product_check;
+
+ALTER TABLE public.services
+  ADD CONSTRAINT services_product_check
+  CHECK (
+    product IN (
+      'Arialief',
+      'Alphacur',
+      'Blinzador',
+      'Feilaira',
+      'Garaherb',
+      'Karylief',
+      'Kymezol',
+      'Jertaris',
+      'Laellium',
+      'Memyts',
+      'Presgera',
+      'Biografa',
+      'Cetacondor',
+      'Cetadusse',
+      'Sciatilief',
+      'Goldenfrib',
+      'Felaromi',
+      'Tenurima',
+      'Ariovira',
+      'CucuDrops',
+      'Zalovira',
+      'Xelovita',
+      'Cerami',
+      'NATHUREX',
+      'Mahgryn',
+      'Levhyn',
+      'Ariomyx',
+      'Alitoryn',
+      'Athentys',
+      'Velynivo',
+      'Mioralab',
+      'Vergolief',
+      'Olisteren',
+      'Halegryn',
+      'Danmyts',
+      'Maizkidor',
+      'Basmontex',
+      'Fraganief',
+      'Ceramiri',
+      'Shapeon',
+      'Nexburn',
+      'Memoryon',
+      'Korvizol',
+      'Erectozyn',
+      'Thewellnesswize',
+      'VIP.Shipping',
+      'VisualEase',
+      'NerveEase',
+      'Steelpower',
+      'Gluco Off',
+      'Cognivex',
+      'Nad Dermal+',
+      'Alpharock',
+      'Hair Bloom',
+      'Guardon',
+      'Joint Mend',
+      'Keskara',
+      'Lipolegs',
+      'LipoShape',
+      'Mind Recall',
+      'Mind Wake',
+      'Prostate Vital',
+      'Quiet Nerves',
+      'Quiet Rest',
+      'RingSilence',
+      'FlowStrong'
+    )
+  );

@@ -74,6 +74,19 @@ const PRODUCTS = [
   "Cognivex",
   "Nad Dermal+",
   "Alpharock",
+  "Hair Bloom",
+  "Guardon",
+  "Joint Mend",
+  "Keskara",
+  "Lipolegs",
+  "LipoShape",
+  "Mind Recall",
+  "Mind Wake",
+  "Prostate Vital",
+  "Quiet Nerves",
+  "Quiet Rest",
+  "RingSilence",
+  "FlowStrong",
 ] as const;
 
 const PLATFORMS = [
