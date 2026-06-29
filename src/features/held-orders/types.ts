@@ -58,6 +58,14 @@ export type ManagerHeldOrder = MyHeldOrder & {
   assigned_to: string | null;
   assigned_to_name: string | null;
   imported_at: string | null;
+  /** Quantas vezes o pedido já foi distribuído. 0 = "Novo"; N>=1 = "Pendente N". */
+  assign_count: number;
+};
+
+/** Resultado da distribuição em lote (manager_distribute_held_orders). */
+export type DistributeHeldOrdersResult = {
+  moved: number;
+  by_agent: { agent_id: string; full_name: string | null; count: number }[];
 };
 
 export type HeldOrderAgentSummary = {

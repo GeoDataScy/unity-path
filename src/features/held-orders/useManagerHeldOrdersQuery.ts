@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
-import type { HeldOrderImportRow, ManagerHeldOrdersResult } from "./types";
+import type {
+  DistributeHeldOrdersResult,
+  HeldOrderImportRow,
+  ManagerHeldOrdersResult,
+} from "./types";
 
 // As RPCs de pedidos em espera ainda não estão nos tipos gerados do Supabase.
 const rpc = supabase.rpc.bind(supabase) as (
@@ -62,6 +66,30 @@ export function useAssignHeldOrdersMutation() {
       });
       if (error) throw error;
       return (data as number) ?? 0;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });
+    },
+  });
+}
+
+/** Distribuição em lote round-robin entre vários agentes. */
+export function useDistributeHeldOrdersMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderIds,
+      agentIds,
+    }: {
+      orderIds: string[];
+      agentIds: string[];
+    }): Promise<DistributeHeldOrdersResult> => {
+      const { data, error } = await rpc("manager_distribute_held_orders", {
+        p_order_ids: orderIds,
+        p_agent_ids: agentIds,
+      });
+      if (error) throw error;
+      return (data as DistributeHeldOrdersResult) ?? { moved: 0, by_agent: [] };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });

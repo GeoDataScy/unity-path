@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   Inbox,
+  ListChecks,
   PackageSearch,
   Search,
   Send,
@@ -34,11 +35,34 @@ function formatDate(value: string | null): string {
   return y && m && d ? `${d}/${m}/${y}` : value;
 }
 
+// Badge de status na visão do manager:
+//   concluído            -> "Confirmado"
+//   nunca distribuído    -> "Novo"        (assign_count = 0)
+//   distribuído N vezes  -> "Pendente N"  (assign_count >= 1, ainda não concluído)
+function statusBadge(o: ManagerHeldOrder) {
+  if (o.agent_status === "concluido" || o.status === "confirmed") {
+    return <Badge variant="success">Confirmado</Badge>;
+  }
+  if ((o.assign_count ?? 0) === 0) {
+    return (
+      <Badge variant="outline" className="text-sky-600 dark:text-sky-400">
+        Novo
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+      Pendente {o.assign_count}
+    </Badge>
+  );
+}
+
 export function HeldOrdersManagerTab() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchQty, setBatchQty] = useState<string>("10");
   const [importOpen, setImportOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
 
@@ -95,6 +119,15 @@ export function HeldOrdersManagerTab() {
       return next;
     });
   };
+
+  // Seleção em lote: marca os primeiros N pendentes da tabela filtrada (na ordem
+  // exibida). "all" marca todos os pendentes filtrados.
+  const selectFirstN = () => {
+    const n = batchQty === "all" ? selectablePendingIds.length : Number(batchQty);
+    setSelected(new Set(selectablePendingIds.slice(0, n)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
@@ -215,6 +248,42 @@ export function HeldOrdersManagerTab() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Seleção em lote por quantidade */}
+          {selectablePendingIds.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+              <ListChecks className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Selecionar as primeiras</span>
+              <Select value={batchQty} onValueChange={setBatchQty}>
+                <SelectTrigger className="h-8 w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="15">15</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="secondary" size="sm" onClick={selectFirstN}>
+                Selecionar
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {selectablePendingIds.length} pendente(s) na lista
+              </span>
+              {selectedIds.length > 0 && (
+                <>
+                  <span className="ml-auto text-sm font-medium text-foreground">
+                    {selectedIds.length} selecionado(s)
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={clearSelection}>
+                    Limpar
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
           {ordersQuery.isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -287,15 +356,7 @@ export function HeldOrdersManagerTab() {
                         <TableCell className="text-sm">
                           {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
                         </TableCell>
-                        <TableCell>
-                          {isPending ? (
-                            <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
-                              Pendente
-                            </Badge>
-                          ) : (
-                            <Badge variant="success">Confirmado</Badge>
-                          )}
-                        </TableCell>
+                        <TableCell>{statusBadge(o)}</TableCell>
                       </TableRow>
                     );
                   })}
