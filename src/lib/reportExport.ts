@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_REASONS } from "@/features/services/contact-reasons";
+import type { DashboardRefundReasonDetailRow } from "@/features/dashboard/useDashboardRefundReasonDetailQuery";
 
 type SheetSpec = {
   name: string;
@@ -314,4 +315,137 @@ export async function exportManagerReport(
 
   const fileName = `relatorio-suporte_${fromISO}_a_${toISO}.xlsx`;
   XLSX.writeFile(wb, fileName);
+}
+
+// ── Relatório do drill-down de "Motivos de reembolso" ───────────────────────────
+
+type RefundReasonDetailResponse = {
+  total_count: number;
+  rows: DashboardRefundReasonDetailRow[];
+};
+
+// Aceita 'YYYY-MM-DD' ou timestamp ISO completo; devolve dd/MM/yyyy.
+function formatBrDateLoose(value: string | null): string {
+  if (!value) return "";
+  const [y, m, d] = value.slice(0, 10).split("-");
+  return y && m && d ? `${d}/${m}/${y}` : value;
+}
+
+// Remove caracteres inválidos para nome de arquivo (ex.: "/" em "Indicação médica / efeitos colaterais").
+function safeFileSegment(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
+
+export type RefundReasonExportParams = {
+  reasonCategory: string;
+  fromISO: string;
+  toISO: string;
+  agentId?: string;
+  status?: "all" | "open" | "done";
+  refundType?: string;
+  product?: string;
+};
+
+// Busca TODAS as linhas da categoria (paginando o RPC, máx. 200/página) e gera o .xlsx
+// com exatamente as colunas mostradas na tabela do modal.
+export async function exportRefundReasonDetail(params: RefundReasonExportParams): Promise<number> {
+  const { reasonCategory, fromISO, toISO, agentId, status = "all", refundType = "all", product = "all" } = params;
+
+  const pageSize = 200;
+  let offset = 0;
+  let total = Infinity;
+  const all: DashboardRefundReasonDetailRow[] = [];
+
+  while (offset < total) {
+    const { data, error } = await supabase.rpc("dashboard_refund_reason_detail", {
+      from_date: fromISO,
+      to_date: toISO,
+      reason_category: reasonCategory,
+      agent_id: agentId && agentId !== "all" ? agentId : null,
+      status_filter: status,
+      refund_type_filter: refundType,
+      product_filter: product,
+      page_size: pageSize,
+      page_offset: offset,
+    });
+
+    if (error) throw error;
+
+    const res = data as unknown as RefundReasonDetailResponse;
+    total = res.total_count ?? 0;
+    const rows = res.rows ?? [];
+    all.push(...rows);
+    if (rows.length === 0) break;
+    offset += rows.length;
+  }
+
+  const columns = [
+    "Solicitação",
+    "Conclusão",
+    "Agente",
+    "E-mail",
+    "Produto",
+    "Loja",
+    "Pedido",
+    "Canal",
+    "Tipo",
+    "Valor (R$)",
+    "Motivo original",
+  ];
+
+  const dataRows: (string | number)[][] = all.map((r) => [
+    formatBrDateLoose(r.request_date),
+    r.completion_date ? formatBrDateLoose(r.completion_date) : "Em aberto",
+    r.profiles?.full_name ?? "—",
+    r.customer_email ?? "",
+    r.product ?? "—",
+    r.sales_platform ?? "",
+    r.order_id ?? "",
+    r.channel ?? "—",
+    r.refund_type ?? "—",
+    r.refund_value ?? "",
+    r.original_reason ?? "—",
+  ]);
+
+  const sheetRows: (string | number)[][] = [
+    [`Motivos de reembolso — ${reasonCategory}`],
+    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)}`],
+    [`Total de reembolsos: ${all.length}`],
+    [],
+    columns,
+    ...(dataRows.length > 0 ? dataRows : [[EMPTY_PLACEHOLDER, ...columns.slice(1).map(() => "")]]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: columns.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: columns.length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: columns.length - 1 } },
+  ];
+  ws["!cols"] = [
+    { wch: 12 }, // Solicitação
+    { wch: 12 }, // Conclusão
+    { wch: 22 }, // Agente
+    { wch: 30 }, // E-mail
+    { wch: 20 }, // Produto
+    { wch: 16 }, // Loja
+    { wch: 18 }, // Pedido
+    { wch: 14 }, // Canal
+    { wch: 10 }, // Tipo
+    { wch: 12 }, // Valor
+    { wch: 40 }, // Motivo original
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Reembolsos");
+
+  const fileName = `reembolsos_${safeFileSegment(reasonCategory)}_${fromISO}_a_${toISO}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+
+  return all.length;
 }

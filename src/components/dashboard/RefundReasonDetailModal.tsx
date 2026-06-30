@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MessageSquareText } from "lucide-react";
+import { Download, Loader2, MessageSquareText } from "lucide-react";
+import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -15,6 +17,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useDashboardRefundReasonDetailQuery } from "@/features/dashboard/useDashboardRefundReasonDetailQuery";
+import { exportRefundReasonDetail } from "@/lib/reportExport";
 
 function safeParseISODate(value: string | null): Date | null {
   if (!value) return null;
@@ -58,6 +61,7 @@ export function RefundReasonDetailModal({
   product = "all",
 }: Props) {
   const [page, setPage] = useState(1);
+  const [downloading, setDownloading] = useState(false);
 
   // Reset to first page whenever the category or filters change.
   useEffect(() => {
@@ -85,6 +89,28 @@ export function RefundReasonDetailModal({
 
   const periodLabel = `${formatDate(from)} — ${formatDate(to)}`;
 
+  async function handleDownload() {
+    if (!reasonCategory || downloading) return;
+    setDownloading(true);
+    try {
+      const count = await exportRefundReasonDetail({
+        reasonCategory,
+        fromISO: from,
+        toISO: to,
+        agentId,
+        status,
+        refundType,
+        product,
+      });
+      toast.success(`Relatório gerado com ${count.toLocaleString("pt-BR")} reembolso(s).`);
+    } catch (err) {
+      console.error("Falha ao gerar relatório de reembolsos:", err);
+      toast.error("Não foi possível gerar o relatório. Tente novamente.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -96,15 +122,23 @@ export function RefundReasonDetailModal({
         </DialogHeader>
 
         {/* Resumo */}
-        <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-3">
-          <div className="rounded-lg border bg-card p-3">
+        <div className="flex flex-wrap items-stretch gap-3 pb-1">
+          <div className="rounded-lg border bg-card p-3 min-w-[180px]">
             <p className="text-xs text-muted-foreground">Reembolsos nesta categoria</p>
             <p className="text-2xl font-bold tabular-nums">{total.toLocaleString("pt-BR")}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3">
+          <div className="rounded-lg border bg-card p-3 min-w-[200px]">
             <p className="text-xs text-muted-foreground">Período</p>
             <p className="text-sm font-medium leading-tight mt-1">{periodLabel}</p>
           </div>
+          <Button
+            onClick={handleDownload}
+            disabled={downloading || query.isLoading || total === 0}
+            className="ml-auto self-center gap-2"
+          >
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Baixar relatório
+          </Button>
         </div>
 
         {query.isLoading ? (
