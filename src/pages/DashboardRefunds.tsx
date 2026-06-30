@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/pagination";
 import { useDashboardRefundMetricsQuery } from "@/features/dashboard/useDashboardRefundMetricsQuery";
 import { useDashboardRefundAuditQuery } from "@/features/dashboard/useDashboardRefundAuditQuery";
+import { RefundReasonDetailModal } from "@/components/dashboard/RefundReasonDetailModal";
 
 function safeParseISODate(value: string): Date | null {
   const dt = parseISO(value);
@@ -54,6 +55,9 @@ export default function DashboardRefunds() {
   const [status, setStatus] = useState<"all" | "open" | "done">("all");
   const [refundType, setRefundType] = useState<string>("all");
   const [product, setProduct] = useState<string>("all");
+
+  // Drill-down: motivo selecionado ao clicar numa barra do gráfico de motivos
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   // Table pagination
   const [page, setPage] = useState(1);
@@ -491,6 +495,7 @@ export default function DashboardRefunds() {
                 </CardTitle>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Histórico normalizado em 15 categorias — texto livre antigo reclassificado automaticamente.
+                  <span className="ml-1 text-primary">Clique numa barra para ver os reembolsos.</span>
                 </p>
               </div>
 
@@ -549,7 +554,17 @@ export default function DashboardRefunds() {
                       return [`${value.toLocaleString("pt-BR")} (${pct.toFixed(1)}%)`, "Reembolsos"];
                     }}
                   />
-                  <Bar dataKey="value" name="Reembolsos" radius={[0, 6, 6, 0]} barSize={20}>
+                  <Bar
+                    dataKey="value"
+                    name="Reembolsos"
+                    radius={[0, 6, 6, 0]}
+                    barSize={20}
+                    cursor="pointer"
+                    onClick={(d: { name?: string; payload?: { name?: string } }) => {
+                      const name = d?.name ?? d?.payload?.name;
+                      if (name) setSelectedReason(name);
+                    }}
+                  >
                     {reasonChartData.map((_, i) => (
                       <Cell key={`reason-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
                     ))}
@@ -729,6 +744,18 @@ export default function DashboardRefunds() {
           </CardContent>
         </Card>
       </section>
+
+      <RefundReasonDetailModal
+        open={!!selectedReason}
+        onClose={() => setSelectedReason(null)}
+        reasonCategory={selectedReason}
+        from={fromISO}
+        to={toISO}
+        agentId={agentId === "all" ? undefined : agentId}
+        status={status}
+        refundType={refundType}
+        product={product}
+      />
     </div>
   );
 }

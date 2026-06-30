@@ -698,6 +698,20 @@ export type Database = {
         }
         Returns: Json
       }
+      dashboard_refund_reason_detail: {
+        Args: {
+          agent_id?: string
+          from_date: string
+          page_offset?: number
+          page_size?: number
+          product_filter?: string
+          reason_category: string
+          refund_type_filter?: string
+          status_filter?: string
+          to_date: string
+        }
+        Returns: Json
+      }
       dashboard_status_summary: {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
