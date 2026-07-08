@@ -59,7 +59,10 @@ export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred
       const { error } = await supabase.from("ticket_transfers").insert({
         service_id: ticket.id,
         from_user_id: session.user.id,
-        to_user_id: ticket.user_id,
+        // Dono operacional atual (current_owner), não o criador. Cobre o caso de
+        // ticket redistribuído pelo gestor: o criador pode ser outro, mas quem
+        // deve receber o encaminhamento é quem atende o ticket agora.
+        to_user_id: ticket.current_owner_id ?? ticket.user_id,
         message: message.trim() || null,
         status: "pending",
       });
@@ -76,7 +79,7 @@ export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred
       await queryClient.invalidateQueries({ queryKey: ["ticket_transfers"] });
       toast({
         title: "Encaminhado",
-        description: `Pedido enviado para ${ticket?.agent_name ?? "o agente responsável"}.`,
+        description: `Pedido enviado para ${ticket?.current_owner_name ?? ticket?.agent_name ?? "o agente responsável"}.`,
       });
       setMessage("");
       onTransferred?.();
@@ -108,7 +111,9 @@ export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred
           <div className="grid gap-3 rounded-md border bg-muted/30 p-3 text-sm">
             <div className="grid grid-cols-3 gap-2">
               <span className="text-muted-foreground">Agente</span>
-              <span className="col-span-2 font-medium">{ticket.agent_name ?? "—"}</span>
+              <span className="col-span-2 font-medium">
+                {ticket.current_owner_name ?? ticket.agent_name ?? "—"}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <span className="text-muted-foreground">Cliente</span>
