@@ -109,6 +109,11 @@ const PRODUCTS = [
   "Quiet Rest",
   "RingSilence",
   "FlowStrong",
+  "Youth Within",
+  "Thermo Ignite",
+  "Glyco Barrier",
+  "Gluco Mild",
+  "Horsefil",
 ] as const;
 
 const PLATFORMS = [
