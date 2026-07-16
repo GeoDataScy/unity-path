@@ -34,6 +34,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   ticket: DuplicateTicket | null;
   onTransferred?: () => void;
+  // Assume a titularidade do ticket (passa a ser o dono e pode registrar).
+  // Recebe o ticket em questão; o caller cuida de abrir o acompanhamento.
+  onClaim?: (ticket: DuplicateTicket) => Promise<void>;
+  claiming?: boolean;
 };
 
 function formatServiceDate(value: string | null): string {
@@ -43,7 +47,7 @@ function formatServiceDate(value: string | null): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
-export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred }: Props) {
+export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred, onClaim, claiming = false }: Props) {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,8 +106,9 @@ export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred
         <DialogHeader>
           <DialogTitle>Cliente já possui ticket aberto</DialogTitle>
           <DialogDescription>
-            Esse cliente já está sendo atendido por outro agente. Você não pode registrar um
-            novo atendimento, mas pode encaminhar uma mensagem para o agente responsável continuar.
+            Esse cliente já está sendo atendido por outro agente. Você pode{" "}
+            <strong>assumir o atendimento</strong> (passa a ser seu e você registra a
+            interação) ou <strong>encaminhar</strong> uma mensagem para o agente responsável continuar.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,20 +159,31 @@ export function TransferTicketDialog({ open, onOpenChange, ticket, onTransferred
           />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:justify-between">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            disabled={createTransfer.isPending}
+            disabled={createTransfer.isPending || claiming}
           >
             Cancelar
           </Button>
-          <Button
-            onClick={() => createTransfer.mutate()}
-            disabled={createTransfer.isPending || !ticket}
-          >
-            {createTransfer.isPending ? "Enviando..." : "Encaminhar"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => createTransfer.mutate()}
+              disabled={createTransfer.isPending || claiming || !ticket}
+            >
+              {createTransfer.isPending ? "Enviando..." : "Encaminhar"}
+            </Button>
+            {onClaim && (
+              <Button
+                onClick={() => ticket && onClaim(ticket)}
+                disabled={createTransfer.isPending || claiming || !ticket}
+              >
+                {claiming ? "Assumindo..." : "Assumir atendimento"}
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

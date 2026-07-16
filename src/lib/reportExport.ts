@@ -449,3 +449,250 @@ export async function exportRefundReasonDetail(params: RefundReasonExportParams)
 
   return all.length;
 }
+
+// ── Relatório de atendimentos do agente ─────────────────────────────────────────
+
+type ExportTicketRow = {
+  id: string;
+  client_email: string;
+  service_date: string;
+  product: string;
+  platform: string | null;
+  channel: string | null;
+  status: string;
+  created_at: string | null;
+  has_tracking_code: boolean;
+  contact_reason: string | null;
+  user_id: string;
+  current_owner_id: string;
+  creator_name: string | null;
+  owner_name: string | null;
+  follow_up_count: number;
+  last_interaction_at: string | null;
+  last_follow_up_status: string | null;
+};
+
+type ExportFollowUpRow = {
+  service_id: string;
+  client_email: string;
+  follow_up_number: number;
+  status: string;
+  observation: string | null;
+  recorded_at: string;
+  user_id: string;
+  agent_name: string | null;
+};
+
+type ExportAgentServicesResponse = {
+  tickets: ExportTicketRow[];
+  follow_ups: ExportFollowUpRow[];
+};
+
+// Trata timestamps "naive" (sem timezone, ex.: "2026-03-18T19:14:02.436") como
+// UTC, depois converte para São Paulo — mesmo tratamento da tela de atendimentos.
+function formatBrDateTimeSP(value: string | null | undefined): string {
+  if (!value) return "";
+  const ts = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value}Z`;
+  const dt = new Date(ts);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function serviceDateBr(value: string | null | undefined): string {
+  if (!value) return "";
+  const datePart = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? formatBrDate(datePart) : value;
+}
+
+function ticketStatusLabel(t: ExportTicketRow): string {
+  if ((t.follow_up_count ?? 0) === 0) {
+    return t.status === "concluido" ? "Concluído" : "Novo";
+  }
+  return t.last_follow_up_status === "concluido" ? "Concluído" : "Em Andamento";
+}
+
+function followUpStatusLabel(status: string): string {
+  if (status === "concluido") return "Concluído";
+  if (status === "em_andamento") return "Em andamento";
+  return status;
+}
+
+export type AgentServicesExportParams = {
+  fromISO: string;
+  toISO: string;
+};
+
+// Gera o .xlsx com os atendimentos do agente no período (respeita a mesma regra
+// de visibilidade da tela). Aba 1: um ticket por linha, com todos os campos.
+// Aba 2: histórico completo de interações (abertura + follow-ups) por ticket.
+// Retorna o total de tickets exportados.
+export async function exportAgentServices(params: AgentServicesExportParams): Promise<number> {
+  const { fromISO, toISO } = params;
+
+  const { data, error } = await supabase.rpc("export_agent_services", {
+    p_from: fromISO,
+    p_to: toISO,
+  });
+  if (error) throw error;
+
+  const res = (data ?? { tickets: [], follow_ups: [] }) as unknown as ExportAgentServicesResponse;
+  const tickets = res.tickets ?? [];
+  const followUps = res.follow_ups ?? [];
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Aba 1: Atendimentos ───────────────────────────────────────────────────
+  const ticketColumns = [
+    "Data de abertura",
+    "Hora",
+    "E-mail do Cliente",
+    "Produto",
+    "Plataforma",
+    "Canal",
+    "Motivo de contato",
+    "Cód. Rastreio",
+    "Status",
+    "Nº de interações",
+    "Última interação",
+    "Agente (criador)",
+    "Dono atual",
+    "ID do ticket",
+  ];
+
+  const ticketDataRows: (string | number)[][] = tickets.map((t) => [
+    serviceDateBr(t.service_date),
+    formatBrDateTimeSP(t.created_at).slice(11) || "—",
+    t.client_email ?? "",
+    t.product ?? "",
+    t.platform ?? "—",
+    t.channel ?? "—",
+    reasonLabel(t.contact_reason ?? "nao_informado"),
+    t.has_tracking_code ? "Sim" : "Não",
+    ticketStatusLabel(t),
+    (t.follow_up_count ?? 0) + 1,
+    t.last_interaction_at ? formatBrDateTimeSP(t.last_interaction_at) : "—",
+    t.creator_name ?? "—",
+    t.owner_name ?? "—",
+    t.id,
+  ]);
+
+  const ticketSheetRows: (string | number)[][] = [
+    ["Meus Atendimentos"],
+    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)}`],
+    [`Total de atendimentos: ${tickets.length}`],
+    [],
+    ticketColumns,
+    ...(ticketDataRows.length > 0
+      ? ticketDataRows
+      : [[EMPTY_PLACEHOLDER, ...ticketColumns.slice(1).map(() => "")]]),
+  ];
+
+  const wsTickets = XLSX.utils.aoa_to_sheet(ticketSheetRows);
+  wsTickets["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: ticketColumns.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: ticketColumns.length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: ticketColumns.length - 1 } },
+  ];
+  wsTickets["!cols"] = [
+    { wch: 14 }, // Data de abertura
+    { wch: 8 }, // Hora
+    { wch: 30 }, // E-mail
+    { wch: 18 }, // Produto
+    { wch: 14 }, // Plataforma
+    { wch: 12 }, // Canal
+    { wch: 24 }, // Motivo
+    { wch: 12 }, // Cód. Rastreio
+    { wch: 14 }, // Status
+    { wch: 14 }, // Nº interações
+    { wch: 18 }, // Última interação
+    { wch: 22 }, // Agente criador
+    { wch: 22 }, // Dono atual
+    { wch: 38 }, // ID
+  ];
+  XLSX.utils.book_append_sheet(wb, wsTickets, "Atendimentos");
+
+  // ── Aba 2: Histórico de Interações ────────────────────────────────────────
+  // Reconstrói o histórico completo por ticket: a abertura conta como interação
+  // #1 e cada follow-up soma +1 (mesma semântica da tela do agente).
+  const followUpsByTicket = new Map<string, ExportFollowUpRow[]>();
+  for (const f of followUps) {
+    const list = followUpsByTicket.get(f.service_id);
+    if (list) list.push(f);
+    else followUpsByTicket.set(f.service_id, [f]);
+  }
+
+  const historyColumns = [
+    "E-mail do Cliente",
+    "Interação nº",
+    "Data / Hora",
+    "Status",
+    "Observação",
+    "Registrado por",
+  ];
+
+  const historyDataRows: (string | number)[][] = [];
+  for (const t of tickets) {
+    // Interação #1 = abertura do ticket
+    historyDataRows.push([
+      t.client_email ?? "",
+      1,
+      formatBrDateTimeSP(t.created_at ?? t.service_date),
+      "Abertura",
+      reasonLabel(t.contact_reason ?? "nao_informado"),
+      t.creator_name ?? "—",
+    ]);
+    const fus = (followUpsByTicket.get(t.id) ?? [])
+      .slice()
+      .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+    fus.forEach((f, idx) => {
+      historyDataRows.push([
+        t.client_email ?? "",
+        idx + 2,
+        formatBrDateTimeSP(f.recorded_at),
+        followUpStatusLabel(f.status),
+        f.observation ?? "",
+        f.agent_name ?? "—",
+      ]);
+    });
+  }
+
+  const historySheetRows: (string | number)[][] = [
+    ["Histórico de Interações"],
+    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)}`],
+    [`Total de interações: ${historyDataRows.length}`],
+    [],
+    historyColumns,
+    ...(historyDataRows.length > 0
+      ? historyDataRows
+      : [[EMPTY_PLACEHOLDER, ...historyColumns.slice(1).map(() => "")]]),
+  ];
+
+  const wsHistory = XLSX.utils.aoa_to_sheet(historySheetRows);
+  wsHistory["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: historyColumns.length - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: historyColumns.length - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: historyColumns.length - 1 } },
+  ];
+  wsHistory["!cols"] = [
+    { wch: 30 }, // E-mail
+    { wch: 12 }, // Interação nº
+    { wch: 18 }, // Data / Hora
+    { wch: 14 }, // Status
+    { wch: 50 }, // Observação
+    { wch: 22 }, // Registrado por
+  ];
+  XLSX.utils.book_append_sheet(wb, wsHistory, "Histórico de Interações");
+
+  const fileName = `meus-atendimentos_${fromISO}_a_${toISO}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+
+  return tickets.length;
+}

@@ -18,6 +18,7 @@ export type AgentOutletContext = {
   fullName: string | null;
   canViewAllTickets: boolean;
   canRegisterDuplicateEmails: boolean;
+  canClaimTickets: boolean;
 };
 
 export default function AgentLayout() {
@@ -29,6 +30,7 @@ export default function AgentLayout() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [canViewAllTickets, setCanViewAllTickets] = useState(false);
   const [canRegisterDuplicateEmails, setCanRegisterDuplicateEmails] = useState(false);
+  const [canClaimTickets, setCanClaimTickets] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +60,7 @@ export default function AgentLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name, can_view_all_tickets, can_register_duplicate_emails")
+        .select("role, full_name, can_view_all_tickets, can_register_duplicate_emails, can_claim_tickets")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -78,6 +80,7 @@ export default function AgentLayout() {
       setFullName(profile?.full_name ?? null);
       setCanViewAllTickets(Boolean(profile?.can_view_all_tickets));
       setCanRegisterDuplicateEmails(Boolean(profile?.can_register_duplicate_emails));
+      setCanClaimTickets(Boolean(profile?.can_claim_tickets));
       setLoading(false);
     };
 
@@ -147,8 +150,8 @@ export default function AgentLayout() {
 
   const outletContext = useMemo<AgentOutletContext | null>(() => {
     if (!userId) return null;
-    return { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails };
-  }, [userId, fullName, canViewAllTickets, canRegisterDuplicateEmails]);
+    return { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails, canClaimTickets };
+  }, [userId, fullName, canViewAllTickets, canRegisterDuplicateEmails, canClaimTickets]);
 
   const handleLogout = async () => {
     await recordAuthEvent("logout").catch(() => {});

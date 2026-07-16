@@ -141,6 +141,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_claim_tickets: boolean
           can_register_duplicate_emails: boolean
           can_view_all_tickets: boolean
           created_at: string | null
@@ -154,6 +155,7 @@ export type Database = {
           support_channel: string
         }
         Insert: {
+          can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
           created_at?: string | null
@@ -167,6 +169,7 @@ export type Database = {
           support_channel?: string
         }
         Update: {
+          can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
           created_at?: string | null
@@ -620,7 +623,25 @@ export type Database = {
         Args: { from_date: string; to_date: string; top_n?: number }
         Returns: Json
       }
+      can_claim_tickets: { Args: never; Returns: boolean }
       can_view_all_tickets: { Args: never; Returns: boolean }
+      claim_ticket: {
+        Args: { p_service_id: string }
+        Returns: {
+          channel: string
+          client_email: string
+          contact_reason: string
+          created_at: string
+          current_owner_id: string
+          has_tracking_code: boolean
+          id: string
+          platform: string
+          product: string
+          service_date: string
+          status: string
+          user_id: string
+        }[]
+      }
       classify_refund_reason: { Args: { p_reason: string }; Returns: string }
       create_refund:
         | {
@@ -714,6 +735,10 @@ export type Database = {
       }
       dashboard_status_summary: {
         Args: { agent_id?: string; from_date: string; to_date: string }
+        Returns: Json
+      }
+      export_agent_services: {
+        Args: { p_from: string; p_to: string }
         Returns: Json
       }
       find_ticket_by_email: {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, CheckCircle2, Package, Pencil, Search, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Download, Loader2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +40,7 @@ import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
 import { CONTACT_REASONS, getContactReason, type ContactReasonCode } from "@/features/services/contact-reasons";
 import { TransferTicketDialog, type DuplicateTicket } from "@/features/transfers/TransferTicketDialog";
+import { exportAgentServices } from "@/lib/reportExport";
 
 const PRODUCTS = [
   "Arialief",
@@ -192,7 +193,7 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
 }
 
 export default function Atendimentos() {
-  const { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails } = useOutletContext<AgentOutletContext>();
+  const { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails, canClaimTickets } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -221,6 +222,9 @@ export default function Atendimentos() {
   const [filterTrackingCode, setFilterTrackingCode] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
+
+  // Exportação da planilha (Excel) dos atendimentos do período selecionado.
+  const [exporting, setExporting] = useState(false);
 
   // Edit dialog state
   const [editing, setEditing] = useState<ServiceItem | null>(null);
@@ -281,6 +285,31 @@ export default function Atendimentos() {
     },
     [canAddInteraction, addEntryMutation, toast],
   );
+
+  const handleExport = useCallback(async () => {
+    if (!dateFrom || !dateTo) {
+      toast({
+        title: "Selecione o período",
+        description: "Escolha a data inicial e final antes de exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setExporting(true);
+    try {
+      const count = await exportAgentServices({ fromISO: dateFrom, toISO: dateTo });
+      toast({
+        title: "Exportação concluída",
+        description: `${count} atendimento(s) exportado(s) para a planilha.`,
+      });
+    } catch (error) {
+      console.error("[export-services] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível gerar a planilha.";
+      toast({ title: "Erro ao exportar", description: message, variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }, [dateFrom, dateTo, toast]);
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), canViewAllTickets);
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
@@ -612,6 +641,32 @@ export default function Atendimentos() {
     },
   });
 
+  const claimMutation = useMutation({
+    mutationFn: async (t: DuplicateTicket): Promise<ServiceItem> => {
+      const { data, error } = await supabase.rpc("claim_ticket", { p_service_id: t.id });
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as ServiceItem | undefined;
+      if (!row) throw new Error("Não foi possível assumir o atendimento.");
+      return row;
+    },
+    onSuccess: async (row) => {
+      // O ticket agora é da agente: aparece na lista dela e ela pode registrar a
+      // interação. Fecha o diálogo de duplicidade e abre o acompanhamento.
+      await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      setTransferTarget(null);
+      setTrackingService(row);
+      toast({
+        title: "Atendimento assumido",
+        description: "Agora você é o responsável. Registre a interação.",
+      });
+    },
+    onError: (error: unknown) => {
+      console.error("[claim-ticket] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível assumir o atendimento.";
+      toast({ title: "Erro ao assumir", description: message, variant: "destructive" });
+    },
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || createMutation.isPending) return;
@@ -898,6 +953,26 @@ export default function Atendimentos() {
               Cód. Rastreio
               {filterTrackingCode && <X className="h-3 w-3" />}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={handleExport}
+              disabled={exporting || !dateFrom || !dateTo}
+              title={
+                !dateFrom || !dateTo
+                  ? "Selecione a data inicial e final para exportar"
+                  : "Exportar os atendimentos do período para Excel"
+              }
+            >
+              {exporting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {exporting ? "Exportando..." : "Exportar (Excel)"}
+            </Button>
           </div>
           {(servicesLoading || createMutation.isPending) && (
             <span className="text-sm text-muted-foreground">Atualizando...</span>
@@ -1141,6 +1216,14 @@ export default function Atendimentos() {
           if (!open) setTransferTarget(null);
         }}
         ticket={transferTarget}
+        claiming={claimMutation.isPending}
+        onClaim={
+          canClaimTickets
+            ? async (t) => {
+                await claimMutation.mutateAsync(t);
+              }
+            : undefined
+        }
         onTransferred={() => {
           // Clear the form so the agent can move on; the ticket stays with the original owner.
           setClientEmail("");
