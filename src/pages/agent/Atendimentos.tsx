@@ -672,6 +672,36 @@ export default function Atendimentos() {
     },
   });
 
+  const requestApprovalMutation = useMutation({
+    mutationFn: async ({ ticket, note }: { ticket: DuplicateTicket; note: string }) => {
+      const { error } = await supabase.rpc("request_ticket_takeover", {
+        p_service_id: ticket.id,
+        p_note: note.trim() || undefined,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setTransferTarget(null);
+      // Limpa o formulário; o ticket só vira do agente após a gestora aprovar.
+      setClientEmail("");
+      setProduct("");
+      setPlatform("");
+      setChannel("Email");
+      setHasTrackingCode(false);
+      setContactReason("");
+      toast({
+        title: "Pedido enviado",
+        description:
+          "A gestora foi notificada. Assim que aprovado, o atendimento aparecerá na sua lista.",
+      });
+    },
+    onError: (error: unknown) => {
+      console.error("[request-takeover] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível enviar o pedido.";
+      toast({ title: "Erro ao solicitar", description: message, variant: "destructive" });
+    },
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || createMutation.isPending) return;
@@ -1229,6 +1259,10 @@ export default function Atendimentos() {
               }
             : undefined
         }
+        requestingApproval={requestApprovalMutation.isPending}
+        onRequestApproval={async (t, note) => {
+          await requestApprovalMutation.mutateAsync({ ticket: t, note });
+        }}
         onTransferred={() => {
           // Clear the form so the agent can move on; the ticket stays with the original owner.
           setClientEmail("");

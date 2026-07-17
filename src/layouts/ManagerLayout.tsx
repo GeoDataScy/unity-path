@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
+import { ManagerApprovalsBell } from "@/features/takeovers/ManagerApprovalsBell";
 import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
@@ -96,6 +97,7 @@ export default function ManagerLayout() {
 
   const [authLoading, setAuthLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [canApproveTakeovers, setCanApproveTakeovers] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -156,7 +158,7 @@ export default function ManagerLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, can_approve_takeovers")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -173,6 +175,7 @@ export default function ManagerLayout() {
 
       if (!active) return;
       setFullName(profile?.role === "manager" ? "Ester" : (profile?.full_name ?? null));
+      setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
       setAuthLoading(false);
     };
 
@@ -472,6 +475,8 @@ export default function ManagerLayout() {
       </aside>
 
       <ManagerRefundNotification />
+
+      <ManagerApprovalsBell enabled={canApproveTakeovers} />
 
       <ThemeToggle
         variant="ghost"

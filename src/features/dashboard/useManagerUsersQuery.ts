@@ -9,6 +9,7 @@ export type ManagerUser = {
   role: string;
   support_channel: string | null;
   is_active: boolean;
+  is_available: boolean;
   deactivated_at: string | null;
   deactivated_by: string | null;
   deactivated_by_email: string | null;
@@ -21,6 +22,7 @@ export type ManagerUser = {
   is_online: boolean;
   last_logout_at: string | null;
   open_tickets_count: number;
+  authorized_open_count: number;
 };
 
 const USERS_QUERY_KEY = ["dashboard", "users"] as const;
@@ -47,6 +49,22 @@ export function useSetUserActiveMutation() {
       const { error } = await supabase.rpc("manager_set_user_active", {
         p_target_user_id: userId,
         p_active: active,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: USERS_QUERY_KEY });
+    },
+  });
+}
+
+export function useSetAgentAvailabilityMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, available }: { userId: string; available: boolean }) => {
+      const { error } = await supabase.rpc("manager_set_agent_availability", {
+        p_target_user_id: userId,
+        p_available: available,
       });
       if (error) throw error;
     },

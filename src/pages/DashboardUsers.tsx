@@ -4,8 +4,10 @@ import { ptBR } from "date-fns/locale";
 import { useOutletContext } from "react-router-dom";
 import {
   AlertCircle,
+  BadgeCheck,
   CheckCircle2,
   Circle,
+  Coffee,
   Inbox,
   LogIn,
   LogOut,
@@ -43,6 +45,7 @@ import {
   type ManagerUser,
   useDeleteAuthUserMutation,
   useManagerUsersQuery,
+  useSetAgentAvailabilityMutation,
   useSetUserActiveMutation,
 } from "@/features/dashboard/useManagerUsersQuery";
 import { ReassignTicketsDialog } from "@/features/dashboard/ReassignTicketsDialog";
@@ -143,6 +146,7 @@ export default function DashboardUsers() {
   const { toast } = useToast();
   const usersQuery = useManagerUsersQuery();
   const setActive = useSetUserActiveMutation();
+  const setAvailability = useSetAgentAvailabilityMutation();
   const deleteAuth = useDeleteAuthUserMutation();
 
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -181,6 +185,22 @@ export default function DashboardUsers() {
       await setActive.mutateAsync({ userId: user.id, active: !user.is_active });
       toast({
         title: user.is_active ? "Usuário inativado" : "Usuário reativado",
+        description: user.full_name ?? user.email,
+      });
+    } catch (e) {
+      toast({
+        title: "Erro",
+        description: e instanceof Error ? e.message : "Não foi possível atualizar.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleAvailability = async (user: ManagerUser) => {
+    try {
+      await setAvailability.mutateAsync({ userId: user.id, available: !user.is_available });
+      toast({
+        title: user.is_available ? "Marcado como de folga" : "Marcado como disponível",
         description: user.full_name ?? user.email,
       });
     } catch (e) {
@@ -374,7 +394,17 @@ export default function DashboardUsers() {
                         ) : null;
                       return (
                         <TableRow key={user.id} className={isDeleted ? "opacity-60" : ""}>
-                          <TableCell><StatusDot user={user} /></TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <StatusDot user={user} />
+                              {!isManager && !isDeleted && !user.is_available && (
+                                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-600 dark:text-sky-400">
+                                  <Coffee className="h-2.5 w-2.5" />
+                                  De folga
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-medium">{user.full_name ?? "Sem nome"}</span>
@@ -389,15 +419,32 @@ export default function DashboardUsers() {
                           <TableCell>
                             {isManager ? (
                               <span className="text-xs text-muted-foreground">—</span>
-                            ) : user.open_tickets_count > 0 ? (
-                              <Badge
-                                variant={user.is_active ? "outline" : "destructive"}
-                                className="tabular-nums"
-                              >
-                                {user.open_tickets_count}
-                              </Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">0</span>
+                              <div className="flex flex-col items-start gap-1">
+                                {user.open_tickets_count > 0 ? (
+                                  <Badge
+                                    variant={user.is_active ? "outline" : "destructive"}
+                                    className="tabular-nums"
+                                  >
+                                    {user.open_tickets_count}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">0</span>
+                                )}
+                                {user.authorized_open_count > 0 && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                        <BadgeCheck className="h-2.5 w-2.5" />
+                                        {user.authorized_open_count} autorizado{user.authorized_open_count > 1 ? "s" : ""}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Tickets assumidos com autorização da gestora (dono estava de folga).
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>
@@ -424,6 +471,23 @@ export default function DashboardUsers() {
                             ) : (
                               <div className="inline-flex items-center gap-2">
                                 {reassignButton}
+                                {!isManager && (
+                                  <Button
+                                    variant={user.is_available ? "ghost" : "secondary"}
+                                    size="sm"
+                                    onClick={() => handleToggleAvailability(user)}
+                                    disabled={setAvailability.isPending}
+                                    title={
+                                      user.is_available
+                                        ? "Marcar como de folga/indisponível"
+                                        : "Marcar como disponível"
+                                    }
+                                    className={user.is_available ? "" : "text-sky-600 dark:text-sky-400"}
+                                  >
+                                    <Coffee className="mr-1.5 h-3.5 w-3.5" />
+                                    {user.is_available ? "De folga" : "Disponível"}
+                                  </Button>
+                                )}
                                 <Button
                                   variant={user.is_active ? "outline" : "default"}
                                   size="sm"
