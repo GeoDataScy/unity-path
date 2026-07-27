@@ -101,7 +101,6 @@ export function useDashboardRefundReasonDetailQuery({
       if (error) throw error;
       return data as unknown as DashboardRefundReasonDetailResult;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalMs,
   });

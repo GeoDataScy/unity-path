@@ -42,7 +42,6 @@ export function useAgentDailyMetricsQuery(enabled: boolean) {
       if (error) throw error;
       return data as AgentDailyMetrics;
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }

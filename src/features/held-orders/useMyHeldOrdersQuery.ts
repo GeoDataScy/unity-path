@@ -31,7 +31,6 @@ export function useMyHeldOrdersQuery(
       return (data as MyHeldOrder[]) ?? [];
     },
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 }
 
@@ -45,7 +44,6 @@ export function useMyHeldOrdersMetricsQuery(enabled: boolean) {
       return (data as HeldOrdersDailyMetrics) ?? { confirmed_today: 0, pending: 0, goal: 30 };
     },
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 }
 
@@ -60,7 +58,6 @@ export function useHeldOrderEventsQuery(orderId: string | null) {
       return (data as HeldOrderEvent[]) ?? [];
     },
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 }
 

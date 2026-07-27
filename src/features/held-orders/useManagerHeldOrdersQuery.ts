@@ -38,7 +38,6 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
       );
     },
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 }
 

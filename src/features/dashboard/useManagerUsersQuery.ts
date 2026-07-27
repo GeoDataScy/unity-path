@@ -38,7 +38,6 @@ export function useManagerUsersQuery(enabled: boolean = true) {
     },
     refetchInterval: 15_000,
     refetchOnWindowFocus: false,
-    staleTime: 0,
   });
 }
 

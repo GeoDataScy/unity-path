@@ -49,7 +49,6 @@ export function useDashboardServicesQuery({ enabled, from, to, agentId }: Params
       if (error) throw error;
       return (data ?? []) as DashboardServiceRow[];
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

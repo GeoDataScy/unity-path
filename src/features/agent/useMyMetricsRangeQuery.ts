@@ -49,7 +49,6 @@ export function useMyMetricsRangeQuery(params: { enabled: boolean; from: string;
       if (error) throw error;
       return data as AgentMetricsRange;
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }

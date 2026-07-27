@@ -86,7 +86,6 @@ export function useDashboardRefundAuditQuery({
       if (error) throw error;
       return data as DashboardRefundAuditResult;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalMs,
   });
