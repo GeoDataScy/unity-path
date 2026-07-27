@@ -37,6 +37,5 @@ export function useTakeoverNotificationsQuery(enabled: boolean) {
     // Mesma cadência do sino dos agentes: 30s + no foco, sem Realtime.
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
   });
 }

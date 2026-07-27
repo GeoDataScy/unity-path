@@ -30,6 +30,5 @@ export function useTransferNotificationsQuery(enabled: boolean) {
     // without paying for Supabase Realtime in v1.
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
-    staleTime: 0,
   });
 }

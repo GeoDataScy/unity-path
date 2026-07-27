@@ -31,7 +31,6 @@ export function useOpenTicketsByAgentQuery(agentId: string | null, enabled: bool
       if (error) throw error;
       return (data as unknown as OpenTicketRow[]) ?? [];
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

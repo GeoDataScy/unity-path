@@ -76,7 +76,6 @@ export function useDashboardRefundMetricsQuery({
       if (error) throw error;
       return data as DashboardRefundMetrics;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalMs,
   });

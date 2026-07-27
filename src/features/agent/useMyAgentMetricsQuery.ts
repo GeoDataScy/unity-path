@@ -62,7 +62,6 @@ export function useMyAgentMetricsQuery(params: { enabled: boolean; from: string;
       if (error) throw error;
       return data as AgentMyMetrics;
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }

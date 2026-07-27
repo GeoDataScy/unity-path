@@ -29,7 +29,27 @@ const Transferencias = lazy(() => import("./pages/agent/Transferencias"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+// Defaults explícitos: sem eles o TanStack Query usa `staleTime: 0` +
+// `refetchOnWindowFocus: true`, ou seja, TODA volta de foco na janela refazia
+// TODAS as queries montadas. Medido em produção (156 dias): agent_daily_metrics
+// com 272.590 chamadas (13 h de CPU) e my_refunds_with_refunded_value com
+// 161.772 (17,7 h) — a maior parte era refetch por foco, não navegação.
+//
+// 30 s de staleTime não atrasa nada que o agente faça: toda mutação invalida a
+// query correspondente explicitamente, e invalidação força refetch imediato
+// independente do staleTime. O polling real (sino de notificações, dashboards do
+// gestor) usa `refetchInterval`, que também é independente do staleTime.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+  },
+});
 
 const RouteFallback = () => (
   <div className="flex min-h-screen items-center justify-center">

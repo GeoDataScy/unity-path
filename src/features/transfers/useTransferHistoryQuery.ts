@@ -29,7 +29,6 @@ export function useTransferHistoryQuery(enabled: boolean) {
       if (error) throw error;
       return (data ?? []) as TransferHistoryItem[];
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }

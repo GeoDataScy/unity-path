@@ -44,7 +44,6 @@
        if (error) throw error;
        return data as DashboardMetrics;
      },
-     staleTime: 0,
      refetchOnWindowFocus: false,
    });
  }

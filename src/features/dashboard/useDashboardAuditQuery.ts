@@ -56,7 +56,6 @@ export function useDashboardAuditQuery({ enabled, from, to, agentId, page, pageS
       if (error) throw error;
       return data as DashboardAuditResult;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

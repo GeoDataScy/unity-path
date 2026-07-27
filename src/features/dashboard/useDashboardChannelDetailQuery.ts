@@ -33,7 +33,6 @@ export function useDashboardChannelDetailQuery({ enabled, from, to }: Params) {
       if (error) throw error;
       return data as DashboardChannelDetail;
     },
-    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 }

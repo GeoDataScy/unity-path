@@ -37,7 +37,6 @@ export function useMyProductMixQuery(params: { enabled: boolean; from: string; t
       if (error) throw error;
       return (data ?? []) as ProductMixItem[];
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 }
