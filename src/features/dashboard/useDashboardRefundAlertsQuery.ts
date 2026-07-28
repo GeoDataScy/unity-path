@@ -25,9 +25,11 @@ export interface RefundAlertsData {
   by_agent: AgentOverdueGroup[];
 }
 
+export const REFUND_ALERTS_QUERY_KEY = ["dashboard", "refund-alerts"] as const;
+
 export function useDashboardRefundAlertsQuery() {
   return useQuery({
-    queryKey: ["dashboard", "refund-alerts"],
+    queryKey: REFUND_ALERTS_QUERY_KEY,
     queryFn: async (): Promise<RefundAlertsData> => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return { total_overdue: 0, agents_affected: 0, by_agent: [] };

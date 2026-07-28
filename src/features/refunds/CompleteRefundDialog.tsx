@@ -83,15 +83,41 @@ const completeSchema = z.object({
 
 export type CompleteRefundValues = z.infer<typeof completeSchema>;
 
+/** Campos que o dialog realmente lê — permite reuso na aba Alertas do manager,
+ *  cujo payload de reembolso em atraso é menor que RefundItem. */
+export type CompletableRefund = Pick<
+  RefundItem,
+  | "customer_email"
+  | "order_id"
+  | "completion_date"
+  | "reason"
+  | "refund_type"
+  | "refund_value"
+  | "items_returned"
+>;
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  refund: RefundItem;
+  refund: CompletableRefund;
   onSubmit: (values: CompleteRefundValues) => Promise<void>;
   submitting?: boolean;
+  title?: string;
+  description?: string;
+  /** Nome do agente dono do reembolso — exibido quando quem conclui não é o dono. */
+  ownerName?: string;
 };
 
-export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, submitting }: Props) {
+export function CompleteRefundDialog({
+  open,
+  onOpenChange,
+  refund,
+  onSubmit,
+  submitting,
+  title = "Concluir reembolso",
+  description = "Defina a data de conclusão e ajuste o tipo final do reembolso.",
+  ownerName,
+}: Props) {
   const defaultValues = useMemo<CompleteRefundValues>(
     () => ({
       completion_date: refund.completion_date ?? "",
@@ -122,13 +148,14 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onSubmit, sub
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Concluir reembolso</DialogTitle>
-          <DialogDescription>Defina a data de conclusão e ajuste o tipo final do reembolso.</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="rounded-md border p-3 text-sm">
           <p className="font-medium">Resumo</p>
           <p className="text-muted-foreground">{refund.customer_email} • Pedido {refund.order_id}</p>
+          {ownerName && <p className="text-muted-foreground">Agente: {ownerName}</p>}
         </div>
 
         <form onSubmit={handleSubmit} className="grid gap-4">

@@ -1028,6 +1028,17 @@ export type Database = {
         Args: { p_agent_id: string; p_order_ids: string[] }
         Returns: number
       }
+      manager_complete_refund: {
+        Args: {
+          p_completion_date: string
+          p_items_returned?: boolean
+          p_reason: string
+          p_refund_id: string
+          p_refund_type: string
+          p_refund_value: number
+        }
+        Returns: Json
+      }
       manager_correct_service_date: {
         Args: { p_new_date: string; p_reason: string; p_service_id: string }
         Returns: Json
@@ -1082,6 +1093,7 @@ export type Database = {
         }[]
       }
       me_status: { Args: never; Returns: Json }
+      my_follow_ups: { Args: never; Returns: Json }
       my_held_orders: { Args: { p_status?: string }; Returns: Json }
       my_held_orders_daily_metrics: { Args: never; Returns: Json }
       my_recent_services: {

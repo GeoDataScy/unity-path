@@ -11,6 +11,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import type { AgentOverdueGroup, OverdueRefund } from "@/features/dashboard/useDashboardRefundAlertsQuery";
+import { useManagerCompleteRefundMutation } from "@/features/dashboard/useManagerCompleteRefundMutation";
+import { CompleteRefundDialog } from "@/features/refunds/CompleteRefundDialog";
+import type { CompleteRefundValues } from "@/features/refunds/CompleteRefundDialog";
+import { SameDayRepeatsSection } from "@/components/dashboard/SameDayRepeatsSection";
+import { useToast } from "@/hooks/use-toast";
+import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
+
+/** Reembolso selecionado para baixa, junto do agente dono (usado na auditoria). */
+type PendingWriteOff = {
+  refund: OverdueRefund;
+  agentId: string;
+  agentName: string;
+};
 
 function DelayBadge({ days }: { days: number }) {
   if (days >= 4) {
@@ -30,7 +43,15 @@ function DelayBadge({ days }: { days: number }) {
   );
 }
 
-function AgentCard({ group }: { group: AgentOverdueGroup }) {
+function AgentCard({
+  group,
+  onWriteOff,
+  writingOffId,
+}: {
+  group: AgentOverdueGroup;
+  onWriteOff: (selection: PendingWriteOff) => void;
+  writingOffId: string | null;
+}) {
   const severity =
     group.overdue_count >= 5
       ? "border-destructive/60"
@@ -60,6 +81,7 @@ function AgentCard({ group }: { group: AgentOverdueGroup }) {
                 <TableHead>Canal</TableHead>
                 <TableHead>Solicitado em</TableHead>
                 <TableHead>Atraso</TableHead>
+                <TableHead className="text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,6 +119,25 @@ function AgentCard({ group }: { group: AgentOverdueGroup }) {
                   <TableCell>
                     <DelayBadge days={r.days_overdue} />
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      disabled={writingOffId === r.id}
+                      onClick={() =>
+                        onWriteOff({
+                          refund: r,
+                          agentId: group.agent_id,
+                          agentName: group.agent_name,
+                        })
+                      }
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {writingOffId === r.id ? "Dando baixa..." : "Dar baixa"}
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -111,6 +152,10 @@ export default function DashboardAlertas() {
   const alertsQuery = useDashboardRefundAlertsQuery();
   const data = alertsQuery.data;
   const isLoading = alertsQuery.isLoading;
+
+  const { toast } = useToast();
+  const completeRefund = useManagerCompleteRefundMutation();
+  const [writeOff, setWriteOff] = useState<PendingWriteOff | null>(null);
 
   const [search, setSearch] = useState("");
   const [selectedAgent, setSelectedAgent] = useState("all");
@@ -136,6 +181,26 @@ export default function DashboardAlertas() {
   function clearFilters() {
     setSearch("");
     setSelectedAgent("all");
+  }
+
+  async function handleWriteOffSubmit(values: CompleteRefundValues) {
+    if (!writeOff) return;
+    const { refund, agentId, agentName } = writeOff;
+
+    try {
+      await completeRefund.mutateAsync({ refundId: refund.id, agentId, values });
+      toast({
+        title: "Baixa registrada",
+        description: `Reembolso de ${refund.customer_email} (${agentName}) concluído.`,
+      });
+      setWriteOff(null);
+    } catch (error: unknown) {
+      console.error("[manager-complete-refund] failed:", error);
+      const message =
+        error instanceof Error ? error.message : "Não foi possível dar baixa no reembolso.";
+      toast({ title: "Erro ao dar baixa", description: message, variant: "destructive" });
+      throw error;
+    }
   }
 
   return (
@@ -282,7 +347,12 @@ export default function DashboardAlertas() {
           </Card>
         ) : (
           filteredAgents.map((group) => (
-            <AgentCard key={group.agent_id} group={group} />
+            <AgentCard
+              key={group.agent_id}
+              group={group}
+              onWriteOff={setWriteOff}
+              writingOffId={completeRefund.isPending ? writeOff?.refund.id ?? null : null}
+            />
           ))
         )}
       </section>
@@ -291,6 +361,29 @@ export default function DashboardAlertas() {
         <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
           {(alertsQuery.error as Error).message || "Erro ao carregar alertas."}
         </p>
+      )}
+
+      {writeOff && (
+        <CompleteRefundDialog
+          open
+          title="Dar baixa no reembolso"
+          description="Conclui o reembolso em nome do agente. A baixa fica registrada com o seu usuário."
+          ownerName={writeOff.agentName}
+          refund={{
+            customer_email: writeOff.refund.customer_email,
+            order_id: writeOff.refund.order_id,
+            completion_date: format(new Date(), "yyyy-MM-dd"),
+            reason: null,
+            refund_type: null,
+            refund_value: null,
+            items_returned: false,
+          }}
+          submitting={completeRefund.isPending}
+          onOpenChange={(open) => {
+            if (!open && !completeRefund.isPending) setWriteOff(null);
+          }}
+          onSubmit={handleWriteOffSubmit}
+        />
       )}
     </div>
   );
