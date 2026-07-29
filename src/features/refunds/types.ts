@@ -91,4 +91,5 @@ export const REFUND_PRODUCTS = [
   "Glyco Barrier",
   "Gluco Mild",
   "Horsefil",
+  "Honeyfil",
 ] as const;
