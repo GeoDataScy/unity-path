@@ -1,6 +1,16 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Clock, MapPin, MessageSquare, Package, PackageSearch } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Flag,
+  MapPin,
+  MessageSquare,
+  Package,
+  PackageSearch,
+  RotateCcw,
+} from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { Badge } from "@/components/ui/badge";
@@ -8,12 +18,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMyHeldOrdersMetricsQuery, useMyHeldOrdersQuery } from "@/features/held-orders/useMyHeldOrdersQuery";
 import { HeldOrderTrackingDialog } from "@/features/held-orders/HeldOrderTrackingDialog";
 import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
+import { parseAddress, parseItems, parseReasons, totalUnits } from "@/features/held-orders/format";
 import {
   HELD_ORDER_AGENT_STATUS_LABEL,
+  HELD_ORDER_PENDING_TAG_LABEL,
+  HELD_ORDER_PENDING_TAGS,
   type HeldOrderAgentStatus,
+  type HeldOrderPendingTag,
   type MyHeldOrder,
 } from "@/features/held-orders/types";
 
@@ -24,20 +45,15 @@ const STATUS_BADGE: Record<HeldOrderAgentStatus, "new" | "in-progress" | "done">
 };
 
 type StatusFilter = "all" | HeldOrderAgentStatus;
+/** "any" = qualquer pendência; "none" = sem pendência. */
+type PendingFilter = "all" | "any" | "none" | HeldOrderPendingTag;
 
-const FILTERS: { value: StatusFilter; label: string }[] = [
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "novo", label: "Novo" },
   { value: "em_andamento", label: "Em Andamento" },
   { value: "concluido", label: "Concluído" },
 ];
-
-function fullAddress(o: MyHeldOrder): string {
-  return [o.street1, o.street2, o.street3, o.city, o.state, o.postal_code, o.country]
-    .map((p) => (p ?? "").trim())
-    .filter(Boolean)
-    .join(", ");
-}
 
 export default function PedidosEspera() {
   const { userId } = useOutletContext<AgentOutletContext>();
@@ -45,7 +61,9 @@ export default function PedidosEspera() {
   const ordersQuery = useMyHeldOrdersQuery(Boolean(userId), "all");
   const metricsQuery = useMyHeldOrdersMetricsQuery(Boolean(userId));
 
-  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [reasonFilter, setReasonFilter] = useState<string>("all");
+  const [pendingFilter, setPendingFilter] = useState<PendingFilter>("all");
   const [selected, setSelected] = useState<MyHeldOrder | null>(null);
 
   const orders = ordersQuery.data ?? [];
@@ -54,10 +72,69 @@ export default function PedidosEspera() {
   const confirmedToday = metrics?.confirmed_today ?? 0;
   const remaining = Math.max(0, goal - confirmedToday);
 
-  const filtered = useMemo(
-    () => (filter === "all" ? orders : orders.filter((o) => o.agent_status === filter)),
-    [orders, filter],
+  // Cada pedido já parseado uma vez — a lista é reusada por card e por filtro.
+  const parsed = useMemo(
+    () =>
+      orders.map((o) => ({
+        order: o,
+        reasons: parseReasons(o.reason),
+        address: parseAddress(o),
+        items: parseItems(o.items),
+      })),
+    [orders],
   );
+
+  /** Motivos existentes nos pedidos do agente, com contagem — alimenta o filtro. */
+  const reasonOptions = useMemo(() => {
+    const counts = new Map<string, { label: string; count: number }>();
+    for (const p of parsed) {
+      for (const r of p.reasons) {
+        const entry = counts.get(r.key);
+        if (entry) entry.count += 1;
+        else counts.set(r.key, { label: r.label, count: 1 });
+      }
+    }
+    return [...counts.entries()]
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "pt-BR"));
+  }, [parsed]);
+
+  const pendingCounts = useMemo(() => {
+    const counts = new Map<PendingFilter, number>();
+    let withTag = 0;
+    for (const p of parsed) {
+      const tag = p.order.pending_tag;
+      if (tag) {
+        withTag += 1;
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    counts.set("any", withTag);
+    counts.set("none", parsed.length - withTag);
+    return counts;
+  }, [parsed]);
+
+  const filtered = useMemo(
+    () =>
+      parsed.filter((p) => {
+        if (statusFilter !== "all" && p.order.agent_status !== statusFilter) return false;
+        if (reasonFilter !== "all" && !p.reasons.some((r) => r.key === reasonFilter)) return false;
+        if (pendingFilter === "any" && !p.order.pending_tag) return false;
+        if (pendingFilter === "none" && p.order.pending_tag) return false;
+        if (
+          pendingFilter !== "all" &&
+          pendingFilter !== "any" &&
+          pendingFilter !== "none" &&
+          p.order.pending_tag !== pendingFilter
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [parsed, statusFilter, reasonFilter, pendingFilter],
+  );
+
+  const hasExtraFilters = reasonFilter !== "all" || pendingFilter !== "all";
 
   const progress = useMemo(() => {
     if (goal <= 0) return 0;
@@ -78,8 +155,9 @@ export default function PedidosEspera() {
           <PackageSearch className="h-7 w-7 text-primary" /> Pedidos em Espera
         </h1>
         <p className="text-sm text-muted-foreground">
-          Gerencie cada pedido retido atribuído a você. Clique em um pedido para mudar o status e
-          registrar o que foi feito. Concluir um pedido conta para a sua meta diária.
+          Gerencie cada pedido retido atribuído a você. Clique em um pedido para mudar o status,
+          marcar uma pendência e registrar o que foi feito. Concluir um pedido conta para a sua
+          meta diária.
         </p>
       </header>
 
@@ -150,17 +228,26 @@ export default function PedidosEspera() {
 
       {/* Lista de pedidos */}
       <Card>
-        <CardHeader className="gap-3">
-          <CardTitle>Pedidos atribuídos a você</CardTitle>
+        <CardHeader className="gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>Pedidos atribuídos a você</CardTitle>
+            <p className="text-sm tabular-nums text-muted-foreground">
+              {filtered.length === orders.length
+                ? `${orders.length} pedido(s)`
+                : `${filtered.length} de ${orders.length} pedido(s)`}
+            </p>
+          </div>
+
           <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => {
-              const count = f.value === "all" ? orders.length : orders.filter((o) => o.agent_status === f.value).length;
+            {STATUS_FILTERS.map((f) => {
+              const count =
+                f.value === "all" ? orders.length : orders.filter((o) => o.agent_status === f.value).length;
               return (
                 <Button
                   key={f.value}
                   size="sm"
-                  variant={filter === f.value ? "default" : "outline"}
-                  onClick={() => setFilter(f.value)}
+                  variant={statusFilter === f.value ? "default" : "outline"}
+                  onClick={() => setStatusFilter(f.value)}
                 >
                   {f.label}
                   <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
@@ -168,13 +255,63 @@ export default function PedidosEspera() {
               );
             })}
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={reasonFilter} onValueChange={setReasonFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-[280px]">
+                <SelectValue placeholder="Motivo do On Hold" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os motivos</SelectItem>
+                {reasonOptions.map((r) => (
+                  <SelectItem key={r.key} value={r.key}>
+                    {r.label} ({r.count})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={pendingFilter} onValueChange={(v) => setPendingFilter(v as PendingFilter)}>
+              <SelectTrigger className="h-9 w-full sm:w-[280px]">
+                <SelectValue placeholder="Pendência" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as pendências</SelectItem>
+                <SelectItem value="any">
+                  Com pendência ({pendingCounts.get("any") ?? 0})
+                </SelectItem>
+                <SelectItem value="none">
+                  Sem pendência ({pendingCounts.get("none") ?? 0})
+                </SelectItem>
+                {HELD_ORDER_PENDING_TAGS.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {HELD_ORDER_PENDING_TAG_LABEL[tag]} ({pendingCounts.get(tag) ?? 0})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasExtraFilters && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setReasonFilter("all");
+                  setPendingFilter("all");
+                }}
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
+              </Button>
+            )}
+          </div>
         </CardHeader>
+
         <CardContent>
           {ordersQuery.isLoading ? (
             <div className="space-y-3">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
             </div>
           ) : ordersQuery.isError ? (
             <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
@@ -188,54 +325,112 @@ export default function PedidosEspera() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filtered.map((o) => (
+              {filtered.map(({ order: o, reasons, address, items }) => (
                 <button
                   key={o.id}
                   type="button"
                   onClick={() => setSelected(o)}
-                  className="flex w-full flex-col gap-3 rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/40 sm:flex-row sm:items-start sm:justify-between"
+                  className="w-full rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/40"
                 >
-                  <div className="min-w-0 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-medium">
+                  {/* Linha 1 — o que identifica o pedido, em destaque */}
+                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <span className="font-mono text-xl font-bold leading-none tracking-tight">
                         {o.order_number ?? "Sem número"}
                       </span>
                       <Badge variant="secondary">
                         {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
                       </Badge>
                       {o.rma && <span className="text-xs text-muted-foreground">RMA: {o.rma}</span>}
-                      {o.reason && (
-                        <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
-                          {o.reason}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {o.pending_tag && (
+                        <Badge variant="destructive" className="gap-1">
+                          <Flag className="h-3 w-3" />
+                          {HELD_ORDER_PENDING_TAG_LABEL[o.pending_tag]}
                         </Badge>
                       )}
+                      <Badge variant={STATUS_BADGE[o.agent_status]}>
+                        {HELD_ORDER_AGENT_STATUS_LABEL[o.agent_status]}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Linha 2 — motivos do On Hold + idade */}
+                  {(reasons.length > 0 || o.age) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {reasons.map((r) => (
+                        <Badge
+                          key={r.key}
+                          variant="outline"
+                          className="border-amber-500/40 font-medium text-amber-600 dark:text-amber-400"
+                        >
+                          {r.label}
+                        </Badge>
+                      ))}
                       {o.age && (
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" /> {o.age}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm">
+                  )}
+
+                  {/* Linha 3 — produto e endereço lado a lado, cada um em seu bloco */}
+                  {(items.length > 0 || address.oneLine) && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {items.length > 0 && (
+                        <section className="rounded-md border bg-muted/30 p-2.5">
+                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Package className="h-3.5 w-3.5" />
+                            Produtos
+                            <span className="font-normal normal-case tracking-normal">
+                              ({items.length} item(ns) · {totalUnits(items)} un.)
+                            </span>
+                          </p>
+                          <ul className="space-y-1">
+                            {items.map((item, idx) => (
+                              <li key={`${item.sku}-${idx}`} className="flex items-baseline gap-2 text-sm">
+                                <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-semibold tabular-nums text-primary">
+                                  {item.qty}×
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="font-medium">{item.product}</span>
+                                  <span className="ml-1.5 font-mono text-[11px] text-muted-foreground">
+                                    {item.sku}
+                                  </span>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {address.oneLine && (
+                        <section className="rounded-md border bg-muted/30 p-2.5">
+                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5" /> Endereço
+                          </p>
+                          <address className="space-y-0.5 text-sm not-italic">
+                            {address.street.map((line, idx) => (
+                              <div key={idx}>{line}</div>
+                            ))}
+                            {address.locality && <div>{address.locality}</div>}
+                            {address.country && (
+                              <div className="font-medium text-muted-foreground">{address.country}</div>
+                            )}
+                          </address>
+                        </section>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Linha 4 — cliente (contexto, não é o dado principal) */}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm">
+                    <span className="min-w-0">
                       <span className="font-medium">{o.customer_name ?? "—"}</span>
                       {o.email && <span className="text-muted-foreground"> · {o.email}</span>}
-                    </div>
-                    {fullAddress(o) && (
-                      <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                        <span>{fullAddress(o)}</span>
-                      </div>
-                    )}
-                    {o.items && (
-                      <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                        <Package className="mt-0.5 h-3 w-3 shrink-0" />
-                        <span>{o.items}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end">
-                    <Badge variant={STATUS_BADGE[o.agent_status]}>
-                      {HELD_ORDER_AGENT_STATUS_LABEL[o.agent_status]}
-                    </Badge>
+                    </span>
                     {o.event_count > 0 && (
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <MessageSquare className="h-3 w-3" />
