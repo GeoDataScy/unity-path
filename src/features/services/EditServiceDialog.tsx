@@ -92,6 +92,7 @@ const PRODUCTS = [
   "Glyco Barrier",
   "Gluco Mild",
   "Horsefil",
+  "Honeyfil",
 ] as const;
 
 const PLATFORMS = [
