@@ -13,11 +13,42 @@ export const HELD_ORDER_AGENT_STATUS_LABEL: Record<HeldOrderAgentStatus, string>
   concluido: "Concluído",
 };
 
+/**
+ * Tag de pendência: por que o pedido ainda não foi concluído. Opcional (null =
+ * sem pendência) e sempre limpa ao concluir. Serve para o agente não esquecer
+ * casos que dependem de terceiros.
+ */
+export type HeldOrderPendingTag =
+  | "pedido_nao_encontrado"
+  | "aguardando_cliente"
+  | "aguardando_transportadora"
+  | "outra";
+
+export const HELD_ORDER_PENDING_TAG_LABEL: Record<HeldOrderPendingTag, string> = {
+  pedido_nao_encontrado: "Pedido não encontrado",
+  aguardando_cliente: "Aguardando cliente",
+  aguardando_transportadora: "Aguardando transportadora",
+  outra: "Outra pendência",
+};
+
+/** Texto de apoio exibido na seleção da tag, para o agente escolher certo. */
+export const HELD_ORDER_PENDING_TAG_HINT: Record<HeldOrderPendingTag, string> = {
+  pedido_nao_encontrado: "Não localizei o pedido do cliente",
+  aguardando_cliente: "Cliente ainda não respondeu à confirmação de endereço",
+  aguardando_transportadora: "Aguardando retorno da transportadora",
+  outra: "Outra pendência operacional (detalhe na observação)",
+};
+
+export const HELD_ORDER_PENDING_TAGS = Object.keys(
+  HELD_ORDER_PENDING_TAG_LABEL,
+) as HeldOrderPendingTag[];
+
 /** Uma entrada do histórico (timeline) de um pedido. */
 export type HeldOrderEvent = {
   id: string;
   status: HeldOrderAgentStatus;
   note: string;
+  pending_tag: HeldOrderPendingTag | null;
   recorded_at: string;
   user_name: string | null;
 };
@@ -48,6 +79,7 @@ export type MyHeldOrder = {
   comments: string | null;
   status: HeldOrderStatus;
   agent_status: HeldOrderAgentStatus;
+  pending_tag: HeldOrderPendingTag | null;
   confirmed_at: string | null;
   event_count: number;
 };

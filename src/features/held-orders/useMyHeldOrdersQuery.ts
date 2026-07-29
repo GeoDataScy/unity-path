@@ -5,6 +5,7 @@ import type {
   HeldOrderAgentStatus,
   HeldOrderEvent,
   HeldOrdersDailyMetrics,
+  HeldOrderPendingTag,
   MyHeldOrder,
 } from "./types";
 
@@ -69,11 +70,14 @@ export function useSetHeldOrderStatusMutation() {
       orderId: string;
       status: HeldOrderAgentStatus;
       note: string;
+      /** null = sem pendência. O valor enviado sempre sobrescreve a tag atual. */
+      pendingTag: HeldOrderPendingTag | null;
     }) => {
       const { error } = await rpc("set_held_order_status", {
         p_order_id: params.orderId,
         p_status: params.status,
         p_note: params.note,
+        p_pending_tag: params.pendingTag,
       });
       if (error) throw error;
     },
