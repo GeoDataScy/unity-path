@@ -93,6 +93,7 @@ const PRODUCTS = [
   "Gluco Mild",
   "Horsefil",
   "Honeyfil",
+  "Clear Gaze",
 ] as const;
 
 const PLATFORMS = [
