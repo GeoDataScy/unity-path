@@ -19,11 +19,13 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderIds: string[];
+  /** Quantos CLIENTES distintos há na seleção — é essa a unidade do rateio. */
+  clientCount?: number;
   agents: ManagerUser[];
   onAssigned?: () => void;
 };
 
-export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, onAssigned }: Props) {
+export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, clientCount, agents, onAssigned }: Props) {
   const { toast } = useToast();
   const distributeMutation = useDistributeHeldOrdersMutation();
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
@@ -37,11 +39,15 @@ export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, o
   const selectedAgentIds = useMemo(() => Array.from(selectedAgents), [selectedAgents]);
   const nAgents = selectedAgentIds.length;
 
-  // Pré-visualização do round-robin: como os pedidos serão divididos.
+  // O rateio é por cliente (todos os pedidos de um cliente vão para o mesmo agente),
+  // então a prévia divide clientes, não linhas.
+  const units = clientCount ?? orderIds.length;
+
+  // Pré-visualização do round-robin: como os clientes serão divididos.
   const perAgent = useMemo(() => {
     if (nAgents === 0) return { base: 0, extra: 0 };
-    return { base: Math.floor(orderIds.length / nAgents), extra: orderIds.length % nAgents };
-  }, [orderIds.length, nAgents]);
+    return { base: Math.floor(units / nAgents), extra: units % nAgents };
+  }, [units, nAgents]);
 
   const toggleAgent = (id: string) => {
     setSelectedAgents((prev) => {
@@ -64,11 +70,22 @@ export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, o
       const breakdown = result.by_agent
         .map((a) => `${a.full_name ?? "Sem nome"}: ${a.count}`)
         .join(" · ");
+      // O que aconteceu além do round-robin, para a gestora não estranhar as contas.
+      const notes: string[] = [];
+      if (result.kept_with_owner) {
+        notes.push(`${result.kept_with_owner} ficou(aram) com o agente que já atendia o cliente`);
+      }
+      if (result.pulled_siblings) {
+        notes.push(`${result.pulled_siblings} pedido(s) do mesmo cliente foi(ram) junto`);
+      }
       toast({
         title: "Pedidos distribuídos",
-        description: breakdown
-          ? `${result.moved} pedido(s) — ${breakdown}`
-          : `${result.moved} pedido(s) distribuído(s).`,
+        description: [
+          breakdown ? `${result.moved} pedido(s) — ${breakdown}` : `${result.moved} pedido(s) distribuído(s).`,
+          notes.join(". "),
+        ]
+          .filter(Boolean)
+          .join(". "),
       });
       reset();
       onAssigned?.();
@@ -96,9 +113,16 @@ export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, o
             <Send className="h-5 w-5 text-primary" /> Distribuir pedidos
           </DialogTitle>
           <DialogDescription>
-            Atribuir <span className="font-medium text-foreground">{orderIds.length}</span> pedido(s) em espera. Marque
-            um ou mais agentes — os pedidos são divididos automaticamente entre eles (round-robin). Apenas pedidos não
-            concluídos são movidos.
+            Atribuir <span className="font-medium text-foreground">{orderIds.length}</span> pedido(s) em espera
+            {clientCount !== undefined && clientCount !== orderIds.length ? (
+              <>
+                {" "}
+                de <span className="font-medium text-foreground">{clientCount}</span> cliente(s)
+              </>
+            ) : null}
+            . Marque um ou mais agentes — a divisão é <strong>por cliente</strong>: todos os pedidos em aberto de um
+            mesmo cliente ficam com o mesmo agente, e cliente que já está sendo atendido continua com o agente dele.
+            Apenas pedidos não concluídos são movidos.
           </DialogDescription>
         </DialogHeader>
 
@@ -127,10 +151,10 @@ export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, o
               {perAgent.extra > 0 ? (
                 <>
                   {" "}
-                  pedido(s) cada ({perAgent.extra} recebe(m) +1)
+                  cliente(s) cada ({perAgent.extra} recebe(m) +1)
                 </>
               ) : (
-                <> pedido(s) cada</>
+                <> cliente(s) cada</>
               )}
             </span>
           </div>

@@ -104,6 +104,10 @@ export type ManagerHeldOrder = MyHeldOrder & {
 export type DistributeHeldOrdersResult = {
   moved: number;
   by_agent: { agent_id: string; full_name: string | null; count: number }[];
+  /** Pedidos que foram para o agente que já atendia aquele cliente, em vez do round-robin. */
+  kept_with_owner: number;
+  /** Pedidos fora da seleção movidos para manter o cliente com um único agente. */
+  pulled_siblings: number;
 };
 
 export type HeldOrderAgentSummary = {

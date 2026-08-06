@@ -140,6 +140,19 @@ export function HeldOrdersManagerTab() {
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
+  // A distribuição agrupa por CLIENTE (mesma regra do banco: e-mail; sem e-mail, o
+  // nome; sem nome, a própria linha), então a prévia do rateio conta clientes.
+  const selectedClientCount = useMemo(() => {
+    const keys = new Set<string>();
+    for (const o of allRows) {
+      if (!selected.has(o.id)) continue;
+      const email = o.email?.trim().toLowerCase();
+      const name = o.customer_name?.trim().toLowerCase();
+      keys.add(email || (name ? `nome:${name}` : `linha:${o.id}`));
+    }
+    return keys.size;
+  }, [allRows, selected]);
+
   return (
     <div className="space-y-6">
       {/* Resumo */}
@@ -400,6 +413,7 @@ export function HeldOrdersManagerTab() {
         open={assignOpen}
         onOpenChange={setAssignOpen}
         orderIds={selectedIds}
+        clientCount={selectedClientCount}
         agents={usersQuery.data ?? []}
         onAssigned={() => setSelected(new Set())}
       />
