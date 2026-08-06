@@ -14,6 +14,10 @@ export type RefundItem = {
   refunded_value?: number | null; // calculado no backend (numeric)
   product: string | null;
   channel: string | null;
+  /** Atendimento que originou o reembolso; null = cadastrado direto nesta aba. */
+  service_id?: string | null;
+  /** Quando o agente assumiu. Vindo do atendimento e ainda null = linha apagada. */
+  picked_up_at?: string | null;
 };
 
 export const SALES_PLATFORMS = ["Nenhum", "Cartpanda", "CartCandy", "Buygoods", "ClickBank", "Digistore24", "SalesBound", "LogiCall"] as const;

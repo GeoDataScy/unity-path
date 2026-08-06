@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import type { ServiceItem } from "@/features/services/useMyServicesQuery";
 import { CONTACT_REASONS, type ContactReasonCode } from "@/features/services/contact-reasons";
 
@@ -113,7 +114,7 @@ type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; product: string; platform: string; channel: string; contact_reason: string | null }) => Promise<void>;
+  onSave: (next: { client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; order_id: string | null }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
@@ -125,10 +126,38 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const [contactReason, setContactReason] = useState<ContactReasonCode | "">(
     (service.contact_reason as ContactReasonCode | null) ?? "",
   );
+  const [orderId, setOrderId] = useState("");
+
+  const isRefund = contactReason === "reembolso";
+
+  // order_id não vem na listagem (my_recent_services), então é buscado ao abrir —
+  // sem isso, salvar apagaria o número do pedido já gravado.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("services")
+        .select("order_id")
+        .eq("id", service.id)
+        .maybeSingle();
+      if (error) {
+        console.error("[edit-service] fetch order_id failed:", error);
+        return;
+      }
+      // types.ts é gerado e ainda não conhece services.order_id.
+      const row = data as unknown as { order_id: string | null } | null;
+      if (!cancelled) setOrderId(row?.order_id ?? "");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, service.id]);
 
   const canSave = useMemo(() => {
-    return Boolean(clientEmail) && Boolean(product) && Boolean(platform) && !saving;
-  }, [clientEmail, product, platform, saving]);
+    const orderOk = !isRefund || orderId.trim().length > 0;
+    return Boolean(clientEmail) && Boolean(product) && Boolean(platform) && orderOk && !saving;
+  }, [clientEmail, product, platform, isRefund, orderId, saving]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -139,6 +168,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
         platform,
         channel,
         contact_reason: contactReason || null,
+        order_id: orderId.trim() || null,
       });
       onOpenChange(false);
     } finally {
@@ -235,6 +265,21 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
               </SelectContent>
             </Select>
           </div>
+
+          {isRefund && (
+            <div className="grid gap-2">
+              <Label htmlFor="edit-order-id">Número do pedido</Label>
+              <Input
+                id="edit-order-id"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+                placeholder="Ex: 12345"
+              />
+              <p className="text-xs text-muted-foreground">
+                Usado no registro da aba Reembolsos, que é criado e mantido em dia a partir deste atendimento.
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

@@ -218,6 +218,9 @@ export default function Atendimentos() {
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
   const [hasTrackingCode, setHasTrackingCode] = useState(false);
   const [contactReason, setContactReason] = useState<ContactReasonCode | "">("");
+  // Número do pedido: só aparece (e só é exigido) quando o motivo é Reembolso —
+  // é o dado que faltava para o sistema abrir o reembolso sozinho.
+  const [orderId, setOrderId] = useState("");
 
   // Search & filter state. Default to "hoje" so the agent sees only today's
   // activity on opening the page — clean slate at the start of the day,
@@ -445,10 +448,13 @@ export default function Atendimentos() {
   }, [services]) as "email" | "sms";
   const dailyGoal = supportChannel === "sms" ? 150 : 100;
 
+  const isRefund = contactReason === "reembolso";
+
   const canSubmit = useMemo(() => {
     const emailOk = channel === "SMS" ? isPhoneComplete(clientEmail) : Boolean(clientEmail);
-    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && Boolean(contactReason);
-  }, [clientEmail, serviceDate, product, platform, channel, contactReason]);
+    const orderOk = !isRefund || orderId.trim().length > 0;
+    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && Boolean(contactReason) && orderOk;
+  }, [clientEmail, serviceDate, product, platform, channel, contactReason, isRefund, orderId]);
 
   const greetingName = useMemo(() => {
     const trimmed = (fullName ?? "").trim();
@@ -502,6 +508,8 @@ export default function Atendimentos() {
           channel,
           has_tracking_code: hasTrackingCode,
           contact_reason: contactReason || null,
+          // Alimenta o registro automático em Reembolsos (trigger sync_refund_from_service).
+          order_id: contactReason === "reembolso" ? orderId.trim() : null,
           // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
           status: concludeAfterCreate.current ? "concluido" : "registered",
           user_id: session.user.id,
@@ -558,6 +566,7 @@ export default function Atendimentos() {
       setChannel("Email");
       setHasTrackingCode(false);
       setContactReason("");
+      setOrderId("");
 
       // Optimistic update: prepend o ticket recém-criado em todas as variações da
       // query (chave inclui sufixo de cutoff de data). A tabela atualiza instantâneo
@@ -571,10 +580,26 @@ export default function Atendimentos() {
       await queryClient.invalidateQueries({ queryKey: ["agent", "daily-metrics"] });
       emitAgentInteraction();
 
+      // Motivo Reembolso: o banco já criou o registro na aba Reembolsos.
+      const createdRefund = result.ticket.contact_reason === "reembolso";
+      if (createdRefund) {
+        await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
+      }
+
       toast(
         shouldConclude
-          ? { title: "Atendimento concluído", description: "Ticket registrado e marcado como concluído." }
-          : { title: "Atendimento registrado", description: "Seu registro foi salvo com sucesso." },
+          ? {
+              title: "Atendimento concluído",
+              description: createdRefund
+                ? "Ticket registrado e concluído. O reembolso já está na aba Reembolsos, aguardando você assumir."
+                : "Ticket registrado e marcado como concluído.",
+            }
+          : {
+              title: "Atendimento registrado",
+              description: createdRefund
+                ? "Registro salvo. O reembolso já está na aba Reembolsos, aguardando você assumir."
+                : "Seu registro foi salvo com sucesso.",
+            },
       );
     },
     onError: (error: unknown) => {
@@ -614,7 +639,7 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; product: string; platform: string; channel: string; contact_reason: string | null }) => {
+    mutationFn: async (payload: { id: string; client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; order_id: string | null }) => {
       // service_date is frozen by a database trigger; we never send it from the
       // edit flow. Manager corrections go through manager_correct_service_date.
       const { error } = await supabase
@@ -625,6 +650,7 @@ export default function Atendimentos() {
           platform: payload.platform,
           channel: payload.channel,
           contact_reason: payload.contact_reason,
+          order_id: payload.order_id,
         })
         .eq("id", payload.id);
 
@@ -632,6 +658,8 @@ export default function Atendimentos() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["services", "me"] });
+      // A edição pode ter criado/atualizado o reembolso vinculado.
+      await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
       toast({
         title: "Atendimento atualizado",
         description: "As alterações foram salvas.",
@@ -691,6 +719,7 @@ export default function Atendimentos() {
       setChannel("Email");
       setHasTrackingCode(false);
       setContactReason("");
+      setOrderId("");
       toast({
         title: "Pedido enviado",
         description:
@@ -879,6 +908,21 @@ export default function Atendimentos() {
                 </SelectContent>
               </Select>
             </div>
+
+            {isRefund && (
+              <div className="grid gap-2">
+                <Label htmlFor="order-id">Número do pedido</Label>
+                <Input
+                  id="order-id"
+                  value={orderId}
+                  onChange={(e) => setOrderId(e.target.value)}
+                  placeholder="Ex: 12345"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Com o número do pedido, o reembolso é criado sozinho na aba Reembolsos — não precisa cadastrar de novo.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-2 lg:justify-end">
               <Button type="submit" className="flex-1 lg:flex-none" disabled={!canSubmit || createMutation.isPending}>
@@ -1273,6 +1317,7 @@ export default function Atendimentos() {
           setChannel("Email");
           setHasTrackingCode(false);
           setContactReason("");
+          setOrderId("");
         }}
       />
     </main>

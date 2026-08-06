@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { CheckCircle2, Hand, Headset, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -173,6 +173,32 @@ export default function Reembolsos() {
         description: message,
         variant: "destructive",
       });
+    },
+  });
+
+  // Reembolso criado pelo atendimento entra apagado; assumir acende a linha e
+  // registra quem pegou.
+  const pickUpMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // pick_up_refund ainda não está nos tipos gerados do Supabase (types.ts é gerado).
+      const rpc = supabase.rpc.bind(supabase) as (
+        fn: string,
+        args?: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { error } = await rpc("pick_up_refund", { p_refund_id: id });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["refunds", "me"] });
+      toast({
+        title: "Reembolso assumido",
+        description: "Agora é com você — confira os dados e conclua quando resolver.",
+      });
+    },
+    onError: (error: unknown) => {
+      console.error("[pick-up-refund] failed:", error);
+      const message = error instanceof Error ? error.message : "Não foi possível assumir o reembolso.";
+      toast({ title: "Erro ao assumir", description: message, variant: "destructive" });
     },
   });
 
@@ -362,8 +388,12 @@ export default function Reembolsos() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedOpenRefunds.map((r) => (
-                        <TableRow key={r.id}>
+                      paginatedOpenRefunds.map((r) => {
+                        // Veio do atendimento e ninguém pegou ainda: linha apagada,
+                        // sem ação de concluir — primeiro o agente assume.
+                        const waiting = Boolean(r.service_id) && !r.picked_up_at;
+                        return (
+                        <TableRow key={r.id} className={waiting ? "opacity-50 hover:opacity-100" : undefined}>
                           <TableCell>
                             {(() => {
                               const dt = parseDateForDisplay(r.request_date);
@@ -373,24 +403,46 @@ export default function Reembolsos() {
                           <TableCell className="font-medium">{r.customer_email}</TableCell>
                           <TableCell>{r.sales_platform}</TableCell>
                           <TableCell>{r.product ?? "—"}</TableCell>
-                          <TableCell>{r.order_id}</TableCell>
+                          <TableCell>{r.order_id || "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="open">Em Aberto</Badge>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge variant="open">Em Aberto</Badge>
+                              {r.service_id && (
+                                <Badge variant="outline" className="gap-1 font-normal">
+                                  <Headset className="h-3 w-3" />
+                                  Do atendimento
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              type="button"
-                              variant="default"
-                              className="transition-transform active:translate-y-px active:scale-[0.98]"
-                              onClick={() => setCompleting(r)}
-                              disabled={completeMutation.isPending}
-                            >
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Concluir Reembolso
-                            </Button>
+                            {waiting ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="transition-transform active:translate-y-px active:scale-[0.98]"
+                                onClick={() => pickUpMutation.mutate(r.id)}
+                                disabled={pickUpMutation.isPending}
+                              >
+                                <Hand className="mr-2 h-4 w-4" />
+                                Assumir
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="transition-transform active:translate-y-px active:scale-[0.98]"
+                                onClick={() => setCompleting(r)}
+                                disabled={completeMutation.isPending}
+                              >
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Concluir Reembolso
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
-                      ))
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
