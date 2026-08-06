@@ -67,10 +67,24 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
     }
     try {
       const result = await importMutation.mutateAsync(rows);
-      toast({
-        title: "Importação concluída",
-        description: `${result.inserted} pedido(s) importado(s).${result.skipped ? ` ${result.skipped} linha(s) vazia(s) ignorada(s).` : ""}`,
-      });
+      // Exemplos de Order IDs recusados, para o manager conferir na planilha.
+      const samples = result.duplicate_samples.slice(0, 3).join(", ");
+      const examples = samples ? ` (ex.: ${samples}${result.duplicates > 3 ? "…" : ""})` : "";
+
+      if (result.inserted === 0 && result.duplicates > 0) {
+        toast({
+          title: "Nenhum pedido novo",
+          description: `Os ${result.duplicates} pedido(s) do arquivo já estavam na lista${examples}.`,
+        });
+      } else {
+        const detail: string[] = [];
+        if (result.duplicates) detail.push(`${result.duplicates} já estava(m) na lista e foi(ram) ignorado(s)${examples}`);
+        if (result.empty) detail.push(`${result.empty} linha(s) vazia(s) ignorada(s)`);
+        toast({
+          title: "Importação concluída",
+          description: `${result.inserted} pedido(s) importado(s).${detail.length ? ` ${detail.join(". ")}.` : ""}`,
+        });
+      }
       reset();
       onOpenChange(false);
     } catch (e) {
@@ -97,7 +111,8 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
           </DialogTitle>
           <DialogDescription>
             Selecione um ou mais arquivos <code>On_Holds_Details</code> ou de devoluções (CSV ou Excel <code>.xlsx</code>/<code>.xls</code>).
-            Todas as linhas são importadas, repetidas ou não — apenas linhas em branco são ignoradas.
+            Pedidos cujo <strong>Order ID já está na lista</strong> não são importados de novo — cada pedido entra uma única vez.
+            Linhas em branco também são ignoradas.
           </DialogDescription>
         </DialogHeader>
 
