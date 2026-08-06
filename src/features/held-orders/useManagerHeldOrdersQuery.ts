@@ -98,7 +98,13 @@ export function useDistributeHeldOrdersMutation() {
         p_agent_ids: agentIds,
       });
       if (error) throw error;
-      return (data as DistributeHeldOrdersResult) ?? { moved: 0, by_agent: [] };
+      const raw = (data ?? {}) as Partial<DistributeHeldOrdersResult>;
+      return {
+        moved: raw.moved ?? 0,
+        by_agent: raw.by_agent ?? [],
+        kept_with_owner: raw.kept_with_owner ?? 0,
+        pulled_siblings: raw.pulled_siblings ?? 0,
+      };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });
