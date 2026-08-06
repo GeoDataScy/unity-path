@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useImportHeldOrdersMutation } from "./useManagerHeldOrdersQuery";
 import { parseHeldOrdersCsv } from "./parseHeldOrdersCsv";
-import type { HeldOrderImportRow } from "./types";
+import type { HeldOrderImportRow, ImportHeldOrdersResult } from "./types";
 
 type ParsedFile = {
   name: string;
@@ -25,6 +25,21 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
+
+/**
+ * Resumo do que entrou e do que foi ignorado. Dizer QUAIS pedidos foram ignorados
+ * é o ponto: a dedupe antiga descartava arquivo inteiro em silêncio.
+ */
+function describeImport(r: ImportHeldOrdersResult): string {
+  const parts = [`${r.inserted} pedido(s) novo(s)`];
+  if (r.duplicates > 0) parts.push(`${r.duplicates} já em aberto (repetido)`);
+  if (r.empty_rows > 0) parts.push(`${r.empty_rows} linha(s) vazia(s)`);
+
+  const sample = r.duplicate_orders ?? [];
+  const shown = sample.slice(0, 5).join(", ");
+  const more = sample.length > 5 ? "..." : "";
+  return `${parts.join(" · ")}.${shown ? ` Repetidos: ${shown}${more}` : ""}`;
+}
 
 export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
@@ -68,9 +83,12 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
     try {
       const result = await importMutation.mutateAsync(rows);
       toast({
-        title: "Importação concluída",
-        description: `${result.inserted} pedido(s) importado(s).${result.skipped ? ` ${result.skipped} linha(s) vazia(s) ignorada(s).` : ""}`,
+        title: result.inserted === 0 ? "Nada novo para importar" : "Importação concluída",
+        description: describeImport(result),
       });
+      // Se nada entrou, mantém o diálogo aberto com os arquivos selecionados para a
+      // gestora conferir o que mandou em vez de perder a seleção.
+      if (result.inserted === 0) return;
       reset();
       onOpenChange(false);
     } catch (e) {
@@ -97,7 +115,8 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
           </DialogTitle>
           <DialogDescription>
             Selecione um ou mais arquivos <code>On_Holds_Details</code> ou de devoluções (CSV ou Excel <code>.xlsx</code>/<code>.xls</code>).
-            Todas as linhas são importadas, repetidas ou não — apenas linhas em branco são ignoradas.
+            Pedido que já está em aberto não entra de novo (o relatório do dia repete os
+            retidos de ontem) — no fim é mostrado o que entrou e o que foi ignorado.
           </DialogDescription>
         </DialogHeader>
 

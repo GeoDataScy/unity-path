@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   DistributeHeldOrdersResult,
   HeldOrderImportRow,
+  ImportHeldOrdersResult,
   ManagerHeldOrdersResult,
 } from "./types";
 
@@ -34,7 +35,7 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
       });
       if (error) throw error;
       return (
-        (data as ManagerHeldOrdersResult) ?? { total: 0, rows: [], summary_by_agent: [] }
+        (data as ManagerHeldOrdersResult) ?? { total: 0, duplicates: 0, rows: [], summary_by_agent: [] }
       );
     },
     refetchOnWindowFocus: false,
@@ -44,10 +45,19 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
 export function useImportHeldOrdersMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rows: HeldOrderImportRow[]): Promise<{ inserted: number; skipped: number }> => {
+    mutationFn: async (rows: HeldOrderImportRow[]): Promise<ImportHeldOrdersResult> => {
       const { data, error } = await rpc("manager_import_held_orders", { p_rows: rows });
       if (error) throw error;
-      return (data as { inserted: number; skipped: number }) ?? { inserted: 0, skipped: 0 };
+      return (
+        (data as ImportHeldOrdersResult) ?? {
+          total: 0,
+          inserted: 0,
+          duplicates: 0,
+          empty_rows: 0,
+          duplicate_orders: [],
+          skipped: 0,
+        }
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });

@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  CopyX,
   Inbox,
   ListChecks,
   PackageSearch,
@@ -62,6 +63,7 @@ export function HeldOrdersManagerTab() {
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showDuplicates, setShowDuplicates] = useState(false);
   const [batchQty, setBatchQty] = useState<string>("10");
   const [importOpen, setImportOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -78,28 +80,35 @@ export function HeldOrdersManagerTab() {
   const allRows = useMemo(() => result?.rows ?? [], [result]);
   const summary = result?.summary_by_agent ?? [];
 
+  // Linhas repetidas do mesmo pedido (dados anteriores a 05/08/2026, já
+  // consolidados no banco): ficam fora das contagens e da tabela por padrão, mas
+  // seguem inspecionáveis — nada foi apagado.
+  const realRows = useMemo(() => allRows.filter((o) => !o.duplicate_of), [allRows]);
+  const duplicateCount = allRows.length - realRows.length;
+
   // Filtro "não atribuído" e busca textual são aplicados no cliente (o RPC já
   // filtrou status e agente específico).
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return allRows.filter((o) => {
+    return (showDuplicates ? allRows : realRows).filter((o) => {
       if (agentFilter === "unassigned" && o.assigned_to) return false;
       if (!term) return true;
       const hay = `${o.order_number ?? ""} ${o.dyna_code} ${o.email ?? ""} ${o.customer_name ?? ""}`.toLowerCase();
       return hay.includes(term);
     });
-  }, [allRows, agentFilter, search]);
+  }, [allRows, realRows, showDuplicates, agentFilter, search]);
 
   const totals = useMemo(() => {
-    const pending = allRows.filter((o) => o.status === "pending").length;
-    const confirmed = allRows.filter((o) => o.status === "confirmed").length;
-    const unassigned = allRows.filter((o) => !o.assigned_to).length;
-    return { total: allRows.length, pending, confirmed, unassigned };
-  }, [allRows]);
+    const pending = realRows.filter((o) => o.status === "pending").length;
+    const confirmed = realRows.filter((o) => o.status === "confirmed").length;
+    const unassigned = realRows.filter((o) => !o.assigned_to).length;
+    return { total: realRows.length, pending, confirmed, unassigned };
+  }, [realRows]);
 
-  // Só pedidos pendentes podem ser selecionados para distribuir.
+  // Só pedidos pendentes podem ser selecionados para distribuir — e nunca uma
+  // linha repetida (o RPC também a recusaria).
   const selectablePendingIds = useMemo(
-    () => rows.filter((o) => o.status === "pending").map((o) => o.id),
+    () => rows.filter((o) => o.status === "pending" && !o.duplicate_of).map((o) => o.id),
     [rows],
   );
   const allSelected = selectablePendingIds.length > 0 && selectablePendingIds.every((id) => selected.has(id));
@@ -238,6 +247,16 @@ export function HeldOrdersManagerTab() {
                     ))}
                 </SelectContent>
               </Select>
+              {duplicateCount > 0 && (
+                <Button
+                  variant={showDuplicates ? "secondary" : "ghost"}
+                  onClick={() => setShowDuplicates((v) => !v)}
+                  title="Linhas repetidas do mesmo pedido, consolidadas e fora da caixa do agente"
+                >
+                  <CopyX className="mr-1.5 h-4 w-4" />
+                  {showDuplicates ? "Ocultar" : "Ver"} repetidos ({duplicateCount})
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <Upload className="mr-1.5 h-4 w-4" /> Importar arquivo
               </Button>
@@ -321,9 +340,10 @@ export function HeldOrdersManagerTab() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((o: ManagerHeldOrder) => {
-                    const isPending = o.status === "pending";
+                    const isDuplicate = Boolean(o.duplicate_of);
+                    const isPending = o.status === "pending" && !isDuplicate;
                     return (
-                      <TableRow key={o.id}>
+                      <TableRow key={o.id} className={isDuplicate ? "opacity-60" : undefined}>
                         <TableCell>
                           <Checkbox
                             checked={selected.has(o.id)}
@@ -356,7 +376,15 @@ export function HeldOrdersManagerTab() {
                         <TableCell className="text-sm">
                           {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
                         </TableCell>
-                        <TableCell>{statusBadge(o)}</TableCell>
+                        <TableCell>
+                          {isDuplicate ? (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              Repetido
+                            </Badge>
+                          ) : (
+                            statusBadge(o)
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })}

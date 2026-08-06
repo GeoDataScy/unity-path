@@ -92,6 +92,12 @@ export type ManagerHeldOrder = MyHeldOrder & {
   imported_at: string | null;
   /** Quantas vezes o pedido já foi distribuído. 0 = "Novo"; N>=1 = "Pendente N". */
   assign_count: number;
+  /**
+   * Linha repetida do mesmo pedido (aponta para a linha mantida). Só existe em
+   * dados anteriores a 05/08/2026: hoje a repetição é barrada no import. Fica na
+   * listagem da gestora para auditoria, mas fora da caixa e da carga do agente.
+   */
+  duplicate_of: string | null;
 };
 
 /** Resultado da distribuição em lote (manager_distribute_held_orders). */
@@ -109,8 +115,29 @@ export type HeldOrderAgentSummary = {
 
 export type ManagerHeldOrdersResult = {
   total: number;
+  /** Quantas das linhas listadas são repetição consolidada de outro pedido. */
+  duplicates: number;
   rows: ManagerHeldOrder[];
+  /** Carga real por agente — já exclui as linhas repetidas. */
   summary_by_agent: HeldOrderAgentSummary[];
+};
+
+/**
+ * Resultado do import (manager_import_held_orders). Repetição de pedido que já
+ * está em aberto não entra, e a gestora precisa VER isso — foi o silêncio da
+ * dedupe antiga que causou o problema de 23/06/2026.
+ */
+export type ImportHeldOrdersResult = {
+  total: number;
+  inserted: number;
+  /** Linhas ignoradas por já haver aquele pedido em aberto (ou repetidas no lote). */
+  duplicates: number;
+  /** Linhas sem nenhum dado aproveitável. */
+  empty_rows: number;
+  /** Amostra (até 20) dos números de pedido ignorados. */
+  duplicate_orders: string[];
+  /** duplicates + empty_rows. Mantido para o bundle antigo ainda cacheado. */
+  skipped: number;
 };
 
 export type HeldOrdersDailyMetrics = {
