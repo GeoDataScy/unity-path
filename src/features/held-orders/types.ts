@@ -94,6 +94,20 @@ export type ManagerHeldOrder = MyHeldOrder & {
   assign_count: number;
 };
 
+/** Resultado da importação (manager_import_held_orders). */
+export type HeldOrderImportResult = {
+  /** Linhas gravadas. */
+  inserted: number;
+  /** Ignoradas porque o Order ID já estava na lista (ou repetiu dentro do lote). */
+  duplicates: number;
+  /** Linhas sem nenhum dado. */
+  empty: number;
+  /** duplicates + empty (mantido por compatibilidade). */
+  skipped: number;
+  /** Até 10 Order IDs ignorados, para mostrar exemplos ao manager. */
+  duplicate_samples: string[];
+};
+
 /** Resultado da distribuição em lote (manager_distribute_held_orders). */
 export type DistributeHeldOrdersResult = {
   moved: number;

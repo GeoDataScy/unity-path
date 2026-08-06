@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   DistributeHeldOrdersResult,
+  HeldOrderImportResult,
   HeldOrderImportRow,
   ManagerHeldOrdersResult,
 } from "./types";
@@ -44,10 +45,17 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
 export function useImportHeldOrdersMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rows: HeldOrderImportRow[]): Promise<{ inserted: number; skipped: number }> => {
+    mutationFn: async (rows: HeldOrderImportRow[]): Promise<HeldOrderImportResult> => {
       const { data, error } = await rpc("manager_import_held_orders", { p_rows: rows });
       if (error) throw error;
-      return (data as { inserted: number; skipped: number }) ?? { inserted: 0, skipped: 0 };
+      const raw = (data ?? {}) as Partial<HeldOrderImportResult>;
+      return {
+        inserted: raw.inserted ?? 0,
+        duplicates: raw.duplicates ?? 0,
+        empty: raw.empty ?? 0,
+        skipped: raw.skipped ?? 0,
+        duplicate_samples: raw.duplicate_samples ?? [],
+      };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });
