@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   DistributeHeldOrdersResult,
-  HeldOrderImportResult,
   HeldOrderImportRow,
+  ImportHeldOrdersResult,
   ManagerHeldOrdersResult,
 } from "./types";
 
@@ -35,7 +35,7 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
       });
       if (error) throw error;
       return (
-        (data as ManagerHeldOrdersResult) ?? { total: 0, rows: [], summary_by_agent: [] }
+        (data as ManagerHeldOrdersResult) ?? { total: 0, duplicates: 0, rows: [], summary_by_agent: [] }
       );
     },
     refetchOnWindowFocus: false,
@@ -45,17 +45,19 @@ export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, stat
 export function useImportHeldOrdersMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rows: HeldOrderImportRow[]): Promise<HeldOrderImportResult> => {
+    mutationFn: async (rows: HeldOrderImportRow[]): Promise<ImportHeldOrdersResult> => {
       const { data, error } = await rpc("manager_import_held_orders", { p_rows: rows });
       if (error) throw error;
-      const raw = (data ?? {}) as Partial<HeldOrderImportResult>;
-      return {
-        inserted: raw.inserted ?? 0,
-        duplicates: raw.duplicates ?? 0,
-        empty: raw.empty ?? 0,
-        skipped: raw.skipped ?? 0,
-        duplicate_samples: raw.duplicate_samples ?? [],
-      };
+      return (
+        (data as ImportHeldOrdersResult) ?? {
+          total: 0,
+          inserted: 0,
+          duplicates: 0,
+          empty_rows: 0,
+          duplicate_orders: [],
+          skipped: 0,
+        }
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: MANAGER_HELD_ORDERS_KEY });
