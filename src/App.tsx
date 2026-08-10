@@ -26,6 +26,7 @@ const Reembolsos = lazy(() => import("./pages/agent/Reembolsos"));
 const MinhasMetricas = lazy(() => import("./pages/agent/MinhasMetricas"));
 const ComeceAqui = lazy(() => import("./pages/agent/ComeceAqui"));
 const Transferencias = lazy(() => import("./pages/agent/Transferencias"));
+const BaseSuporte = lazy(() => import("./pages/agent/BaseSuporte"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="metricas" element={<MinhasMetricas />} />
             <Route path="transferencias" element={<Transferencias />} />
+            <Route path="base-suporte" element={<BaseSuporte />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
