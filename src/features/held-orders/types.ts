@@ -43,6 +43,12 @@ export const HELD_ORDER_PENDING_TAGS = Object.keys(
   HELD_ORDER_PENDING_TAG_LABEL,
 ) as HeldOrderPendingTag[];
 
+/**
+ * Filtro de status da listagem do MANAGER (manager_list_held_orders.status_filter).
+ * "aguardando" = pendente que ninguém começou; "em_andamento" = já em atendimento.
+ */
+export type ManagerHeldOrderStatusFilter = "all" | "aguardando" | "em_andamento" | "confirmed";
+
 /** Uma entrada do histórico (timeline) de um pedido. */
 export type HeldOrderEvent = {
   id: string;
@@ -113,7 +119,10 @@ export type DistributeHeldOrdersResult = {
 export type HeldOrderAgentSummary = {
   agent_id: string;
   full_name: string | null;
+  /** Tudo que ainda não foi concluído (inclui os em andamento). */
   pending: number;
+  /** Subconjunto de `pending` que o agente já começou a tratar. */
+  in_progress: number;
   confirmed: number;
 };
 
