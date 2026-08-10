@@ -6,6 +6,7 @@ import type {
   HeldOrderImportRow,
   ImportHeldOrdersResult,
   ManagerHeldOrdersResult,
+  ManagerHeldOrderStatusFilter,
 } from "./types";
 
 // As RPCs de pedidos em espera ainda não estão nos tipos gerados do Supabase.
@@ -19,7 +20,7 @@ const MANAGER_HELD_ORDERS_KEY = ["dashboard", "held-orders"] as const;
 type ListParams = {
   enabled?: boolean;
   agentId?: string | null;
-  statusFilter?: "all" | "pending" | "confirmed";
+  statusFilter?: ManagerHeldOrderStatusFilter;
 };
 
 export function useManagerHeldOrdersQuery({ enabled = true, agentId = null, statusFilter = "all" }: ListParams) {

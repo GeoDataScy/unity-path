@@ -6,6 +6,7 @@ import {
   CopyX,
   Inbox,
   ListChecks,
+  Loader2,
   PackageSearch,
   Search,
   Send,
@@ -25,9 +26,7 @@ import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
 import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
 import { RETURNS_DYNA_CODE } from "./parseHeldOrdersCsv";
-import type { ManagerHeldOrder } from "./types";
-
-type StatusFilter = "all" | "pending" | "confirmed";
+import type { ManagerHeldOrder, ManagerHeldOrderStatusFilter } from "./types";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -36,13 +35,22 @@ function formatDate(value: string | null): string {
   return y && m && d ? `${d}/${m}/${y}` : value;
 }
 
+/** O agente já começou a tratar o pedido (e ainda não concluiu). */
+function isInProgress(o: ManagerHeldOrder): boolean {
+  return o.agent_status === "em_andamento" && o.status !== "confirmed";
+}
+
 // Badge de status na visão do manager:
 //   concluído            -> "Confirmado"
-//   nunca distribuído    -> "Novo"        (assign_count = 0)
-//   distribuído N vezes  -> "Pendente N"  (assign_count >= 1, ainda não concluído)
+//   em atendimento       -> "Em andamento" (agent_status = 'em_andamento')
+//   nunca distribuído    -> "Novo"         (assign_count = 0)
+//   distribuído N vezes  -> "Pendente N"   (assign_count >= 1, sem início)
 function statusBadge(o: ManagerHeldOrder) {
   if (o.agent_status === "concluido" || o.status === "confirmed") {
     return <Badge variant="success">Confirmado</Badge>;
+  }
+  if (isInProgress(o)) {
+    return <Badge variant="in-progress">Em andamento</Badge>;
   }
   if ((o.assign_count ?? 0) === 0) {
     return (
@@ -59,7 +67,7 @@ function statusBadge(o: ManagerHeldOrder) {
 }
 
 export function HeldOrdersManagerTab() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<ManagerHeldOrderStatusFilter>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -98,11 +106,14 @@ export function HeldOrdersManagerTab() {
     });
   }, [allRows, realRows, showDuplicates, agentFilter, search]);
 
+  // "Aguardando" e "Em andamento" particionam os pendentes: aguardando = ninguém
+  // começou; em andamento = agente já registrou atendimento.
   const totals = useMemo(() => {
-    const pending = realRows.filter((o) => o.status === "pending").length;
+    const inProgress = realRows.filter(isInProgress).length;
+    const waiting = realRows.filter((o) => o.status === "pending" && !isInProgress(o)).length;
     const confirmed = realRows.filter((o) => o.status === "confirmed").length;
     const unassigned = realRows.filter((o) => !o.assigned_to).length;
-    return { total: realRows.length, pending, confirmed, unassigned };
+    return { total: realRows.length, waiting, inProgress, confirmed, unassigned };
   }, [realRows]);
 
   // Só pedidos pendentes podem ser selecionados para distribuir — e nunca uma
@@ -156,7 +167,7 @@ export function HeldOrdersManagerTab() {
   return (
     <div className="space-y-6">
       {/* Resumo */}
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -170,11 +181,21 @@ export function HeldOrdersManagerTab() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Clock className="h-4 w-4 text-amber-500" /> Pendentes
+              <Clock className="h-4 w-4 text-amber-500" /> Aguardando
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.pending}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.waiting}</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Loader2 className="h-4 w-4 text-status-in-progress" /> Em andamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.inProgress}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -211,6 +232,7 @@ export function HeldOrdersManagerTab() {
                 <div key={s.agent_id} className="rounded-md border px-3 py-1.5 text-sm">
                   <span className="font-medium">{s.full_name ?? "Sem nome"}</span>{" "}
                   <span className="text-amber-600 dark:text-amber-400 tabular-nums">{s.pending} pend.</span>{" "}
+                  <span className="text-status-in-progress tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
                   <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{s.confirmed} conf.</span>
                 </div>
               ))}
@@ -234,13 +256,17 @@ export function HeldOrdersManagerTab() {
                   className="w-60 pl-8"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="w-40">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as ManagerHeldOrderStatusFilter)}
+              >
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos status</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="aguardando">Aguardando</SelectItem>
+                  <SelectItem value="em_andamento">Em andamento</SelectItem>
                   <SelectItem value="confirmed">Confirmados</SelectItem>
                 </SelectContent>
               </Select>
