@@ -18,17 +18,30 @@ const SHEET_SPECS = {
   },
   porCanal: {
     name: "Atendimentos por Canal",
-    title: "Total de atendimentos por canal",
+    title: "Total de atendimentos por canal (abertura de ticket + cada interação)",
     columns: ["Canal", "Quantidade"],
+  },
+  canalDetalhamento: {
+    name: "Canal — Detalhamento",
+    title: "Atendimentos por Canal — Detalhamento (canal × agente)",
+    columns: [
+      "Canal",
+      "Agente",
+      "Tickets Novos",
+      "Interações",
+      "Concluídos",
+      "Total",
+      "% Conclusão",
+    ],
   },
   statusTickets: {
     name: "Status dos Tickets",
-    title: "Tickets novos / em andamento / finalizados",
+    title: "Status atual dos tickets tocados no período (abertos ou com interação)",
     columns: ["Status", "Quantidade"],
   },
   motivosContato: {
     name: "Motivos de Contato",
-    title: "Motivos de contato por canal",
+    title: "Motivos de contato por canal (só aberturas de ticket — 1 motivo por ticket)",
     columns: ["Canal", "Motivo", "Quantidade"],
   },
   reembolsosResumo: {
@@ -91,6 +104,22 @@ type RefundMetricsResponse = {
   by_platform: NameValue[];
 };
 
+// Mesma linha devolvida por dashboard_channel_detail e consumida pelo modal
+// "Atendimentos por Canal — Detalhamento" (ChannelDetailModal.tsx).
+type ChannelAgentRow = {
+  channel: string;
+  agent_id: string;
+  agent_name: string;
+  new_tickets: number;
+  done_count: number;
+  interactions: number;
+  total: number;
+};
+
+type ChannelDetailResponse = {
+  by_channel_agent: ChannelAgentRow[];
+};
+
 type ExportExtrasResponse = {
   contact_reasons_by_channel: Array<{ channel: string; reason_code: string; qty: number }>;
   refund_summary: {
@@ -132,10 +161,11 @@ function buildSheet(
   fromISO: string,
   toISO: string,
   dataRows: (string | number)[][] = [],
+  agentLabel = "Todos os agentes",
 ): XLSX.WorkSheet {
   const rows: (string | number)[][] = [
     [spec.title],
-    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)}`],
+    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)} — Agente: ${agentLabel}`],
     [],
     spec.columns,
     ...(dataRows.length > 0
@@ -159,7 +189,7 @@ function buildSheet(
 async function fetchReportData(fromISO: string, toISO: string, agentId?: string) {
   const normalizedAgentId = agentId && agentId !== "all" ? agentId : null;
 
-  const [metricsRes, statusRes, refundMetricsRes, extrasRes] = await Promise.all([
+  const [metricsRes, statusRes, refundMetricsRes, extrasRes, channelDetailRes] = await Promise.all([
     supabase.rpc("dashboard_metrics", {
       from_date: fromISO,
       to_date: toISO,
@@ -183,18 +213,27 @@ async function fetchReportData(fromISO: string, toISO: string, agentId?: string)
       to_date: toISO,
       agent_id: normalizedAgentId,
     }),
+    // Mesma RPC que alimenta o modal da tela — é o que garante que a aba
+    // "Canal — Detalhamento" reproduza exatamente os números vistos lá.
+    supabase.rpc("dashboard_channel_detail", {
+      p_from_date: fromISO,
+      p_to_date: toISO,
+      p_agent_id: normalizedAgentId,
+    }),
   ]);
 
   if (metricsRes.error) throw metricsRes.error;
   if (statusRes.error) throw statusRes.error;
   if (refundMetricsRes.error) throw refundMetricsRes.error;
   if (extrasRes.error) throw extrasRes.error;
+  if (channelDetailRes.error) throw channelDetailRes.error;
 
   return {
     metrics: metricsRes.data as unknown as DashboardMetricsResponse,
     status: statusRes.data as unknown as StatusSummaryResponse,
     refundMetrics: refundMetricsRes.data as unknown as RefundMetricsResponse,
     extras: extrasRes.data as unknown as ExportExtrasResponse,
+    channelDetail: channelDetailRes.data as unknown as ChannelDetailResponse,
   };
 }
 
@@ -202,13 +241,20 @@ export async function exportManagerReport(
   fromISO: string,
   toISO: string,
   agentId?: string,
+  agentName?: string,
 ): Promise<void> {
-  const { metrics, status, refundMetrics, extras } = await fetchReportData(fromISO, toISO, agentId);
+  const { metrics, status, refundMetrics, extras, channelDetail } = await fetchReportData(
+    fromISO,
+    toISO,
+    agentId,
+  );
+
+  const agentLabel = agentId && agentId !== "all" ? (agentName ?? agentId) : "Todos os agentes";
 
   const wb = XLSX.utils.book_new();
 
   const appendSheet = (spec: SheetSpec, rows: (string | number)[][]) =>
-    XLSX.utils.book_append_sheet(wb, buildSheet(spec, fromISO, toISO, rows), spec.name);
+    XLSX.utils.book_append_sheet(wb, buildSheet(spec, fromISO, toISO, rows, agentLabel), spec.name);
 
   // 1) Visão Geral
   const totalAtendimentos = metrics.total_count ?? 0;
@@ -217,11 +263,27 @@ export async function exportManagerReport(
   const emAndamento = status.em_andamento ?? 0;
   const concluidos = status.concluido ?? 0;
 
+  // Reconciliação com a tela: "Total de atendimentos" conta EVENTOS (abertura de
+  // ticket + cada interação), enquanto o bloco de status conta TICKETS. Sem essa
+  // quebra explícita a gestora somava "Tickets novos" do Excel e não fechava com
+  // a coluna "Tickets Novos" do modal — são recortes diferentes.
+  const ticketsAbertos = (channelDetail?.by_channel_agent ?? []).reduce(
+    (s, r) => s + (r.new_tickets ?? 0),
+    0,
+  );
+  const interacoesPeriodo = (channelDetail?.by_channel_agent ?? []).reduce(
+    (s, r) => s + (r.interactions ?? 0),
+    0,
+  );
+
   appendSheet(SHEET_SPECS.visaoGeral, [
     ["Total de atendimentos realizados pelo time", totalAtendimentos],
-    ["Tickets novos", novos],
-    ["Tickets em andamento", emAndamento],
-    ["Tickets finalizados", concluidos],
+    ["↳ Tickets abertos no período", ticketsAbertos],
+    ["↳ Interações (follow-ups) no período", interacoesPeriodo],
+    ["Tickets tocados no período (abertos ou com interação)", novos + emAndamento + concluidos],
+    ["↳ Novos (nenhuma interação registrada)", novos],
+    ["↳ Em andamento", emAndamento],
+    ["↳ Finalizados", concluidos],
   ]);
 
   // 2) Atendimentos por Canal
@@ -230,11 +292,81 @@ export async function exportManagerReport(
     byChannel.map((c) => [c.name ?? "Não informado", c.value ?? 0]),
   );
 
+  // 2b) Canal — Detalhamento (canal × agente)
+  // Espelha linha a linha a tabela do modal ChannelDetailModal: uma linha de
+  // total por canal (canais ordenados por Total desc) seguida das linhas de
+  // cada agente daquele canal (também por Total desc). As fórmulas de
+  // % Conclusão são as mesmas do componente — done/new, arredondado.
+  const channelRows = channelDetail?.by_channel_agent ?? [];
+  const channelNames = Array.from(new Set(channelRows.map((r) => r.channel)));
+
+  const channelTotals = channelNames
+    .map((ch) => {
+      const chRows = channelRows.filter((r) => r.channel === ch);
+      const newT = chRows.reduce((s, r) => s + r.new_tickets, 0);
+      const inter = chRows.reduce((s, r) => s + r.interactions, 0);
+      const done = chRows.reduce((s, r) => s + r.done_count, 0);
+      const total = chRows.reduce((s, r) => s + r.total, 0);
+      const rate = newT > 0 ? Math.round((done / newT) * 100) : 0;
+      return { channel: ch, new_tickets: newT, interactions: inter, done_count: done, total, rate };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  const channelDetailRows: (string | number)[][] = [];
+  for (const ct of channelTotals) {
+    channelDetailRows.push([
+      ct.channel,
+      "TOTAL DO CANAL",
+      ct.new_tickets,
+      ct.interactions,
+      ct.done_count,
+      ct.total,
+      ct.new_tickets > 0 ? `${ct.rate}%` : "—",
+    ]);
+    channelRows
+      .filter((r) => r.channel === ct.channel)
+      .sort((a, b) => b.total - a.total)
+      .forEach((r) => {
+        channelDetailRows.push([
+          ct.channel,
+          r.agent_name,
+          r.new_tickets,
+          r.interactions,
+          r.done_count,
+          r.total,
+          r.new_tickets > 0 ? `${Math.round((r.done_count / r.new_tickets) * 100)}%` : "—",
+        ]);
+      });
+  }
+
+  if (channelDetailRows.length > 0) {
+    const grandNew = channelTotals.reduce((s, c) => s + c.new_tickets, 0);
+    const grandInter = channelTotals.reduce((s, c) => s + c.interactions, 0);
+    const grandDone = channelTotals.reduce((s, c) => s + c.done_count, 0);
+    const grandTotal = channelTotals.reduce((s, c) => s + c.total, 0);
+    channelDetailRows.push([
+      "TOTAL NO PERÍODO",
+      `${channelTotals.length} canal(is)`,
+      grandNew,
+      grandInter,
+      grandDone,
+      grandTotal,
+      grandNew > 0 ? `${Math.round((grandDone / grandNew) * 100)}%` : "—",
+    ]);
+  }
+
+  appendSheet(SHEET_SPECS.canalDetalhamento, channelDetailRows);
+
   // 3) Status dos Tickets
+  // Universo: tickets abertos no período OU que receberam alguma interação nele,
+  // classificados pelo estado ATUAL (último follow-up). Não é o mesmo recorte da
+  // coluna "Tickets Novos" do detalhamento por canal — lá só entram tickets
+  // ABERTOS no período.
   appendSheet(SHEET_SPECS.statusTickets, [
-    ["Novos", novos],
+    ["Novos (nenhuma interação registrada)", novos],
     ["Em andamento", emAndamento],
     ["Finalizados", concluidos],
+    ["Total de tickets tocados no período", novos + emAndamento + concluidos],
   ]);
 
   // 4) Motivos de Contato (canal × motivo)

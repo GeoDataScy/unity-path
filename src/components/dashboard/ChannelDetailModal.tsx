@@ -34,10 +34,15 @@ const AGENT_COLORS = [
   "hsl(var(--chart-8))",
 ];
 
+// O gráfico é empilhado e a soma das barras tem de fechar com a coluna "Total"
+// da tabela (Tickets Novos + Interações). Por isso a primeira faixa é
+// "Novos em aberto" = Tickets Novos − Concluídos: os concluídos aparecem na
+// faixa verde. Rotular essa faixa como "Tickets Novos" fazia o tooltip mostrar
+// um número menor que a tabela (ex.: 163 no gráfico vs 175 na tabela).
 const TYPE_COLORS: Record<string, string> = {
-  "Tickets Novos": "hsl(var(--chart-1))",
-  "Interações":    "hsl(var(--chart-info))",
-  "Concluídos":    "hsl(var(--chart-success))",
+  "Novos em aberto": "hsl(var(--chart-1))",
+  "Interações":      "hsl(var(--chart-info))",
+  "Concluídos":      "hsl(var(--chart-success))",
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -60,9 +65,12 @@ type Props = {
   onClose: () => void;
   initialFrom: string;
   initialTo: string;
+  /** filtro de agente do cabeçalho da gestora — o mesmo que o relatório usa */
+  agentId?: string;
+  agentLabel?: string;
 };
 
-export function ChannelDetailModal({ open, onClose, initialFrom, initialTo }: Props) {
+export function ChannelDetailModal({ open, onClose, initialFrom, initialTo, agentId, agentLabel }: Props) {
   const [range, setRange] = useState<DateRange | undefined>(() => {
     const from = safeParse(initialFrom);
     const to   = safeParse(initialTo);
@@ -73,7 +81,7 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo }: Pr
   const fromISO = range?.from ? toISODate(range.from) : initialFrom;
   const toISO   = range?.to   ? toISODate(range.to)   : (range?.from ? toISODate(range.from) : initialTo);
 
-  const query = useDashboardChannelDetailQuery({ enabled: open, from: fromISO, to: toISO });
+  const query = useDashboardChannelDetailQuery({ enabled: open, from: fromISO, to: toISO, agentId });
   const rows  = query.data?.by_channel_agent ?? [];
 
   // ── derived data ─────────────────────────────────────────────────────────────
@@ -107,9 +115,9 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo }: Pr
       const done   = chRows.reduce((s, r) => s + r.done_count, 0);
       return {
         channel: ch,
-        "Tickets Novos": Math.max(0, newT - done),
-        "Interações":    inter,
-        "Concluídos":    done,
+        "Novos em aberto": Math.max(0, newT - done),
+        "Interações":      inter,
+        "Concluídos":      done,
       };
     });
 
@@ -173,7 +181,12 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo }: Pr
               Por Tipo
             </button>
           </div>
-          {periodLabel && <span className="text-sm text-muted-foreground ml-auto">{periodLabel}</span>}
+          {periodLabel && (
+            <span className="text-sm text-muted-foreground ml-auto">
+              {periodLabel}
+              {agentId && agentId !== "all" ? ` • ${agentLabel ?? "agente selecionado"}` : ""}
+            </span>
+          )}
         </div>
 
         {/* ── Summary cards ── */}
