@@ -5267,7 +5267,11 @@ function adminApplyEdit(canal, origNome, fields) {
      cole este bloco de novo no final.
 ══════════════════════════════════════════════════════════════════════ -->
 <style>
-  #login-screen, .logout-btn, .admin-btn { display: none !important; }
+  /* Sem senha e sem "Sair": o acesso é o login do XMX App.
+     Sem Admin: a aba é só de consulta.
+     Sem logo XMX (header e footer): a marca já aparece no header do workspace. */
+  #login-screen, .logout-btn, .admin-btn,
+  .logo, .footer-logo { display: none !important; }
 </style>
 <script>
   (function () {
