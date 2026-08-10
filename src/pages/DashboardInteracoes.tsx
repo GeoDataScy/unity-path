@@ -136,22 +136,26 @@ export default function DashboardInteracoes() {
     });
   }, [data, agentId]);
 
-  // Pie chart data — three mutually exclusive slices that sum to total_tickets
+  // Pie chart data — três fatias que se somam ao total de atendimentos.
+  // A primeira é "Novos em aberto" (= tickets novos − concluídos): rotulá-la
+  // "Tickets Novos" fazia o gráfico mostrar um número menor que o card e que a
+  // coluna "Tickets Novos" da tabela.
   const pieData = useMemo(() => {
     if (!kpi) return [];
     const openNew = (kpi.new_tickets_count ?? 0) - (kpi.done_count ?? 0);
     return [
-      { name: "Tickets Novos", value: Math.max(0, openNew), fill: STATUS_COLORS.open },
+      { name: "Novos em aberto", value: Math.max(0, openNew), fill: STATUS_COLORS.open },
       { name: "Interações", value: kpi.interactions_count ?? 0, fill: STATUS_COLORS.in_progress },
       { name: "Concluido", value: kpi.done_count ?? 0, fill: STATUS_COLORS.done },
     ].filter((d) => d.value > 0);
   }, [kpi]);
 
   // Stacked bar chart data (by agent)
-  // Three non-overlapping segments that together equal Atendimentos por Agente total:
-  //   Tickets Novos = new services in range that are NOT concluded
-  //   Concluido     = new services in range that ARE concluded
-  //   Interações    = distinct previous-day services with a follow-up in range
+  // Três segmentos que não se sobrepõem e cuja soma é o total de atendimentos
+  // do agente no período:
+  //   Novos em aberto = tickets abertos no período que NÃO estão concluídos
+  //   Concluido       = tickets abertos no período que ESTÃO concluídos
+  //   Interações      = cada follow-up registrado no período (1 evento cada)
   const stackedBarData = useMemo(() => {
     return filteredAgents
       .filter((a) => a.total_tickets > 0 || a.interactions_count > 0)
@@ -161,7 +165,7 @@ export default function DashboardInteracoes() {
         const interactions = a.interactions_count ?? 0;
         return {
           name: a.agent_name.split(" ")[0],
-          "Tickets Novos": openNew,
+          "Novos em aberto": openNew,
           "Interações": interactions,
           "Concluido": done,
           total: openNew + done + interactions,
@@ -190,17 +194,23 @@ export default function DashboardInteracoes() {
           Interacoes dos Agentes
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Visao detalhada dos status e interacoes registradas pelos agentes no periodo selecionado
+          Visao detalhada dos status e interacoes registradas pelos agentes no periodo selecionado.
+          Cada abertura de ticket e cada interacao valem 1 — mesma regra da tela de Atendimentos.
         </p>
       </header>
 
       {/* ── KPI Cards ────────────────────────────────────────────────────── */}
       <section className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        {/* Conta EVENTOS (abertura de ticket + cada interação) — é o mesmo
+            número do card "Total de atendimentos" da tela Atendimentos e do
+            total do modal por canal. Chamar isso de "Total Tickets" era o que
+            fazia a gestora comparar com contagem de ticket e não fechar. */}
         <KpiCard
           icon={<Target className="h-4 w-4 text-blue-600" />}
-          label="Total Tickets"
+          label="Total de Atendimentos"
           value={kpi?.total_services}
           isLoading={isLoading}
+          subtitle="aberturas + interações"
         />
         <KpiCard
           icon={<FolderOpen className="h-4 w-4 text-slate-500" />}
@@ -217,25 +227,31 @@ export default function DashboardInteracoes() {
           accent="text-amber-600"
           isLoading={isLoading}
         />
+        {/* Concluídos são tickets ABERTOS no período que já estão concluídos —
+            a taxa tem de ser sobre tickets novos, não sobre eventos. */}
         <KpiCard
           icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
           label="Concluidos"
           value={kpi?.done_count}
           accent="text-emerald-600"
           isLoading={isLoading}
-          subtitle={kpi ? pct(kpi.done_count, kpi.total_services) : undefined}
+          subtitle={
+            kpi && kpi.new_tickets_count > 0
+              ? `${pct(kpi.done_count, kpi.new_tickets_count)} dos tickets novos`
+              : undefined
+          }
         />
         <KpiCard
           icon={<MessageSquareText className="h-4 w-4 text-violet-500" />}
-          label="Interacoes"
-          value={kpi?.total_interactions}
+          label="Interações por Ticket"
+          value={
+            kpi && kpi.new_tickets_count > 0
+              ? Number((kpi.interactions_count / kpi.new_tickets_count).toFixed(1))
+              : 0
+          }
           accent="text-violet-600"
           isLoading={isLoading}
-          subtitle={
-            kpi && kpi.total_services > 0
-              ? `${(kpi.total_interactions / kpi.total_services).toFixed(1)} por ticket`
-              : undefined
-          }
+          subtitle="média no período"
         />
       </section>
 
@@ -288,7 +304,7 @@ export default function DashboardInteracoes() {
               <div className="flex gap-1">
                 {([
                   { key: "all", label: "Todos" },
-                  { key: "open", label: "Tickets Novos" },
+                  { key: "open", label: "Novos em aberto" },
                   { key: "in_progress", label: "Interações" },
                   { key: "done", label: "Concluído" },
                 ] as const).map((opt) => (
@@ -328,13 +344,13 @@ export default function DashboardInteracoes() {
                   <Tooltip
                     content={({ active, payload, label }) => {
                       if (!active || !payload || payload.length === 0) return null;
-                      const item = payload[0]?.payload as { "Tickets Novos": number; "Interações": number; Concluido: number; total: number } | undefined;
+                      const item = payload[0]?.payload as { "Novos em aberto": number; "Interações": number; Concluido: number; total: number } | undefined;
                       if (!item) return null;
                       return (
                         <div className="rounded-md border bg-background p-2 text-xs shadow-md">
                           <p className="mb-1 font-semibold">{label}</p>
                           <div className="space-y-0.5">
-                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Tickets Novos: <span className="font-medium">{item["Tickets Novos"]}</span></p>
+                            <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Novos em aberto: <span className="font-medium">{item["Novos em aberto"]}</span></p>
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.in_progress }} />Interações: <span className="font-medium">{item["Interações"]}</span></p>
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.done }} />Concluído: <span className="font-medium">{item.Concluido}</span></p>
                             <p className="mt-1 border-t pt-1 font-semibold">Total: {item.total}</p>
@@ -344,8 +360,8 @@ export default function DashboardInteracoes() {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="Tickets Novos" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
-                    <LabelList dataKey="Tickets Novos" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                  <Bar dataKey="Novos em aberto" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
+                    <LabelList dataKey="Novos em aberto" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
                   </Bar>
                   <Bar dataKey="Interações" stackId="status" fill={STATUS_COLORS.in_progress}>
                     <LabelList dataKey="Interações" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
@@ -357,7 +373,7 @@ export default function DashboardInteracoes() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (() => {
-              const dataKey = ticketStatusFilter === "open" ? "Tickets Novos"
+              const dataKey = ticketStatusFilter === "open" ? "Novos em aberto"
                 : ticketStatusFilter === "in_progress" ? "Interações"
                 : "Concluido";
               const color = ticketStatusFilter === "in_progress" ? STATUS_COLORS.in_progress
