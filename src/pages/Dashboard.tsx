@@ -169,7 +169,11 @@ const Dashboard = () => {
       .map(({ name, value }) => ({ name, value }));
     kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
     kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
-    kpi.byChannelSeries = (allMetrics?.by_channel ?? metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
+    // Respeita o filtro de agente do cabeçalho, como o modal de detalhamento e a
+    // aba "Atendimentos por Canal" do Excel. Antes usava allMetrics (time
+    // inteiro) mesmo com um agente selecionado, e aí a tela não batia com o
+    // relatório extraído.
+    kpi.byChannelSeries = (metrics.by_channel ?? []).map(({ name, value }) => ({ name, value }));
 
     // Fill missing days for area chart continuity
     const dayCounts = new Map<string, number>(
@@ -571,6 +575,8 @@ const Dashboard = () => {
         onClose={() => setChannelModalOpen(false)}
         initialFrom={fromISO}
         initialTo={toISO}
+        agentId={agentId}
+        agentLabel={byAgentSeries[0]?.name}
       />
     </div>
   );

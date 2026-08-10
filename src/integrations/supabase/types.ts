@@ -932,7 +932,7 @@ export type Database = {
         Returns: Json
       }
       dashboard_channel_detail: {
-        Args: { p_from_date?: string; p_to_date?: string }
+        Args: { p_agent_id?: string; p_from_date?: string; p_to_date?: string }
         Returns: Json
       }
       dashboard_export_extras: {
