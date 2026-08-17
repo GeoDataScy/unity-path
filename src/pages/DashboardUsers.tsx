@@ -377,12 +377,13 @@ export default function DashboardUsers() {
                   <TableBody>
                     {filtered.map((user) => {
                       const isManager = user.role === "manager";
+                      const isAgent = user.role === "agent";
                       const isDeleted = user.auth_account_deleted;
                       // Redistribuir vale para qualquer agente com tickets em aberto,
                       // inclusive contas já excluídas no auth (ex.: Aguida, Maria) —
                       // só assim esses tickets "presos" voltam a ter um dono ativo.
                       const reassignButton =
-                        !isManager && user.open_tickets_count > 0 ? (
+                        isAgent && user.open_tickets_count > 0 ? (
                           <Button
                             variant="secondary"
                             size="sm"
@@ -397,7 +398,7 @@ export default function DashboardUsers() {
                           <TableCell>
                             <div className="flex flex-col gap-1">
                               <StatusDot user={user} />
-                              {!isManager && !isDeleted && !user.is_available && (
+                              {isAgent && !isDeleted && !user.is_available && (
                                 <span className="inline-flex w-fit items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-600 dark:text-sky-400">
                                   <Coffee className="h-2.5 w-2.5" />
                                   De folga
@@ -413,11 +414,11 @@ export default function DashboardUsers() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={isManager ? "default" : "secondary"} className="capitalize">
-                              {isManager ? "Manager" : "Agente"}
+                              {isManager ? "Manager" : isAgent ? "Agente" : "Copy"}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {isManager ? (
+                            {!isAgent ? (
                               <span className="text-xs text-muted-foreground">—</span>
                             ) : (
                               <div className="flex flex-col items-start gap-1">
@@ -471,7 +472,7 @@ export default function DashboardUsers() {
                             ) : (
                               <div className="inline-flex items-center gap-2">
                                 {reassignButton}
-                                {!isManager && (
+                                {isAgent && (
                                   <Button
                                     variant={user.is_available ? "ghost" : "secondary"}
                                     size="sm"
