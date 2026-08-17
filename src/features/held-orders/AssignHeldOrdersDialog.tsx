@@ -30,7 +30,7 @@ export function AssignHeldOrdersDialog({ open, onOpenChange, orderIds, agents, o
 
   // Só agentes ativos e não-excluídos podem receber pedidos.
   const assignableAgents = useMemo(
-    () => agents.filter((a) => a.role !== "manager" && a.is_active && !a.auth_account_deleted),
+    () => agents.filter((a) => a.role === "agent" && a.is_active && !a.auth_account_deleted),
     [agents],
   );
 

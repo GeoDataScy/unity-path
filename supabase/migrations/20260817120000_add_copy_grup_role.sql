@@ -1,0 +1,11 @@
+-- Nova role para o time de copy.
+--
+-- Perfis com role = 'copy_grup' caem em /copy (CopyLayout) logo após o login e
+-- não têm acesso às telas de agente (/workspace) nem às da gestora (/dashboard).
+-- Como todas as RPCs de métricas filtram explicitamente `p.role = 'agent'`, o
+-- novo valor não entra em nenhum número de atendimento/reembolso.
+--
+-- ALTER TYPE ... ADD VALUE precisa ficar sozinho na migration: o novo rótulo só
+-- pode ser usado por outras instruções depois que a transação que o criou
+-- comita.
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'copy_grup';

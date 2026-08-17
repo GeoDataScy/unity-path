@@ -12,6 +12,7 @@ import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInCo
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
+import { homePathForRole } from "@/lib/roles";
 
 export type AgentOutletContext = {
   userId: string;
@@ -70,8 +71,9 @@ export default function AgentLayout() {
         return;
       }
 
-      if (profile?.role === "manager") {
-        navigate("/dashboard", { replace: true });
+      // Perfil sem role (linha ausente) continua caindo aqui, como antes.
+      if (profile?.role && profile.role !== "agent") {
+        navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
 

@@ -29,6 +29,7 @@ import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
+import { homePathForRole } from "@/lib/roles";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
@@ -169,7 +170,7 @@ export default function ManagerLayout() {
       }
 
       if (profile?.role !== "manager") {
-        navigate("/workspace", { replace: true });
+        navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
 
