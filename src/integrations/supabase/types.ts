@@ -989,6 +989,10 @@ export type Database = {
         }
         Returns: Json
       }
+      dashboard_same_day_repeats: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
+        Returns: Json
+      }
       dashboard_status_summary: {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json

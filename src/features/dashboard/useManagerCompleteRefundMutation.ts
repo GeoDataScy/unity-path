@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { toError } from "@/lib/supabaseError";
 import type { CompleteRefundValues } from "@/features/refunds/CompleteRefundDialog";
 import { REFUND_ALERTS_QUERY_KEY } from "./useDashboardRefundAlertsQuery";
 import type { RefundAlertsData } from "./useDashboardRefundAlertsQuery";
@@ -35,7 +36,9 @@ export function useManagerCompleteRefundMutation() {
         p_reason: values.reason,
         p_items_returned: values.items_returned,
       });
-      if (error) throw error;
+      // O erro do supabase-js é objeto simples, não Error — normalizar aqui é o
+      // que faz o motivo real chegar ao toast em vez do texto genérico.
+      if (error) throw toError(error, "Não foi possível dar baixa no reembolso.");
     },
 
     onMutate: async ({ refundId, agentId }: ManagerCompleteRefundInput) => {

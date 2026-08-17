@@ -16,6 +16,7 @@ import { CompleteRefundDialog } from "@/features/refunds/CompleteRefundDialog";
 import type { CompleteRefundValues } from "@/features/refunds/CompleteRefundDialog";
 import { SameDayRepeatsSection } from "@/components/dashboard/SameDayRepeatsSection";
 import { useToast } from "@/hooks/use-toast";
+import { supabaseErrorMessage } from "@/lib/supabaseError";
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 
 /** Reembolso selecionado para baixa, junto do agente dono (usado na auditoria). */
@@ -195,9 +196,15 @@ export default function DashboardAlertas() {
       });
       setWriteOff(null);
     } catch (error: unknown) {
-      console.error("[manager-complete-refund] failed:", error);
-      const message =
-        error instanceof Error ? error.message : "Não foi possível dar baixa no reembolso.";
+      console.error("[manager-complete-refund] failed:", {
+        refund_id: refund.id,
+        agent_id: agentId,
+        request_date: refund.request_date,
+        values,
+        error,
+        cause: (error as { cause?: unknown })?.cause,
+      });
+      const message = supabaseErrorMessage(error, "Não foi possível dar baixa no reembolso.");
       toast({ title: "Erro ao dar baixa", description: message, variant: "destructive" });
       throw error;
     }
@@ -359,7 +366,7 @@ export default function DashboardAlertas() {
 
       {alertsQuery.error && (
         <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
-          {(alertsQuery.error as Error).message || "Erro ao carregar alertas."}
+          {supabaseErrorMessage(alertsQuery.error, "Erro ao carregar alertas.")}
         </p>
       )}
 

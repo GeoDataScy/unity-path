@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 export type MeStatus = {
   is_active: boolean;
@@ -24,7 +25,9 @@ export async function recordAuthEvent(
   const { error } = await supabase.rpc("record_auth_event", {
     p_event_type: eventType,
     p_target_user_id: null,
-    p_metadata: metadata ?? null,
+    // p_metadata é jsonb; o tipo gerado é `Json`, que não aceita
+    // Record<string, unknown> direto.
+    p_metadata: (metadata ?? null) as Json,
   });
   if (error) throw error;
 }
