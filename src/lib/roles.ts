@@ -1,4 +1,4 @@
-// Roles do app (enum public.app_role no banco) e para onde cada uma entra
+// Roles do app (enum public."AppRole" no banco) e para onde cada uma entra
 // depois do login. Centralizado aqui para que login, "/" e os três layouts
 // concordem sobre o destino de cada perfil.
 
