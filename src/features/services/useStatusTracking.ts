@@ -26,34 +26,24 @@ export function useFollowUpsQuery(enabled: boolean) {
     queryKey: ["service-follow-ups"],
     enabled,
     queryFn: async (): Promise<FollowUpRow[]> => {
-      const PAGE = 1000;
-      const all: FollowUpRow[] = [];
-      let from = 0;
-      while (true) {
-        // Ordenação DETERMINÍSTICA para paginação estável: recorded_at sozinho
-        // não é único (e follow_up_number repete em milhares de linhas), então
-        // o OFFSET pulava/duplicava registros na fronteira das páginas a partir
-        // de 1000 follow-ups — fazendo o histórico de alguns tickets sumir.
-        // O desempate por `id` (único) garante páginas estáveis. A ordem
-        // cronológica é preservada (consumidores usam o último item = mais recente).
-        const { data, error } = await supabase
-          .from("service_follow_ups")
-          .select("*")
-          .order("recorded_at", { ascending: true })
-          .order("id", { ascending: true })
-          .range(from, from + PAGE - 1);
-        if (error) throw error;
-        const rows = (data ?? []) as FollowUpRow[];
-        all.push(...rows);
-        if (rows.length < PAGE) break;
-        from += PAGE;
-      }
-      return all;
+      // Uma ÚNICA chamada à RPC my_follow_ups(), que devolve um único jsonb com o
+      // array de follow-ups visíveis ao agente já ordenado por (recorded_at, id).
+      //
+      // Antes: paginávamos `service_follow_ups` (`.range()`, 1000/página) porque o
+      // PostgREST limita o nº de linhas por resposta. Cada página re-ordenava o
+      // histórico inteiro sob RLS (Seq Scan por causa do OR) e OFFSETs profundos
+      // re-classificavam tudo → a query estourava o statement_timeout de 8s sob
+      // carga. Como o carregamento era tudo-ou-nada, qualquer página que falhasse
+      // zerava a lista e TODO ticket aparecia como "Novo". Retornar 1 jsonb foge
+      // do limite de linhas e faz uma varredura ordenada única (~60ms/agente).
+      const { data, error } = await supabase.rpc("my_follow_ups");
+      if (error) throw error;
+      return (data ?? []) as unknown as FollowUpRow[];
     },
-    // Esta query pagina TODO o histórico de follow-ups do agente (vários
-    // requests sequenciais). Com staleTime > 0 ela não é re-baixada inteira a
-    // cada foco da janela — só quando "velha" (>60s). Mutações de follow-up
-    // invalidam a query e forçam o recarregamento imediato quando necessário.
+    // Esta query carrega TODO o histórico de follow-ups do agente numa única
+    // chamada. Com staleTime > 0 ela não é re-baixada a cada foco da janela — só
+    // quando "velha" (>60s). Mutações de follow-up invalidam a query e forçam o
+    // recarregamento imediato quando necessário.
     staleTime: 60_000,
     refetchOnWindowFocus: true,
   });

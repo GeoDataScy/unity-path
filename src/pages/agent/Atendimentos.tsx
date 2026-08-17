@@ -36,6 +36,7 @@ import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
 import { useStatusTracking, useFollowUpsQuery } from "@/features/services/useStatusTracking";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
 import { CONTACT_REASONS, getContactReason, type ContactReasonCode } from "@/features/services/contact-reasons";
@@ -324,7 +325,18 @@ export default function Atendimentos() {
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), canViewAllTickets);
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
   // useStatusTracking already calls this internally; React Query deduplicates it — no extra request.
-  const { data: allFollowUps = [] } = useFollowUpsQuery(Boolean(userId));
+  const {
+    data: allFollowUps = [],
+    isPending: followUpsPending,
+    isError: followUpsError,
+  } = useFollowUpsQuery(Boolean(userId));
+
+  // Enquanto os follow-ups não chegaram (primeira carga) ou falharam sem nenhum
+  // dado em cache, NÃO podemos calcular status — o mapa vazio faria todo ticket
+  // aparecer como "Novo" (era exatamente o bug). Nesses casos mostramos um
+  // placeholder no badge em vez de fabricar "Novo". Com dado (mesmo em erro de
+  // refetch, quando o cache anterior persiste) o status real é exibido.
+  const followUpsUnavailable = allFollowUps.length === 0 && (followUpsPending || followUpsError);
 
   // Map id -> full_name for displaying ticket owner when supervisor (RLS gates this query for non-supervisors).
   const { data: agentNamesMap = {} } = useQuery<Record<string, string>>({
@@ -1166,22 +1178,27 @@ export default function Atendimentos() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {(() => {
-                        const st = getAgentStatus(s.id, s.status);
-                        const count = getInteractionCount(s.id);
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <Badge
-                              variant={st.variant}
-                              className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                              onClick={() => setTrackingService(s)}
-                            >
-                              {st.label}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground">#{count}</span>
-                          </div>
-                        );
-                      })()}
+                      {followUpsUnavailable ? (
+                        // Follow-ups ainda carregando/indisponíveis: não fabricar "Novo".
+                        <Skeleton className="h-5 w-24" />
+                      ) : (
+                        (() => {
+                          const st = getAgentStatus(s.id, s.status);
+                          const count = getInteractionCount(s.id);
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <Badge
+                                variant={st.variant}
+                                className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                                onClick={() => setTrackingService(s)}
+                              >
+                                {st.label}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">#{count}</span>
+                            </div>
+                          );
+                        })()
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex items-center justify-end gap-1">
