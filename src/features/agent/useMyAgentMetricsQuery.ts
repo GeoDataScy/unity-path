@@ -20,15 +20,43 @@ export type AgentMyMetrics = {
   total_interactions: number;
   new_services: number;
   follow_ups: number;
+  /** Total / dias de CALENDÁRIO do período. Legado — prefira `my_rate`. */
   avg_daily: number;
   best_day: string | null;
   best_day_count: number;
   trend_pct: number;
   trend_label: "Evoluindo" | "Estável" | "Regredindo" | string;
+  /** false quando não há dias trabalhados suficientes nas duas metades — a UI esconde a tendência. */
+  trend_reliable: boolean;
   by_day: AgentMetricsByDayItem[];
   by_channel: AgentMetricsItem[];
   by_platform: AgentMetricsItem[];
   by_product: AgentMetricsItem[];
+
+  // ── Ritmo (comparação justa) ───────────────────────────────────────────────
+  /** Dias de calendário do período. */
+  period_days: number;
+  /** Dias em que o agente registrou pelo menos 1 interação. */
+  active_days: number;
+  /** Dias de calendário que ainda restam no período (contando hoje). 0 se já acabou. */
+  days_remaining: number;
+  /** total / active_days — interações por dia TRABALHADO. */
+  my_rate: number;
+  /** Mediana do ritmo dos OUTROS agentes. Robusta a outlier, ao contrário da média. */
+  team_median_rate: number;
+  /** Mediana do total dos OUTROS agentes. */
+  team_median_total: number;
+  /** Quantos agentes tiveram atividade no período (inclui o próprio). */
+  team_size: number;
+  /** Ritmo do líder (que é definido por volume total, não por ritmo). */
+  team_leader_rate: number;
+  /** Quantos a mais por dia trabalhado para alcançar a mediana. 0 se já está igual ou acima. */
+  gap_per_day: number;
+  /** Quantos % o ritmo da mediana está acima do seu. 0 se já está igual ou acima. */
+  gap_to_median_pct: number;
+  /** true quando o ritmo próprio está abaixo de 80% da mediana do time. */
+  is_below_team_rate: boolean;
+
   // Team comparison
   /** Average total across OTHER agents (excludes the current agent). */
   team_average: number;
