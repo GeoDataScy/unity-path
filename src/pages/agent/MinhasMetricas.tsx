@@ -1,15 +1,12 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -20,43 +17,38 @@ import {
   Award,
   BarChart3,
   CheckCircle2,
-  CloudRain,
+  ChevronLeft,
+  ChevronRight,
   Crown,
-  MessageSquare,
+  Minus,
   RefreshCw,
-  Star,
+  Target,
   TrendingDown,
   TrendingUp,
-  Users,
+  Wallet,
 } from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useMyAgentMetricsQuery, type AgentMyMetrics } from "@/features/agent/useMyAgentMetricsQuery";
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-
-const CHART_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-neutral))",
-  "hsl(var(--chart-7))",
-  "hsl(var(--chart-5))",
-];
-
-const CHANNEL_COLORS: Record<string, string> = {
-  Email:           "hsl(var(--chart-info))",
-  SMS:             "hsl(var(--chart-success))",
-  Clickbank:       "hsl(var(--chart-warning))",
-  "Não informado": "hsl(var(--chart-neutral))",
-};
+// ── Cores ─────────────────────────────────────────────────────────────────────
+//
+// Só duas séries no gráfico principal (novos / follow-ups) e elas precisam ser
+// distinguíveis por quem tem daltonismo. Roxo + turquesa foi validado:
+// ΔE 20.9 sob deuteranopia, 29.7 com visão normal — bem acima do piso.
+// (O par roxo + azul que estava aqui antes dava ΔE 2.6 sob protanopia, ou seja,
+// era a MESMA cor para boa parte das pessoas. Não voltar para ele.)
+const COLOR_NOVOS      = "hsl(var(--chart-1))"; // roxo
+const COLOR_FOLLOWUPS  = "hsl(var(--chart-6))"; // turquesa
+const COLOR_MAGNITUDE  = "hsl(var(--chart-1))"; // hue única p/ ranking de canal/plataforma
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -73,102 +65,169 @@ function fmtN(n: number) {
   return new Intl.NumberFormat("pt-BR").format(n);
 }
 
+/** Ritmo sempre com 1 casa: "8,4". Duas casas viram ruído visual. */
+function fmtRate(n: number) {
+  return (Number(n) || 0).toFixed(1).replace(".", ",");
+}
+
 function fmtUsd(n: number) {
   return "$ " + new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 
-// ── Motivation engine ──────────────────────────────────────────────────────────
-
-type MotivationTone = "leader" | "great" | "good" | "neutral" | "sad";
-
-interface MotivationResult {
-  title: string;
-  message: string;
-  tone: MotivationTone;
+function plural(n: number, one: string, many: string) {
+  return n === 1 ? one : many;
 }
 
-function getMotivation(m: AgentMyMetrics): MotivationResult {
-  const {
-    total_interactions: total,
-    team_average,
-    team_leader_count,
-    team_leader_name,
-    is_leader,
-    is_below_team_avg_20pct,
-    gap_to_avg_pct,
-    trend_label,
-    trend_pct,
-  } = m;
+// ── Mensagem principal ────────────────────────────────────────────────────────
+//
+// Regra: toda mensagem termina em algo que a pessoa PODE FAZER, com número
+// contável. Nunca só "você está atrás" — isso informa o problema e não dá saída.
 
-  // Empty period — gentle nudge
+type Tone = "leader" | "ahead" | "onpar" | "action" | "empty";
+
+interface Headline {
+  title: string;
+  message: string;
+  tone: Tone;
+}
+
+function getHeadline(m: AgentMyMetrics): Headline {
+  const total     = m.total_interactions ?? 0;
+  const myRate    = Number(m.my_rate ?? 0);
+  const median    = Number(m.team_median_rate ?? 0);
+  const gap       = Number(m.gap_per_day ?? 0);
+  const left      = Number(m.days_remaining ?? 0);
+  const activeDays = Number(m.active_days ?? 0);
+
   if (total === 0) {
     return {
-      title: "Bora começar!",
-      message: "Nenhuma interação registrada neste período. O primeiro atendimento do dia é o mais importante — vamos lá!",
-      tone: "sad",
+      title: "Nada registrado neste período",
+      message: "Escolha outro período acima, ou comece a registrar — o primeiro atendimento do dia é o que destrava o resto.",
+      tone: "empty",
     };
   }
 
-  // Leader takes precedence over everything else
-  if (is_leader) {
+  if (m.is_leader) {
     return {
-      title: "Você lidera o período! 🏆",
-      message: `Com ${fmtN(total)} atendimentos você está no topo do time. Mantenha esse ritmo!`,
+      title: "Você foi quem mais atendeu no período",
+      message: `${fmtN(total)} atendimentos em ${activeDays} ${plural(activeDays, "dia trabalhado", "dias trabalhados")}. Seu ritmo é ${fmtRate(myRate)} por dia. Segura esse ritmo.`,
       tone: "leader",
     };
   }
 
-  // The flagged "20% below the team average" — sad tone with the exact copy
-  if (is_below_team_avg_20pct) {
+  // Sem time suficiente para comparar (agente sozinho no período).
+  if (median <= 0) {
     return {
-      title: "Hora de acelerar.",
-      message: `O time está ${fmtN(gap_to_avg_pct)}% acima de você. Cada interação conta.`,
-      tone: "sad",
+      title: `Seu ritmo é ${fmtRate(myRate)} por dia trabalhado`,
+      message: `${fmtN(total)} atendimentos em ${activeDays} ${plural(activeDays, "dia", "dias")}. Ainda não dá para comparar com o time neste período.`,
+      tone: "onpar",
     };
   }
 
-  // Above-or-around the team average — encouraging variants
-  if (team_average > 0 && total >= team_average) {
-    const aheadPct = Math.round(((total - team_average) / team_average) * 100);
+  if (gap <= 0) {
+    const aheadPct = median > 0 ? Math.round((myRate / median - 1) * 100) : 0;
+    if (aheadPct <= 0) {
+      return {
+        title: "Você está no mesmo ritmo do time",
+        message: `${fmtRate(myRate)} por dia trabalhado, igual à metade do time. Mais 1 por dia já te coloca na frente.`,
+        tone: "onpar",
+      };
+    }
     return {
-      title: "Acima da média do time 📈",
-      message: aheadPct > 0
-        ? `Você está ${aheadPct}% acima da média do time (${fmtN(Math.round(team_average))}). Líder do período: ${team_leader_name} com ${fmtN(team_leader_count)}.`
-        : `Você está exatamente na média do time (${fmtN(Math.round(team_average))}). Bora superar?`,
-      tone: "great",
+      title: `Você está ${aheadPct}% acima do time`,
+      message: `Seu ritmo é ${fmtRate(myRate)} por dia trabalhado. A metade do time faz ${fmtRate(median)}. Continue assim.`,
+      tone: "ahead",
     };
   }
 
-  if (trend_label === "Evoluindo") {
-    return {
-      title: `Tendência positiva: +${Math.abs(trend_pct).toFixed(0)}% 📊`,
-      message: `Você está crescendo. Continue nesse ritmo para alcançar a média do time (${fmtN(Math.round(team_average))}).`,
-      tone: "good",
-    };
-  }
+  // Atrás: sempre vira alvo contável, nunca só "você está atrás".
+  const catchUp = Math.ceil(gap * Math.max(left, 1));
+  const projection =
+    left >= 2
+      ? ` São cerca de ${fmtN(catchUp)} atendimentos nos ${left} dias que faltam no período.`
+      : "";
 
-  // Below average but within the 20% tolerance
   return {
-    title: "Próximo da média",
-    message: `Você está com ${fmtN(total)} atendimentos. Média do time: ${fmtN(Math.round(team_average))}. Continue firme!`,
-    tone: "neutral",
+    title: `Faltam ${fmtRate(gap)} por dia para alcançar o time`,
+    message: `Você faz ${fmtRate(myRate)} por dia trabalhado e a metade do time faz ${fmtRate(median)}.${projection}`,
+    tone: "action",
   };
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
+const TONE_CARD: Record<Tone, string> = {
+  leader: "border-amber-400/70 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-950/25",
+  ahead:  "border-emerald-400/70 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-950/25",
+  onpar:  "border-border bg-card",
+  action: "border-primary/50 bg-primary/5",
+  empty:  "border-border bg-muted/40",
+};
+
+const TONE_ICON: Record<Tone, React.ElementType> = {
+  leader: Crown,
+  ahead:  TrendingUp,
+  onpar:  Minus,
+  action: Target,
+  empty:  BarChart3,
+};
+
+const TONE_ICON_COLOR: Record<Tone, string> = {
+  leader: "text-amber-500",
+  ahead:  "text-emerald-600 dark:text-emerald-400",
+  onpar:  "text-muted-foreground",
+  action: "text-primary",
+  empty:  "text-muted-foreground",
+};
+
+// ── Barra "você vs time" ──────────────────────────────────────────────────────
+
+function RateBar({
+  label,
+  value,
+  max,
+  colorClass,
+  strong,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  colorClass: string;
+  strong?: boolean;
+}) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-3">
+        <span className={cn("text-sm", strong ? "font-semibold text-foreground" : "text-muted-foreground")}>
+          {label}
+        </span>
+        <span className={cn("tabular-nums", strong ? "text-lg font-semibold" : "text-sm text-muted-foreground")}>
+          {fmtRate(value)}
+          <span className="ml-1 text-xs font-normal text-muted-foreground">/dia</span>
+        </span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-muted">
+        <div className={cn("h-full rounded-full transition-all", colorClass)} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+// ── KPI simples, com uma linha de explicação em português claro ────────────────
 
 function KpiCard({
   label,
   value,
-  sub,
+  hint,
   icon: Icon,
   loading,
+  valueClass,
 }: {
   label: string;
   value: string;
-  sub?: string;
+  hint: string;
   icon: React.ElementType;
   loading: boolean;
+  valueClass?: string;
 }) {
   return (
     <Card>
@@ -180,11 +239,11 @@ function KpiCard({
       </CardHeader>
       <CardContent>
         {loading ? (
-          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-9 w-24" />
         ) : (
           <>
-            <div className="text-3xl font-semibold">{value}</div>
-            {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
+            <div className={cn("text-3xl font-semibold tabular-nums", valueClass)}>{value}</div>
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">{hint}</p>
           </>
         )}
       </CardContent>
@@ -192,72 +251,59 @@ function KpiCard({
   );
 }
 
-// ── Empty chart placeholder ────────────────────────────────────────────────────
-
 function ChartEmpty({ msg = "Nenhum dado no período" }: { msg?: string }) {
+  return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{msg}</div>;
+}
+
+/** Ranking por magnitude → uma hue só. Cor diferente por categoria sugeriria
+ *  uma identidade que esses cortes não têm. */
+function RankingChart({ data, unit = "interações" }: { data: { name: string; value: number }[]; unit?: string }) {
   return (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{msg}</div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart layout="vertical" data={data} margin={{ top: 5, right: 28, left: 8, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--chart-grid))" />
+        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--chart-axis))" />
+        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} stroke="hsl(var(--chart-axis))" />
+        <Tooltip
+          cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+          contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))" }}
+          formatter={(v: number) => [fmtN(v), unit]}
+        />
+        <Bar dataKey="value" fill={COLOR_MAGNITUDE} radius={[0, 4, 4, 0]} maxBarSize={22} />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
-// ── Comparison bar (você vs referência) ───────────────────────────────────────
+// ── Página ────────────────────────────────────────────────────────────────────
 
-function ComparisonBar({
-  label,
-  yourValue,
-  refValue,
-  youAheadColor,
-  refAheadColor,
-}: {
-  label: string;
-  yourValue: number;
-  refValue: number;
-  youAheadColor: string;
-  refAheadColor: string;
-}) {
-  const max = Math.max(yourValue, refValue, 1);
-  const yourPct = Math.round((yourValue / max) * 100);
-  const refPct = Math.round((refValue / max) * 100);
-  const youAhead = yourValue >= refValue;
+type PresetKey = "hoje" | "semana" | "mes" | "30d";
 
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="tabular-nums">
-          <span className="font-medium">{fmtN(yourValue)}</span>
-          <span className="mx-1.5 text-muted-foreground">/</span>
-          <span className="text-muted-foreground">{fmtN(Math.round(refValue))}</span>
-        </span>
-      </div>
-      <div className="relative h-2.5 overflow-hidden rounded-full bg-muted">
-        {/* Reference (lighter, full ref value) */}
-        <div
-          className={cn("absolute inset-y-0 left-0 rounded-full opacity-30", youAhead ? "bg-muted-foreground" : refAheadColor)}
-          style={{ width: `${refPct}%` }}
-        />
-        {/* You (solid) */}
-        <div
-          className={cn("absolute inset-y-0 left-0 rounded-full", youAhead ? youAheadColor : refAheadColor)}
-          style={{ width: `${yourPct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ─────────────────────────────────────────────────────────────
+/** Linhas por página na tabela "Dia a dia". 10 cabe na tela sem rolar. */
+const DAYS_PER_PAGE = 10;
 
 export default function MinhasMetricas() {
   const { fullName } = useOutletContext<AgentOutletContext>();
 
-  const defaultRange = useMemo<DateRange>(() => {
-    const todayISO = spToday();
-    const today = parseISOLocal(todayISO);
-    return { from: addDays(today, -29), to: today };
+  const presets = useMemo(() => {
+    const today = parseISOLocal(spToday());
+    return {
+      hoje:   { label: "Hoje",            range: { from: today, to: today } },
+      semana: { label: "Esta semana",     range: { from: startOfWeek(today, { weekStartsOn: 1 }), to: today } },
+      mes:    { label: "Este mês",        range: { from: startOfMonth(today), to: today } },
+      "30d":  { label: "Últimos 30 dias", range: { from: addDays(today, -29), to: today } },
+    } as Record<PresetKey, { label: string; range: DateRange }>;
   }, []);
 
-  const [range, setRange] = useState<DateRange | undefined>(defaultRange);
+  const [range, setRange] = useState<DateRange | undefined>(presets["30d"].range);
+  const [dayPage, setDayPage] = useState(1);
+
+  // Trocar o período muda a quantidade de linhas — sempre voltar para a página 1,
+  // senão a pessoa clica em "Este mês" e cai numa página vazia.
+  function changeRange(next: DateRange | undefined) {
+    setRange(next);
+    setDayPage(1);
+  }
 
   const { fromISO, toISO } = useMemo(() => {
     const today = spToday();
@@ -266,462 +312,404 @@ export default function MinhasMetricas() {
     return { fromISO: from, toISO: to };
   }, [range]);
 
-  const days = useMemo(() => {
-    const d = (parseISOLocal(toISO).getTime() - parseISOLocal(fromISO).getTime()) / 86_400_000 + 1;
-    return Math.max(1, Math.round(d));
-  }, [fromISO, toISO]);
+  const activePreset = useMemo<PresetKey | null>(() => {
+    const entries = Object.entries(presets) as [PresetKey, { range: DateRange }][];
+    const hit = entries.find(
+      ([, p]) => spToday(p.range.from!) === fromISO && spToday(p.range.to!) === toISO,
+    );
+    return hit ? hit[0] : null;
+  }, [presets, fromISO, toISO]);
 
   const metricsQuery = useMyAgentMetricsQuery({ enabled: true, from: fromISO, to: toISO });
   const isLoading = metricsQuery.isLoading;
   const m = metricsQuery.data;
 
-  const greetingName = (fullName ?? "").trim() || "Agente";
+  const firstName = ((fullName ?? "").trim().split(/\s+/)[0]) || "Agente";
 
-  // ── Derived display values ───────────────────────────────────────────────────
+  const myRate     = Number(m?.my_rate ?? 0);
+  const medianRate = Number(m?.team_median_rate ?? 0);
+  const activeDays = Number(m?.active_days ?? 0);
 
-  const trend = useMemo(() => {
-    if (!m) return { label: "—", pct: 0, tone: "neutral" as const, Icon: TrendingUp };
-    const pct = Number(m.trend_pct ?? 0);
-    const label = m.trend_label ?? "Estável";
-    const tone = pct >= 5 ? ("success" as const) : pct <= -5 ? ("destructive" as const) : ("neutral" as const);
-    const Icon = pct >= 5 ? TrendingUp : pct <= -5 ? TrendingDown : BarChart3;
-    return { label, pct, tone, Icon };
-  }, [m]);
-
-  const motivation = useMemo(() => {
-    if (!m) return null;
-    return getMotivation(m);
-  }, [m, days]);
+  const headline = useMemo(() => (m ? getHeadline(m) : null), [m]);
 
   const chartSeries = useMemo(() => {
     if (!m) return [];
     return (m.by_day ?? []).map((d) => ({
       day: format(parseISO(d.day), "dd/MM"),
-      total: d.value,
       novos: d.services,
       followups: d.followups,
+      total: d.value,
     }));
   }, [m]);
 
-  const avgDaily = m ? Number(m.avg_daily ?? 0) : 0;
-  const teamAvgDaily = m && days > 0 ? Number(m.team_average ?? 0) / days : 0;
+  const trend = useMemo(() => {
+    const pct = Number(m?.trend_pct ?? 0);
+    if (pct >= 10)  return { Icon: TrendingUp,   cls: "text-emerald-600 dark:text-emerald-400" };
+    if (pct <= -10) return { Icon: TrendingDown, cls: "text-destructive" };
+    return { Icon: Minus, cls: "text-foreground" };
+  }, [m]);
 
-  const trendClass =
-    trend.tone === "success"
-      ? "text-green-600"
-      : trend.tone === "destructive"
-        ? "text-destructive"
-        : "text-muted-foreground";
+  // Escala das barras de ritmo: 15% de folga em cima do maior valor, para a
+  // barra cheia nunca encostar na borda e sugerir "no máximo".
+  const rateMax = Math.max(myRate, medianRate, 0.1) * 1.15;
 
-  const motivationBg: Record<MotivationTone, string> = {
-    leader:  "border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30",
-    great:   "border-green-400 bg-green-50 dark:bg-green-950/30",
-    good:    "border-primary/40 bg-primary/5",
-    neutral: "border-border bg-card",
-    sad:     "border-rose-400/70 bg-rose-50 dark:bg-rose-950/30",
-  };
+  // ── Paginação da tabela "Dia a dia" ─────────────────────────────────────────
+  // Clampar em vez de sincronizar com efeito: se o período novo tiver menos
+  // páginas que a página atual, cai na última válida sem render intermediário.
+  const allDays   = m?.by_day ?? [];
+  const pageCount = Math.max(1, Math.ceil(allDays.length / DAYS_PER_PAGE));
+  const page      = Math.min(Math.max(dayPage, 1), pageCount);
+  const pageStart = (page - 1) * DAYS_PER_PAGE;
+  const pagedDays = allDays.slice(pageStart, pageStart + DAYS_PER_PAGE);
 
-  const motivationIcon: Record<MotivationTone, React.ElementType> = {
-    leader:  Award,
-    great:   Star,
-    good:    TrendingUp,
-    neutral: BarChart3,
-    sad:     CloudRain,
-  };
-
-  const motivationIconColor: Record<MotivationTone, string> = {
-    leader:  "text-yellow-500",
-    great:   "text-green-600",
-    good:    "text-primary",
-    neutral: "text-muted-foreground",
-    sad:     "text-rose-500",
-  };
+  const HeadlineIcon = headline ? TONE_ICON[headline.tone] : BarChart3;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
-      {/* Header */}
-      <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Olá, {greetingName}!</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Minhas Métricas</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")}
-            &nbsp;·&nbsp;{days} dia{days !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex w-full flex-col gap-1.5 md:w-[360px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Período (de — até)
-          </label>
-          <DateRangePicker
-            value={range}
-            onChange={setRange}
-            className="border bg-background text-foreground hover:bg-accent"
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Clique para escolher a data inicial e final
-          </p>
-        </div>
-      </header>
+    <main className="mx-auto max-w-6xl px-4 py-8">
+      {/* ── Cabeçalho + período ──────────────────────────────────────────── */}
+      <header className="mb-6">
+        <p className="text-sm font-medium text-muted-foreground">Olá, {firstName}!</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Minhas Métricas</h1>
 
-      {/* Motivation card */}
-      {isLoading ? (
-        <Skeleton className="mb-6 h-20 w-full rounded-xl" />
-      ) : motivation && (
-        <div className={cn("mb-6 flex items-start gap-3 rounded-xl border p-4", motivationBg[motivation.tone])}>
-          {(() => {
-            const Icon = motivationIcon[motivation.tone];
-            return <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", motivationIconColor[motivation.tone])} />;
-          })()}
-          <div>
-            <p className="font-semibold">{motivation.title}</p>
-            <p className="text-sm text-muted-foreground">{motivation.message}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {(Object.keys(presets) as PresetKey[]).map((key) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={activePreset === key ? "default" : "outline"}
+              onClick={() => changeRange(presets[key].range)}
+            >
+              {presets[key].label}
+            </Button>
+          ))}
+          <div className="ml-auto w-full sm:w-auto sm:min-w-[260px]">
+            <DateRangePicker
+              value={range}
+              onChange={changeRange}
+              className="border bg-background text-foreground hover:bg-accent"
+            />
           </div>
         </div>
-      )}
 
-      {/* Team comparison card — você vs média vs líder */}
-      {!isLoading && m && (
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Users className="h-4 w-4 text-primary" />
-              Comparação com o time no período
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {/* Você */}
-              <div className="rounded-lg border bg-card p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Você</div>
-                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(m.total_interactions)}</div>
-                <div className="text-xs text-muted-foreground">atendimentos</div>
-              </div>
-              {/* Média do time (excluindo você) */}
-              <div className="rounded-lg border bg-card p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Média do time</div>
-                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(Math.round(m.team_average))}</div>
-                <div className="text-xs text-muted-foreground">excluindo você</div>
-              </div>
-              {/* Líder */}
-              <div className="rounded-lg border bg-card p-3">
-                <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
-                  <Crown className="h-3.5 w-3.5 text-yellow-500" />
-                  Líder
+        <p className="mt-2 text-xs text-muted-foreground">
+          Mostrando {format(parseISO(fromISO), "dd/MM/yyyy")} até {format(parseISO(toISO), "dd/MM/yyyy")}
+        </p>
+      </header>
+
+      {/* ── 1. O número principal: seu ritmo ─────────────────────────────── */}
+      {isLoading ? (
+        <Skeleton className="mb-6 h-56 w-full rounded-xl" />
+      ) : m && headline ? (
+        <Card className="mb-6 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="grid gap-6 p-6 md:grid-cols-2">
+              {/* Hero */}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Seu ritmo</p>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-5xl font-semibold tabular-nums leading-none">{fmtRate(myRate)}</span>
+                  <span className="text-sm text-muted-foreground">atendimentos por dia trabalhado</span>
                 </div>
-                <div className="mt-1 text-2xl font-semibold tabular-nums">{fmtN(m.team_leader_count)}</div>
-                <div className="truncate text-xs text-muted-foreground">{m.is_leader ? "Você 🏆" : m.team_leader_name}</div>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {fmtN(m.total_interactions)} no total, em{" "}
+                  <span className="font-medium text-foreground">
+                    {activeDays} {plural(activeDays, "dia", "dias")}
+                  </span>{" "}
+                  que você trabalhou.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Contamos por dia trabalhado, não pelo total do mês — assim folga e férias não contam contra você.
+                </p>
+              </div>
+
+              {/* Comparação */}
+              <div className="space-y-4 md:border-l md:pl-6">
+                <RateBar
+                  label="Você"
+                  value={myRate}
+                  max={rateMax}
+                  colorClass={myRate >= medianRate ? "bg-emerald-500" : "bg-primary"}
+                  strong
+                />
+                <RateBar
+                  label="Metade do time faz até"
+                  value={medianRate}
+                  max={rateMax}
+                  colorClass="bg-muted-foreground/50"
+                />
+                <p className="text-xs leading-snug text-muted-foreground">
+                  A referência é a <span className="font-medium text-foreground">mediana</span>: metade do time está
+                  acima dela e metade abaixo. Usamos ela no lugar da média porque um único colega muito acima não
+                  distorce o alvo de todo mundo.
+                  {m.team_leader_name && !m.is_leader && (
+                    <>
+                      {" "}Quem mais atendeu no período foi{" "}
+                      <span className="font-medium text-foreground">{m.team_leader_name}</span>, com{" "}
+                      {fmtN(m.team_leader_count)}.
+                    </>
+                  )}
+                </p>
               </div>
             </div>
 
-            {/* Progress bars: você vs média e você vs líder */}
-            <div className="mt-4 space-y-3">
-              <ComparisonBar
-                label="vs média"
-                yourValue={m.total_interactions}
-                refValue={m.team_average}
-                youAheadColor="bg-emerald-500"
-                refAheadColor="bg-rose-500"
-              />
-              <ComparisonBar
-                label="vs líder"
-                yourValue={m.total_interactions}
-                refValue={m.team_leader_count}
-                youAheadColor="bg-yellow-500"
-                refAheadColor="bg-primary"
-              />
+            {/* Faixa de ação */}
+            <div className={cn("flex items-start gap-3 border-t px-6 py-4", TONE_CARD[headline.tone])}>
+              <HeadlineIcon className={cn("mt-0.5 h-5 w-5 shrink-0", TONE_ICON_COLOR[headline.tone])} />
+              <div>
+                <p className="font-semibold">{headline.title}</p>
+                <p className="text-sm text-muted-foreground">{headline.message}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {/* ── KPIs: Atendimentos ─────────────────────────────────────────────── */}
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Atendimentos
-      </h2>
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {/* ── 2. Três números de apoio ─────────────────────────────────────── */}
+      <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <KpiCard
-          label="Total de interações"
+          label="Total no período"
           value={fmtN(m?.total_interactions ?? 0)}
-          sub="novos + follow-ups"
+          hint={`${fmtN(m?.new_services ?? 0)} atendimentos novos e ${fmtN(m?.follow_ups ?? 0)} follow-ups (retornos em tickets que já existiam).`}
           icon={BarChart3}
           loading={isLoading}
         />
         <KpiCard
-          label="Novos atendimentos"
-          value={fmtN(m?.new_services ?? 0)}
-          sub="tickets registrados"
-          icon={MessageSquare}
+          label="Seu melhor dia"
+          value={isLoading || !m?.best_day ? "—" : fmtN(m.best_day_count)}
+          hint={
+            m?.best_day
+              ? `Foi em ${format(parseISO(m.best_day), "dd/MM")}. É a prova de que esse número cabe no seu dia.`
+              : "Sem nenhum dia com atendimento neste período."
+          }
+          icon={Award}
           loading={isLoading}
         />
         <KpiCard
-          label="Follow-ups"
-          value={fmtN(m?.follow_ups ?? 0)}
-          sub="interações em abertos"
-          icon={RefreshCw}
+          label="Como você vem indo"
+          value={isLoading ? "—" : !m?.trend_reliable ? "Sem leitura" : m.trend_label}
+          hint={
+            !m?.trend_reliable
+              ? "Poucos dias trabalhados para comparar o começo com o fim do período sem virar chute."
+              : `A segunda metade do período está ${Math.abs(Number(m?.trend_pct ?? 0))}% ${Number(m?.trend_pct ?? 0) >= 0 ? "acima" : "abaixo"} da primeira, comparando ritmo por dia trabalhado.`
+          }
+          icon={trend.Icon}
+          valueClass={m?.trend_reliable ? trend.cls : "text-muted-foreground text-2xl"}
           loading={isLoading}
         />
-        <KpiCard
-          label="Média diária"
-          value={isLoading ? "—" : avgDaily.toFixed(1).replace(".", ",")}
-          sub="interações/dia"
-          icon={TrendingUp}
-          loading={isLoading}
-        />
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <trend.Icon className="h-4 w-4 text-primary" />
-              Tendência
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-28" />
-            ) : (
-              <>
-                <div className={cn("text-xl font-semibold", trendClass)}>
-                  {trend.label}
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {trend.pct >= 0 ? "+" : ""}{trend.pct.toFixed(0)}% (2ª vs 1ª metade)
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </section>
 
-      {/* ── KPIs: Reembolsos ─────────────────────────────────────────────── */}
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Reembolsos
-      </h2>
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* ── 3. Gráfico: cada dia do período ──────────────────────────────── */}
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Seus dias no período</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Cada barra é um dia. A altura é quanto você fez; a linha tracejada é o ritmo do time.
+          </p>
+        </CardHeader>
+        <CardContent className="h-[320px]">
+          {isLoading ? (
+            <Skeleton className="h-full w-full" />
+          ) : chartSeries.length === 0 ? (
+            <ChartEmpty />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartSeries} margin={{ top: 16, right: 12, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--chart-grid))" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11 }}
+                  minTickGap={20}
+                  stroke="hsl(var(--chart-axis))"
+                  tickLine={false}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--chart-axis))" tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))" }}
+                  formatter={(val: number, name: string) => [fmtN(val), name === "novos" ? "Novos" : "Follow-ups"]}
+                />
+                <Legend
+                  formatter={(v) => (v === "novos" ? "Novos atendimentos" : "Follow-ups")}
+                  wrapperStyle={{ fontSize: 12 }}
+                />
+                {medianRate > 0 && (
+                  <ReferenceLine
+                    y={medianRate}
+                    stroke="hsl(var(--chart-axis))"
+                    strokeDasharray="6 4"
+                    strokeWidth={2}
+                    label={{
+                      value: `Ritmo do time: ${fmtRate(medianRate)}`,
+                      position: "insideTopRight",
+                      fontSize: 11,
+                      fill: "hsl(var(--chart-axis))",
+                    }}
+                  />
+                )}
+                {/* stroke na cor da superfície = separador de 1,5px entre os
+                    segmentos empilhados, sem inventar uma terceira cor */}
+                <Bar dataKey="novos"     stackId="dia" fill={COLOR_NOVOS}     stroke="hsl(var(--card))" strokeWidth={1.5} maxBarSize={38} />
+                <Bar dataKey="followups" stackId="dia" fill={COLOR_FOLLOWUPS} stroke="hsl(var(--card))" strokeWidth={1.5} maxBarSize={38} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── 4. Reembolsos ────────────────────────────────────────────────── */}
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Reembolsos</h2>
+      <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="Em aberto"
           value={fmtN(m?.refunds_open ?? 0)}
-          sub="solicitados no período"
+          hint="Pedidos que você abriu no período e ainda não foram concluídos."
           icon={RefreshCw}
           loading={isLoading}
         />
         <KpiCard
           label="Concluídos"
           value={fmtN(m?.refunds_done ?? 0)}
-          sub="finalizados no período"
+          hint="Pedidos que receberam baixa dentro do período."
           icon={CheckCircle2}
           loading={isLoading}
         />
         <KpiCard
-          label="Valor reembolsado"
+          label="Valor devolvido"
           value={isLoading ? "—" : fmtUsd(m?.refunds_total_value ?? 0)}
-          sub="concluídos no período"
-          icon={BarChart3}
+          hint="Soma dos reembolsos concluídos no período."
+          icon={Wallet}
           loading={isLoading}
         />
-      </div>
-
-      {/* ── Melhor dia ────────────────────────────────────────────────────── */}
-      {!isLoading && m?.best_day && (
-        <div className="mb-6 flex items-center gap-2 rounded-lg border bg-card px-4 py-3">
-          <Award className="h-4 w-4 text-yellow-500" />
-          <span className="text-sm">
-            <span className="font-semibold">Melhor dia do período:</span>{" "}
-            {format(parseISO(m.best_day), "dd/MM/yyyy")} com{" "}
-            <span className="font-semibold text-primary">{fmtN(m.best_day_count)} interações</span>
-          </span>
-        </div>
-      )}
-
-      {/* ── Charts ───────────────────────────────────────────────────────── */}
-      <section className="mb-6 grid gap-4 lg:grid-cols-3">
-        {/* Evolução diária */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Evolução diária (interações)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : chartSeries.length === 0 ? (
-              <ChartEmpty />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartSeries} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ fontSize: 12 }}
-                    formatter={(val: number, name: string) => [
-                      fmtN(val),
-                      name === "total" ? "Total" : name === "novos" ? "Novos" : "Follow-ups",
-                    ]}
-                  />
-                  <Legend
-                    formatter={(v) => v === "total" ? "Total" : v === "novos" ? "Novos" : "Follow-ups"}
-                    wrapperStyle={{ fontSize: 11 }}
-                  />
-                  <ReferenceLine
-                    y={avgDaily}
-                    stroke="hsl(var(--muted-foreground))"
-                    strokeDasharray="6 4"
-                    label={{ value: "Sua média", position: "insideTopLeft", fontSize: 10 }}
-                  />
-                  {teamAvgDaily > 0 && (
-                    <ReferenceLine
-                      y={teamAvgDaily}
-                      stroke="hsl(0 72% 55%)"
-                      strokeDasharray="3 3"
-                      label={{ value: "Média do time", position: "insideTopRight", fontSize: 10, fill: "hsl(0 72% 55%)" }}
-                    />
-                  )}
-                  <Line type="monotone" dataKey="total"     stroke="hsl(var(--primary))"    strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="novos"     stroke="hsl(142 71% 45%)"       strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-                  <Line type="monotone" dataKey="followups" stroke="hsl(221 83% 65%)"       strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Canal */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Por canal</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : !m?.by_channel?.length ? (
-              <ChartEmpty />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={m.by_channel}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-muted" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtN(v), "Interações"]} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {(m.by_channel ?? []).map((entry, i) => (
-                      <Cell key={entry.name} fill={CHANNEL_COLORS[entry.name] ?? CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
       </section>
 
-      {/* Plataforma */}
-      <section className="mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Por plataforma</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            {isLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : !m?.by_platform?.length ? (
-              <ChartEmpty />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={m.by_platform}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-muted" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtN(v), "Interações"]} />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+      {/* ── 5. Detalhes (fechado por padrão) ─────────────────────────────── */}
+      <Accordion type="single" collapsible className="rounded-lg border bg-card px-4">
+        <AccordionItem value="detalhes" className="border-none">
+          <AccordionTrigger className="text-sm font-medium hover:no-underline">
+            Ver detalhes — canal, plataforma e dia a dia
+          </AccordionTrigger>
+          <AccordionContent className="pb-6">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Esses cortes descrevem de onde vieram os atendimentos. Quem escolhe o canal e a plataforma é o cliente,
+              então eles servem para entender o período — não para cobrar de você.
+            </p>
 
-      {/* ── Tabela diária ─────────────────────────────────────────────────── */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Detalhamento por dia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-              </div>
-            ) : !chartSeries.length ? (
-              <div className="py-10 text-center text-muted-foreground">Nenhum dado no período</div>
-            ) : (
-              <div className="rounded-lg border bg-card">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Novos</TableHead>
-                      <TableHead className="text-right">Follow-ups</TableHead>
-                      <TableHead className="text-right">% período</TableHead>
-                      <TableHead>Leitura</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(m?.by_day ?? []).map((row, idx) => {
-                      const prev    = idx > 0 ? (m?.by_day ?? [])[idx - 1].value : null;
-                      const delta   = prev == null ? null : row.value - prev;
-                      const pct     = (m?.total_interactions ?? 0) > 0
-                        ? Math.round((row.value / (m?.total_interactions ?? 1)) * 100)
-                        : 0;
-                      const reading =
-                        row.value === 0            ? "Sem atividade"
-                        : row.value > avgDaily * 1.2 ? "Acima da média"
-                        : row.value < avgDaily * 0.8 ? "Abaixo da média"
-                        : "Na média";
-                      const readingBadge =
-                        reading === "Acima da média"   ? "success"
-                        : reading === "Abaixo da média" ? "destructive"
-                        : reading === "Sem atividade"   ? "open"
-                        : "secondary";
-                      const deltaColor =
-                        delta == null ? "" : delta > 0 ? "text-green-600" : delta < 0 ? "text-destructive" : "text-muted-foreground";
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Por canal</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[240px]">
+                  {!m?.by_channel?.length ? <ChartEmpty /> : <RankingChart data={m.by_channel} />}
+                </CardContent>
+              </Card>
 
-                      return (
-                        <TableRow key={row.day} className={row.value === 0 ? "opacity-40" : ""}>
-                          <TableCell>{format(parseISO(row.day), "dd/MM/yyyy")}</TableCell>
-                          <TableCell className="text-right font-semibold">{fmtN(row.value)}</TableCell>
-                          <TableCell className="text-right text-muted-foreground">{fmtN(row.services)}</TableCell>
-                          <TableCell className="text-right text-muted-foreground">{fmtN(row.followups)}</TableCell>
-                          <TableCell className="text-right text-xs text-muted-foreground">{pct}%</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={readingBadge as any} className="text-xs">
-                                {reading}
-                              </Badge>
-                              {delta != null && (
-                                <span className={cn("text-xs font-medium", deltaColor)}>
-                                  {delta > 0 ? `+${delta}` : delta}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Por plataforma</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[240px]">
+                  {!m?.by_platform?.length ? <ChartEmpty /> : <RankingChart data={m.by_platform} />}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Dia a dia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!chartSeries.length ? (
+                  <div className="py-10 text-center text-muted-foreground">Nenhum dado no período</div>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead className="text-right">Novos</TableHead>
+                          <TableHead className="text-right">Follow-ups</TableHead>
+                          <TableHead>Leitura</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+                      </TableHeader>
+                      <TableBody>
+                        {pagedDays.map((row) => {
+                          // Comparação contra o PRÓPRIO ritmo por dia trabalhado.
+                          // Dia sem atividade não é "dia ruim" — é dia de folga.
+                          const reading =
+                            row.value === 0             ? "Sem atividade"
+                            : myRate <= 0               ? "—"
+                            : row.value > myRate * 1.2  ? "Dia forte"
+                            : row.value < myRate * 0.8  ? "Dia fraco"
+                            : "No seu ritmo";
+                          const badge =
+                            reading === "Dia forte"     ? "success"
+                            : reading === "Dia fraco"   ? "destructive"
+                            : reading === "Sem atividade" ? "open"
+                            : "secondary";
+
+                          return (
+                            <TableRow key={row.day} className={row.value === 0 ? "opacity-50" : ""}>
+                              <TableCell className="whitespace-nowrap">{format(parseISO(row.day), "dd/MM/yyyy")}</TableCell>
+                              <TableCell className="text-right font-semibold tabular-nums">{fmtN(row.value)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-muted-foreground">{fmtN(row.services)}</TableCell>
+                              <TableCell className="text-right tabular-nums text-muted-foreground">{fmtN(row.followups)}</TableCell>
+                              <TableCell>
+                                <Badge variant={badge as any} className="text-xs">{reading}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {allDays.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Mostrando{" "}
+                      <span className="font-medium text-foreground tabular-nums">
+                        {pageStart + 1}–{pageStart + pagedDays.length}
+                      </span>{" "}
+                      de {fmtN(allDays.length)} {plural(allDays.length, "dia", "dias")}
+                    </p>
+
+                    {pageCount > 1 && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={page <= 1}
+                          onClick={() => setDayPage(page - 1)}
+                          aria-label="Página anterior"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Anterior
+                        </Button>
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                          Página {page} de {pageCount}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={page >= pageCount}
+                          onClick={() => setDayPage(page + 1)}
+                          aria-label="Próxima página"
+                        >
+                          Próxima
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </main>
   );
 }
