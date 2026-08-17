@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { homePathForRole } from "@/lib/roles";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,11 +28,7 @@ const Index = () => {
         return;
       }
 
-      if (profile?.role === "manager") {
-        navigate("/dashboard", { replace: true });
-      } else {
-        navigate("/workspace", { replace: true });
-      }
+      navigate(homePathForRole(profile?.role), { replace: true });
     };
 
     checkAuth();

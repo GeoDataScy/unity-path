@@ -278,7 +278,7 @@ export function HeldOrdersManagerTab() {
                   <SelectItem value="all">Todos agentes</SelectItem>
                   <SelectItem value="unassigned">Sem agente</SelectItem>
                   {(usersQuery.data ?? [])
-                    .filter((u) => u.role !== "manager")
+                    .filter((u) => u.role === "agent")
                     .map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.full_name ?? u.email}

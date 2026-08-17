@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InputLogin } from "@/components/ui/input-login";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
+import { homePathForRole } from "@/lib/roles";
 import logo from "@/assets/logo-xmx.png";
 
 function isNetworkError(error: unknown): boolean {
@@ -94,11 +95,7 @@ const Login = () => {
       // Best-effort: record login event. Non-blocking.
       recordAuthEvent("login").catch(() => {});
 
-      if (profile?.role === "manager") {
-        navigate("/dashboard");
-      } else {
-        navigate("/workspace");
-      }
+      navigate(homePathForRole(profile?.role));
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
