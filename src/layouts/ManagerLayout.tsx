@@ -254,7 +254,8 @@ export default function ManagerLayout() {
     if (exporting) return;
     setExporting(true);
     try {
-      await exportManagerReport(fromISO, toISO, agentId);
+      const agentName = (agentsQuery.data ?? []).find((a) => a.id === agentId)?.label;
+      await exportManagerReport(fromISO, toISO, agentId, agentName);
     } catch (error) {
       console.error("[export-report] failed:", error);
       const message =
