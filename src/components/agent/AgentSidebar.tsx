@@ -22,7 +22,7 @@ const items = [
   { title: "Reembolsos", to: "/workspace/reembolsos", icon: HandCoins },
   { title: "Transferências", to: "/workspace/transferencias", icon: Send },
   { title: "Minhas métricas", to: "/workspace/metricas", icon: LineChart },
-  { title: "Base Suporte", to: "/workspace/base-suporte", icon: BookOpen },
+  { title: "Base de Suporte", to: "/workspace/base-suporte", icon: BookOpen },
 ] as const;
 
 export function AgentSidebar() {
