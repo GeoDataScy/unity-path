@@ -14,6 +14,7 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  BookOpen,
   ClipboardCheck,
   FileSpreadsheet,
   LogOut,
@@ -382,6 +383,12 @@ export default function ManagerLayout() {
               to="/dashboard/usuarios"
               icon={<Users className="h-4 w-4" />}
               label="Usuários"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/dashboard/base"
+              icon={<BookOpen className="h-4 w-4" />}
+              label="Base de Suporte"
               collapsed={collapsed}
             />
           </nav>

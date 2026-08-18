@@ -19,6 +19,7 @@ const DashboardAcompanhamento = lazy(() => import("./pages/DashboardAcompanhamen
 const DashboardInteracoes = lazy(() => import("./pages/DashboardInteracoes"));
 const DashboardAlertas = lazy(() => import("./pages/DashboardAlertas"));
 const DashboardUsers = lazy(() => import("./pages/DashboardUsers"));
+const DashboardBaseSuporte = lazy(() => import("./pages/DashboardBaseSuporte"));
 const AgentLayout = lazy(() => import("./layouts/AgentLayout"));
 const Atendimentos = lazy(() => import("./pages/agent/Atendimentos"));
 const PedidosEspera = lazy(() => import("./pages/agent/PedidosEspera"));
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="interacoes" element={<DashboardInteracoes />} />
             <Route path="alertas" element={<DashboardAlertas />} />
             <Route path="usuarios" element={<DashboardUsers />} />
+            <Route path="base" element={<DashboardBaseSuporte />} />
           </Route>
           <Route path="/workspace" element={<AgentLayout />}>
             <Route index element={<Atendimentos />} />

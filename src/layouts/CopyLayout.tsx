@@ -336,8 +336,7 @@ export default function CopyLayout() {
         className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
       />
 
-      {/* Sem padding/max-width aqui: cada página do copy define o seu container.
-          A Base de Suporte é um iframe que precisa da largura toda. */}
+      {/* Sem padding/max-width aqui: cada página do copy define o seu container. */}
       <main className="min-w-0 flex-1 bg-dashboard-surface">
         <Outlet context={outletContext} />
       </main>
