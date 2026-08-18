@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   CopyX,
+  Download,
   Inbox,
   ListChecks,
   Loader2,
@@ -21,23 +22,27 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { useManagerUsersQuery } from "@/features/dashboard/useManagerUsersQuery";
 import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
 import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
-import { RETURNS_DYNA_CODE } from "./parseHeldOrdersCsv";
+import { exportHeldOrders } from "./exportHeldOrders";
+import { isInProgress, productLabel } from "./format";
 import type { ManagerHeldOrder, ManagerHeldOrderStatusFilter } from "./types";
+
+const STATUS_LABELS: Record<ManagerHeldOrderStatusFilter, string> = {
+  all: "Todos status",
+  aguardando: "Aguardando",
+  em_andamento: "Em andamento",
+  confirmed: "Confirmados",
+};
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
   // order_date vem como YYYY-MM-DD.
   const [y, m, d] = value.split("-");
   return y && m && d ? `${d}/${m}/${y}` : value;
-}
-
-/** O agente já começou a tratar o pedido (e ainda não concluiu). */
-function isInProgress(o: ManagerHeldOrder): boolean {
-  return o.agent_status === "em_andamento" && o.status !== "confirmed";
 }
 
 // Badge de status na visão do manager:
@@ -68,6 +73,7 @@ function statusBadge(o: ManagerHeldOrder) {
 
 export function HeldOrdersManagerTab() {
   const [statusFilter, setStatusFilter] = useState<ManagerHeldOrderStatusFilter>("all");
+  const [productFilter, setProductFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -76,6 +82,7 @@ export function HeldOrdersManagerTab() {
   const [importOpen, setImportOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
 
+  const { toast } = useToast();
   const usersQuery = useManagerUsersQuery();
   const ordersQuery = useManagerHeldOrdersQuery({
     statusFilter,
@@ -94,17 +101,25 @@ export function HeldOrdersManagerTab() {
   const realRows = useMemo(() => allRows.filter((o) => !o.duplicate_of), [allRows]);
   const duplicateCount = allRows.length - realRows.length;
 
-  // Filtro "não atribuído" e busca textual são aplicados no cliente (o RPC já
-  // filtrou status e agente específico).
+  // Produtos (lojas) presentes no que foi carregado — o filtro se adapta ao que
+  // já foi importado, sem lista fixa para manter.
+  const products = useMemo(() => {
+    const codes = new Set(realRows.map((o) => o.dyna_code));
+    return Array.from(codes).sort((a, b) => productLabel(a).localeCompare(productLabel(b), "pt-BR"));
+  }, [realRows]);
+
+  // Filtro "não atribuído", produto e busca textual são aplicados no cliente (o
+  // RPC já filtrou status e agente específico).
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (showDuplicates ? allRows : realRows).filter((o) => {
       if (agentFilter === "unassigned" && o.assigned_to) return false;
+      if (productFilter !== "all" && o.dyna_code !== productFilter) return false;
       if (!term) return true;
       const hay = `${o.order_number ?? ""} ${o.dyna_code} ${o.email ?? ""} ${o.customer_name ?? ""}`.toLowerCase();
       return hay.includes(term);
     });
-  }, [allRows, realRows, showDuplicates, agentFilter, search]);
+  }, [allRows, realRows, showDuplicates, agentFilter, productFilter, search]);
 
   // "Aguardando" e "Em andamento" particionam os pendentes: aguardando = ninguém
   // começou; em andamento = agente já registrou atendimento.
@@ -150,6 +165,40 @@ export function HeldOrdersManagerTab() {
   const clearSelection = () => setSelected(new Set());
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
+
+  const agentLabel = useMemo(() => {
+    if (agentFilter === "all") return "Todos agentes";
+    if (agentFilter === "unassigned") return "Sem agente";
+    const user = (usersQuery.data ?? []).find((u) => u.id === agentFilter);
+    return user?.full_name ?? user?.email ?? "Agente";
+  }, [agentFilter, usersQuery.data]);
+
+  // Exporta o array `rows` — exatamente o que a tabela abaixo renderiza.
+  const handleExport = () => {
+    try {
+      const count = exportHeldOrders({
+        rows,
+        filters: {
+          status: STATUS_LABELS[statusFilter],
+          product: productFilter === "all" ? "Todos os produtos" : productLabel(productFilter),
+          agent: agentLabel,
+          search,
+          includingDuplicates: showDuplicates,
+        },
+      });
+      toast({
+        title: "Exportação concluída",
+        description: `${count} pedido(s) exportado(s) para a planilha.`,
+      });
+    } catch (error) {
+      console.error("[export-held-orders] failed:", error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Não foi possível gerar a planilha.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // A distribuição agrupa por CLIENTE (mesma regra do banco: e-mail; sem e-mail, o
   // nome; sem nome, a própria linha), então a prévia do rateio conta clientes.
@@ -264,10 +313,24 @@ export function HeldOrdersManagerTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos status</SelectItem>
-                  <SelectItem value="aguardando">Aguardando</SelectItem>
-                  <SelectItem value="em_andamento">Em andamento</SelectItem>
-                  <SelectItem value="confirmed">Confirmados</SelectItem>
+                  {(Object.keys(STATUS_LABELS) as ManagerHeldOrderStatusFilter[]).map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {STATUS_LABELS[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={productFilter} onValueChange={setProductFilter}>
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os produtos</SelectItem>
+                  {products.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {productLabel(code)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={agentFilter} onValueChange={setAgentFilter}>
@@ -296,6 +359,14 @@ export function HeldOrdersManagerTab() {
                   {showDuplicates ? "Ocultar" : "Ver"} repetidos ({duplicateCount})
                 </Button>
               )}
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                disabled={ordersQuery.isLoading || rows.length === 0}
+                title="Baixar em Excel os pedidos listados, com os filtros atuais"
+              >
+                <Download className="mr-1.5 h-4 w-4" /> Exportar ({rows.length})
+              </Button>
               <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <Upload className="mr-1.5 h-4 w-4" /> Importar arquivo
               </Button>
@@ -399,7 +470,7 @@ export function HeldOrdersManagerTab() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
-                            {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
+                            {productLabel(o.dyna_code)}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-[220px] truncate text-sm text-muted-foreground" title={o.reason ?? ""}>

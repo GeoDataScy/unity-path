@@ -7,7 +7,8 @@
 //   street1/2/3 + city/state/postal/country, às vezes com street1 == street2.
 // Aqui quebramos cada um em partes exibíveis.
 
-import type { MyHeldOrder } from "./types";
+import { RETURNS_DYNA_CODE } from "./parseHeldOrdersCsv";
+import type { ManagerHeldOrder, MyHeldOrder } from "./types";
 
 // ============================================================================
 // Motivos do On Hold
@@ -142,4 +143,29 @@ export function parseItems(items: string | null): HeldOrderItem[] {
 /** Total de unidades do pedido — o número que o agente confere na etiqueta. */
 export function totalUnits(items: HeldOrderItem[]): number {
   return items.reduce((sum, i) => sum + i.qty, 0);
+}
+
+// ============================================================================
+// Rótulos da visão do MANAGER
+// ============================================================================
+
+/** O agente já começou a tratar o pedido (e ainda não concluiu). */
+export function isInProgress(o: Pick<ManagerHeldOrder, "agent_status" | "status">): boolean {
+  return o.agent_status === "em_andamento" && o.status !== "confirmed";
+}
+
+/**
+ * Status do pedido no vocabulário que a gestora usa nos filtros e relatórios:
+ * Repetido (linha consolidada) / Confirmado / Em andamento / Aguardando.
+ */
+export function managerStatusLabel(o: ManagerHeldOrder): string {
+  if (o.duplicate_of) return "Repetido";
+  if (o.agent_status === "concluido" || o.status === "confirmed") return "Confirmado";
+  if (isInProgress(o)) return "Em andamento";
+  return "Aguardando";
+}
+
+/** Rótulo da loja/produto: pedidos de devolução não têm loja no arquivo de origem. */
+export function productLabel(dynaCode: string): string {
+  return dynaCode === RETURNS_DYNA_CODE ? "Devolução" : dynaCode;
 }
