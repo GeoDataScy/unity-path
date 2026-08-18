@@ -17,9 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import type { ServiceItem } from "@/features/services/useMyServicesQuery";
-import { CONTACT_REASONS, type ContactReasonCode } from "@/features/services/contact-reasons";
+import {
+  CONTACT_REASONS,
+  CONTACT_REASON_NOTE_MAX_LENGTH,
+  normalizeContactReasonNote,
+  requiresContactReasonNote,
+  type ContactReasonCode,
+} from "@/features/services/contact-reasons";
 
 const PRODUCTS = [
   "Arialief",
@@ -114,7 +121,7 @@ type Props = {
   service: ServiceItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (next: { client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; order_id: string | null }) => Promise<void>;
+  onSave: (next: { client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; contact_reason_note: string | null; order_id: string | null }) => Promise<void>;
 };
 
 export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props) {
@@ -126,6 +133,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const [contactReason, setContactReason] = useState<ContactReasonCode | "">(
     (service.contact_reason as ContactReasonCode | null) ?? "",
   );
+  const [contactReasonNote, setContactReasonNote] = useState(service.contact_reason_note ?? "");
   const [orderId, setOrderId] = useState("");
 
   const isRefund = contactReason === "reembolso";
@@ -156,8 +164,13 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
 
   const canSave = useMemo(() => {
     const orderOk = !isRefund || orderId.trim().length > 0;
-    return Boolean(clientEmail) && Boolean(product) && Boolean(platform) && orderOk && !saving;
-  }, [clientEmail, product, platform, isRefund, orderId, saving]);
+    // "Outro" só é salvável com a descrição preenchida (espelha o CHECK do banco).
+    const reasonOk =
+      !requiresContactReasonNote(contactReason) || contactReasonNote.trim().length > 0;
+    return (
+      Boolean(clientEmail) && Boolean(product) && Boolean(platform) && orderOk && reasonOk && !saving
+    );
+  }, [clientEmail, product, platform, isRefund, orderId, contactReason, contactReasonNote, saving]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -168,6 +181,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
         platform,
         channel,
         contact_reason: contactReason || null,
+        contact_reason_note: normalizeContactReasonNote(contactReason, contactReasonNote),
         order_id: orderId.trim() || null,
       });
       onOpenChange(false);
@@ -248,7 +262,10 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
             <Label>Motivo de contato</Label>
             <Select
               value={contactReason}
-              onValueChange={(v) => setContactReason(v as ContactReasonCode)}
+              onValueChange={(v) => {
+                setContactReason(v as ContactReasonCode);
+                if (!requiresContactReasonNote(v)) setContactReasonNote("");
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
@@ -265,6 +282,26 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
               </SelectContent>
             </Select>
           </div>
+
+          {requiresContactReasonNote(contactReason) && (
+            <div className="grid gap-2">
+              <Label htmlFor="edit-contact-reason-note">Descreva o motivo</Label>
+              <Textarea
+                id="edit-contact-reason-note"
+                value={contactReasonNote}
+                onChange={(e) =>
+                  setContactReasonNote(e.target.value.slice(0, CONTACT_REASON_NOTE_MAX_LENGTH))
+                }
+                maxLength={CONTACT_REASON_NOTE_MAX_LENGTH}
+                rows={2}
+                placeholder="Ex.: cliente confundiu cápsula com gummy"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use para situações que não se encaixam nos motivos da lista.{" "}
+                {contactReasonNote.length}/{CONTACT_REASON_NOTE_MAX_LENGTH}
+              </p>
+            </div>
+          )}
 
           {isRefund && (
             <div className="grid gap-2">

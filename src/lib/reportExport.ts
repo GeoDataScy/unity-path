@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
-import { CONTACT_REASONS } from "@/features/services/contact-reasons";
+import { formatContactReason } from "@/features/services/contact-reasons";
 import type { DashboardRefundReasonDetailRow } from "@/features/dashboard/useDashboardRefundReasonDetailQuery";
 
 type SheetSpec = {
@@ -43,6 +43,11 @@ const SHEET_SPECS = {
     name: "Motivos de Contato",
     title: "Motivos de contato por canal (só aberturas de ticket — 1 motivo por ticket)",
     columns: ["Canal", "Motivo", "Quantidade"],
+  },
+  motivosOutro: {
+    name: "Motivos — Outro",
+    title: 'Casos excepcionais descritos pelo agente (motivo "Outro")',
+    columns: ["Data", "Canal", "Produto", "E-mail do Cliente", "Descrição do motivo", "Agente"],
   },
   reembolsosResumo: {
     name: "Reembolsos - Resumo",
@@ -140,6 +145,17 @@ type ExportExtrasResponse = {
   refund_reasons_by_product: Array<{ product: string; reason: string; qty: number }>;
 };
 
+// Um registro por ticket aberto com motivo "Outro" — o texto livre que o
+// agregado por código (contact_reasons_by_channel) não consegue mostrar.
+type ContactReasonNoteRow = {
+  service_day: string;
+  channel: string;
+  product: string;
+  client_email: string;
+  note: string;
+  agent_name: string;
+};
+
 const EMPTY_PLACEHOLDER = "Sem registros no período";
 
 function formatBrDate(iso: string): string {
@@ -151,9 +167,8 @@ function formatBrCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function reasonLabel(code: string): string {
-  if (code === "nao_informado") return "Não informado";
-  return CONTACT_REASONS.find((r) => r.code === code)?.label ?? code;
+function reasonLabel(code: string, note?: string | null): string {
+  return formatContactReason(code, note);
 }
 
 function buildSheet(
@@ -189,7 +204,7 @@ function buildSheet(
 async function fetchReportData(fromISO: string, toISO: string, agentId?: string) {
   const normalizedAgentId = agentId && agentId !== "all" ? agentId : null;
 
-  const [metricsRes, statusRes, refundMetricsRes, extrasRes, channelDetailRes] = await Promise.all([
+  const [metricsRes, statusRes, refundMetricsRes, extrasRes, channelDetailRes, reasonNotesRes] = await Promise.all([
     supabase.rpc("dashboard_metrics", {
       from_date: fromISO,
       to_date: toISO,
@@ -220,6 +235,11 @@ async function fetchReportData(fromISO: string, toISO: string, agentId?: string)
       p_to_date: toISO,
       p_agent_id: normalizedAgentId,
     }),
+    supabase.rpc("dashboard_contact_reason_notes", {
+      from_date: fromISO,
+      to_date: toISO,
+      agent_id: normalizedAgentId,
+    }),
   ]);
 
   if (metricsRes.error) throw metricsRes.error;
@@ -227,6 +247,7 @@ async function fetchReportData(fromISO: string, toISO: string, agentId?: string)
   if (refundMetricsRes.error) throw refundMetricsRes.error;
   if (extrasRes.error) throw extrasRes.error;
   if (channelDetailRes.error) throw channelDetailRes.error;
+  if (reasonNotesRes.error) throw reasonNotesRes.error;
 
   return {
     metrics: metricsRes.data as unknown as DashboardMetricsResponse,
@@ -234,6 +255,7 @@ async function fetchReportData(fromISO: string, toISO: string, agentId?: string)
     refundMetrics: refundMetricsRes.data as unknown as RefundMetricsResponse,
     extras: extrasRes.data as unknown as ExportExtrasResponse,
     channelDetail: channelDetailRes.data as unknown as ChannelDetailResponse,
+    reasonNotes: (reasonNotesRes.data ?? []) as unknown as ContactReasonNoteRow[],
   };
 }
 
@@ -243,11 +265,8 @@ export async function exportManagerReport(
   agentId?: string,
   agentName?: string,
 ): Promise<void> {
-  const { metrics, status, refundMetrics, extras, channelDetail } = await fetchReportData(
-    fromISO,
-    toISO,
-    agentId,
-  );
+  const { metrics, status, refundMetrics, extras, channelDetail, reasonNotes } =
+    await fetchReportData(fromISO, toISO, agentId);
 
   const agentLabel = agentId && agentId !== "all" ? (agentName ?? agentId) : "Todos os agentes";
 
@@ -376,6 +395,21 @@ export async function exportManagerReport(
       row.channel,
       reasonLabel(row.reason_code),
       row.qty,
+    ]),
+  );
+
+  // 4b) Motivos — Outro (texto livre)
+  // A aba acima conta 'outro' como um balde só; aqui a gestora lê o que de fato
+  // aconteceu em cada um desses tickets e decide se algum vira motivo fixo.
+  appendSheet(
+    SHEET_SPECS.motivosOutro,
+    (reasonNotes ?? []).map((row) => [
+      row.service_day ? formatBrDate(row.service_day) : "—",
+      row.channel ?? "—",
+      row.product ?? "—",
+      row.client_email ?? "",
+      row.note ?? "",
+      row.agent_name ?? "—",
     ]),
   );
 
@@ -595,6 +629,7 @@ type ExportTicketRow = {
   created_at: string | null;
   has_tracking_code: boolean;
   contact_reason: string | null;
+  contact_reason_note: string | null;
   user_id: string;
   current_owner_id: string;
   creator_name: string | null;
@@ -706,7 +741,7 @@ export async function exportAgentServices(params: AgentServicesExportParams): Pr
     t.product ?? "",
     t.platform ?? "—",
     t.channel ?? "—",
-    reasonLabel(t.contact_reason ?? "nao_informado"),
+    reasonLabel(t.contact_reason ?? "nao_informado", t.contact_reason_note),
     t.has_tracking_code ? "Sim" : "Não",
     ticketStatusLabel(t),
     (t.follow_up_count ?? 0) + 1,
@@ -778,7 +813,7 @@ export async function exportAgentServices(params: AgentServicesExportParams): Pr
       1,
       formatBrDateTimeSP(t.created_at ?? t.service_date),
       "Abertura",
-      reasonLabel(t.contact_reason ?? "nao_informado"),
+      reasonLabel(t.contact_reason ?? "nao_informado", t.contact_reason_note),
       t.creator_name ?? "—",
     ]);
     const fus = (followUpsByTicket.get(t.id) ?? [])

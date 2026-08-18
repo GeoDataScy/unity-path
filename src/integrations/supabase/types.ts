@@ -534,6 +534,7 @@ export type Database = {
           channel: string | null
           client_email: string
           contact_reason: string | null
+          contact_reason_note: string | null
           created_at: string | null
           current_owner_id: string
           has_tracking_code: boolean
@@ -550,6 +551,7 @@ export type Database = {
           channel?: string | null
           client_email: string
           contact_reason?: string | null
+          contact_reason_note?: string | null
           created_at?: string | null
           // NOT NULL na base, mas preenchido por trigger no INSERT — opcional aqui.
           current_owner_id?: string
@@ -567,6 +569,7 @@ export type Database = {
           channel?: string | null
           client_email?: string
           contact_reason?: string | null
+          contact_reason_note?: string | null
           created_at?: string | null
           current_owner_id?: string
           has_tracking_code?: boolean
@@ -886,6 +889,7 @@ export type Database = {
           channel: string
           client_email: string
           contact_reason: string
+          contact_reason_note: string
           created_at: string
           current_owner_id: string
           has_tracking_code: boolean
@@ -955,6 +959,10 @@ export type Database = {
       }
       dashboard_channel_detail: {
         Args: { p_agent_id?: string; p_from_date?: string; p_to_date?: string }
+        Returns: Json
+      }
+      dashboard_contact_reason_notes: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
       }
       dashboard_export_extras: {
@@ -1128,6 +1136,7 @@ export type Database = {
           channel: string
           client_email: string
           contact_reason: string
+          contact_reason_note: string
           created_at: string
           current_owner_id: string
           has_tracking_code: boolean

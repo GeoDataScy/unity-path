@@ -12,6 +12,7 @@ export type ServiceItem = {
   created_at: string | null;
   has_tracking_code: boolean;
   contact_reason: string | null;
+  contact_reason_note: string | null;
   user_id: string;
   current_owner_id: string;
 };
