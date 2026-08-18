@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -39,7 +40,15 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
-import { CONTACT_REASONS, getContactReason, type ContactReasonCode } from "@/features/services/contact-reasons";
+import {
+  CONTACT_REASONS,
+  CONTACT_REASON_NOTE_MAX_LENGTH,
+  formatContactReason,
+  getContactReason,
+  normalizeContactReasonNote,
+  requiresContactReasonNote,
+  type ContactReasonCode,
+} from "@/features/services/contact-reasons";
 import { TransferTicketDialog, type DuplicateTicket } from "@/features/transfers/TransferTicketDialog";
 import { exportAgentServices } from "@/lib/reportExport";
 
@@ -219,6 +228,8 @@ export default function Atendimentos() {
   const [channel, setChannel] = useState<"Clickbank" | "Email" | "SMS">("Email");
   const [hasTrackingCode, setHasTrackingCode] = useState(false);
   const [contactReason, setContactReason] = useState<ContactReasonCode | "">("");
+  // Só é usado (e gravado) quando o motivo é "Outro (descrever)".
+  const [contactReasonNote, setContactReasonNote] = useState("");
   // Número do pedido: só aparece (e só é exigido) quando o motivo é Reembolso —
   // é o dado que faltava para o sistema abrir o reembolso sozinho.
   const [orderId, setOrderId] = useState("");
@@ -465,8 +476,12 @@ export default function Atendimentos() {
   const canSubmit = useMemo(() => {
     const emailOk = channel === "SMS" ? isPhoneComplete(clientEmail) : Boolean(clientEmail);
     const orderOk = !isRefund || orderId.trim().length > 0;
-    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && Boolean(contactReason) && orderOk;
-  }, [clientEmail, serviceDate, product, platform, channel, contactReason, isRefund, orderId]);
+    // "Outro" sem descrição não registra nada de útil — e o CHECK do banco recusa.
+    const reasonOk =
+      Boolean(contactReason) &&
+      (!requiresContactReasonNote(contactReason) || contactReasonNote.trim().length > 0);
+    return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && reasonOk && orderOk;
+  }, [clientEmail, serviceDate, product, platform, channel, contactReason, contactReasonNote, isRefund, orderId]);
 
   const greetingName = useMemo(() => {
     const trimmed = (fullName ?? "").trim();
@@ -520,13 +535,14 @@ export default function Atendimentos() {
           channel,
           has_tracking_code: hasTrackingCode,
           contact_reason: contactReason || null,
+          contact_reason_note: normalizeContactReasonNote(contactReason, contactReasonNote),
           // Alimenta o registro automático em Reembolsos (trigger sync_refund_from_service).
           order_id: contactReason === "reembolso" ? orderId.trim() : null,
           // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
           status: concludeAfterCreate.current ? "concluido" : "registered",
           user_id: session.user.id,
         })
-        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
+        .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, contact_reason_note, user_id, current_owner_id")
         .single();
 
       if (error) throw error;
@@ -542,7 +558,7 @@ export default function Atendimentos() {
         if (!mine) {
           const { data, error } = await supabase
             .from("services")
-            .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, user_id, current_owner_id")
+            .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, contact_reason_note, user_id, current_owner_id")
             .eq("id", result.serviceId)
             .maybeSingle();
           if (error) {
@@ -579,6 +595,7 @@ export default function Atendimentos() {
       setHasTrackingCode(false);
       setContactReason("");
       setOrderId("");
+      setContactReasonNote("");
 
       // Optimistic update: prepend o ticket recém-criado em todas as variações da
       // query (chave inclui sufixo de cutoff de data). A tabela atualiza instantâneo
@@ -651,7 +668,7 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; order_id: string | null }) => {
+    mutationFn: async (payload: { id: string; client_email: string; product: string; platform: string; channel: string; contact_reason: string | null; contact_reason_note: string | null; order_id: string | null }) => {
       // service_date is frozen by a database trigger; we never send it from the
       // edit flow. Manager corrections go through manager_correct_service_date.
       const { error } = await supabase
@@ -662,6 +679,7 @@ export default function Atendimentos() {
           platform: payload.platform,
           channel: payload.channel,
           contact_reason: payload.contact_reason,
+          contact_reason_note: payload.contact_reason_note,
           order_id: payload.order_id,
         })
         .eq("id", payload.id);
@@ -732,6 +750,7 @@ export default function Atendimentos() {
       setHasTrackingCode(false);
       setContactReason("");
       setOrderId("");
+      setContactReasonNote("");
       toast({
         title: "Pedido enviado",
         description:
@@ -903,7 +922,12 @@ export default function Atendimentos() {
               <Label>Motivo de contato</Label>
               <Select
                 value={contactReason}
-                onValueChange={(v) => setContactReason(v as ContactReasonCode)}
+                onValueChange={(v) => {
+                  setContactReason(v as ContactReasonCode);
+                  // A nota pertence ao motivo "Outro"; trocar o motivo a descarta
+                  // (o CHECK do banco também recusaria nota em outro motivo).
+                  if (!requiresContactReasonNote(v)) setContactReasonNote("");
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
@@ -920,6 +944,27 @@ export default function Atendimentos() {
                 </SelectContent>
               </Select>
             </div>
+
+            {requiresContactReasonNote(contactReason) && (
+              <div className="grid gap-2 lg:col-span-3">
+                <Label htmlFor="contactReasonNote">Descreva o motivo</Label>
+                <Textarea
+                  id="contactReasonNote"
+                  value={contactReasonNote}
+                  onChange={(e) =>
+                    setContactReasonNote(e.target.value.slice(0, CONTACT_REASON_NOTE_MAX_LENGTH))
+                  }
+                  maxLength={CONTACT_REASON_NOTE_MAX_LENGTH}
+                  rows={2}
+                  placeholder="Ex.: cliente confundiu cápsula com gummy"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use para situações que não se encaixam nos motivos da lista.{" "}
+                  {contactReasonNote.length}/{CONTACT_REASON_NOTE_MAX_LENGTH}
+                </p>
+              </div>
+            )}
 
             {isRefund && (
               <div className="grid gap-2">
@@ -1119,14 +1164,17 @@ export default function Atendimentos() {
               ) : (
                 paginatedServices.map((s, idx) => {
                   const reason = getContactReason(s.contact_reason);
+                  const reasonTitle = reason
+                    ? `Motivo: ${formatContactReason(s.contact_reason, s.contact_reason_note)}`
+                    : "Sem motivo registrado";
                   return (
                   <TableRow key={s.id} className={idx % 2 === 1 ? "bg-muted/40" : undefined}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span
                           className={`inline-block h-2 w-2 shrink-0 rounded-full ${reason ? reason.dot : "bg-transparent ring-1 ring-border"}`}
-                          title={reason ? `Motivo: ${reason.label}` : "Sem motivo registrado"}
-                          aria-label={reason ? `Motivo: ${reason.label}` : "Sem motivo registrado"}
+                          title={reasonTitle}
+                          aria-label={reasonTitle}
                         />
                         <span>
                           {(() => {
@@ -1335,6 +1383,7 @@ export default function Atendimentos() {
           setHasTrackingCode(false);
           setContactReason("");
           setOrderId("");
+          setContactReasonNote("");
         }}
       />
     </main>
