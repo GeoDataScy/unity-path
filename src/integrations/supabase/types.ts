@@ -899,6 +899,28 @@ export type Database = {
       }
       classify_refund_reason: { Args: { p_reason: string }; Returns: string }
       confirm_held_order: { Args: { p_order_id: string }; Returns: undefined }
+      copy_refund_reason_analytics: {
+        Args: {
+          channel_filter?: string
+          from_date: string
+          platform_filter?: string
+          product_filter?: string
+          to_date: string
+        }
+        Returns: Json
+      }
+      copy_refund_reason_evidence: {
+        Args: {
+          channel_filter?: string
+          from_date: string
+          max_rows?: number
+          platform_filter?: string
+          product_filter?: string
+          reason_category: string
+          to_date: string
+        }
+        Returns: Json
+      }
       create_refund:
         | {
             Args: {

@@ -1,25 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import type { DateRange } from "react-day-picker";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
 import { homePathForRole } from "@/lib/roles";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { BookOpen, LogOut, MessageSquareQuote, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_KEY = "copy-sidebar-collapsed";
+
+function toISODate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export type CopyOutletContext = {
   userId: string;
   fullName: string | null;
+  range: DateRange | undefined;
+  setRange: (next: DateRange | undefined) => void;
+  fromISO: string;
+  toISO: string;
 };
 
 const NAV_ITEMS = [
-  { to: "/copy", end: true, icon: LayoutDashboard, label: "Início" },
+  { to: "/copy", end: true, icon: MessageSquareQuote, label: "Motivos de reembolso" },
+  { to: "/copy/base-suporte", end: false, icon: BookOpen, label: "Base de Suporte" },
 ] as const;
 
 type NavItemProps = {
@@ -69,6 +83,27 @@ export default function CopyLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
   });
+
+  // Padrão: últimos 90 dias. Diferente do painel da gestora (que abre no mês
+  // corrente) de propósito — a leitura do copy é de tendência de motivo, e um
+  // mês recém-começado deixaria a evolução mês a mês com um único ponto.
+  const [range, setRange] = useState<DateRange | undefined>(() => {
+    const to = new Date();
+    const from = new Date(to.getFullYear(), to.getMonth(), to.getDate() - 89);
+    return { from, to };
+  });
+
+  const fromISO = useMemo(() => {
+    const d = range?.from;
+    if (d) return toISODate(d);
+    const now = new Date();
+    return toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89));
+  }, [range?.from]);
+
+  const toISO = useMemo(() => {
+    const d = range?.to ?? range?.from;
+    return d ? toISODate(d) : toISODate(new Date());
+  }, [range?.to, range?.from]);
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
@@ -187,8 +222,8 @@ export default function CopyLayout() {
 
   const outletContext = useMemo<CopyOutletContext | null>(() => {
     if (authLoading || !userId) return null;
-    return { userId, fullName };
-  }, [authLoading, userId, fullName]);
+    return { userId, fullName, range, setRange, fromISO, toISO };
+  }, [authLoading, userId, fullName, range, fromISO, toISO]);
 
   const handleLogout = async () => {
     await recordAuthEvent("logout").catch(() => {});
@@ -239,6 +274,13 @@ export default function CopyLayout() {
               <TooltipContent side="right">{collapsed ? "Expandir menu" : "Encolher menu"}</TooltipContent>
             </Tooltip>
           </div>
+
+          {!collapsed && (
+            <div className="space-y-1.5">
+              <p className="px-1 text-[11px] uppercase tracking-wide opacity-70">Período</p>
+              <DateRangePicker value={range} onChange={setRange} />
+            </div>
+          )}
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
             {NAV_ITEMS.map((item) => {
@@ -294,10 +336,10 @@ export default function CopyLayout() {
         className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
       />
 
-      <main className="flex-1 bg-dashboard-surface p-8">
-        <div className="mx-auto max-w-7xl">
-          <Outlet context={outletContext} />
-        </div>
+      {/* Sem padding/max-width aqui: cada página do copy define o seu container.
+          A Base de Suporte é um iframe que precisa da largura toda. */}
+      <main className="min-w-0 flex-1 bg-dashboard-surface">
+        <Outlet context={outletContext} />
       </main>
     </div>
   );

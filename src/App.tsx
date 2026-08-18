@@ -28,7 +28,8 @@ const ComeceAqui = lazy(() => import("./pages/agent/ComeceAqui"));
 const Transferencias = lazy(() => import("./pages/agent/Transferencias"));
 const BaseSuporte = lazy(() => import("./pages/agent/BaseSuporte"));
 const CopyLayout = lazy(() => import("./layouts/CopyLayout"));
-const CopyHome = lazy(() => import("./pages/copy/CopyHome"));
+const CopyMotivos = lazy(() => import("./pages/copy/CopyMotivos"));
+const CopyBaseSuporte = lazy(() => import("./pages/copy/CopyBaseSuporte"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -90,7 +91,8 @@ const App = () => (
             <Route path="base-suporte" element={<BaseSuporte />} />
           </Route>
           <Route path="/copy" element={<CopyLayout />}>
-            <Route index element={<CopyHome />} />
+            <Route index element={<CopyMotivos />} />
+            <Route path="base-suporte" element={<CopyBaseSuporte />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
