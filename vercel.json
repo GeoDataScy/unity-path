@@ -1,4 +1,11 @@
 {
+    "redirects": [
+        {
+            "source": "/base-suporte.html",
+            "destination": "/workspace/base-suporte",
+            "permanent": false
+        }
+    ],
     "rewrites": [
         {
             "source": "/(.*)",
