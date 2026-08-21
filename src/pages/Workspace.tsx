@@ -99,6 +99,7 @@ const PRODUCTS = [
   "Horsefil",
   "Honeyfil",
   "Clear Gaze",
+  "PagAmerican",
 ] as const;
 
 function todayISO() {
