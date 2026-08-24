@@ -7,7 +7,17 @@
 //   street1/2/3 + city/state/postal/country, às vezes com street1 == street2.
 // Aqui quebramos cada um em partes exibíveis.
 
+import { RETURNS_DYNA_CODE } from "./parseHeldOrdersCsv";
 import type { MyHeldOrder } from "./types";
+
+/**
+ * Rótulo da loja (`dyna_code`). Pedidos vindos do arquivo de devoluções não têm
+ * loja na origem — entram com a constante RETURNS_DYNA_CODE e são exibidos como
+ * "Devolução".
+ */
+export function heldOrderStoreLabel(dynaCode: string): string {
+  return dynaCode === RETURNS_DYNA_CODE ? "Devolução" : dynaCode;
+}
 
 // ============================================================================
 // Motivos do On Hold

@@ -49,6 +49,59 @@ export const HELD_ORDER_PENDING_TAGS = Object.keys(
  */
 export type ManagerHeldOrderStatusFilter = "all" | "aguardando" | "em_andamento" | "confirmed";
 
+/**
+ * Rótulos do filtro de status na visão da GESTORA — é este o vocabulário em que a
+ * operação pede os relatórios ("todos os Aguardando atendimento", "todos os
+ * Concluídos"), e não o `agent_status` cru.
+ */
+export const MANAGER_HELD_ORDER_STATUS_FILTER_LABEL: Record<ManagerHeldOrderStatusFilter, string> = {
+  all: "Todos os status",
+  aguardando: "Aguardando atendimento",
+  em_andamento: "Em andamento",
+  confirmed: "Concluído",
+};
+
+/** O agente já começou a tratar o pedido (e ainda não concluiu). */
+export function heldOrderIsInProgress(
+  o: Pick<ManagerHeldOrder, "agent_status" | "status">,
+): boolean {
+  return o.agent_status === "em_andamento" && o.status !== "confirmed";
+}
+
+/**
+ * Em qual balde do filtro de status o pedido cai. Mesma regra do
+ * `status_filter` do RPC, para o relatório usar o rótulo que a gestora escolheu.
+ */
+export function heldOrderStatusBucketLabel(
+  o: Pick<ManagerHeldOrder, "agent_status" | "status">,
+): string {
+  if (o.status === "confirmed" || o.agent_status === "concluido") {
+    return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.confirmed;
+  }
+  if (heldOrderIsInProgress(o)) return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.em_andamento;
+  return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.aguardando;
+}
+
+/**
+ * Texto do badge de status da tela da gestora — o mesmo que vai para a coluna
+ * "Status" do relatório, para a planilha não contar uma história diferente da
+ * tabela:
+ *   linha repetida       -> "Repetido"
+ *   concluído            -> "Confirmado"
+ *   em atendimento       -> "Em andamento"
+ *   nunca distribuído    -> "Novo"        (assign_count = 0)
+ *   distribuído N vezes  -> "Pendente N"  (assign_count >= 1, sem início)
+ */
+export function heldOrderManagerStatusLabel(
+  o: Pick<ManagerHeldOrder, "agent_status" | "status" | "assign_count" | "duplicate_of">,
+): string {
+  if (o.duplicate_of) return "Repetido";
+  if (o.agent_status === "concluido" || o.status === "confirmed") return "Confirmado";
+  if (heldOrderIsInProgress(o)) return "Em andamento";
+  if ((o.assign_count ?? 0) === 0) return "Novo";
+  return `Pendente ${o.assign_count}`;
+}
+
 /** Uma entrada do histórico (timeline) de um pedido. */
 export type HeldOrderEvent = {
   id: string;
