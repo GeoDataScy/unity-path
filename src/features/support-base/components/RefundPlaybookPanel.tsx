@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +27,20 @@ const TOM_TEXTO = {
   ambar: "text-amber-700 dark:text-amber-400",
 } as const;
 
+/**
+ * O playbook é procedimento corrido — não pagina (a sequência 30/40/50 só faz
+ * sentido inteira). O que faltava era navegação: o índice abaixo leva direto à
+ * seção em vez de obrigar a rolar a página toda.
+ */
+const SECOES = [
+  { id: "funil", titulo: "Funil de reembolso" },
+  { id: "excecoes", titulo: "Exceções" },
+  { id: "perfis", titulo: "Perfis de cliente" },
+  { id: "frases", titulo: "Frases de apoio" },
+] as const;
+
+type SecaoId = (typeof SECOES)[number]["id"];
+
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
@@ -35,8 +51,29 @@ function SectionHead({ children }: { children: React.ReactNode }) {
 }
 
 export function RefundPlaybookPanel() {
+  const refs = useRef<Partial<Record<SecaoId, HTMLElement | null>>>({});
+
+  const irPara = (id: SecaoId) => {
+    refs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center gap-2 border-b bg-dashboard-surface/95 px-1 py-3 backdrop-blur supports-[backdrop-filter]:bg-dashboard-surface/80">
+        <span className="text-xs font-medium text-muted-foreground">Ir para:</span>
+        {SECOES.map((s) => (
+          <Button
+            key={s.id}
+            variant="outline"
+            size="sm"
+            className="h-8 bg-background text-xs"
+            onClick={() => irPara(s.id)}
+          >
+            {s.titulo}
+          </Button>
+        ))}
+      </div>
+
       <Alert className="border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
@@ -45,7 +82,12 @@ export function RefundPlaybookPanel() {
         </AlertDescription>
       </Alert>
 
-      <section className="space-y-3">
+      <section
+        ref={(el) => {
+          refs.current.funil = el;
+        }}
+        className="scroll-mt-20 space-y-3"
+      >
         <SectionHead>Funil de reembolso</SectionHead>
         <div className="space-y-3">
           {FUNIL_STEPS.map((step) => (
@@ -92,9 +134,14 @@ export function RefundPlaybookPanel() {
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section
+        ref={(el) => {
+          refs.current.excecoes = el;
+        }}
+        className="scroll-mt-20 space-y-3"
+      >
         <SectionHead>Exceções — pular escada de retenção</SectionHead>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-start gap-3 sm:grid-cols-2">
           {EXCECOES.map((ex) => (
             <Card
               key={ex.titulo}
@@ -125,9 +172,14 @@ export function RefundPlaybookPanel() {
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section
+        ref={(el) => {
+          refs.current.perfis = el;
+        }}
+        className="scroll-mt-20 space-y-3"
+      >
         <SectionHead>Perfis de cliente</SectionHead>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PERFIS_CLIENTE.map((p) => (
             <Card key={p.titulo} className="space-y-2 p-4">
               <h3 className="text-sm font-semibold">{p.titulo}</h3>
@@ -140,9 +192,14 @@ export function RefundPlaybookPanel() {
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section
+        ref={(el) => {
+          refs.current.frases = el;
+        }}
+        className="scroll-mt-20 space-y-3"
+      >
         <SectionHead>Frases de apoio</SectionHead>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FRASES_APOIO.map((f) => (
             <Card key={f.tipo} className="space-y-1 p-4">
               <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
