@@ -30,9 +30,17 @@ import { exportManagerReport } from "@/lib/reportExport";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { homePathForRole } from "@/lib/roles";
+import { canAccessArea, homePathForRole } from "@/lib/roles";
+import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
+
+// Páginas desta área que são de gestão, não de análise: escrevem no banco
+// (dar baixa em reembolso, ativar/desativar usuário, editar a Base de Suporte)
+// e continuam guardadas por is_manager() no Postgres. O time de copy entra na
+// área de analytics só para ler os números, então essas rotas não aparecem para
+// ele — e um acesso direto pela URL volta para o dashboard.
+const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base"];
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -98,6 +106,7 @@ export default function ManagerLayout() {
   const { toast } = useToast();
 
   const [authLoading, setAuthLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [canApproveTakeovers, setCanApproveTakeovers] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -170,12 +179,13 @@ export default function ManagerLayout() {
         return;
       }
 
-      if (profile?.role !== "manager") {
+      if (!canAccessArea(profile?.role, "analytics")) {
         navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
 
       if (!active) return;
+      setRole(profile?.role ?? null);
       setFullName(profile?.role === "manager" ? "Ester" : (profile?.full_name ?? null));
       setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
       setAuthLoading(false);
@@ -243,8 +253,19 @@ export default function ManagerLayout() {
     };
   }, [navigate]);
 
+  // Só a gestora tem as ações de gestão desta área; o copy entra para ler.
+  const isManager = role === "manager";
+
   const agentsQuery = useAgentsQuery(!authLoading);
-  const alertsQuery = useDashboardRefundAlertsQuery();
+  const alertsQuery = useDashboardRefundAlertsQuery(!authLoading && isManager);
+
+  // Acesso direto por URL a uma rota de gestão sem ser gestora: volta ao topo.
+  useEffect(() => {
+    if (authLoading || isManager) return;
+    if (MANAGER_ONLY_PATHS.some((p) => location.pathname.startsWith(p))) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, isManager, location.pathname, navigate]);
 
   const outletContext = useMemo<ManagerOutletContext | null>(() => {
     if (authLoading) return null;
@@ -320,8 +341,10 @@ export default function ManagerLayout() {
               <img src={logo} alt="Logo da empresa" className="h-8 w-auto shrink-0" loading="lazy" />
               {!collapsed && (
                 <div className="leading-tight truncate">
-                  <div className="text-sm font-semibold">Painel da Gestora</div>
-                  <div className="text-xs opacity-80">Analytics</div>
+                  <div className="text-sm font-semibold">
+                    {isManager ? "Painel da Gestora" : "Data Analytics"}
+                  </div>
+                  <div className="text-xs opacity-80">{isManager ? "Analytics" : "Suporte"}</div>
                 </div>
               )}
             </div>
@@ -345,6 +368,8 @@ export default function ManagerLayout() {
               </TooltipContent>
             </Tooltip>
           </div>
+
+          <AreaSwitcher role={role} currentArea="analytics" collapsed={collapsed} />
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
             <NavItem
@@ -372,25 +397,29 @@ export default function ManagerLayout() {
               label="Interacoes"
               collapsed={collapsed}
             />
-            <NavItem
-              to="/dashboard/alertas"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              label="Alertas"
-              collapsed={collapsed}
-              badge={alertsBadge}
-            />
-            <NavItem
-              to="/dashboard/usuarios"
-              icon={<Users className="h-4 w-4" />}
-              label="Usuários"
-              collapsed={collapsed}
-            />
-            <NavItem
-              to="/dashboard/base"
-              icon={<BookOpen className="h-4 w-4" />}
-              label="Base de Suporte"
-              collapsed={collapsed}
-            />
+            {isManager && (
+              <>
+                <NavItem
+                  to="/dashboard/alertas"
+                  icon={<AlertTriangle className="h-4 w-4" />}
+                  label="Alertas"
+                  collapsed={collapsed}
+                  badge={alertsBadge}
+                />
+                <NavItem
+                  to="/dashboard/usuarios"
+                  icon={<Users className="h-4 w-4" />}
+                  label="Usuários"
+                  collapsed={collapsed}
+                />
+                <NavItem
+                  to="/dashboard/base"
+                  icon={<BookOpen className="h-4 w-4" />}
+                  label="Base de Suporte"
+                  collapsed={collapsed}
+                />
+              </>
+            )}
           </nav>
 
           {!collapsed && (
@@ -423,22 +452,24 @@ export default function ManagerLayout() {
           <div className={cn("mt-auto", collapsed ? "space-y-1" : "space-y-2")}>
             {collapsed ? (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={handleExportReport}
-                      disabled={exporting}
-                      aria-label={exporting ? "Extraindo relatório" : "Extrair relatório"}
-                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition disabled:opacity-60"
-                    >
-                      <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {exporting ? "Extraindo..." : "Extrair relatório"}
-                  </TooltipContent>
-                </Tooltip>
+                {isManager && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={handleExportReport}
+                        disabled={exporting}
+                        aria-label={exporting ? "Extraindo relatório" : "Extrair relatório"}
+                        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition disabled:opacity-60"
+                      >
+                        <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {exporting ? "Extraindo..." : "Extrair relatório"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -456,15 +487,17 @@ export default function ManagerLayout() {
               </>
             ) : (
               <>
-                <Button
-                  onClick={handleExportReport}
-                  disabled={exporting}
-                  variant="secondary"
-                  className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
-                >
-                  <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
-                  {exporting ? "Extraindo..." : "Extrair Relatório"}
-                </Button>
+                {isManager && (
+                  <Button
+                    onClick={handleExportReport}
+                    disabled={exporting}
+                    variant="secondary"
+                    className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                  >
+                    <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
+                    {exporting ? "Extraindo..." : "Extrair Relatório"}
+                  </Button>
+                )}
 
                 <Button
                   onClick={handleLogout}
@@ -483,9 +516,9 @@ export default function ManagerLayout() {
         </div>
       </aside>
 
-      <ManagerRefundNotification />
+      {isManager && <ManagerRefundNotification />}
 
-      <ManagerApprovalsBell enabled={canApproveTakeovers} />
+      <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
 
       <ThemeToggle
         variant="ghost"

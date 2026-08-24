@@ -31,6 +31,7 @@ const BaseSuporte = lazy(() => import("./pages/agent/BaseSuporte"));
 const CopyLayout = lazy(() => import("./layouts/CopyLayout"));
 const CopyMotivos = lazy(() => import("./pages/copy/CopyMotivos"));
 const CopyBaseSuporte = lazy(() => import("./pages/copy/CopyBaseSuporte"));
+const AreaSelect = lazy(() => import("./pages/AreaSelect"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -74,6 +75,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/blocked" element={<Blocked />} />
+          {/* Escolha de área (gestora e copy têm acesso a duas) */}
+          <Route path="/areas" element={<AreaSelect />} />
           <Route path="/dashboard" element={<ManagerLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />
