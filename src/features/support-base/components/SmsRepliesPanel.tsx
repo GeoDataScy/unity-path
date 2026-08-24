@@ -1,20 +1,31 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Search } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSupportSmsRepliesQuery } from "../useSupportBaseQuery";
+import { usePanelPagination } from "../usePanelPagination";
 import type { SupportSmsReply } from "../types";
 import { CopyButton } from "./CopyButton";
+import { TODOS } from "./EstruturaFilter";
+import { PanelEmpty, PanelError, PanelSkeleton } from "./PanelStates";
+import { PanelPagination } from "./PanelPagination";
+import { PanelToolbar } from "./PanelToolbar";
 
 type Idioma = "en" | "pt";
 
 export function SmsRepliesPanel() {
   const { data, isLoading, isError } = useSupportSmsRepliesQuery();
   const [busca, setBusca] = useState("");
+  const [categoria, setCategoria] = useState<string>(TODOS);
+  const [porPagina, setPorPagina] = useState(12);
   // Idioma global: o agente costuma trabalhar um atendimento inteiro no mesmo
   // idioma, então o botão do topo troca tudo de uma vez. Cada card ainda pode
   // divergir individualmente (estado próprio, ver ReplyCard).
@@ -22,96 +33,91 @@ export function SmsRepliesPanel() {
 
   const respostas = useMemo(() => data ?? [], [data]);
 
+  const categorias = useMemo(
+    () => [...new Set(respostas.map((r) => r.categoria))].sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [respostas],
+  );
+
   const filtradas = useMemo(() => {
     const q = busca.toLowerCase().trim();
-    if (!q) return respostas;
-    return respostas.filter((r) =>
-      `${r.titulo}${r.categoria}${r.texto_en}${r.texto_pt}`.toLowerCase().includes(q),
-    );
-  }, [respostas, busca]);
+    return respostas.filter((r) => {
+      const alvo = `${r.titulo}${r.categoria}${r.texto_en}${r.texto_pt}`.toLowerCase();
+      return (!q || alvo.includes(q)) && (categoria === TODOS || r.categoria === categoria);
+    });
+  }, [respostas, busca, categoria]);
 
-  // Agrupa preservando a ordem de sort_order (a query já vem ordenada).
-  const categorias = useMemo(() => {
-    const mapa = new Map<string, SupportSmsReply[]>();
-    for (const r of filtradas) {
-      const lista = mapa.get(r.categoria);
-      if (lista) lista.push(r);
-      else mapa.set(r.categoria, [r]);
-    }
-    return [...mapa.entries()];
-  }, [filtradas]);
+  const paginacao = usePanelPagination(filtradas, porPagina, `${busca}|${categoria}`);
 
-  if (isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Não foi possível carregar as respostas de SMS. Recarregue a página e tente de novo.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const temFiltro = Boolean(busca) || categoria !== TODOS;
+  const limpar = () => {
+    setBusca("");
+    setCategoria(TODOS);
+  };
+
+  if (isError) return <PanelError recurso="as respostas de SMS" />;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar mensagem ou situação…"
-            className="pl-9"
-          />
-        </div>
+    <div className="space-y-4">
+      <PanelToolbar
+        busca={busca}
+        onBuscaChange={setBusca}
+        placeholder="Buscar mensagem ou situação…"
+      >
+        <Select value={categoria} onValueChange={setCategoria}>
+          <SelectTrigger className="h-9 w-full bg-background sm:w-[200px]" aria-label="Categoria">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent className="z-50">
+            <SelectItem value={TODOS}>Todas as categorias</SelectItem>
+            {categorias.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <ToggleGroup
           type="single"
           value={idiomaGlobal}
           onValueChange={(v) => v && setIdiomaGlobal(v as Idioma)}
+          className="rounded-md border bg-background p-0.5"
+          aria-label="Idioma das mensagens"
         >
-          <ToggleGroupItem value="en" className="h-9 px-4 text-xs">
+          <ToggleGroupItem value="en" className="h-8 px-4 text-xs">
             EN
           </ToggleGroupItem>
-          <ToggleGroupItem value="pt" className="h-9 px-4 text-xs">
+          <ToggleGroupItem value="pt" className="h-8 px-4 text-xs">
             PT
           </ToggleGroupItem>
         </ToggleGroup>
-
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {filtradas.length} {filtradas.length === 1 ? "mensagem" : "mensagens"}
-        </span>
-      </div>
+      </PanelToolbar>
 
       {isLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-36 rounded-xl" />
-          ))}
-        </div>
-      ) : filtradas.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          Nenhuma mensagem encontrada para essa busca.
-        </p>
+        <PanelSkeleton quantidade={6} altura="h-40" colunas="sm:grid-cols-2" />
+      ) : paginacao.total === 0 ? (
+        <PanelEmpty
+          titulo="Nenhuma mensagem encontrada"
+          descricao="Ajuste a busca ou escolha outra categoria."
+          onLimpar={temFiltro ? limpar : undefined}
+        />
       ) : (
-        <div className="space-y-8">
-          {categorias.map(([categoria, itens]) => (
-            <section key={categoria} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-sm font-semibold">{categoria}</h2>
-                <span className="text-xs text-muted-foreground">{itens.length}</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {itens.map((r) => (
-                  // key inclui o idioma global para o card remontar e voltar a
-                  // seguir o toggle do topo depois de ter sido trocado sozinho.
-                  <ReplyCard key={`${r.id}-${idiomaGlobal}`} reply={r} idiomaInicial={idiomaGlobal} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <>
+          <div className="grid items-start gap-3 sm:grid-cols-2">
+            {paginacao.visiveis.map((r) => (
+              // key inclui o idioma global para o card remontar e voltar a
+              // seguir o toggle do topo depois de ter sido trocado sozinho.
+              <ReplyCard key={`${r.id}-${idiomaGlobal}`} reply={r} idiomaInicial={idiomaGlobal} />
+            ))}
+          </div>
+
+          <PanelPagination
+            estado={paginacao}
+            rotulo={["mensagem", "mensagens"]}
+            porPagina={porPagina}
+            onPorPaginaChange={setPorPagina}
+          />
+        </>
       )}
     </div>
   );
@@ -128,14 +134,20 @@ function ReplyCard({
   const texto = idioma === "en" ? reply.texto_en : reply.texto_pt;
 
   return (
-    <Card className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold leading-tight">{reply.titulo}</h3>
+        <div className="min-w-0 flex-1 space-y-1">
+          <h3 className="text-sm font-semibold leading-tight">{reply.titulo}</h3>
+          <Badge variant="secondary" className="text-[10px] font-medium">
+            {reply.categoria}
+          </Badge>
+        </div>
         <ToggleGroup
           type="single"
           value={idioma}
           onValueChange={(v) => v && setIdioma(v as Idioma)}
-          className="shrink-0"
+          className="shrink-0 rounded-md border p-0.5"
+          aria-label="Idioma desta mensagem"
         >
           <ToggleGroupItem value="en" className="h-6 px-2 text-[10px]">
             EN
@@ -146,7 +158,8 @@ function ReplyCard({
         </ToggleGroup>
       </div>
 
-      <p className="flex-1 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+      {/* max-h + scroll interno: mensagem longa não estica o card e desalinha a grade. */}
+      <p className="max-h-40 flex-1 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
         {texto}
       </p>
 

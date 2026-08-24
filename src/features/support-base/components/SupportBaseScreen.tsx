@@ -1,13 +1,49 @@
-import { BookOpen, ExternalLink, HandCoins, Mail, MessageSquare, Package } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { HandCoins, Mail, MessageSquareText, Package, Smartphone } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailTemplatesPanel } from "@/features/support-base/components/EmailTemplatesPanel";
-import { ProductsPanel } from "@/features/support-base/components/ProductsPanel";
-import { RefundPlaybookPanel } from "@/features/support-base/components/RefundPlaybookPanel";
-import { SmsBrandsPanel } from "@/features/support-base/components/SmsBrandsPanel";
-import { SmsRepliesPanel } from "@/features/support-base/components/SmsRepliesPanel";
-import { LINKS_RAPIDOS } from "@/features/support-base/data/refundPlaybook";
+import { EMAIL_TEMPLATES } from "../data/emailTemplates";
+import {
+  useSupportProductsQuery,
+  useSupportSmsBrandsQuery,
+  useSupportSmsRepliesQuery,
+} from "../useSupportBaseQuery";
+import { EmailTemplatesPanel } from "./EmailTemplatesPanel";
+import { ProductsPanel } from "./ProductsPanel";
+import { QuickLinksMenu } from "./QuickLinksMenu";
+import { RefundPlaybookPanel } from "./RefundPlaybookPanel";
+import { SmsBrandsPanel } from "./SmsBrandsPanel";
+import { SmsRepliesPanel } from "./SmsRepliesPanel";
+
+/**
+ * Duas famílias de conteúdo: catálogo (o que existe e onde está) e mensagens
+ * prontas (o que enviar). O playbook de reembolso fica sozinho no fim porque é
+ * procedimento, não consulta.
+ */
+const GRUPOS = [
+  {
+    titulo: "Catálogo",
+    abas: [
+      { valor: "produtos", rotulo: "Produtos (E-mail)", icone: Package },
+      { valor: "sms", rotulo: "Produtos (SMS)", icone: Smartphone },
+    ],
+  },
+  {
+    titulo: "Mensagens prontas",
+    abas: [
+      { valor: "respostas", rotulo: "Respostas SMS", icone: MessageSquareText },
+      { valor: "emails", rotulo: "E-mails Clickbank", icone: Mail },
+    ],
+  },
+  {
+    titulo: "Procedimento",
+    abas: [{ valor: "reembolso", rotulo: "Reembolso", icone: HandCoins }],
+  },
+] as const;
+
+const ABAS_VALIDAS = GRUPOS.flatMap((g) => g.abas.map((a) => a.valor)) as string[];
+const ABA_PADRAO = "produtos";
 
 /**
  * A base em modo consulta. Mesma tela para o agente (/workspace/base-suporte) e
@@ -16,79 +52,92 @@ import { LINKS_RAPIDOS } from "@/features/support-base/data/refundPlaybook";
  * Clickbank e o playbook de reembolso são fixos em src/features/support-base/data.
  */
 export function SupportBaseScreen() {
+  // Aba na URL: o agente pode deixar "Respostas SMS" fixa numa outra guia do
+  // navegador e o F5 não joga ele de volta para Produtos.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const abaUrl = searchParams.get("aba");
+  const aba = abaUrl && ABAS_VALIDAS.includes(abaUrl) ? abaUrl : ABA_PADRAO;
+
+  const trocarAba = (valor: string) => {
+    const proximo = new URLSearchParams(searchParams);
+    proximo.set("aba", valor);
+    setSearchParams(proximo, { replace: true });
+  };
+
+  // Contagens no rótulo das abas — o cache é compartilhado com os painéis, então
+  // isso não gera requisição extra depois da primeira carga.
+  const produtos = useSupportProductsQuery();
+  const brands = useSupportSmsBrandsQuery();
+  const respostas = useSupportSmsRepliesQuery();
+
+  const contagens: Record<string, number | undefined> = {
+    produtos: produtos.data?.length,
+    sms: brands.data?.length,
+    respostas: respostas.data?.length,
+    emails: EMAIL_TEMPLATES.length,
+  };
+
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <header className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-          <BookOpen className="h-5 w-5 text-primary" />
-        </div>
+    <main className="mx-auto max-w-7xl px-4 py-8">
+      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Base de Suporte</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Base de Suporte</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Produtos, mensagens prontas e procedimentos — sempre a versão mais atual.
           </p>
         </div>
+        <QuickLinksMenu />
       </header>
 
-      <Tabs defaultValue="produtos">
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
-          <TabsTrigger value="produtos" className="gap-1.5 text-xs">
-            <Package className="h-3.5 w-3.5" />
-            Produtos (E-mail)
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-1.5 text-xs">
-            <MessageSquare className="h-3.5 w-3.5" />
-            Produtos (SMS)
-          </TabsTrigger>
-          <TabsTrigger value="respostas" className="gap-1.5 text-xs">
-            <MessageSquare className="h-3.5 w-3.5" />
-            Respostas SMS
-          </TabsTrigger>
-          <TabsTrigger value="emails" className="gap-1.5 text-xs">
-            <Mail className="h-3.5 w-3.5" />
-            E-mails Clickbank
-          </TabsTrigger>
-          <TabsTrigger value="reembolso" className="gap-1.5 text-xs">
-            <HandCoins className="h-3.5 w-3.5" />
-            Reembolso
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={aba} onValueChange={trocarAba}>
+        {/* Grupos rotulados no lugar de cinco abas soltas: dá para achar a aba
+            pelo tipo de conteúdo sem ler todos os rótulos. */}
+        <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          {GRUPOS.map((grupo) => (
+            <div key={grupo.titulo} className="flex flex-col gap-1.5">
+              <span className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {grupo.titulo}
+              </span>
+              <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">
+                {grupo.abas.map((item) => {
+                  const Icone = item.icone;
+                  const total = contagens[item.valor];
+                  return (
+                    <TabsTrigger key={item.valor} value={item.valor} className="gap-1.5 text-xs">
+                      <Icone className="h-3.5 w-3.5" />
+                      {item.rotulo}
+                      {total !== undefined && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-0.5 h-4 min-w-4 justify-center px-1 text-[10px] font-semibold"
+                        >
+                          {total}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </div>
+          ))}
+        </div>
 
-        <TabsContent value="produtos" className="mt-6">
+        <TabsContent value="produtos" className="mt-0">
           <ProductsPanel />
         </TabsContent>
-        <TabsContent value="sms" className="mt-6">
+        <TabsContent value="sms" className="mt-0">
           <SmsBrandsPanel />
         </TabsContent>
-        <TabsContent value="respostas" className="mt-6">
+        <TabsContent value="respostas" className="mt-0">
           <SmsRepliesPanel />
         </TabsContent>
-        <TabsContent value="emails" className="mt-6">
+        <TabsContent value="emails" className="mt-0">
           <EmailTemplatesPanel />
         </TabsContent>
-        <TabsContent value="reembolso" className="mt-6">
+        <TabsContent value="reembolso" className="mt-0">
           <RefundPlaybookPanel />
         </TabsContent>
       </Tabs>
-
-      <Card className="space-y-3 p-4">
-        <h2 className="text-sm font-semibold">Links rápidos</h2>
-        <div className="flex flex-wrap gap-2">
-          {LINKS_RAPIDOS.map((link) => (
-            <a
-              key={link.url}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <ExternalLink className="h-3 w-3" />
-              {link.label}
-              <span className="text-[10px] opacity-60">{link.grupo}</span>
-            </a>
-          ))}
-        </div>
-      </Card>
     </main>
   );
 }
