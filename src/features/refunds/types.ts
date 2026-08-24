@@ -98,4 +98,5 @@ export const REFUND_PRODUCTS = [
   "Honeyfil",
   "Clear Gaze",
   "PagAmerican",
+  "Jellyrock",
 ] as const;

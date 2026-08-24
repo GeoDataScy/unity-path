@@ -103,6 +103,7 @@ const PRODUCTS = [
   "Honeyfil",
   "Clear Gaze",
   "PagAmerican",
+  "Jellyrock",
 ] as const;
 
 const PLATFORMS = [
