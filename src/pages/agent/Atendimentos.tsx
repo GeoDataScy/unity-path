@@ -138,6 +138,7 @@ const PLATFORMS = [
   "Digistore24",
   "SalesBound",
   "LogiCall",
+  "PagAmerican",
 ] as const;
 
 function todayISO() {
