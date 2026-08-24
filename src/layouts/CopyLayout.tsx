@@ -9,7 +9,8 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
-import { homePathForRole } from "@/lib/roles";
+import { canAccessArea, homePathForRole } from "@/lib/roles";
+import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { BookOpen, LogOut, MessageSquareQuote, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
@@ -77,6 +78,7 @@ export default function CopyLayout() {
 
   const [authLoading, setAuthLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -147,13 +149,14 @@ export default function CopyLayout() {
         return;
       }
 
-      if (profile?.role !== "copy_grup") {
+      if (!canAccessArea(profile?.role, "copy")) {
         navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
 
       if (!active) return;
       setUserId(session.user.id);
+      setRole(profile?.role ?? null);
       setFullName(profile?.full_name ?? null);
       setAuthLoading(false);
     };
@@ -274,6 +277,8 @@ export default function CopyLayout() {
               <TooltipContent side="right">{collapsed ? "Expandir menu" : "Encolher menu"}</TooltipContent>
             </Tooltip>
           </div>
+
+          <AreaSwitcher role={role} currentArea="copy" collapsed={collapsed} />
 
           {!collapsed && (
             <div className="space-y-1.5">

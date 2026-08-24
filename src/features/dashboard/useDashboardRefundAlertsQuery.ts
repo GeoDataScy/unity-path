@@ -27,9 +27,13 @@ export interface RefundAlertsData {
 
 export const REFUND_ALERTS_QUERY_KEY = ["dashboard", "refund-alerts"] as const;
 
-export function useDashboardRefundAlertsQuery() {
+// manager_refund_alerts é guardada por is_manager() no banco. Quem entra na área
+// de analytics sem ser gestora (time de copy) não deve nem chamar: daria erro a
+// cada 60 s no polling. Daí o `enabled`.
+export function useDashboardRefundAlertsQuery(enabled = true) {
   return useQuery({
     queryKey: REFUND_ALERTS_QUERY_KEY,
+    enabled,
     queryFn: async (): Promise<RefundAlertsData> => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return { total_overdue: 0, agents_affected: 0, by_agent: [] };
