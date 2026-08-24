@@ -114,6 +114,7 @@ const PLATFORMS = [
   "Digistore24",
   "SalesBound",
   "LogiCall",
+  "PagAmerican",
 ] as const;
 
 const CHANNELS = ["Nenhum", "Clickbank", "Email", "SMS"] as const;
