@@ -1,0 +1,92 @@
+// Catálogo de produtos oferecido nos selects do agente.
+//
+// Esta lista é hoje a TERCEIRA cópia do mesmo array: `Atendimentos.tsx` e
+// `EditServiceDialog.tsx` mantêm cada um a sua, idêntica caractere por caractere.
+// O Radar não as reaproveita porque nenhuma das duas é exportada, e apontar as
+// duas telas para cá é refactor que não pertence a esta feature — vira PR
+// próprio, mecânico (apagar o `const`, adicionar o import).
+//
+// Por isso o arquivo mora em `features/services/` e não em `features/radar/`:
+// ele já está no lugar certo para ser a fonte única quando esse PR acontecer.
+// Enquanto isso, produto novo precisa entrar nos TRÊS arquivos.
+//
+// `services.product` e `radar_items.product` são TEXT livre, sem FK: esta lista
+// é conveniência de UI, não constraint. Produto que sair daqui continua gravado
+// nos registros históricos.
+export const PRODUCTS = [
+  "Arialief",
+  "Alphacur",
+  "Blinzador",
+  "Feilaira",
+  "Garaherb",
+  "Karylief",
+  "Kymezol",
+  "Jertaris",
+  "Laellium",
+  "Memyts",
+  "Presgera",
+  "Biografa",
+  "Cetacondor",
+  "Cetadusse",
+  "Sciatilief",
+  "Goldenfrib",
+  "Felaromi",
+  "Tenurima",
+  "Ariovira",
+  "CucuDrops",
+  "Zalovira",
+  "Xelovita",
+  "Cerami",
+  "NATHUREX",
+  "Mahgryn",
+  "Levhyn",
+  "Ariomyx",
+  "Alitoryn",
+  "Athentys",
+  "Velynivo",
+  "Mioralab",
+  "Vergolief",
+  "Olisteren",
+  "Halegryn",
+  "Danmyts",
+  "Maizkidor",
+  "Basmontex",
+  "Fraganief",
+  "Ceramiri",
+  "Shapeon",
+  "Nexburn",
+  "Memoryon",
+  "Korvizol",
+  "Erectozyn",
+  "Thewellnesswize",
+  "VIP.Shipping",
+  "VisualEase",
+  "NerveEase",
+  "Steelpower",
+  "Gluco Off",
+  "Cognivex",
+  "Nad Dermal+",
+  "Alpharock",
+  "Hair Bloom",
+  "Guardon",
+  "Joint Mend",
+  "Keskara",
+  "Lipolegs",
+  "LipoShape",
+  "Mind Recall",
+  "Mind Wake",
+  "Prostate Vital",
+  "Quiet Nerves",
+  "Quiet Rest",
+  "RingSilence",
+  "FlowStrong",
+  "Youth Within",
+  "Thermo Ignite",
+  "Glyco Barrier",
+  "Gluco Mild",
+  "Horsefil",
+  "Honeyfil",
+  "Clear Gaze",
+  "PagAmerican",
+  "Jellyrock",
+] as const;
