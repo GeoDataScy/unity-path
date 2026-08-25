@@ -98,6 +98,14 @@ All colors MUST be HSL.
     /* Grid e eixos dos charts */
     --chart-grid: 220 13% 91%;
     --chart-axis: 220 9% 46%;
+
+    /* Bloco de notas do agente — papel pautado.
+       `paper` é um branco levemente quente (papel, não tela); `rule` é a pauta e
+       precisa ficar visível SOB o texto sem competir com ele; `margin` é a linha
+       vermelha da margem do caderno. */
+    --notepad-paper: 44 40% 98%;
+    --notepad-rule: 214 30% 88%;
+    --notepad-margin: 0 65% 62%;
   }
 
   .dark {
@@ -176,6 +184,12 @@ All colors MUST be HSL.
 
     --chart-grid: 220 13% 22%;
     --chart-axis: 220 9% 65%;
+
+    /* Caderno no dark: papel escuro (um degrau acima do fundo do app, para o
+       painel se destacar), pauta discreta e margem dessaturada. */
+    --notepad-paper: 222 14% 15%;
+    --notepad-rule: 218 12% 27%;
+    --notepad-margin: 0 45% 48%;
   }
 }
 

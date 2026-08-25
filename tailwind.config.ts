@@ -101,6 +101,13 @@ export default {
           axis: "hsl(var(--chart-axis))",
         },
 
+        // Bloco de notas do agente (papel pautado)
+        notepad: {
+          paper: "hsl(var(--notepad-paper))",
+          rule: "hsl(var(--notepad-rule))",
+          margin: "hsl(var(--notepad-margin))",
+        },
+
         // shadcn sidebar semantic tokens (mapped to dashboard identity)
         sidebar: "hsl(var(--sidebar))",
         "sidebar-foreground": "hsl(var(--sidebar-foreground))",
