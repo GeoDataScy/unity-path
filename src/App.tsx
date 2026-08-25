@@ -28,6 +28,7 @@ const MinhasMetricas = lazy(() => import("./pages/agent/MinhasMetricas"));
 const ComeceAqui = lazy(() => import("./pages/agent/ComeceAqui"));
 const Transferencias = lazy(() => import("./pages/agent/Transferencias"));
 const BaseSuporte = lazy(() => import("./pages/agent/BaseSuporte"));
+const Radar = lazy(() => import("./pages/agent/Radar"));
 const CopyLayout = lazy(() => import("./layouts/CopyLayout"));
 const CopyMotivos = lazy(() => import("./pages/copy/CopyMotivos"));
 const CopyBaseSuporte = lazy(() => import("./pages/copy/CopyBaseSuporte"));
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="metricas" element={<MinhasMetricas />} />
             <Route path="transferencias" element={<Transferencias />} />
+            <Route path="radar" element={<Radar />} />
             <Route path="base-suporte" element={<BaseSuporte />} />
           </Route>
           <Route path="/copy" element={<CopyLayout />}>
