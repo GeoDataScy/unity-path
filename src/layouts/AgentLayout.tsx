@@ -9,6 +9,7 @@ import logo from "@/assets/logo-xmx.png";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentCheckInController } from "@/features/agent/check-in/AgentCheckInController";
+import { AgentNotepad } from "@/features/notepad/AgentNotepad";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
@@ -209,6 +210,11 @@ export default function AgentLayout() {
 
       <PendingRefundsAlert enabled={Boolean(userId)} />
       {userId && <AgentCheckInController userId={userId} fullName={fullName} />}
+
+      {/* Caderno pessoal do agente: marcador no canto inferior direito, painel
+          de altura inteira à direita. Fica no layout (e não numa página) porque
+          a anotação nasce no meio de qualquer tela do workspace. */}
+      <AgentNotepad enabled={Boolean(userId)} fullName={fullName} />
     </SidebarProvider>
   );
 }
