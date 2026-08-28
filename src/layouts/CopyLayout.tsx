@@ -26,6 +26,8 @@ function toISODate(d: Date) {
 export type CopyOutletContext = {
   userId: string;
   fullName: string | null;
+  /** profiles.role — a gestora entra nesta área pelo seletor e edita a cotação. */
+  role: string | null;
   range: DateRange | undefined;
   setRange: (next: DateRange | undefined) => void;
   fromISO: string;
@@ -225,8 +227,8 @@ export default function CopyLayout() {
 
   const outletContext = useMemo<CopyOutletContext | null>(() => {
     if (authLoading || !userId) return null;
-    return { userId, fullName, range, setRange, fromISO, toISO };
-  }, [authLoading, userId, fullName, range, fromISO, toISO]);
+    return { userId, fullName, role, range, setRange, fromISO, toISO };
+  }, [authLoading, userId, fullName, role, range, fromISO, toISO]);
 
   const handleLogout = async () => {
     await recordAuthEvent("logout").catch(() => {});
