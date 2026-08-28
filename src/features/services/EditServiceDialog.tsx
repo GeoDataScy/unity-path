@@ -23,6 +23,7 @@ import type { ServiceItem } from "@/features/services/useMyServicesQuery";
 import {
   CONTACT_REASONS,
   CONTACT_REASON_NOTE_MAX_LENGTH,
+  getContactReasonNoteCopy,
   normalizeContactReasonNote,
   requiresContactReasonNote,
   type ContactReasonCode,
@@ -140,6 +141,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
   const [orderId, setOrderId] = useState("");
 
   const isRefund = contactReason === "reembolso";
+  const contactReasonNoteCopy = getContactReasonNoteCopy(contactReason);
 
   // order_id não vem na listagem (my_recent_services), então é buscado ao abrir —
   // sem isso, salvar apagaria o número do pedido já gravado.
@@ -167,7 +169,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
 
   const canSave = useMemo(() => {
     const orderOk = !isRefund || orderId.trim().length > 0;
-    // "Outro" só é salvável com a descrição preenchida (espelha o CHECK do banco).
+    // Motivo que pede descrição só é salvável com o texto preenchido.
     const reasonOk =
       !requiresContactReasonNote(contactReason) || contactReasonNote.trim().length > 0;
     return (
@@ -286,9 +288,9 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
             </Select>
           </div>
 
-          {requiresContactReasonNote(contactReason) && (
+          {contactReasonNoteCopy && (
             <div className="grid gap-2">
-              <Label htmlFor="edit-contact-reason-note">Descreva o motivo</Label>
+              <Label htmlFor="edit-contact-reason-note">{contactReasonNoteCopy.label}</Label>
               <Textarea
                 id="edit-contact-reason-note"
                 value={contactReasonNote}
@@ -297,10 +299,10 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
                 }
                 maxLength={CONTACT_REASON_NOTE_MAX_LENGTH}
                 rows={2}
-                placeholder="Ex.: cliente confundiu cápsula com gummy"
+                placeholder={contactReasonNoteCopy.placeholder}
               />
               <p className="text-xs text-muted-foreground">
-                Use para situações que não se encaixam nos motivos da lista.{" "}
+                {contactReasonNoteCopy.hint}{" "}
                 {contactReasonNote.length}/{CONTACT_REASON_NOTE_MAX_LENGTH}
               </p>
             </div>

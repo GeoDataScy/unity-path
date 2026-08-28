@@ -45,6 +45,7 @@ import {
   CONTACT_REASON_NOTE_MAX_LENGTH,
   formatContactReason,
   getContactReason,
+  getContactReasonNoteCopy,
   normalizeContactReasonNote,
   requiresContactReasonNote,
   type ContactReasonCode,
@@ -475,11 +476,13 @@ export default function Atendimentos() {
   const dailyGoal = supportChannel === "sms" ? 150 : 100;
 
   const isRefund = contactReason === "reembolso";
+  // Motivos "Outro" e "Reclamação VSL" pedem descrição livre — cada um com seu texto.
+  const contactReasonNoteCopy = getContactReasonNoteCopy(contactReason);
 
   const canSubmit = useMemo(() => {
     const emailOk = channel === "SMS" ? isPhoneComplete(clientEmail) : Boolean(clientEmail);
     const orderOk = !isRefund || orderId.trim().length > 0;
-    // "Outro" sem descrição não registra nada de útil — e o CHECK do banco recusa.
+    // Motivo que pede descrição sem texto não registra nada de útil.
     const reasonOk =
       Boolean(contactReason) &&
       (!requiresContactReasonNote(contactReason) || contactReasonNote.trim().length > 0);
@@ -927,8 +930,8 @@ export default function Atendimentos() {
                 value={contactReason}
                 onValueChange={(v) => {
                   setContactReason(v as ContactReasonCode);
-                  // A nota pertence ao motivo "Outro"; trocar o motivo a descarta
-                  // (o CHECK do banco também recusaria nota em outro motivo).
+                  // A nota pertence aos motivos que a pedem; trocar o motivo a
+                  // descarta (o CHECK do banco também recusaria nota nos demais).
                   if (!requiresContactReasonNote(v)) setContactReasonNote("");
                 }}
               >
@@ -948,9 +951,9 @@ export default function Atendimentos() {
               </Select>
             </div>
 
-            {requiresContactReasonNote(contactReason) && (
+            {contactReasonNoteCopy && (
               <div className="grid gap-2 lg:col-span-3">
-                <Label htmlFor="contactReasonNote">Descreva o motivo</Label>
+                <Label htmlFor="contactReasonNote">{contactReasonNoteCopy.label}</Label>
                 <Textarea
                   id="contactReasonNote"
                   value={contactReasonNote}
@@ -959,11 +962,11 @@ export default function Atendimentos() {
                   }
                   maxLength={CONTACT_REASON_NOTE_MAX_LENGTH}
                   rows={2}
-                  placeholder="Ex.: cliente confundiu cápsula com gummy"
+                  placeholder={contactReasonNoteCopy.placeholder}
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Use para situações que não se encaixam nos motivos da lista.{" "}
+                  {contactReasonNoteCopy.hint}{" "}
                   {contactReasonNote.length}/{CONTACT_REASON_NOTE_MAX_LENGTH}
                 </p>
               </div>

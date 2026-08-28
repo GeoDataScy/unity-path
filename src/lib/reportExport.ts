@@ -44,10 +44,10 @@ const SHEET_SPECS = {
     title: "Motivos de contato por canal (só aberturas de ticket — 1 motivo por ticket)",
     columns: ["Canal", "Motivo", "Quantidade"],
   },
-  motivosOutro: {
-    name: "Motivos — Outro",
-    title: 'Casos excepcionais descritos pelo agente (motivo "Outro")',
-    columns: ["Data", "Canal", "Produto", "E-mail do Cliente", "Descrição do motivo", "Agente"],
+  motivosDescritos: {
+    name: "Motivos descritos",
+    title: 'Casos descritos pelo agente (motivos "Outro" e "Reclamação VSL")',
+    columns: ["Data", "Motivo", "Canal", "Produto", "E-mail do Cliente", "Descrição", "Agente"],
   },
   reembolsosResumo: {
     name: "Reembolsos - Resumo",
@@ -145,13 +145,15 @@ type ExportExtrasResponse = {
   refund_reasons_by_product: Array<{ product: string; reason: string; qty: number }>;
 };
 
-// Um registro por ticket aberto com motivo "Outro" — o texto livre que o
-// agregado por código (contact_reasons_by_channel) não consegue mostrar.
+// Um registro por ticket aberto com motivo descrito ("Outro" ou "Reclamação
+// VSL") — o texto livre que o agregado por código (contact_reasons_by_channel)
+// não consegue mostrar.
 type ContactReasonNoteRow = {
   service_day: string;
   channel: string;
   product: string;
   client_email: string;
+  reason: string;
   note: string;
   agent_name: string;
 };
@@ -398,13 +400,15 @@ export async function exportManagerReport(
     ]),
   );
 
-  // 4b) Motivos — Outro (texto livre)
-  // A aba acima conta 'outro' como um balde só; aqui a gestora lê o que de fato
-  // aconteceu em cada um desses tickets e decide se algum vira motivo fixo.
+  // 4b) Motivos descritos (texto livre)
+  // A aba acima conta 'outro' e 'reclamacao_vsl' como baldes fechados; aqui a
+  // gestora lê o que de fato aconteceu em cada ticket — qual caso excepcional
+  // apareceu e qual promessa do anúncio o cliente cobrou.
   appendSheet(
-    SHEET_SPECS.motivosOutro,
+    SHEET_SPECS.motivosDescritos,
     (reasonNotes ?? []).map((row) => [
       row.service_day ? formatBrDate(row.service_day) : "—",
+      reasonLabel(row.reason ?? "nao_informado"),
       row.channel ?? "—",
       row.product ?? "—",
       row.client_email ?? "",

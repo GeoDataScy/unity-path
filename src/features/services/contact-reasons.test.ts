@@ -4,15 +4,32 @@ import {
   CONTACT_REASONS,
   CONTACT_REASON_NOTE_MAX_LENGTH,
   formatContactReason,
+  getContactReasonNoteCopy,
   normalizeContactReasonNote,
   requiresContactReasonNote,
 } from "@/features/services/contact-reasons";
 
 describe("requiresContactReasonNote", () => {
-  it("exige nota apenas no motivo 'outro'", () => {
+  it("exige nota nos motivos 'outro' e 'reclamacao_vsl'", () => {
     expect(requiresContactReasonNote("outro")).toBe(true);
+    expect(requiresContactReasonNote("reclamacao_vsl")).toBe(true);
     expect(requiresContactReasonNote("duvida_de_uso")).toBe(false);
     expect(requiresContactReasonNote(null)).toBe(false);
+  });
+});
+
+describe("getContactReasonNoteCopy", () => {
+  it("dá textos próprios a cada motivo que pede descrição", () => {
+    const outro = getContactReasonNoteCopy("outro");
+    const vsl = getContactReasonNoteCopy("reclamacao_vsl");
+    expect(outro?.label).toBe("Descreva o motivo");
+    expect(vsl?.label).toBe("Descreva a reclamação");
+    expect(vsl?.placeholder).not.toBe(outro?.placeholder);
+  });
+
+  it("não devolve nada nos motivos sem descrição", () => {
+    expect(getContactReasonNoteCopy("reembolso")).toBeNull();
+    expect(getContactReasonNoteCopy(null)).toBeNull();
   });
 });
 
@@ -23,6 +40,7 @@ describe("normalizeContactReasonNote", () => {
 
   it("apara espaços e devolve null quando só sobra vazio", () => {
     expect(normalizeContactReasonNote("outro", "  cápsula x gummy  ")).toBe("cápsula x gummy");
+    expect(normalizeContactReasonNote("reclamacao_vsl", "  prometia 7 dias  ")).toBe("prometia 7 dias");
     expect(normalizeContactReasonNote("outro", "   ")).toBeNull();
     expect(normalizeContactReasonNote("outro", undefined)).toBeNull();
   });
@@ -44,6 +62,13 @@ describe("formatContactReason", () => {
       "Outro — cliente confundiu cápsula com gummy",
     );
     expect(formatContactReason("outro", null)).toBe("Outro");
+  });
+
+  it("anexa a descrição no motivo 'reclamacao_vsl'", () => {
+    expect(formatContactReason("reclamacao_vsl", "anúncio prometia 7 dias")).toBe(
+      "Reclamação VSL — anúncio prometia 7 dias",
+    );
+    expect(formatContactReason("reclamacao_vsl", null)).toBe("Reclamação VSL");
   });
 
   it("trata código ausente e desconhecido", () => {
