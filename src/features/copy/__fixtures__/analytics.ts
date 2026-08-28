@@ -6,6 +6,10 @@ import type { CopyRefundAnalytics } from "@/features/copy/types";
  * mesmos formatos que a tela recebe do banco — inclusive `share`/`lift` nulos.
  */
 export const analyticsFixture: CopyRefundAnalytics = {
+  "cotacao": {
+    "usd_brl": 5.4,
+    "atualizada_em": "2026-08-28T13:00:00-03:00"
+  },
   "kpis": {
     "dias_mediano": 4,
     "retencao_pct": 26.4,

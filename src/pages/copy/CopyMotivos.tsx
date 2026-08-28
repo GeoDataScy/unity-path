@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MixEvolutionPanels } from "@/features/copy/components/MixEvolutionPanels";
+import { ExchangeRateNote } from "@/features/copy/components/ExchangeRateNote";
 import { ReasonEvidenceModal } from "@/features/copy/components/ReasonEvidenceModal";
 import { ShareBar } from "@/features/copy/components/ShareBar";
 import { fmtDays, fmtInt, fmtISODate, fmtMoney, fmtPct, fmtSigned } from "@/features/copy/format";
@@ -67,7 +68,7 @@ function KpiCard({
 }
 
 export default function CopyMotivos() {
-  const { fullName, fromISO, toISO } = useOutletContext<CopyOutletContext>();
+  const { fullName, role, fromISO, toISO } = useOutletContext<CopyOutletContext>();
 
   const [product, setProduct] = useState("all");
   const [platform, setPlatform] = useState("all");
@@ -277,6 +278,12 @@ export default function CopyMotivos() {
               hint={`Mediana. ${fmtInt(data.universe.em_aberto)} pedido(s) de reembolso ainda em aberto no período`}
             />
           </section>
+
+          <ExchangeRateNote
+            rate={data.cotacao?.usd_brl ?? null}
+            updatedAt={data.cotacao?.atualizada_em ?? null}
+            canEdit={role === "manager"}
+          />
 
           <Card>
             <CardHeader>

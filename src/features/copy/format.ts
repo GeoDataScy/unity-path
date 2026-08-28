@@ -5,9 +5,20 @@ export function fmtInt(value: number | null | undefined): string {
   return value.toLocaleString("pt-BR");
 }
 
+/**
+ * Dólar: `refunds.refund_value` é lançado em real e a RPC já devolve convertido
+ * pela cotação de `app_settings`. Locale continua pt-BR (separador de milhar
+ * com ponto), só a moeda muda — sai "US$ 119.938".
+ */
 export function fmtMoney(value: number | null | undefined): string {
   if (value === null || value === undefined) return DASH;
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+}
+
+/** A cotação em si é real por dólar — essa continua em R$, com centavos. */
+export function fmtRate(value: number | null | undefined): string {
+  if (value === null || value === undefined) return DASH;
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 }
 
 export function fmtPct(value: number | null | undefined, digits = 1): string {
