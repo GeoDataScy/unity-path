@@ -138,14 +138,28 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
             <div className="grid gap-4 md:grid-cols-2">
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold">Produtos com mais casos deste motivo</h3>
+                <p className="text-xs text-muted-foreground">
+                  O percentual é a fatia deste motivo dentro do produto: de todos os reembolsos que o
+                  produto teve no período, quantos foram por este motivo.
+                </p>
                 <ul className="space-y-2">
                   {data.por_produto.map((row) => (
                     <li key={row.produto} className="flex items-center gap-3 text-sm">
-                      <span className="w-40 shrink-0 truncate" title={row.produto}>
+                      <span className="w-32 shrink-0 truncate" title={row.produto}>
                         {row.produto}
                       </span>
                       <ShareBar value={row.n} max={maxProduto} />
                       <span className="w-12 shrink-0 text-right tabular-nums">{fmtInt(row.n)}</span>
+                      <span
+                        className="w-14 shrink-0 text-right tabular-nums text-muted-foreground"
+                        title={
+                          row.total_produto
+                            ? `${fmtInt(row.n)} de ${fmtInt(row.total_produto)} reembolsos do ${row.produto} no período`
+                            : undefined
+                        }
+                      >
+                        {fmtPct(row.share_no_produto)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -156,7 +170,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
                 <ul className="space-y-2">
                   {data.por_canal.map((row) => (
                     <li key={row.canal} className="flex items-center gap-3 text-sm">
-                      <span className="w-40 shrink-0 truncate" title={row.canal}>
+                      <span className="w-32 shrink-0 truncate" title={row.canal}>
                         {row.canal}
                       </span>
                       <ShareBar value={row.n} max={maxCanal} />
