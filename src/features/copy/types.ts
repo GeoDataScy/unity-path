@@ -84,6 +84,13 @@ export type CopyReasonEvidence = {
   texto_livre: number;
   textos: Array<{ texto: string; n: number; share: number | null; padrao: boolean }>;
   termos: Array<{ termo: string; n: number }>;
-  por_produto: Array<{ produto: string; n: number }>;
+  por_produto: Array<{
+    produto: string;
+    n: number;
+    /** Reembolsos concluídos do produto no período, de qualquer motivo. */
+    total_produto: number | null;
+    /** n / total_produto — quanto deste motivo pesa dentro do produto. */
+    share_no_produto: number | null;
+  }>;
   por_canal: Array<{ canal: string; n: number }>;
 };
