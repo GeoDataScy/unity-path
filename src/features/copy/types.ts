@@ -56,13 +56,8 @@ export type CopyRefundAnalytics = {
     cobertura_pct: number | null;
     variacao_volume_pct: number | null;
   };
-  /** Cotação com que a RPC converteu os valores de real para dólar. */
-  cotacao: {
-    /** Reais por US$ 1. */
-    usd_brl: number | null;
-    /** Quando a gestora mexeu na cotação pela última vez. */
-    atualizada_em: string | null;
-  };
+  // Dinheiro (`valor_*`, `order_value`, `refunded_value`) sai da RPC em dólar,
+  // que é a moeda em que `refunds.refund_value` é lançado. Sem conversão.
   kpis: {
     valor_pedidos: number;
     valor_devolvido: number;
