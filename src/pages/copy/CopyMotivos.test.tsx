@@ -1,19 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import CopyMotivos from "@/pages/copy/CopyMotivos";
 import { analyticsFixture } from "@/features/copy/__fixtures__/analytics";
 
-// A tela lê período/nome/role do contexto do CopyLayout; aqui ele é injetado
-// direto. `role` decide quem pode editar a cotação — o padrão é o time de copy.
-let contextRole = "copy_grup";
-
+// A tela lê período/nome do contexto do CopyLayout; aqui ele é injetado direto.
 vi.mock("react-router-dom", () => ({
   useOutletContext: () => ({
     userId: "u1",
     fullName: "Copy Teste",
-    role: contextRole,
     range: undefined,
     setRange: () => {},
     fromISO: "2026-06-01",
@@ -36,16 +31,6 @@ vi.mock("@/features/copy/useCopyReasonEvidenceQuery", () => ({
   useCopyReasonEvidenceQuery: () => ({ data: undefined, isLoading: false, isError: false, error: null }),
 }));
 
-// A nota de cotação grava via TanStack Query, que exige provider no render.
-function renderScreen() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={client}>
-      <CopyMotivos />
-    </QueryClientProvider>,
-  );
-}
-
 beforeAll(() => {
   // recharts mede o container com ResizeObserver, que o jsdom não tem.
   if (!("ResizeObserver" in window)) {
@@ -59,7 +44,7 @@ beforeAll(() => {
 
 describe("CopyMotivos", () => {
   it("mostra o universo do período e o mix de motivos com variação em p.p.", () => {
-    renderScreen();
+    render(<CopyMotivos />);
 
     // Universo: 1.348 concluídos, 2.019 no período anterior (queda de 33,2%).
     expect(screen.getByText("1.348")).toBeInTheDocument();
@@ -77,7 +62,7 @@ describe("CopyMotivos", () => {
   });
 
   it("lista como sinal de copy só o par produto×motivo acima do piso de volume e de índice", () => {
-    renderScreen();
+    render(<CopyMotivos />);
 
     const sinais = screen.getByText("Sinais de copy").closest("div[data-slot], div");
     expect(sinais).not.toBeNull();
@@ -93,27 +78,17 @@ describe("CopyMotivos", () => {
   });
 
   it("nomeia o período anterior usado na comparação", () => {
-    renderScreen();
+    render(<CopyMotivos />);
     expect(screen.getByText(/15\/03\/2026 a 31\/05\/2026/)).toBeInTheDocument();
   });
 
-  it("mostra o dinheiro em dólar e diz por qual cotação converteu", () => {
-    renderScreen();
+  it("mostra o dinheiro em dólar, com o número que veio da RPC", () => {
+    render(<CopyMotivos />);
 
-    // KPI "Valor devolvido": 332.628,65 convertidos vêm da RPC já em dólar.
+    // KPI "Valor devolvido": 332.628,65 já sai do banco em dólar e aparece como
+    // está. Nenhuma conversão e nenhuma cotação na tela.
     expect(screen.getByText("US$ 332.629")).toBeInTheDocument();
     expect(screen.queryByText("R$ 332.629")).not.toBeInTheDocument();
-    expect(screen.getByText(/convertidos de real a R\$ 5,40 por US\$ 1/)).toBeInTheDocument();
-  });
-
-  it("só a gestora pode mexer na cotação", () => {
-    const { unmount } = renderScreen();
-    expect(screen.queryByRole("button", { name: "Atualizar cotação" })).not.toBeInTheDocument();
-    unmount();
-
-    contextRole = "manager";
-    renderScreen();
-    expect(screen.getByRole("button", { name: "Atualizar cotação" })).toBeInTheDocument();
-    contextRole = "copy_grup";
+    expect(screen.queryByText(/cota[çc][ãa]o/i)).not.toBeInTheDocument();
   });
 });
