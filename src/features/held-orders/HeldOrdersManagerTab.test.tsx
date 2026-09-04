@@ -200,21 +200,19 @@ describe("HeldOrdersManagerTab — exportação", () => {
     expect(call.filters.product).toBe("MVIT");
   });
 
-  it("filtra por loja e descreve devolução pelo rótulo, não pelo código", () => {
+  it("não oferece mais o filtro de lojas e sempre exporta 'store: null'", () => {
     setRows([
       order({ id: "1", order_number: "PED-1", dyna_code: "LSD001" }),
       order({ id: "2", order_number: "PED-2", dyna_code: "RETURNS" }),
     ]);
     render(<HeldOrdersManagerTab />);
 
-    openSelect("Todas as lojas");
-    chooseOption("Devolução (1)");
+    expect(screen.queryByText("Todas as lojas")).not.toBeInTheDocument();
 
-    expect(orderNumbersOnScreen()).toEqual(["PED-2"]);
     fireEvent.click(exportButton());
     const call = exportCall();
-    expect(ids(call.rows)).toEqual(["2"]);
-    expect(call.filters.store).toBe("Devolução");
+    expect(ids(call.rows)).toEqual(["1", "2"]);
+    expect(call.filters.store).toBeNull();
   });
 
   // Os três relatórios que a operação pede por nome, e a combinação deles.
