@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { BarChart3, Package, TrendingUp, Users } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,17 @@ function safeParseISODate(value: string): Date | null {
 
 function formatCompactNumber(n: number) {
   return new Intl.NumberFormat("pt-BR").format(n);
+}
+
+// Hora da interação em São Paulo — mesmo fuso que o RPC usa para escolher o dia.
+function formatEventTime(iso: string) {
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
 }
 
 const DONUT_COLORS = [
@@ -490,6 +502,7 @@ const Dashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Data</TableHead>
+                        <TableHead>Tipo</TableHead>
                         <TableHead>Agente</TableHead>
                         <TableHead>E-mail Cliente</TableHead>
                         <TableHead>Produto</TableHead>
@@ -499,8 +512,20 @@ const Dashboard = () => {
                     </TableHeader>
                     <TableBody>
                       {pageRows.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{format(parseISO(row.service_date.slice(0, 10)), "dd/MM/yyyy")}</TableCell>
+                        <TableRow key={`${row.kind}-${row.id}`}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(parseISO(row.day), "dd/MM/yyyy")}
+                            <span className="ml-1 text-muted-foreground">{formatEventTime(row.event_at)}</span>
+                          </TableCell>
+                          <TableCell>
+                            {row.kind === "service" ? (
+                              <Badge variant="secondary">Abertura</Badge>
+                            ) : (
+                              <Badge variant="outline">
+                                Follow-up{row.follow_up_number != null ? ` #${row.follow_up_number}` : ""}
+                              </Badge>
+                            )}
+                          </TableCell>
                           <TableCell className="font-medium">{row.profiles?.full_name ?? "—"}</TableCell>
                           <TableCell className="text-muted-foreground">{row.client_email}</TableCell>
                           <TableCell>{row.product}</TableCell>
