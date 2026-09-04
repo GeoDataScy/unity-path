@@ -10,13 +10,21 @@ type Params = {
   pageSize: number;
 };
 
+// Uma linha por interação — mesmo universo de dashboard_metrics
+// (abertura do ticket + cada follow-up). Ver migration 20260904120000.
 export type DashboardAuditRow = {
   id: string;
-  service_date: string;
+  kind: "service" | "follow_up";
+  service_id: string;
+  event_at: string; // timestamptz ISO
+  day: string; // YYYY-MM-DD em America/Sao_Paulo (mesmo bucket do gráfico por dia)
+  user_id: string;
   client_email: string;
   product: string;
   platform: string | null;
   channel: string | null;
+  status: string | null;
+  follow_up_number: number | null;
   profiles: { full_name: string | null } | null;
 };
 
