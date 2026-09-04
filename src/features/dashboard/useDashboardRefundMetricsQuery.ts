@@ -23,13 +23,32 @@ export type DashboardRefundMetrics = {
   by_channel: Array<{ name: string; value: number }>;
   by_platform: Array<{ name: string; value: number }>;
   by_reason: Array<{ name: string; value: number }>;
-  by_channel_efficiency: Array<{
-    channel: string;
-    total_done: number;
-    partial_count: number;
-    full_count: number;
-    efficiency_score: number;
-  }>;
+  by_channel_efficiency: ChannelEfficiencyRow[];
+  channel_efficiency_total: ChannelEfficiencyTotal | null;
+};
+
+// Uma linha por canal, só reembolsos concluídos no período.
+// *_rate: dentro do canal (parcial + integral = 100%).
+// *_share: fatia do canal no total de parciais/integrais do período.
+export type ChannelEfficiencyRow = {
+  channel: string;
+  total_done: number;
+  partial_count: number;
+  full_count: number;
+  partial_rate: number;
+  full_rate: number;
+  partial_share: number;
+  full_share: number;
+  /** Mantido por compatibilidade; igual a partial_rate. */
+  efficiency_score: number;
+};
+
+export type ChannelEfficiencyTotal = {
+  total_done: number;
+  partial_count: number;
+  full_count: number;
+  partial_rate: number;
+  full_rate: number;
 };
 
 async function requireSession() {
