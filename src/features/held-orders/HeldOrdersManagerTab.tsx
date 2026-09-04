@@ -71,7 +71,6 @@ function statusBadge(o: ManagerHeldOrder) {
 
 export function HeldOrdersManagerTab() {
   const [statusFilter, setStatusFilter] = useState<ManagerHeldOrderStatusFilter>("all");
-  const [storeFilter, setStoreFilter] = useState<string>("all");
   const [productFilter, setProductFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -100,9 +99,9 @@ export function HeldOrdersManagerTab() {
   const realRows = useMemo(() => allRows.filter((o) => !o.duplicate_of), [allRows]);
   const duplicateCount = allRows.length - realRows.length;
 
-  // Conjunto já filtrado por tudo MENOS loja e produto: "não atribuído" e busca
+  // Conjunto já filtrado por tudo MENOS produto: "não atribuído" e busca
   // textual são aplicados no cliente (o RPC já filtrou status e agente
-  // específico). É a base tanto da tabela quanto das opções dos dois selects.
+  // específico). É a base tanto da tabela quanto das opções do select de produto.
   const baseRows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (showDuplicates ? allRows : realRows).filter((o) => {
@@ -113,53 +112,33 @@ export function HeldOrdersManagerTab() {
     });
   }, [allRows, realRows, showDuplicates, agentFilter, search]);
 
-  // Cada select lista apenas o que ainda existe DEPOIS do outro filtro (as lojas
-  // consideram o produto escolhido e vice-versa), com a contagem ao lado. Assim
-  // nenhuma combinação oferecida devolve lista vazia.
-  const stores = useMemo(() => {
-    const count = new Map<string, number>();
-    for (const o of baseRows) {
-      if (productFilter !== "all" && !productsOf(o).includes(productFilter)) continue;
-      count.set(o.dyna_code, (count.get(o.dyna_code) ?? 0) + 1);
-    }
-    return Array.from(count.entries())
-      .map(([code, n]) => ({ code, count: n }))
-      .sort((a, b) => heldOrderStoreLabel(a.code).localeCompare(heldOrderStoreLabel(b.code), "pt-BR"));
-  }, [baseRows, productFilter]);
-
   // Produtos: miolo do SKU dos itens do pedido (ex.: "NRVEBLND"). Um pedido com
   // vários produtos entra na contagem de cada um deles.
   const products = useMemo(() => {
     const count = new Map<string, number>();
     for (const o of baseRows) {
-      if (storeFilter !== "all" && o.dyna_code !== storeFilter) continue;
       for (const p of new Set(productsOf(o))) count.set(p, (count.get(p) ?? 0) + 1);
     }
     return Array.from(count.entries())
       .map(([code, n]) => ({ code, count: n }))
       .sort((a, b) => a.code.localeCompare(b.code, "pt-BR"));
-  }, [baseRows, storeFilter]);
+  }, [baseRows]);
 
   // O array que a tabela renderiza E que vai para o relatório — a planilha nunca
   // sai de um conjunto diferente do que está na tela.
   const rows = useMemo(
     () =>
       baseRows.filter((o) => {
-        if (storeFilter !== "all" && o.dyna_code !== storeFilter) return false;
         if (productFilter !== "all" && !productsOf(o).includes(productFilter)) return false;
         return true;
       }),
-    [baseRows, storeFilter, productFilter],
+    [baseRows, productFilter],
   );
 
-  // Trocar de status/agente/busca pode fazer a loja (ou o produto) escolhida
-  // desaparecer do conjunto carregado. Sem isto o filtro seguiria ativo apontando
-  // para algo que não existe mais ali, e a tela — e a planilha — sairiam vazias
-  // sem motivo aparente.
-  useEffect(() => {
-    if (storeFilter !== "all" && !stores.some((s) => s.code === storeFilter)) setStoreFilter("all");
-  }, [stores, storeFilter]);
-
+  // Trocar de status/agente/busca pode fazer o produto escolhido desaparecer do
+  // conjunto carregado. Sem isto o filtro seguiria ativo apontando para algo que
+  // não existe mais ali, e a tela — e a planilha — sairiam vazias sem motivo
+  // aparente.
   useEffect(() => {
     if (productFilter !== "all" && !products.some((p) => p.code === productFilter)) {
       setProductFilter("all");
@@ -239,7 +218,8 @@ export function HeldOrdersManagerTab() {
         rows,
         filters: {
           status: statusFilter === "all" ? null : MANAGER_HELD_ORDER_STATUS_FILTER_LABEL[statusFilter],
-          store: storeFilter === "all" ? null : heldOrderStoreLabel(storeFilter),
+          // Filtro de loja removido da tela (dado pouco confiável) — sempre "todas".
+          store: null,
           product: productFilter === "all" ? null : productFilter,
           agent: agentLabel,
           search,
@@ -364,19 +344,6 @@ export function HeldOrdersManagerTab() {
                   <SelectItem value="aguardando">Aguardando</SelectItem>
                   <SelectItem value="em_andamento">Em andamento</SelectItem>
                   <SelectItem value="confirmed">Confirmados</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={storeFilter} onValueChange={setStoreFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as lojas</SelectItem>
-                  {stores.map((s) => (
-                    <SelectItem key={s.code} value={s.code}>
-                      {heldOrderStoreLabel(s.code)} ({s.count})
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
               <Select value={productFilter} onValueChange={setProductFilter}>
