@@ -17,6 +17,7 @@ import {
   BookOpen,
   ClipboardCheck,
   FileSpreadsheet,
+  Headset,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -313,6 +314,7 @@ export default function ManagerLayout() {
   const isOnAcompanhamento = location.pathname.startsWith("/dashboard/acompanhamento");
   const isOnInteracoes = location.pathname.startsWith("/dashboard/interacoes");
   const isOnAlertas = location.pathname.startsWith("/dashboard/alertas");
+  const isOnZendesk = location.pathname.startsWith("/dashboard/zendesk");
   const overdueCount = alertsQuery.data?.total_overdue ?? 0;
 
   const alertsBadge = overdueCount > 0 ? (
@@ -418,6 +420,12 @@ export default function ManagerLayout() {
                   label="Base de Suporte"
                   collapsed={collapsed}
                 />
+                <NavItem
+                  to="/dashboard/zendesk"
+                  icon={<Headset className="h-4 w-4" />}
+                  label="Zendesk"
+                  collapsed={collapsed}
+                />
               </>
             )}
           </nav>
@@ -508,7 +516,7 @@ export default function ManagerLayout() {
                 </Button>
 
                 <div className="text-[11px] opacity-70 px-1">
-                  {isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+                  {isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
                 </div>
               </>
             )}
