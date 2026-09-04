@@ -3,6 +3,10 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { formatContactReason } from "@/features/services/contact-reasons";
 import type { DashboardRefundReasonDetailRow } from "@/features/dashboard/useDashboardRefundReasonDetailQuery";
+import type {
+  ChannelEfficiencyRow,
+  ChannelEfficiencyTotal,
+} from "@/features/dashboard/useDashboardRefundMetricsQuery";
 
 type SheetSpec = {
   name: string;
@@ -69,6 +73,20 @@ const SHEET_SPECS = {
     title: "Reembolsos por plataforma",
     columns: ["Plataforma", "Quantidade"],
   },
+  eficienciaCanal: {
+    name: "Eficiência por Canal",
+    title: "Eficiência por canal (reembolsos concluídos no período)",
+    columns: [
+      "Canal",
+      "Concluídos",
+      "Parciais (<100%)",
+      "% dos parciais",
+      "Integrais (100%)",
+      "% dos integrais",
+      "Taxa conv. parcial",
+      "Taxa conv. integral",
+    ],
+  },
   motivosReembolso: {
     name: "Motivos de Reembolso",
     title: "Motivos de reembolso por produto",
@@ -107,6 +125,8 @@ type StatusSummaryResponse = {
 type RefundMetricsResponse = {
   by_product: NameValue[];
   by_platform: NameValue[];
+  by_channel_efficiency: ChannelEfficiencyRow[];
+  channel_efficiency_total: ChannelEfficiencyTotal | null;
 };
 
 // Mesma linha devolvida por dashboard_channel_detail e consumida pelo modal
@@ -163,6 +183,10 @@ const EMPTY_PLACEHOLDER = "Sem registros no período";
 function formatBrDate(iso: string): string {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
+}
+
+function formatPct(value: number | null | undefined): string {
+  return `${(value ?? 0).toFixed(1)}%`;
 }
 
 function formatBrCurrency(value: number): string {
@@ -456,6 +480,34 @@ export async function exportManagerReport(
     SHEET_SPECS.reembolsosPlataforma,
     (refundMetrics.by_platform ?? []).map((row) => [row.name ?? "Não informado", row.value ?? 0]),
   );
+
+  // 8b) Eficiência por Canal — mesma leitura do card da aba Reembolsos
+  const effRows = refundMetrics.by_channel_efficiency ?? [];
+  const effTotal = refundMetrics.channel_efficiency_total;
+  appendSheet(SHEET_SPECS.eficienciaCanal, [
+    ...effRows.map((row) => [
+      row.channel,
+      row.total_done ?? 0,
+      row.partial_count ?? 0,
+      formatPct(row.partial_share),
+      row.full_count ?? 0,
+      formatPct(row.full_share),
+      formatPct(row.partial_rate),
+      formatPct(row.full_rate),
+    ]),
+    ...(effTotal
+      ? [[
+          "Todos os canais",
+          effTotal.total_done ?? 0,
+          effTotal.partial_count ?? 0,
+          formatPct(effTotal.partial_count > 0 ? 100 : 0),
+          effTotal.full_count ?? 0,
+          formatPct(effTotal.full_count > 0 ? 100 : 0),
+          formatPct(effTotal.partial_rate),
+          formatPct(effTotal.full_rate),
+        ]]
+      : []),
+  ]);
 
   // 9) Motivos de Reembolso (produto × motivo)
   appendSheet(
