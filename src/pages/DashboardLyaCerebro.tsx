@@ -6,7 +6,17 @@ import { LyaBrainGraph } from "@/features/lya/components/LyaBrainGraph";
 import { LyaCerebroTicker } from "@/features/lya/components/LyaCerebroTicker";
 import { LyaTreinar } from "@/features/lya/components/LyaTreinar";
 import type { LyaMemory } from "@/features/lya/types";
-import { useDeleteLyaMemory, useLyaMemoriesQuery } from "@/features/lya/useLyaMemories";
+import { useDeleteLyaMemory, useDeleteSeedMemories, useLyaMemoriesQuery } from "@/features/lya/useLyaMemories";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 type Aba = "grafo" | "treinar";
@@ -27,6 +37,8 @@ export default function DashboardLyaCerebro() {
   // chat (modo treino) ou por outra gestora aparecem nascendo aqui.
   const memorias = useLyaMemoriesQuery(true, aba === "grafo" ? 4000 : false);
   const apagar = useDeleteLyaMemory();
+  const apagarExemplos = useDeleteSeedMemories();
+  const [confirmarExemplos, setConfirmarExemplos] = useState(false);
 
   const editarNoTreino = (m: LyaMemory) => {
     setEditando(m);
@@ -83,6 +95,7 @@ export default function DashboardLyaCerebro() {
             setEditando(null);
             setAba("treinar");
           }}
+          onRemoverExemplos={() => setConfirmarExemplos(true)}
         />
       ) : (
         // `key`: escolher outra memória no grafo precisa RESEMEAR o formulário.
@@ -96,6 +109,31 @@ export default function DashboardLyaCerebro() {
           }}
         />
       )}
+      <AlertDialog open={confirmarExemplos} onOpenChange={setConfirmarExemplos}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover as memórias de exemplo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apaga só o que veio marcado como exemplo. Tudo que você ensinou à Lya continua. Não dá para desfazer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  const n = await apagarExemplos.mutateAsync();
+                  toast({ title: `${n} memória${n === 1 ? "" : "s"} de exemplo removida${n === 1 ? "" : "s"}.` });
+                } catch (err) {
+                  toast({ title: "Não consegui remover.", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
+                }
+              }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
