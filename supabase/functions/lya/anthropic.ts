@@ -20,7 +20,11 @@ export const CHAT_EFFORT = (Deno.env.get("LYA_EFFORT") || "medium") as "low" | "
 // Teto de saída por etapa. É um CAP, não um gasto.
 export const MAX_TOKENS = 16000;
 
+// Cache do cliente amarrado ao VALOR da chave: uma instância quente da função
+// que viu a chave antiga (ou um placeholder) passa a usar a nova no instante
+// em que o secret é regravado, sem esperar a instância reciclar.
 let _client: Anthropic | null = null;
+let _clientKey: string | null = null;
 
 export function apiKeyConfigurada(): boolean {
   return Boolean(Deno.env.get("ANTHROPIC_API_KEY"));
@@ -33,7 +37,10 @@ export function anthropic(): Anthropic {
       "ANTHROPIC_API_KEY não configurada nos secrets do projeto Supabase — a Lya não consegue responder.",
     );
   }
-  _client ??= new Anthropic({ apiKey: key });
+  if (!_client || _clientKey !== key) {
+    _client = new Anthropic({ apiKey: key });
+    _clientKey = key;
+  }
   return _client;
 }
 
