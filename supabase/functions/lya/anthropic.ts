@@ -37,6 +37,21 @@ export function anthropic(): Anthropic {
       "ANTHROPIC_API_KEY não configurada nos secrets do projeto Supabase — a Lya não consegue responder.",
     );
   }
+  // Um secret colado com caractere fora do ASCII (aspas curvas, espaço
+  // especial, quebra de linha) derruba o turno com um "Argument 2 is not a
+  // valid ByteString" opaco na hora de montar o header x-api-key. Aqui a
+  // falha vira uma mensagem que diz ONDE está o caractere, sem expor a chave.
+  const invalidos: string[] = [];
+  for (let i = 0; i < key.length; i++) {
+    const c = key.charCodeAt(i);
+    if (c < 0x21 || c > 0x7e) invalidos.push(`posição ${i + 1} (código U+${c.toString(16).toUpperCase().padStart(4, "0")})`);
+  }
+  if (invalidos.length) {
+    throw new Error(
+      `O secret ANTHROPIC_API_KEY contém caractere inválido em ${invalidos.slice(0, 3).join(", ")} — ` +
+        `regrave o secret com a chave limpa (sem aspas, espaços ou quebra de linha).`,
+    );
+  }
   if (!_client || _clientKey !== key) {
     _client = new Anthropic({ apiKey: key });
     _clientKey = key;
