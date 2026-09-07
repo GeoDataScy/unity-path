@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { GraduationCap, Loader2, Send } from "lucide-react";
+import { GraduationCap, Loader2, Mic, Send } from "lucide-react";
 
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // Caixa de envio da Lya (tela cheia e balão). Enter envia, Shift+Enter quebra
-// linha. O botão "Treinar" só aparece para a gestora.
+// linha. O botão "Treinar" só aparece para a gestora. O microfone é só o
+// símbolo por enquanto: o comando de voz ainda não existe, e o clique avisa.
 export function LyaComposer({
   onSend,
   disabled,
@@ -28,6 +30,13 @@ export function LyaComposer({
 }) {
   const [input, setInput] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
+
+  const avisarVoz = () =>
+    toast({
+      title: "Comando de voz em construção",
+      description: "Em breve você vai poder falar com a Lya. Por enquanto, escreva a pergunta.",
+    });
 
   useEffect(() => {
     if (autoFocus) ref.current?.focus();
@@ -79,7 +88,20 @@ export function LyaComposer({
         )}
       />
       <div className={cn("flex items-center justify-between", compact ? "px-2 pb-2 pt-1" : "px-3 pb-3 pt-1.5")}>
-        <div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={avisarVoz}
+            disabled={disabled}
+            aria-label="Comando de voz (em construção)"
+            title="Comando de voz — em construção"
+            className={cn(
+              "grid shrink-0 place-items-center rounded-full text-muted-foreground transition-colors enabled:hover:bg-muted enabled:hover:text-foreground disabled:opacity-35",
+              compact ? "h-8 w-8" : "h-9 w-9",
+            )}
+          >
+            <Mic className={compact ? "h-4 w-4" : "h-[18px] w-[18px]"} />
+          </button>
           {canTrain && (
             <button
               type="button"
