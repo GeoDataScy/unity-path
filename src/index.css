@@ -202,3 +202,14 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Cérebro da Lya ──
+   Faixa de métricas (esteira) e pulso do nó "nascendo" no grafo. Keyframes
+   globais porque o track referencia a animação por `style` inline. */
+@keyframes lyaTickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.lya-ticker-track:hover {
+  animation-play-state: paused;
+}

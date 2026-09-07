@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Ban, Check, GraduationCap, RotateCcw, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -111,9 +111,24 @@ export function LyaGuia() {
   );
 }
 
-export function LyaTreinar() {
+function formDe(m?: LyaMemory): FormState {
+  if (!m) return FORM_VAZIO;
+  return { editing: m.name, description: m.description ?? "", type: m.type, tags: (m.tags ?? []).join(", "), body: m.body ?? "" };
+}
+
+export function LyaTreinar({
+  editar: memoriaInicial,
+  onTreinandoChange,
+  onSaved,
+}: {
+  /** Memória escolhida no grafo para editar (lida só na montagem — use `key`). */
+  editar?: LyaMemory;
+  /** true enquanto o treinador está classificando/gravando. */
+  onTreinandoChange?: (treinando: boolean) => void;
+  onSaved?: (memoria: LyaMemory) => void;
+} = {}) {
   const { toast } = useToast();
-  const [form, setForm] = useState<FormState>(FORM_VAZIO);
+  const [form, setForm] = useState<FormState>(() => formDe(memoriaInicial));
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<LyaMemoryType | "all">("all");
   const [apagando, setApagando] = useState<string | null>(null);
@@ -121,6 +136,10 @@ export function LyaTreinar() {
   const memorias = useLyaMemoriesQuery();
   const salvar = useSaveLyaMemory();
   const apagar = useDeleteLyaMemory();
+
+  useEffect(() => {
+    onTreinandoChange?.(salvar.isPending);
+  }, [salvar.isPending, onTreinandoChange]);
 
   const lista = useMemo(() => memorias.data ?? [], [memorias.data]);
   const contagem = useMemo(() => {
@@ -155,6 +174,7 @@ export function LyaTreinar() {
       const rotulo = TIPO_MEMORIA_MAP[mem.type]?.label ?? mem.type;
       toast({ title: form.editing ? `Memória atualizada · ${rotulo}` : `A Lya aprendeu: “${mem.description}” · ${rotulo}` });
       setForm(FORM_VAZIO);
+      onSaved?.(mem);
     } catch (err) {
       toast({ title: "Não consegui salvar.", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
     }

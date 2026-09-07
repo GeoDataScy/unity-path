@@ -5,8 +5,16 @@ import type { LyaMemoryInput } from "./types";
 
 export const LYA_MEMORIES_KEY = ["lya", "memories"] as const;
 
-export function useLyaMemoriesQuery(enabled = true) {
-  return useQuery({ queryKey: LYA_MEMORIES_KEY, queryFn: lyaListMemories, enabled, staleTime: 30_000 });
+/** `refetchInterval` curto é o "ao vivo" do grafo; false desliga o polling. */
+export function useLyaMemoriesQuery(enabled = true, refetchInterval: number | false = false) {
+  return useQuery({
+    queryKey: LYA_MEMORIES_KEY,
+    queryFn: lyaListMemories,
+    enabled,
+    staleTime: 30_000,
+    refetchInterval,
+    refetchIntervalInBackground: false,
+  });
 }
 
 /** Gravar passa pela Edge Function (treinador classifica/enriquece + RPC). */
