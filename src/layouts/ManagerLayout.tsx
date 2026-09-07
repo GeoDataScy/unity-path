@@ -23,6 +23,8 @@ import {
   PanelLeftOpen,
   RefreshCcw,
   Users,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
@@ -33,6 +35,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { LyaWidget } from "@/features/lya/components/LyaWidget";
+import type { LyaContexto } from "@/features/lya/types";
 
 const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
@@ -41,7 +45,7 @@ const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 // e continuam guardadas por is_manager() no Postgres. O time de copy entra na
 // área de analytics só para ler os números, então essas rotas não aparecem para
 // ele — e um acesso direto pela URL volta para o dashboard.
-const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base"];
+const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base", "/dashboard/lya/cerebro"];
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -52,6 +56,8 @@ function toISODate(d: Date) {
 
 export type ManagerOutletContext = {
   fullName: string | null;
+  /** profiles.role de quem está logado (manager | copy_grup). */
+  role: string | null;
   range: DateRange | undefined;
   setRange: (next: DateRange | undefined) => void;
   agentId: string;
@@ -270,8 +276,22 @@ export default function ManagerLayout() {
 
   const outletContext = useMemo<ManagerOutletContext | null>(() => {
     if (authLoading) return null;
-    return { fullName, range, setRange, agentId, setAgentId, fromISO, toISO };
-  }, [authLoading, fullName, range, agentId, fromISO, toISO]);
+    return { fullName, role, range, setRange, agentId, setAgentId, fromISO, toISO };
+  }, [authLoading, fullName, role, range, agentId, fromISO, toISO]);
+
+  // Contexto que a Lya recebe junto com cada pergunta feita pelo balão.
+  const lyaContexto = useMemo<LyaContexto>(() => {
+    const agente = (agentsQuery.data ?? []).find((a) => a.id === agentId);
+    return {
+      de: fromISO,
+      ate: toISO,
+      agente_id: agentId === "all" ? null : agentId,
+      agente_nome: agente?.label ?? null,
+      usuario_nome: fullName,
+      usuario_role: role,
+      tela: location.pathname,
+    };
+  }, [agentsQuery.data, agentId, fromISO, toISO, fullName, role, location.pathname]);
 
   const handleExportReport = async () => {
     if (exporting) return;
@@ -399,6 +419,13 @@ export default function ManagerLayout() {
               label="Interacoes"
               collapsed={collapsed}
             />
+            <NavItem
+              to="/dashboard/lya"
+              end
+              icon={<Sparkles className="h-4 w-4" />}
+              label="Lya"
+              collapsed={collapsed}
+            />
             {isManager && (
               <>
                 <NavItem
@@ -424,6 +451,12 @@ export default function ManagerLayout() {
                   to="/dashboard/zendesk"
                   icon={<Headset className="h-4 w-4" />}
                   label="Zendesk"
+                  collapsed={collapsed}
+                />
+                <NavItem
+                  to="/dashboard/lya/cerebro"
+                  icon={<Brain className="h-4 w-4" />}
+                  label="Cérebro da Lya"
                   collapsed={collapsed}
                 />
               </>
@@ -525,6 +558,8 @@ export default function ManagerLayout() {
       </aside>
 
       {isManager && <ManagerRefundNotification />}
+
+      <LyaWidget contexto={lyaContexto} />
 
       <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
 
