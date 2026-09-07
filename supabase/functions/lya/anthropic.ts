@@ -20,7 +20,11 @@ export const CHAT_EFFORT = (Deno.env.get("LYA_EFFORT") || "medium") as "low" | "
 // Teto de saída por etapa. É um CAP, não um gasto.
 export const MAX_TOKENS = 16000;
 
+// Cache do cliente amarrado ao VALOR da chave: uma instância quente da função
+// que viu a chave antiga (ou um placeholder) passa a usar a nova no instante
+// em que o secret é regravado, sem esperar a instância reciclar.
 let _client: Anthropic | null = null;
+let _clientKey: string | null = null;
 
 export function apiKeyConfigurada(): boolean {
   return Boolean(Deno.env.get("ANTHROPIC_API_KEY"));
@@ -33,7 +37,25 @@ export function anthropic(): Anthropic {
       "ANTHROPIC_API_KEY não configurada nos secrets do projeto Supabase — a Lya não consegue responder.",
     );
   }
-  _client ??= new Anthropic({ apiKey: key });
+  // Um secret colado com caractere fora do ASCII (aspas curvas, espaço
+  // especial, quebra de linha) derruba o turno com um "Argument 2 is not a
+  // valid ByteString" opaco na hora de montar o header x-api-key. Aqui a
+  // falha vira uma mensagem que diz ONDE está o caractere, sem expor a chave.
+  const invalidos: string[] = [];
+  for (let i = 0; i < key.length; i++) {
+    const c = key.charCodeAt(i);
+    if (c < 0x21 || c > 0x7e) invalidos.push(`posição ${i + 1} (código U+${c.toString(16).toUpperCase().padStart(4, "0")})`);
+  }
+  if (invalidos.length) {
+    throw new Error(
+      `O secret ANTHROPIC_API_KEY contém caractere inválido em ${invalidos.slice(0, 3).join(", ")} — ` +
+        `regrave o secret com a chave limpa (sem aspas, espaços ou quebra de linha).`,
+    );
+  }
+  if (!_client || _clientKey !== key) {
+    _client = new Anthropic({ apiKey: key });
+    _clientKey = key;
+  }
   return _client;
 }
 
