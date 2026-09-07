@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { BookOpen, LogOut, MessageSquareQuote, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, MessageSquareQuote, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_KEY = "copy-sidebar-collapsed";
 
@@ -34,7 +34,6 @@ export type CopyOutletContext = {
 
 const NAV_ITEMS = [
   { to: "/copy", end: true, icon: MessageSquareQuote, label: "Motivos de reembolso" },
-  { to: "/copy/base-suporte", end: false, icon: BookOpen, label: "Base de Suporte" },
 ] as const;
 
 type NavItemProps = {

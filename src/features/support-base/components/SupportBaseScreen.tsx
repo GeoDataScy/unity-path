@@ -46,8 +46,7 @@ const ABAS_VALIDAS = GRUPOS.flatMap((g) => g.abas.map((a) => a.valor)) as string
 const ABA_PADRAO = "produtos";
 
 /**
- * A base em modo consulta. Mesma tela para o agente (/workspace/base-suporte) e
- * para o copy (/copy/base-suporte) — o conteúdo é o mesmo e quem edita é a
+ * A base em modo consulta do agente (/workspace/base-suporte). Quem edita é a
  * gestora em /dashboard/base. Produtos, brands e respostas vêm do banco; e-mails
  * Clickbank e o playbook de reembolso são fixos em src/features/support-base/data.
  */
