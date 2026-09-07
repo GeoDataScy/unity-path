@@ -163,6 +163,13 @@ export async function lyaListMemories(): Promise<LyaMemory[]> {
   });
 }
 
+/** Apaga só as memórias de exemplo (seed = true). Só gestora. */
+export async function lyaDeleteSeedMemories(): Promise<number> {
+  const { data, error } = await rpc("lya_delete_seed_memories");
+  if (error) throw new Error(supabaseErrorMessage(error, "Não foi possível remover os exemplos."));
+  return Number(data ?? 0);
+}
+
 export async function lyaDeleteMemory(name: string): Promise<void> {
   const { error } = await rpc("lya_delete_memory", { p_name: name });
   if (error) throw new Error(supabaseErrorMessage(error, "Não foi possível apagar a memória."));

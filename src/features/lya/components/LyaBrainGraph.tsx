@@ -1,26 +1,33 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ForceGraphMethods, LinkObject, NodeObject } from "react-force-graph-2d";
-import { Brain, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
+import { Brain, Eraser, Maximize2, Pencil, RotateCcw, Search, Settings2, Sparkles, Trash2, X } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 import { buildGraph, desde, type BrainGraph, type GraphLink, type GraphNode } from "../graph";
-import { TIPO_MEMORIA_MAP, type LyaMemory, type LyaMemoryType } from "../types";
+import { TIPO_MEMORIA_MAP, TIPOS_MEMORIA, type LyaMemory, type LyaMemoryType } from "../types";
 
 // LyaBrainGraph — o cérebro da Lya como um GRAFO ao estilo Obsidian: fundo
 // escuro profundo, cada memória é um nó (cor por tipo, tamanho pelo número de
 // conexões), arestas finas; passar o mouse acende a vizinhança, clicar abre o
 // painel da memória. AO VIVO: a lista de memórias é repuxada de tempos em
-// tempos e memórias novas NASCEM com um flash + ondas (é o que faz "parecer
-// que está sendo treinada" — porque está).
+// tempos e memórias novas NASCEM com um flash + ondas.
 //
-// Herdado do BrainGraph do Daniel (CBIE) com duas mudanças: cor por tipo em
-// vez de estrelas monocromáticas (legenda como os "groups" do Obsidian) e o
-// grafo é montado no browser (graph.ts) a partir das memórias.
+// Manipulável como o grafo do Obsidian: arrastar nós (ficam onde soltar, ou
+// não — ajuste), painel de forças (repulsão, distância das ligações, força
+// central), filtros por tipo, órfãos, rótulos, tamanho dos nós e espessura das
+// linhas. Os ajustes ficam no navegador (localStorage).
+//
+// Herdado do BrainGraph do Daniel (CBIE); o grafo é montado no browser
+// (graph.ts) a partir das memórias.
 
 const ForceGraph2D = lazy(() => import("react-force-graph-2d"));
 
 const NASC_MS = 2400;
+const AJUSTES_KEY = "lya-grafo-ajustes";
 
 const clamp01 = (t: number) => (t < 0 ? 0 : t > 1 ? 1 : t);
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -43,13 +50,48 @@ type NodeExtra = GraphNode & { _born?: number };
 type NodeRuntime = NodeObject<NodeExtra>;
 type LinkRuntime = LinkObject<NodeExtra, GraphLink>;
 type FgRef = ForceGraphMethods<NodeRuntime, LinkRuntime>;
-
 type Endpoint = string | number | NodeRuntime | undefined;
 const idOf = (v: Endpoint) => (typeof v === "object" && v ? String(v.id ?? "") : String(v ?? ""));
 
 function hexToRgba(hex: string, a: number) {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+// ── Ajustes (as "Forces" e "Display" do Obsidian) ───────────────────────────
+interface Ajustes {
+  repulsao: number; // força de repulsão entre nós
+  distancia: number; // distância das ligações
+  centro: number; // força central (puxa tudo para o meio)
+  tamanho: number; // multiplicador do tamanho do nó
+  espessura: number; // multiplicador da espessura da linha
+  rotulos: "auto" | "sempre" | "nunca";
+  fixar: boolean; // nó arrastado fica onde soltar
+  orfaos: boolean; // mostrar nós sem conexão
+  tipos: Record<LyaMemoryType, boolean>;
+}
+
+const AJUSTES_PADRAO: Ajustes = {
+  repulsao: 170,
+  distancia: 60,
+  centro: 0.06,
+  tamanho: 1,
+  espessura: 1,
+  rotulos: "auto",
+  fixar: true,
+  orfaos: true,
+  tipos: { feedback: true, user: true, project: true, reference: true, nota: true },
+};
+
+function lerAjustes(): Ajustes {
+  try {
+    const raw = window.localStorage.getItem(AJUSTES_KEY);
+    if (!raw) return AJUSTES_PADRAO;
+    const p = JSON.parse(raw) as Partial<Ajustes>;
+    return { ...AJUSTES_PADRAO, ...p, tipos: { ...AJUSTES_PADRAO.tipos, ...(p.tipos ?? {}) } };
+  } catch {
+    return AJUSTES_PADRAO;
+  }
 }
 
 export function LyaBrainGraph({
@@ -59,6 +101,7 @@ export function LyaBrainGraph({
   onEditar,
   onApagar,
   onEnsinar,
+  onRemoverExemplos,
 }: {
   memorias: LyaMemory[];
   carregando: boolean;
@@ -67,6 +110,8 @@ export function LyaBrainGraph({
   onEditar: (m: LyaMemory) => void;
   onApagar: (name: string) => void;
   onEnsinar: () => void;
+  /** Remove as memórias de exemplo (seed). Só aparece quando há alguma. */
+  onRemoverExemplos?: () => void;
 }) {
   const [graph, setGraph] = useState<BrainGraph>({ nodes: [], links: [] });
   const [sel, setSel] = useState<string | null>(null);
@@ -74,6 +119,8 @@ export function LyaBrainGraph({
   const [busca, setBusca] = useState("");
   const [novaMemoria, setNovaMemoria] = useState<string | null>(null);
   const [dims, setDims] = useState({ w: 800, h: 600 });
+  const [ajustes, setAjustes] = useState<Ajustes>(lerAjustes);
+  const [painelAjustes, setPainelAjustes] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<FgRef | undefined>(undefined);
   const graphRef = useRef<BrainGraph>({ nodes: [], links: [] });
@@ -81,10 +128,21 @@ export function LyaBrainGraph({
   const primeiraRef = useRef(true);
 
   const porNome = useMemo(() => new Map(memorias.map((m) => [m.name, m])), [memorias]);
+  const temExemplos = useMemo(() => memorias.some((m) => m.seed), [memorias]);
 
   useEffect(() => {
     graphRef.current = graph;
   }, [graph]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AJUSTES_KEY, JSON.stringify(ajustes));
+    } catch {
+      /* noop */
+    }
+  }, [ajustes]);
+
+  const setAjuste = <K extends keyof Ajustes>(k: K, v: Ajustes[K]) => setAjustes((a) => ({ ...a, [k]: v }));
 
   // Funde o grafo fresco no atual PRESERVANDO as posições dos nós já
   // simulados — só nós/arestas realmente novos entram (novos ganham _born).
@@ -155,37 +213,61 @@ export function LyaBrainGraph({
     return () => window.clearTimeout(t);
   }, [dims]);
 
-  // afrouxa as forças para o grafo "respirar" como no Obsidian
+  // ── Filtro por tipo / órfãos: mesmos objetos de nó (posições preservadas) ──
+  const visivel = useMemo<BrainGraph>(() => {
+    const ok = new Set((graph.nodes as NodeRuntime[]).filter((n) => ajustes.tipos[n.type]).map((n) => String(n.id)));
+    const links = (graph.links as LinkRuntime[]).filter((l) => ok.has(idOf(l.source)) && ok.has(idOf(l.target)));
+    let nodes = (graph.nodes as NodeRuntime[]).filter((n) => ok.has(String(n.id)));
+    if (!ajustes.orfaos) {
+      const comLigacao = new Set<string>();
+      for (const l of links) {
+        comLigacao.add(idOf(l.source));
+        comLigacao.add(idOf(l.target));
+      }
+      nodes = nodes.filter((n) => comLigacao.has(String(n.id)));
+    }
+    return { nodes, links };
+  }, [graph, ajustes.tipos, ajustes.orfaos]);
+
+  // ── Forças (as "Forces" do Obsidian) ─────────────────────────────────────
   useEffect(() => {
     const fg = fgRef.current;
-    if (!fg || !graph.nodes.length) return;
+    if (!fg || !visivel.nodes.length) return;
     try {
-      fg.d3Force("charge")?.strength(-170).distanceMax(700);
-      (fg.d3Force("link") as { distance?: (fn: (l: LinkRuntime) => number) => unknown } | undefined)?.distance?.((l) => (l.kind === "link" ? 70 : 42));
+      const charge = fg.d3Force("charge") as { strength?: (v: number) => unknown; distanceMax?: (v: number) => unknown } | undefined;
+      charge?.strength?.(-ajustes.repulsao);
+      charge?.distanceMax?.(800);
+      const link = fg.d3Force("link") as { distance?: (fn: (l: LinkRuntime) => number) => unknown } | undefined;
+      link?.distance?.((l) => (l.kind === "link" ? ajustes.distancia * 1.15 : ajustes.distancia * 0.7));
+      const center = fg.d3Force("center") as { strength?: (v: number) => unknown } | undefined;
+      center?.strength?.(ajustes.centro);
+      fg.d3ReheatSimulation();
     } catch {
       /* noop */
     }
-  }, [graph]);
+  }, [visivel, ajustes.repulsao, ajustes.distancia, ajustes.centro]);
 
   const focoId = sel ?? hover;
 
   const vizinhos = useMemo(() => {
     if (!focoId) return new Set<string>();
     const s = new Set<string>([focoId]);
-    for (const l of graph.links as LinkRuntime[]) {
+    for (const l of visivel.links as LinkRuntime[]) {
       const src = idOf(l.source), tgt = idOf(l.target);
       if (src === focoId) s.add(tgt);
       if (tgt === focoId) s.add(src);
     }
     return s;
-  }, [focoId, graph.links]);
+  }, [focoId, visivel.links]);
 
   // busca: nós cujo rótulo/tags casam ficam acesos, o resto apaga
   const buscados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return null;
-    return new Set(graph.nodes.filter((n) => `${n.label} ${n.tags.join(" ")}`.toLowerCase().includes(q)).map((n) => n.id));
-  }, [busca, graph.nodes]);
+    return new Set(visivel.nodes.filter((n) => `${n.label} ${n.tags.join(" ")}`.toLowerCase().includes(q)).map((n) => n.id));
+  }, [busca, visivel.nodes]);
+
+  const raio = useCallback((n: NodeRuntime) => (2 + Math.sqrt(n.val) * 1.6) * ajustes.tamanho, [ajustes.tamanho]);
 
   const desenharNo = useCallback(
     (node: NodeRuntime, ctx: CanvasRenderingContext2D, scale: number) => {
@@ -195,7 +277,7 @@ export function LyaBrainGraph({
       const cor = COR_TIPO[n.type] ?? COR_TIPO.nota;
       const apagadoPelaBusca = buscados ? !buscados.has(n.id) : false;
       const emFoco = (!focoId || vizinhos.has(n.id)) && !apagadoPelaBusca;
-      const r = 2 + Math.sqrt(n.val) * 1.6;
+      const r = raio(n);
 
       let bp = -1;
       if (n._born != null) {
@@ -259,10 +341,21 @@ export function LyaBrainGraph({
         ctx.strokeStyle = "#ffffff";
         ctx.stroke();
       }
+      // nó fixado (arrastado): anel discreto, como o Obsidian marca nó "preso"
+      if (n.fx != null && !nascendo) {
+        ctx.beginPath();
+        ctx.arc(x, y, rEff + 2 / scale, 0, 2 * Math.PI);
+        ctx.lineWidth = 0.8 / scale;
+        ctx.strokeStyle = hexToRgba(cor, 0.6);
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
       ctx.restore();
 
-      // rótulo: sempre quando o zoom está próximo (como o Obsidian), senão só na vizinhança em foco
-      const mostrarRotulo = scale > 1.3 || (focoId != null && vizinhos.has(n.id)) || (buscados?.has(n.id) ?? false);
+      // rótulo: modo auto = quando o zoom está próximo (como o Obsidian) ou na vizinhança em foco
+      const mostrarRotulo =
+        ajustes.rotulos === "sempre" ||
+        (ajustes.rotulos === "auto" && (scale > 1.3 || (focoId != null && vizinhos.has(n.id)) || (buscados?.has(n.id) ?? false)));
       if (mostrarRotulo && emFoco) {
         // 12 px de TELA sempre: em unidades do canvas é 12/scale (sem piso —
         // o piso fazia o rótulo crescer junto com o zoom e cobrir o grafo).
@@ -273,13 +366,14 @@ export function LyaBrainGraph({
         ctx.shadowColor = "rgba(0,0,0,0.9)";
         ctx.shadowBlur = 4;
         ctx.fillStyle = focoId === n.id ? "#ffffff" : "#c7d2fe";
-        ctx.globalAlpha = scale > 1.3 && focoId == null && !buscados ? Math.min(1, (scale - 1.3) / 1.2 + 0.4) : 1;
+        ctx.globalAlpha =
+          ajustes.rotulos === "auto" && scale > 1.3 && focoId == null && !buscados ? Math.min(1, (scale - 1.3) / 1.2 + 0.4) : 1;
         ctx.fillText(n.label.length > 34 ? n.label.slice(0, 33) + "…" : n.label, x, y + r + 4 / scale);
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
       }
     },
-    [focoId, vizinhos, buscados],
+    [focoId, vizinhos, buscados, raio, ajustes.rotulos],
   );
 
   const linkEmFoco = useCallback(
@@ -291,12 +385,37 @@ export function LyaBrainGraph({
     return nasc(l.source) || nasc(l.target);
   }, []);
 
+  const reiniciarLayout = () => {
+    for (const n of graph.nodes as NodeRuntime[]) {
+      n.fx = undefined;
+      n.fy = undefined;
+    }
+    fitDoneRef.current = false;
+    try {
+      fgRef.current?.d3ReheatSimulation();
+    } catch {
+      /* noop */
+    }
+  };
+
+  const enquadrar = () => {
+    const fg = fgRef.current;
+    fg?.zoomToFit(500, 90);
+    window.setTimeout(() => {
+      try {
+        if (fg && fg.zoom() > 2.2) fg.zoom(2.2, 400);
+      } catch {
+        /* noop */
+      }
+    }, 550);
+  };
+
   const selecionada = sel ? porNome.get(sel) ?? null : null;
-  const selNode = sel ? (graph.nodes.find((n) => n.id === sel) ?? null) : null;
   const recentes = useMemo(
     () => [...memorias].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 6),
     [memorias],
   );
+  const ocultos = graph.nodes.length - visivel.nodes.length;
 
   return (
     <div
@@ -314,7 +433,8 @@ export function LyaBrainGraph({
             "carregando…"
           ) : (
             <>
-              {graph.nodes.length} memórias · {graph.links.length} conexões
+              {visivel.nodes.length} memórias · {visivel.links.length} conexões
+              {ocultos > 0 && <span className="text-slate-500"> · {ocultos} ocultas</span>}
             </>
           )}
           <span className="flex items-center gap-1 text-emerald-400/90">
@@ -326,13 +446,32 @@ export function LyaBrainGraph({
           </span>
         </span>
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-          {(Object.keys(COR_TIPO) as LyaMemoryType[]).map((t) => (
-            <span key={t} className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ background: COR_TIPO[t], boxShadow: `0 0 6px ${COR_TIPO[t]}` }} />
-              {TIPO_MEMORIA_MAP[t].label}
-            </span>
-          ))}
+          {TIPOS_MEMORIA.map((tp) => {
+            const on = ajustes.tipos[tp.value];
+            return (
+              <button
+                key={tp.value}
+                type="button"
+                onClick={() => setAjuste("tipos", { ...ajustes.tipos, [tp.value]: !on })}
+                title={on ? `Ocultar ${tp.label}` : `Mostrar ${tp.label}`}
+                className={cn("flex items-center gap-1.5 text-[11px] transition-opacity", on ? "text-slate-300" : "text-slate-500 opacity-50 line-through")}
+              >
+                <span className="inline-block h-2 w-2 rounded-full" style={{ background: COR_TIPO[tp.value], boxShadow: on ? `0 0 6px ${COR_TIPO[tp.value]}` : "none" }} />
+                {tp.label}
+              </button>
+            );
+          })}
         </div>
+        {temExemplos && onRemoverExemplos && (
+          <button
+            type="button"
+            onClick={onRemoverExemplos}
+            className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 hover:bg-white/10"
+            title="Apaga só as memórias de exemplo, sem tocar no que a gestora ensinou"
+          >
+            <Eraser className="h-3 w-3" /> Remover exemplos
+          </button>
+        )}
       </div>
 
       {/* busca */}
@@ -377,8 +516,65 @@ export function LyaBrainGraph({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-4 left-4 z-10 text-[11px] text-slate-500">
-        passe o mouse para acender · scroll para zoom · arraste para mover · clique para abrir
+      {/* barra inferior: ajustes + ações */}
+      <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
+        <div className="flex flex-col items-start gap-2">
+          {painelAjustes && (
+            <div className="w-64 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-xs text-slate-200 shadow-2xl backdrop-blur-xl">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Forças</p>
+              <Controle label="Repulsão" valor={ajustes.repulsao} min={30} max={500} step={10} onChange={(v) => setAjuste("repulsao", v)} />
+              <Controle label="Distância das ligações" valor={ajustes.distancia} min={15} max={200} step={5} onChange={(v) => setAjuste("distancia", v)} />
+              <Controle label="Força central" valor={ajustes.centro} min={0} max={0.5} step={0.01} onChange={(v) => setAjuste("centro", v)} fmt={(v) => v.toFixed(2)} />
+              <p className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Exibição</p>
+              <Controle label="Tamanho dos nós" valor={ajustes.tamanho} min={0.5} max={2.5} step={0.1} onChange={(v) => setAjuste("tamanho", v)} fmt={(v) => `${v.toFixed(1)}×`} />
+              <Controle label="Espessura das linhas" valor={ajustes.espessura} min={0.3} max={3} step={0.1} onChange={(v) => setAjuste("espessura", v)} fmt={(v) => `${v.toFixed(1)}×`} />
+              <div className="mt-2 flex items-center justify-between">
+                <span>Rótulos</span>
+                <div className="inline-flex rounded-md border border-white/10 p-0.5">
+                  {(["auto", "sempre", "nunca"] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setAjuste("rotulos", r)}
+                      className={cn("rounded px-2 py-0.5 text-[11px] capitalize", ajustes.rotulos === r ? "bg-white/15 text-white" : "text-slate-400 hover:text-slate-200")}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="mt-2 flex items-center justify-between">
+                <span>Fixar nó ao arrastar</span>
+                <Switch checked={ajustes.fixar} onCheckedChange={(v) => setAjuste("fixar", v)} className="scale-75" />
+              </label>
+              <label className="mt-1 flex items-center justify-between">
+                <span>Mostrar órfãos</span>
+                <Checkbox checked={ajustes.orfaos} onCheckedChange={(v) => setAjuste("orfaos", v === true)} className="border-white/40" />
+              </label>
+              <button
+                type="button"
+                onClick={() => setAjustes(AJUSTES_PADRAO)}
+                className="mt-3 w-full rounded-md border border-white/10 py-1 text-[11px] text-slate-300 hover:bg-white/10"
+              >
+                Restaurar padrão
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <BotaoFlutuante on={painelAjustes} onClick={() => setPainelAjustes((v) => !v)} title="Ajustes do grafo">
+              <Settings2 className="h-3.5 w-3.5" /> Ajustes
+            </BotaoFlutuante>
+            <BotaoFlutuante onClick={enquadrar} title="Enquadrar tudo">
+              <Maximize2 className="h-3.5 w-3.5" />
+            </BotaoFlutuante>
+            <BotaoFlutuante onClick={reiniciarLayout} title="Soltar os nós fixados e reorganizar">
+              <RotateCcw className="h-3.5 w-3.5" />
+            </BotaoFlutuante>
+            <span className="ml-2 hidden text-[11px] text-slate-500 lg:inline">
+              arraste os nós · scroll para zoom · clique para abrir
+            </span>
+          </div>
+        </div>
       </div>
 
       <button
@@ -392,14 +588,17 @@ export function LyaBrainGraph({
 
       {/* painel lateral: memória selecionada ou últimos treinos */}
       <div className="absolute right-4 top-4 z-10 w-80 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-slate-200 shadow-2xl backdrop-blur-xl">
-        {selecionada && selNode ? (
+        {selecionada ? (
           <>
             <div className="mb-2 flex items-center justify-between">
-              <span
-                className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
-                style={{ background: hexToRgba(COR_TIPO[selecionada.type], 0.18), color: COR_TIPO[selecionada.type] }}
-              >
-                {TIPO_MEMORIA_MAP[selecionada.type]?.label ?? selecionada.type}
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                  style={{ background: hexToRgba(COR_TIPO[selecionada.type], 0.18), color: COR_TIPO[selecionada.type] }}
+                >
+                  {TIPO_MEMORIA_MAP[selecionada.type]?.label ?? selecionada.type}
+                </span>
+                {selecionada.seed && <span className="text-[10px] uppercase tracking-wide text-slate-500">exemplo</span>}
               </span>
               <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
                 <X className="h-4 w-4" />
@@ -407,7 +606,23 @@ export function LyaBrainGraph({
             </div>
             <h3 className="text-sm font-semibold leading-snug">{selecionada.description || selecionada.name}</h3>
             {selecionada.body && (
-              <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">{selecionada.body}</p>
+              <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
+                {selecionada.body.split(/(\[\[[^\]]+\]\])/g).map((parte, i) => {
+                  const m = /^\[\[([^\]]+)\]\]$/.exec(parte);
+                  if (!m) return <span key={i}>{parte}</span>;
+                  const alvo = graph.nodes.find((n) => n.label === m[1] || n.id === m[1]);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => alvo && setSel(String(alvo.id))}
+                      className="text-violet-300 underline decoration-violet-500/50 underline-offset-2 hover:text-white"
+                    >
+                      {m[1]}
+                    </button>
+                  );
+                })}
+              </p>
             )}
             {selecionada.tags.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1">
@@ -482,36 +697,34 @@ export function LyaBrainGraph({
         <Suspense fallback={null}>
           <ForceGraph2D
             ref={fgRef}
-            graphData={graph}
+            graphData={visivel}
             width={dims.w}
             height={dims.h}
             backgroundColor="rgba(0,0,0,0)"
+            enableNodeDrag
+            onNodeDragEnd={(node: NodeRuntime) => {
+              if (!ajustes.fixar) {
+                node.fx = undefined;
+                node.fy = undefined;
+              }
+            }}
             onEngineStop={() => {
               if (fitDoneRef.current) return;
               fitDoneRef.current = true;
-              const fg = fgRef.current;
-              fg?.zoomToFit(600, 90);
-              // Com poucas memórias o fit aproxima demais (pontos viram bolas).
-              window.setTimeout(() => {
-                try {
-                  if (fg && fg.zoom() > 2.2) fg.zoom(2.2, 400);
-                } catch {
-                  /* noop */
-                }
-              }, 650);
+              enquadrar();
             }}
             nodeCanvasObject={desenharNo}
             nodePointerAreaPaint={(n: NodeRuntime, color: string, ctx: CanvasRenderingContext2D) => {
               if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) return;
               ctx.fillStyle = color;
               ctx.beginPath();
-              ctx.arc(n.x as number, n.y as number, 6 + Math.sqrt(n.val) * 1.6, 0, 2 * Math.PI);
+              ctx.arc(n.x as number, n.y as number, 4 + raio(n), 0, 2 * Math.PI);
               ctx.fill();
             }}
             linkColor={(l: LinkRuntime) =>
               linkNascendo(l) ? "rgba(233,241,255,0.85)" : linkEmFoco(l) ? "rgba(199,210,254,0.9)" : "rgba(167,139,250,0.14)"
             }
-            linkWidth={(l: LinkRuntime) => (linkNascendo(l) ? 1.6 : linkEmFoco(l) ? 1.4 : 0.6)}
+            linkWidth={(l: LinkRuntime) => (linkNascendo(l) ? 1.6 : linkEmFoco(l) ? 1.4 : 0.6) * ajustes.espessura}
             linkCurvature={0}
             linkDirectionalParticles={(l: LinkRuntime) => (linkNascendo(l) ? 5 : linkEmFoco(l) ? 3 : 0)}
             linkDirectionalParticleWidth={(l: LinkRuntime) => (linkNascendo(l) ? 2.6 : 1.8)}
@@ -525,5 +738,49 @@ export function LyaBrainGraph({
         </Suspense>
       </div>
     </div>
+  );
+}
+
+function Controle({
+  label,
+  valor,
+  min,
+  max,
+  step,
+  onChange,
+  fmt = (v) => String(Math.round(v)),
+}: {
+  label: string;
+  valor: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  fmt?: (v: number) => string;
+}) {
+  return (
+    <div className="mb-2">
+      <div className="mb-1 flex items-center justify-between">
+        <span>{label}</span>
+        <span className="font-mono text-[10.5px] text-slate-400">{fmt(valor)}</span>
+      </div>
+      <Slider value={[valor]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5" />
+    </div>
+  );
+}
+
+function BotaoFlutuante({ on, onClick, title, children }: { on?: boolean; onClick: () => void; title: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-medium shadow-2xl backdrop-blur-xl transition-colors",
+        on ? "border-white/30 bg-white/[0.16] text-white" : "border-white/10 bg-white/[0.06] text-slate-200 hover:bg-white/[0.12]",
+      )}
+    >
+      {children}
+    </button>
   );
 }
