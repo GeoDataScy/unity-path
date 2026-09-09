@@ -23,6 +23,18 @@ describe("AreaSwitcher", () => {
     expect(screen.getByText("Data Analytics")).toBeTruthy();
   });
 
+  it("oferece produtos para a gestora e o caminho de volta", () => {
+    renderSwitcher("manager", "analytics");
+    expect(screen.getByText("Ir para Produtos")).toBeTruthy();
+  });
+
+  it("oferece as outras áreas para a gestora dentro de produtos", () => {
+    renderSwitcher("manager", "produtos");
+    expect(screen.getByText("Produtos")).toBeTruthy();
+    expect(screen.getByText("Ir para Data Analytics")).toBeTruthy();
+    expect(screen.getByText("Ir para Copy")).toBeTruthy();
+  });
+
   it("oferece o analytics para o copy na área dele", () => {
     renderSwitcher("copy_grup", "copy");
     expect(screen.getByText("Ir para Data Analytics")).toBeTruthy();
