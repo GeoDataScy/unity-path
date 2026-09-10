@@ -44,7 +44,13 @@ export function useMyHeldOrdersMetricsQuery(enabled: boolean) {
       if (error) throw error;
       return (data as HeldOrdersDailyMetrics) ?? { confirmed_today: 0, pending: 0, goal: 30 };
     },
-    refetchOnWindowFocus: false,
+    // Meta do dia não pode congelar numa aba parada: sem isto o número só andava ao
+    // montar a página ou logo após um registro feito NESTA aba (o App define
+    // refetchOnWindowFocus: false global). Aba aberta desde ontem mostrava o total de
+    // ontem o dia todo. O intervalo só corre com a aba em foco
+    // (refetchIntervalInBackground é false por padrão) — são duas contagens indexadas.
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
   });
 }
 
