@@ -33,6 +33,7 @@ import { useDashboardRefundMetricsQuery } from "@/features/dashboard/useDashboar
 import { useDashboardRefundAuditQuery } from "@/features/dashboard/useDashboardRefundAuditQuery";
 import { RefundReasonDetailModal } from "@/components/dashboard/RefundReasonDetailModal";
 import { ChannelEfficiencyCard } from "@/components/dashboard/ChannelEfficiencyCard";
+import { RefundsSubNav } from "@/components/dashboard/RefundsSubNav";
 
 function safeParseISODate(value: string): Date | null {
   const dt = parseISO(value);
@@ -165,9 +166,10 @@ export default function DashboardRefunds() {
   return (
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
-        <div>
+        <div className="space-y-2">
           <p className="text-lg font-semibold text-muted-foreground">Analytics</p>
           <h1 className="text-3xl font-semibold tracking-tight">Reembolsos</h1>
+          <RefundsSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
           </p>

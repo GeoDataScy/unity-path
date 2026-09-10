@@ -1,0 +1,462 @@
+{
+ "imports": [
+  {
+   "rows": 104,
+   "orders": 82,
+   "product": "Alpharock",
+   "month_ref": "2026-07-01",
+   "imported_at": "2026-09-10T14:22:35.978608-03:00",
+   "source_file": "1789051849_orders_export.csv"
+  },
+  {
+   "rows": 21,
+   "orders": 15,
+   "product": "Alpharock",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:22:36.073003-03:00",
+   "source_file": "1789050930_orders_export.csv"
+  },
+  {
+   "rows": 200,
+   "orders": 126,
+   "product": "Honeyfil",
+   "month_ref": "2026-07-01",
+   "imported_at": "2026-09-10T14:22:36.004152-03:00",
+   "source_file": "1789044889_orders_export.csv"
+  },
+  {
+   "rows": 353,
+   "orders": 237,
+   "product": "Honeyfil",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:22:36.076769-03:00",
+   "source_file": "1789044735_orders_export.csv"
+  },
+  {
+   "rows": 1113,
+   "orders": 717,
+   "product": "Horsefil",
+   "month_ref": "2026-07-01",
+   "imported_at": "2026-09-10T14:22:36.023169-03:00",
+   "source_file": "1789044596_orders_export.csv"
+  },
+  {
+   "rows": 344,
+   "orders": 235,
+   "product": "Horsefil",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:22:36.091554-03:00",
+   "source_file": "1789044420_orders_export.csv"
+  },
+  {
+   "rows": 12,
+   "orders": 7,
+   "product": "Mind Wake",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:23:37.535294-03:00",
+   "source_file": "x.csv"
+  },
+  {
+   "rows": 63,
+   "orders": 30,
+   "product": "Quiet Nerves",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:22:36.107079-03:00",
+   "source_file": "1789045027_orders_export.csv"
+  },
+  {
+   "rows": 15,
+   "orders": 9,
+   "product": "Youth Within",
+   "month_ref": "2026-07-01",
+   "imported_at": "2026-09-10T14:22:36.070672-03:00",
+   "source_file": "1789052992_orders_export.csv"
+  },
+  {
+   "rows": 22,
+   "orders": 12,
+   "product": "Youth Within",
+   "month_ref": "2026-08-01",
+   "imported_at": "2026-09-10T14:22:36.110229-03:00",
+   "source_file": "1789051272_orders_export.csv"
+  }
+ ],
+ "summary": {
+  "to_date": "2026-08-31",
+  "from_date": "2026-07-01",
+  "coverage_pct": 12.4,
+  "external_full": 740,
+  "external_only": 1287,
+  "internal_only": 300,
+  "matched_count": 183,
+  "external_count": 1470,
+  "internal_count": 487,
+  "product_filter": null,
+  "external_amount": 429783.64,
+  "external_partial": 730,
+  "type_mismatch_count": 1,
+  "internal_without_order": 28
+ },
+ "products": [
+  {
+   "product": "Alpharock",
+   "external_orders": 97
+  },
+  {
+   "product": "Honeyfil",
+   "external_orders": 363
+  },
+  {
+   "product": "Horsefil",
+   "external_orders": 952
+  },
+  {
+   "product": "Mind Wake",
+   "external_orders": 7
+  },
+  {
+   "product": "Quiet Nerves",
+   "external_orders": 30
+  },
+  {
+   "product": "Youth Within",
+   "external_orders": 21
+  }
+ ],
+ "by_product": [
+  {
+   "product": "Alpharock",
+   "coverage_pct": 18.6,
+   "external_full": 51,
+   "external_only": 79,
+   "internal_only": 36,
+   "internal_open": 22,
+   "matched_count": 18,
+   "external_count": 97,
+   "internal_count": 55,
+   "external_amount": 25755.89,
+   "external_partial": 46,
+   "internal_without_order": 2
+  },
+  {
+   "product": "Honeyfil",
+   "coverage_pct": 12.1,
+   "external_full": 188,
+   "external_only": 319,
+   "internal_only": 62,
+   "internal_open": 66,
+   "matched_count": 44,
+   "external_count": 363,
+   "internal_count": 104,
+   "external_amount": 107251.0,
+   "external_partial": 175,
+   "internal_without_order": 4
+  },
+  {
+   "product": "Horsefil",
+   "coverage_pct": 12.4,
+   "external_full": 465,
+   "external_only": 834,
+   "internal_only": 114,
+   "internal_open": 138,
+   "matched_count": 118,
+   "external_count": 952,
+   "internal_count": 238,
+   "external_amount": 281364.98,
+   "external_partial": 487,
+   "internal_without_order": 20
+  },
+  {
+   "product": "Mind Wake",
+   "coverage_pct": 0.0,
+   "external_full": 5,
+   "external_only": 7,
+   "internal_only": 12,
+   "internal_open": 5,
+   "matched_count": 0,
+   "external_count": 7,
+   "internal_count": 12,
+   "external_amount": 1462.07,
+   "external_partial": 2,
+   "internal_without_order": 0
+  },
+  {
+   "product": "Quiet Nerves",
+   "coverage_pct": 6.7,
+   "external_full": 17,
+   "external_only": 28,
+   "internal_only": 71,
+   "internal_open": 43,
+   "matched_count": 2,
+   "external_count": 30,
+   "internal_count": 73,
+   "external_amount": 9000.39,
+   "external_partial": 13,
+   "internal_without_order": 2
+  },
+  {
+   "product": "Youth Within",
+   "coverage_pct": 4.8,
+   "external_full": 14,
+   "external_only": 20,
+   "internal_only": 5,
+   "internal_open": 5,
+   "matched_count": 1,
+   "external_count": 21,
+   "internal_count": 5,
+   "external_amount": 4949.31,
+   "external_partial": 7,
+   "internal_without_order": 0
+  }
+ ],
+ "divergences": {
+  "rows": [
+   {
+    "kind": "interno",
+    "channel": "Email",
+    "product": "Alpharock",
+    "agent_name": "Agente Exemplo",
+    "order_name": null,
+    "refund_type": null,
+    "order_number": "955",
+    "refund_value": null,
+    "customer_name": null,
+    "external_date": null,
+    "refund_amount": null,
+    "type_mismatch": false,
+    "customer_email": "cliente@exemplo.com",
+    "payment_status": null,
+    "sales_platform": "Cartpanda",
+    "external_status": null,
+    "internal_order_id": "955",
+    "internal_request_date": "2026-08-31",
+    "internal_completion_date": null
+   },
+   {
+    "kind": "interno",
+    "channel": "SMS",
+    "product": "Honeyfil",
+    "agent_name": "Agente Exemplo",
+    "order_name": null,
+    "refund_type": "50%",
+    "order_number": "110987",
+    "refund_value": 816,
+    "customer_name": null,
+    "external_date": null,
+    "refund_amount": null,
+    "type_mismatch": false,
+    "customer_email": "cliente@exemplo.com",
+    "payment_status": null,
+    "sales_platform": "PagAmerican",
+    "external_status": null,
+    "internal_order_id": "110987",
+    "internal_request_date": "2026-08-31",
+    "internal_completion_date": "2026-09-03"
+   },
+   {
+    "kind": "interno",
+    "channel": "SMS",
+    "product": "Honeyfil",
+    "agent_name": "Agente Exemplo",
+    "order_name": null,
+    "refund_type": "50%",
+    "order_number": "120395",
+    "refund_value": 206.5,
+    "customer_name": null,
+    "external_date": null,
+    "refund_amount": null,
+    "type_mismatch": false,
+    "customer_email": "cliente@exemplo.com",
+    "payment_status": null,
+    "sales_platform": "PagAmerican",
+    "external_status": null,
+    "internal_order_id": "120395",
+    "internal_request_date": "2026-08-31",
+    "internal_completion_date": "2026-08-31"
+   }
+  ],
+  "total_count": 1770
+ },
+ "by_product_month": [
+  {
+   "month": "2026-07",
+   "product": "Alpharock",
+   "coverage_pct": 17.1,
+   "external_full": 43,
+   "external_only": 68,
+   "internal_only": 16,
+   "internal_open": 1,
+   "matched_count": 14,
+   "external_count": 82,
+   "internal_count": 21,
+   "external_amount": 21861.66,
+   "external_partial": 39,
+   "internal_without_order": 1
+  },
+  {
+   "month": "2026-08",
+   "product": "Alpharock",
+   "coverage_pct": 26.7,
+   "external_full": 8,
+   "external_only": 11,
+   "internal_only": 20,
+   "internal_open": 21,
+   "matched_count": 4,
+   "external_count": 15,
+   "internal_count": 34,
+   "external_amount": 3894.23,
+   "external_partial": 7,
+   "internal_without_order": 1
+  },
+  {
+   "month": "2026-07",
+   "product": "Honeyfil",
+   "coverage_pct": 7.9,
+   "external_full": 62,
+   "external_only": 116,
+   "internal_only": 2,
+   "internal_open": 1,
+   "matched_count": 10,
+   "external_count": 126,
+   "internal_count": 3,
+   "external_amount": 37582.54,
+   "external_partial": 64,
+   "internal_without_order": 1
+  },
+  {
+   "month": "2026-08",
+   "product": "Honeyfil",
+   "coverage_pct": 14.3,
+   "external_full": 126,
+   "external_only": 203,
+   "internal_only": 60,
+   "internal_open": 65,
+   "matched_count": 34,
+   "external_count": 237,
+   "internal_count": 101,
+   "external_amount": 69668.46,
+   "external_partial": 111,
+   "internal_without_order": 3
+  },
+  {
+   "month": "2026-07",
+   "product": "Horsefil",
+   "coverage_pct": 12.4,
+   "external_full": 348,
+   "external_only": 628,
+   "internal_only": 18,
+   "internal_open": 15,
+   "matched_count": 89,
+   "external_count": 717,
+   "internal_count": 41,
+   "external_amount": 214869.94,
+   "external_partial": 369,
+   "internal_without_order": 8
+  },
+  {
+   "month": "2026-08",
+   "product": "Horsefil",
+   "coverage_pct": 12.3,
+   "external_full": 117,
+   "external_only": 206,
+   "internal_only": 96,
+   "internal_open": 123,
+   "matched_count": 29,
+   "external_count": 235,
+   "internal_count": 197,
+   "external_amount": 66495.04,
+   "external_partial": 118,
+   "internal_without_order": 12
+  },
+  {
+   "month": "2026-07",
+   "product": "Mind Wake",
+   "coverage_pct": null,
+   "external_full": 0,
+   "external_only": 0,
+   "internal_only": 1,
+   "internal_open": 0,
+   "matched_count": 0,
+   "external_count": 0,
+   "internal_count": 1,
+   "external_amount": 0,
+   "external_partial": 0,
+   "internal_without_order": 0
+  },
+  {
+   "month": "2026-08",
+   "product": "Mind Wake",
+   "coverage_pct": 0.0,
+   "external_full": 5,
+   "external_only": 7,
+   "internal_only": 11,
+   "internal_open": 5,
+   "matched_count": 0,
+   "external_count": 7,
+   "internal_count": 11,
+   "external_amount": 1462.07,
+   "external_partial": 2,
+   "internal_without_order": 0
+  },
+  {
+   "month": "2026-07",
+   "product": "Quiet Nerves",
+   "coverage_pct": null,
+   "external_full": 0,
+   "external_only": 0,
+   "internal_only": 4,
+   "internal_open": 1,
+   "matched_count": 0,
+   "external_count": 0,
+   "internal_count": 4,
+   "external_amount": 0,
+   "external_partial": 0,
+   "internal_without_order": 1
+  },
+  {
+   "month": "2026-08",
+   "product": "Quiet Nerves",
+   "coverage_pct": 6.7,
+   "external_full": 17,
+   "external_only": 28,
+   "internal_only": 67,
+   "internal_open": 42,
+   "matched_count": 2,
+   "external_count": 30,
+   "internal_count": 69,
+   "external_amount": 9000.39,
+   "external_partial": 13,
+   "internal_without_order": 1
+  },
+  {
+   "month": "2026-07",
+   "product": "Youth Within",
+   "coverage_pct": 0.0,
+   "external_full": 7,
+   "external_only": 9,
+   "internal_only": 0,
+   "internal_open": 0,
+   "matched_count": 0,
+   "external_count": 9,
+   "internal_count": 0,
+   "external_amount": 2341.81,
+   "external_partial": 2,
+   "internal_without_order": 0
+  },
+  {
+   "month": "2026-08",
+   "product": "Youth Within",
+   "coverage_pct": 8.3,
+   "external_full": 7,
+   "external_only": 11,
+   "internal_only": 5,
+   "internal_open": 5,
+   "matched_count": 1,
+   "external_count": 12,
+   "internal_count": 5,
+   "external_amount": 2607.5,
+   "external_partial": 5,
+   "internal_without_order": 0
+  }
+ ]
+}
