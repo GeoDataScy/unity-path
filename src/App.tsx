@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 const ManagerLayout = lazy(() => import("./layouts/ManagerLayout"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DashboardRefunds = lazy(() => import("./pages/DashboardRefunds"));
+const DashboardRefundsComparativo = lazy(() => import("./pages/DashboardRefundsComparativo"));
 const DashboardAcompanhamento = lazy(() => import("./pages/DashboardAcompanhamento"));
 const DashboardInteracoes = lazy(() => import("./pages/DashboardInteracoes"));
 const DashboardAlertas = lazy(() => import("./pages/DashboardAlertas"));
@@ -83,6 +84,7 @@ const App = () => (
           <Route path="/dashboard" element={<ManagerLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />
+            <Route path="reembolsos/comparativo" element={<DashboardRefundsComparativo />} />
             <Route path="acompanhamento" element={<DashboardAcompanhamento />} />
             <Route path="interacoes" element={<DashboardInteracoes />} />
             <Route path="alertas" element={<DashboardAlertas />} />
