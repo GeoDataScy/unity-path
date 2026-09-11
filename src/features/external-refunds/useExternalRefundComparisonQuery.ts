@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   DivergenceFilter,
+  ExternalPlatform,
   ExternalRefundComparison,
   ImportExternalRefundsInput,
   ImportExternalRefundsResult,
@@ -16,13 +17,6 @@ const rpc = supabase.rpc.bind(supabase) as (
 
 export const EXTERNAL_REFUNDS_KEY = ["dashboard", "external-refunds"] as const;
 
-/**
- * Plataforma do export importado. O arquivo externo é da Cartpanda, então o
- * lado interno é restrito a refunds.sales_platform = Cartpanda — sem isso o
- * interno (que registra todas as plataformas) infla a diferença.
- */
-export const EXTERNAL_PLATFORM = "Cartpanda";
-
 type Params = {
   enabled?: boolean;
   /** YYYY-MM-DD */
@@ -30,6 +24,8 @@ type Params = {
   /** YYYY-MM-DD */
   to: string;
   product: string; // 'all' | nome do produto
+  /** Vale nos dois lados: externo pela coluna platform, interno por refunds.sales_platform. */
+  platform: ExternalPlatform;
   divergenceFilter: DivergenceFilter;
   page: number; // 1-based
   pageSize: number;
@@ -54,6 +50,7 @@ export function useExternalRefundComparisonQuery({
   from,
   to,
   product,
+  platform,
   divergenceFilter,
   page,
   pageSize,
@@ -62,7 +59,7 @@ export function useExternalRefundComparisonQuery({
     queryKey: [
       ...EXTERNAL_REFUNDS_KEY,
       "comparison",
-      { from, to, product, divergenceFilter, page, pageSize, platform: EXTERNAL_PLATFORM },
+      { from, to, product, divergenceFilter, page, pageSize, platform },
     ],
     enabled,
     queryFn: async (): Promise<ExternalRefundComparison> => {
@@ -74,7 +71,7 @@ export function useExternalRefundComparisonQuery({
         divergence_filter: divergenceFilter,
         page_size: pageSize,
         page_offset: (page - 1) * pageSize,
-        platform_filter: EXTERNAL_PLATFORM,
+        platform_filter: platform,
       });
       if (error) throw error;
       return data as ExternalRefundComparison;
@@ -88,10 +85,15 @@ export function useExternalRefundComparisonQuery({
 export function useDeleteExternalRefundsMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { product: string; monthRef?: string }): Promise<{ deleted: number }> => {
+    mutationFn: async (input: {
+      product: string;
+      platform: ExternalPlatform;
+      monthRef?: string;
+    }): Promise<{ deleted: number }> => {
       const { data, error } = await rpc("manager_delete_external_refunds", {
         p_product: input.product,
         p_month_ref: input.monthRef ?? null,
+        p_platform: input.platform,
       });
       if (error) throw error;
       return data as { deleted: number };
@@ -111,6 +113,7 @@ export function useImportExternalRefundsMutation() {
         p_month_ref: input.monthRef,
         p_source_file: input.sourceFile,
         p_rows: input.rows,
+        p_platform: input.platform,
       });
       if (error) throw error;
       return data as ImportExternalRefundsResult;

@@ -15,7 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 import { REFUND_PRODUCTS } from "@/features/refunds/types";
 
 import { countOutsideMonth, parseExternalRefundsCsv, type ParsedExternalRefunds } from "./parseExternalRefundsCsv";
-import { fmtMonth, type ImportExternalRefundsResult } from "./types";
+import {
+  DEFAULT_PLATFORM,
+  EXTERNAL_PLATFORMS,
+  fmtMonth,
+  type ExternalPlatform,
+  type ImportExternalRefundsResult,
+} from "./types";
 import { useImportExternalRefundsMutation } from "./useExternalRefundComparisonQuery";
 
 type Props = {
@@ -55,6 +61,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const months = useMemo(recentMonths, []);
+  const [platform, setPlatform] = useState<ExternalPlatform>(DEFAULT_PLATFORM);
   const [product, setProduct] = useState<string>("");
   const [monthRef, setMonthRef] = useState<string>(months[1] ?? months[0]);
   const [file, setFile] = useState<ParsedFile | null>(null);
@@ -86,6 +93,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
     if (!file || file.rows.length === 0 || !product || !monthRef) return;
     try {
       const result = await importMutation.mutateAsync({
+        platform,
         product,
         monthRef,
         sourceFile: file.name,
@@ -121,13 +129,28 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
             <FileUp className="h-5 w-5 text-primary" /> Importar reembolso externo
           </DialogTitle>
           <DialogDescription>
-            Um arquivo <code>orders_export.csv</code> de reembolsos externos por produto e mês. Pedido já importado é
-            atualizado, não duplicado.
+            Um arquivo de reembolsos externos por plataforma, produto e mês. Pedido já importado é atualizado, não
+            duplicado.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-2">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Plataforma</div>
+              <Select value={platform} onValueChange={(v) => setPlatform(v as ExternalPlatform)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Plataforma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXTERNAL_PLATFORMS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto</div>
               <Select value={product} onValueChange={setProduct}>

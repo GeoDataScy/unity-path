@@ -30,7 +30,13 @@ export type ExternalRefundImportRow = {
   raw_date?: string;
 };
 
+/** Plataformas de venda com export de reembolso. Mesmas grafias de refunds.sales_platform. */
+export const EXTERNAL_PLATFORMS = ["Cartpanda", "Buygoods", "PagAmerican"] as const;
+export type ExternalPlatform = (typeof EXTERNAL_PLATFORMS)[number];
+export const DEFAULT_PLATFORM: ExternalPlatform = "Cartpanda";
+
 export type ImportExternalRefundsInput = {
+  platform: ExternalPlatform;
   product: string;
   /** Primeiro dia do mês do arquivo, YYYY-MM-DD. */
   monthRef: string;
@@ -55,6 +61,7 @@ export type ComparisonSummary = {
   from_date: string;
   to_date: string;
   product_filter: string | null;
+  platform_filter: string | null;
   internal_count: number;
   internal_only: number;
   internal_without_order: number;
@@ -89,6 +96,7 @@ export type ComparisonProductMonthRow = ComparisonProductRow & {
 };
 
 export type ComparisonImportBatch = {
+  platform: string;
   product: string;
   month_ref: string;
   source_file: string;
