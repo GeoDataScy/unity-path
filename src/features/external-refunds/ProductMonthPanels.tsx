@@ -16,6 +16,8 @@ type Props = {
   rows: ComparisonProductMonthRow[];
   /** Lixeira do painel (só gestora): apaga o reembolso externo importado do produto. */
   onDelete?: (product: string) => void;
+  /** Plataforma selecionada no filtro; entra na legenda. */
+  platform: string;
 };
 
 type Point = {
@@ -39,7 +41,7 @@ function PanelTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   );
 }
 
-export function ProductMonthPanels({ rows, onDelete }: Props) {
+export function ProductMonthPanels({ rows, onDelete, platform }: Props) {
   const months = useMemo(() => Array.from(new Set(rows.map((r) => r.month))).sort(), [rows]);
   const products = useMemo(() => Array.from(new Set(rows.map((r) => r.product))).sort(), [rows]);
 
@@ -76,7 +78,7 @@ export function ProductMonthPanels({ rows, onDelete }: Props) {
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_INTERNAL }} aria-hidden="true" />
-          Interno (registrado pelos agentes, só Cartpanda)
+          Interno (registrado pelos agentes, só {platform})
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_EXTERNAL }} aria-hidden="true" />

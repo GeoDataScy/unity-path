@@ -21,7 +21,6 @@ import { DivergencesTable } from "@/features/external-refunds/DivergencesTable";
 import { ImportExternalRefundsDialog } from "@/features/external-refunds/ImportExternalRefundsDialog";
 import { ProductMonthPanels } from "@/features/external-refunds/ProductMonthPanels";
 import {
-  EXTERNAL_PLATFORM,
   useDeleteExternalRefundsMutation,
   useExternalRefundComparisonQuery,
 } from "@/features/external-refunds/useExternalRefundComparisonQuery";
@@ -37,12 +36,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  DEFAULT_PLATFORM,
+  EXTERNAL_PLATFORMS,
   fmtDate,
   fmtInt,
   fmtMonth,
   fmtPct,
   fmtUsd,
   type DivergenceFilter,
+  type ExternalPlatform,
 } from "@/features/external-refunds/types";
 
 const PAGE_SIZE = 25;
@@ -68,6 +70,7 @@ export default function DashboardRefundsComparativo() {
 
   const [month, setMonth] = useState<string>("all");
   const [product, setProduct] = useState<string>("all");
+  const [platform, setPlatform] = useState<ExternalPlatform>(DEFAULT_PLATFORM);
   const [kind, setKind] = useState<DivergenceFilter>("all");
   const [page, setPage] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
@@ -77,7 +80,7 @@ export default function DashboardRefundsComparativo() {
 
   useEffect(() => {
     setPage(1);
-  }, [month, product, kind]);
+  }, [month, product, platform, kind]);
 
   const { from, to } = useMemo(() => {
     if (month === "all") return { from: ALL_FROM, to: todayISO() };
@@ -88,6 +91,7 @@ export default function DashboardRefundsComparativo() {
     from,
     to,
     product,
+    platform,
     divergenceFilter: kind,
     page,
     pageSize: PAGE_SIZE,
@@ -110,10 +114,10 @@ export default function DashboardRefundsComparativo() {
   const handleDelete = async () => {
     if (!productToDelete) return;
     try {
-      const r = await deleteMutation.mutateAsync({ product: productToDelete });
+      const r = await deleteMutation.mutateAsync({ product: productToDelete, platform });
       toast({
         title: "Reembolsos externos apagados",
-        description: `${productToDelete}: ${fmtInt(r.deleted)} linha(s) removida(s). Importe o arquivo de novo quando quiser.`,
+        description: `${productToDelete} (${platform}): ${fmtInt(r.deleted)} linha(s) removida(s). Importe o arquivo de novo quando quiser.`,
       });
       if (product === productToDelete) setProduct("all");
     } catch (e) {
@@ -139,9 +143,9 @@ export default function DashboardRefundsComparativo() {
           <RefundsSubNav />
           <p className="max-w-3xl text-sm text-muted-foreground">
             Compara os reembolsos registrados pelos agentes (interno) com os reembolsos externos importados por
-            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. Como o arquivo externo é
-            da {EXTERNAL_PLATFORM}, o lado interno considera só reembolsos com plataforma {EXTERNAL_PLATFORM}. O período e
-            o agente da barra lateral não se aplicam aqui.
+            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. O filtro de plataforma vale
+            nos dois lados: externo pelo arquivo importado, interno pela plataforma do reembolso. O período e o agente da
+            barra lateral não se aplicam aqui.
           </p>
         </div>
         {isManager && (
@@ -158,7 +162,22 @@ export default function DashboardRefundsComparativo() {
       )}
 
       {/* Filtros */}
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-2">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Plataforma</div>
+          <Select value={platform} onValueChange={(v) => setPlatform(v as ExternalPlatform)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Plataforma" />
+            </SelectTrigger>
+            <SelectContent>
+              {EXTERNAL_PLATFORMS.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mês</div>
           <Select value={month} onValueChange={setMonth}>
@@ -211,7 +230,7 @@ export default function DashboardRefundsComparativo() {
       {!isLoading && !hasImports && (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Nenhum reembolso externo foi importado ainda.
+            Nenhum reembolso externo de {platform} foi importado ainda.
             {isManager ? " Use o botão “Importar reembolso externo” para começar." : ""}
           </CardContent>
         </Card>
@@ -222,7 +241,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Database className="h-4 w-4 text-primary" /> Interno ({EXTERNAL_PLATFORM})
+              <Database className="h-4 w-4 text-primary" /> Interno ({platform})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -307,6 +326,7 @@ export default function DashboardRefundsComparativo() {
             <ProductMonthPanels
               rows={data?.by_product_month ?? []}
               onDelete={isManager ? (p) => setProductToDelete(p) : undefined}
+              platform={platform}
             />
           )}
         </CardContent>
@@ -390,7 +410,7 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta só reembolsos com plataforma {EXTERNAL_PLATFORM}, pela data em que o cliente pediu o
+                Interno conta só reembolsos com plataforma {platform}, pela data em que o cliente pediu o
                 reembolso; externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
                 <code>#1896</code>), em qualquer mês. Reembolso interno em aberto ainda não aparece no externo — é a causa
                 mais comum de “só interno”. As colunas % interno e % externo ainda serão definidas.
@@ -411,6 +431,7 @@ export default function DashboardRefundsComparativo() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Plataforma</TableHead>
                     <TableHead>Produto</TableHead>
                     <TableHead>Mês</TableHead>
                     <TableHead>Arquivo</TableHead>
@@ -421,7 +442,8 @@ export default function DashboardRefundsComparativo() {
                 </TableHeader>
                 <TableBody>
                   {(data?.imports ?? []).map((b) => (
-                    <TableRow key={`${b.product}-${b.month_ref}-${b.source_file}`}>
+                    <TableRow key={`${b.platform}-${b.product}-${b.month_ref}-${b.source_file}`}>
+                      <TableCell>{b.platform}</TableCell>
                       <TableCell className="font-medium">{b.product}</TableCell>
                       <TableCell>{fmtMonth(b.month_ref)}</TableCell>
                       <TableCell className="font-mono text-xs">{b.source_file}</TableCell>
@@ -490,7 +512,7 @@ export default function DashboardRefundsComparativo() {
           <AlertDialogHeader>
             <AlertDialogTitle>Apagar reembolsos externos de {productToDelete}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove todos os meses importados deste produto. Os reembolsos internos não são afetados. Dá para importar
+              Remove todos os meses importados deste produto na plataforma {platform}. Os reembolsos internos não são afetados. Dá para importar
               o arquivo de novo depois.
             </AlertDialogDescription>
           </AlertDialogHeader>
