@@ -13,6 +13,7 @@ vi.mock("@/features/external-refunds/useExternalRefundComparisonQuery", () => ({
   useExternalRefundComparisonQuery: () => queryResult.current,
   useImportExternalRefundsMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteExternalRefundsMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  EXTERNAL_PLATFORM: "Cartpanda",
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -45,7 +46,8 @@ describe("DashboardRefundsComparativo", () => {
     queryResult.current = { data: fixture, isLoading: false, isError: false };
     renderPage();
 
-    // KPIs do período: 487 internos, 1.470 da loja, 183 casados (12,4%).
+    // KPIs do período: 487 internos, 1.470 externos, 183 casados (12,4%).
+    expect(screen.getByText("Interno (Cartpanda)")).toBeTruthy();
     // Cada total aparece no card e na linha "Todos" da tabela.
     expect(screen.getAllByText("487").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("1.470").length).toBeGreaterThanOrEqual(2);

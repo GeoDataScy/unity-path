@@ -21,6 +21,7 @@ import { DivergencesTable } from "@/features/external-refunds/DivergencesTable";
 import { ImportExternalRefundsDialog } from "@/features/external-refunds/ImportExternalRefundsDialog";
 import { ProductMonthPanels } from "@/features/external-refunds/ProductMonthPanels";
 import {
+  EXTERNAL_PLATFORM,
   useDeleteExternalRefundsMutation,
   useExternalRefundComparisonQuery,
 } from "@/features/external-refunds/useExternalRefundComparisonQuery";
@@ -138,8 +139,9 @@ export default function DashboardRefundsComparativo() {
           <RefundsSubNav />
           <p className="max-w-3xl text-sm text-muted-foreground">
             Compara os reembolsos registrados pelos agentes (interno) com os reembolsos externos importados por
-            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. O período e o agente da
-            barra lateral não se aplicam aqui.
+            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. Como o arquivo externo é
+            da {EXTERNAL_PLATFORM}, o lado interno considera só reembolsos com plataforma {EXTERNAL_PLATFORM}. O período e
+            o agente da barra lateral não se aplicam aqui.
           </p>
         </div>
         {isManager && (
@@ -220,7 +222,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Database className="h-4 w-4 text-primary" /> Interno
+              <Database className="h-4 w-4 text-primary" /> Interno ({EXTERNAL_PLATFORM})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -388,8 +390,8 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta pela data em que o cliente pediu o reembolso; externo conta pela data do pedido no arquivo
-                importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
+                Interno conta só reembolsos com plataforma {EXTERNAL_PLATFORM}, pela data em que o cliente pediu o
+                reembolso; externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
                 <code>#1896</code>), em qualquer mês. Reembolso interno em aberto ainda não aparece no externo — é a causa
                 mais comum de “só interno”. As colunas % interno e % externo ainda serão definidas.
               </p>
