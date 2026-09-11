@@ -246,11 +246,6 @@ export default function DashboardRefundsComparativo() {
           </CardHeader>
           <CardContent>
             {kpi(summary?.internal_count)}
-            {summary && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {fmtInt(summary.internal_without_order)} sem nº de pedido
-              </p>
-            )}
           </CardContent>
         </Card>
         <Card>
