@@ -130,7 +130,7 @@ export type ExternalRefundComparison = {
 
 export const KIND_LABEL: Record<ExternalRefundKind, string> = {
   ambos: "Nos dois",
-  externo: "Só na loja",
+  externo: "Só externo",
   interno: "Só interno",
 };
 
@@ -156,7 +156,7 @@ export function fmtPct(value: number | null | undefined, digits = 1): string {
   return `${value.toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
 }
 
-/** Valores das lojas vêm em dólar. */
+/** Valores dos reembolsos externos vêm em dólar. */
 export function fmtUsd(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   return `US$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

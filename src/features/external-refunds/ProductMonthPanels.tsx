@@ -1,9 +1,12 @@
 import { useMemo } from "react";
+import { Trash2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
+import { Button } from "@/components/ui/button";
 
 import { fmtInt, fmtMonth, type ComparisonProductMonthRow } from "./types";
 
-// Azul = interno, laranja = loja. Mesmo par do card de eficiência por canal,
+// Azul = interno, laranja = reembolso externo. Mesmo par do card de eficiência por canal,
 // validado para daltonismo nos dois temas. Cada produto tem o próprio painel
 // (small multiples) em vez de um gráfico com seis cores.
 export const COLOR_INTERNAL = "hsl(var(--chart-2))";
@@ -11,6 +14,8 @@ export const COLOR_EXTERNAL = "hsl(var(--chart-8))";
 
 type Props = {
   rows: ComparisonProductMonthRow[];
+  /** Lixeira do painel (só gestora): apaga o reembolso externo importado do produto. */
+  onDelete?: (product: string) => void;
 };
 
 type Point = {
@@ -28,13 +33,13 @@ function PanelTooltip({ active, payload }: { active?: boolean; payload?: Array<{
     <div className="rounded-md border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
       <p className="font-medium">{p.label}</p>
       <p>Interno: {fmtInt(p.interno)}</p>
-      <p>Loja: {fmtInt(p.externo)}</p>
+      <p>Externo: {fmtInt(p.externo)}</p>
       <p className="text-muted-foreground">Casados: {fmtInt(p.casados)}</p>
     </div>
   );
 }
 
-export function ProductMonthPanels({ rows }: Props) {
+export function ProductMonthPanels({ rows, onDelete }: Props) {
   const months = useMemo(() => Array.from(new Set(rows.map((r) => r.month))).sort(), [rows]);
   const products = useMemo(() => Array.from(new Set(rows.map((r) => r.product))).sort(), [rows]);
 
@@ -75,7 +80,7 @@ export function ProductMonthPanels({ rows }: Props) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_EXTERNAL }} aria-hidden="true" />
-          Loja (export importado)
+          Reembolso externo (importado)
         </span>
         <span>Escala igual em todos os painéis.</span>
       </div>
@@ -83,9 +88,23 @@ export function ProductMonthPanels({ rows }: Props) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {series.map((s) => (
           <div key={s.product} className="rounded-lg border bg-card p-3">
-            <p className="truncate text-sm font-medium" title={s.product}>
-              {s.product}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-sm font-medium" title={s.product}>
+                {s.product}
+              </p>
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => onDelete(s.product)}
+                  aria-label={`Apagar reembolsos externos de ${s.product}`}
+                  title="Apagar reembolsos externos deste produto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             <div className="mt-2 h-40">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={s.points} margin={{ top: 16, right: 8, bottom: 0, left: 0 }} barCategoryGap="30%">
@@ -101,7 +120,7 @@ export function ProductMonthPanels({ rows }: Props) {
                   <Bar dataKey="interno" name="Interno" fill={COLOR_INTERNAL} radius={[3, 3, 0, 0]}>
                     <LabelList dataKey="interno" position="top" fontSize={10} fill="hsl(var(--chart-axis))" />
                   </Bar>
-                  <Bar dataKey="externo" name="Loja" fill={COLOR_EXTERNAL} radius={[3, 3, 0, 0]}>
+                  <Bar dataKey="externo" name="Externo" fill={COLOR_EXTERNAL} radius={[3, 3, 0, 0]}>
                     <LabelList dataKey="externo" position="top" fontSize={10} fill="hsl(var(--chart-axis))" />
                   </Bar>
                 </BarChart>

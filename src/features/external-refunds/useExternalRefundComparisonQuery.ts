@@ -73,6 +73,23 @@ export function useExternalRefundComparisonQuery({
   });
 }
 
+export function useDeleteExternalRefundsMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { product: string; monthRef?: string }): Promise<{ deleted: number }> => {
+      const { data, error } = await rpc("manager_delete_external_refunds", {
+        p_product: input.product,
+        p_month_ref: input.monthRef ?? null,
+      });
+      if (error) throw error;
+      return data as { deleted: number };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: EXTERNAL_REFUNDS_KEY });
+    },
+  });
+}
+
 export function useImportExternalRefundsMutation() {
   const qc = useQueryClient();
   return useMutation({
