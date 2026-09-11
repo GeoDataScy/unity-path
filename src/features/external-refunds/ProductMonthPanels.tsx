@@ -76,7 +76,7 @@ export function ProductMonthPanels({ rows, onDelete }: Props) {
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_INTERNAL }} aria-hidden="true" />
-          Interno (registrado pelos agentes)
+          Interno (registrado pelos agentes, só Cartpanda)
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_EXTERNAL }} aria-hidden="true" />

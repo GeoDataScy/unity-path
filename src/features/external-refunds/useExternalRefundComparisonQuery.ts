@@ -16,6 +16,13 @@ const rpc = supabase.rpc.bind(supabase) as (
 
 export const EXTERNAL_REFUNDS_KEY = ["dashboard", "external-refunds"] as const;
 
+/**
+ * Plataforma do export importado. O arquivo externo é da Cartpanda, então o
+ * lado interno é restrito a refunds.sales_platform = Cartpanda — sem isso o
+ * interno (que registra todas as plataformas) infla a diferença.
+ */
+export const EXTERNAL_PLATFORM = "Cartpanda";
+
 type Params = {
   enabled?: boolean;
   /** YYYY-MM-DD */
@@ -52,7 +59,11 @@ export function useExternalRefundComparisonQuery({
   pageSize,
 }: Params) {
   return useQuery({
-    queryKey: [...EXTERNAL_REFUNDS_KEY, "comparison", { from, to, product, divergenceFilter, page, pageSize }],
+    queryKey: [
+      ...EXTERNAL_REFUNDS_KEY,
+      "comparison",
+      { from, to, product, divergenceFilter, page, pageSize, platform: EXTERNAL_PLATFORM },
+    ],
     enabled,
     queryFn: async (): Promise<ExternalRefundComparison> => {
       await requireSession();
@@ -63,6 +74,7 @@ export function useExternalRefundComparisonQuery({
         divergence_filter: divergenceFilter,
         page_size: pageSize,
         page_offset: (page - 1) * pageSize,
+        platform_filter: EXTERNAL_PLATFORM,
       });
       if (error) throw error;
       return data as ExternalRefundComparison;
