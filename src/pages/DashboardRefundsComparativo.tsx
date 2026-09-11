@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { ArrowLeftRight, Building2, CircleDollarSign, Database, Store, Upload } from "lucide-react";
+import { Building2, CircleDollarSign, Database, Store, Upload } from "lucide-react";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Button } from "@/components/ui/button";
@@ -237,7 +237,7 @@ export default function DashboardRefundsComparativo() {
       )}
 
       {/* KPIs */}
-      <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -260,19 +260,6 @@ export default function DashboardRefundsComparativo() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {fmtInt(summary.external_full)} integrais · {fmtInt(summary.external_partial)} parciais
               </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <ArrowLeftRight className="h-4 w-4 text-primary" /> Casados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {kpi(summary?.matched_count)}
-            {summary && (
-              <p className="mt-1 text-xs text-muted-foreground">{fmtPct(summary.coverage_pct)} dos reembolsos externos</p>
             )}
           </CardContent>
         </Card>

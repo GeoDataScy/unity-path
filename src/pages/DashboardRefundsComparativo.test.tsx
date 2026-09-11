@@ -45,14 +45,14 @@ describe("DashboardRefundsComparativo", () => {
     queryResult.current = { data: fixture, isLoading: false, isError: false };
     renderPage();
 
-    // KPIs do período: 487 internos, 1.470 externos, 183 casados (12,4%).
+    // KPIs do período: 487 internos, 1.470 externos.
     expect(screen.getByText("Interno (Cartpanda)")).toBeTruthy();
     expect(screen.getAllByText("Plataforma").length).toBeGreaterThanOrEqual(2); // filtro + coluna dos lotes
     // Cada total aparece no card e na linha "Todos" da tabela.
     expect(screen.getAllByText("487").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("1.470").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("183").length).toBeGreaterThan(0);
-    expect(screen.getByText("12,4% dos reembolsos externos")).toBeTruthy();
+    // Card "Casados" foi removido a pedido da gestora.
+    expect(screen.queryByText("Casados")).toBeNull();
     expect(screen.getAllByText("US$ 429.783,64").length).toBeGreaterThanOrEqual(2);
 
     // Linhas produto × mês (6 produtos × 2 meses) + filtro de produto populado.
