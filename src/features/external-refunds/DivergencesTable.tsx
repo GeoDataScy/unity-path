@@ -50,12 +50,12 @@ export function DivergencesTable({ rows, isLoading }: Props) {
             <TableHead>Pedido</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Onde aparece</TableHead>
-            <TableHead>Pedido (loja)</TableHead>
+            <TableHead>Pedido (externo)</TableHead>
             <TableHead>Solicitado (interno)</TableHead>
             <TableHead>Cliente</TableHead>
-            <TableHead>Loja</TableHead>
+            <TableHead>Externo</TableHead>
             <TableHead>Interno</TableHead>
-            <TableHead className="text-right">Valor (loja)</TableHead>
+            <TableHead className="text-right">Valor (externo)</TableHead>
             <TableHead>Agente</TableHead>
           </TableRow>
         </TableHeader>
@@ -70,7 +70,7 @@ export function DivergencesTable({ rows, isLoading }: Props) {
                 <div className="flex flex-wrap items-center gap-1">
                   <KindBadge row={r} />
                   {r.type_mismatch && (
-                    <Badge variant="destructive" title="Loja e interno discordam entre parcial e integral">
+                    <Badge variant="destructive" title="Reembolso externo e interno discordam entre parcial e integral">
                       tipo diverge
                     </Badge>
                   )}

@@ -20,7 +20,21 @@ import { RefundsSubNav } from "@/components/dashboard/RefundsSubNav";
 import { DivergencesTable } from "@/features/external-refunds/DivergencesTable";
 import { ImportExternalRefundsDialog } from "@/features/external-refunds/ImportExternalRefundsDialog";
 import { ProductMonthPanels } from "@/features/external-refunds/ProductMonthPanels";
-import { useExternalRefundComparisonQuery } from "@/features/external-refunds/useExternalRefundComparisonQuery";
+import {
+  useDeleteExternalRefundsMutation,
+  useExternalRefundComparisonQuery,
+} from "@/features/external-refunds/useExternalRefundComparisonQuery";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   fmtDate,
   fmtInt,
@@ -47,15 +61,6 @@ function monthRange(month: string): { from: string; to: string } {
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
 
-function CoverageBar({ value }: { value: number | null }) {
-  const pct = Math.max(0, Math.min(100, value ?? 0));
-  return (
-    <div className="h-2 w-full min-w-[48px] overflow-hidden rounded-full bg-muted" aria-hidden="true">
-      <div className="h-full rounded-full bg-[hsl(var(--chart-2))]" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
 export default function DashboardRefundsComparativo() {
   const { role } = useOutletContext<ManagerOutletContext>();
   const isManager = role === "manager";
@@ -65,6 +70,9 @@ export default function DashboardRefundsComparativo() {
   const [kind, setKind] = useState<DivergenceFilter>("all");
   const [page, setPage] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
+  const deleteMutation = useDeleteExternalRefundsMutation();
 
   useEffect(() => {
     setPage(1);
@@ -98,6 +106,26 @@ export default function DashboardRefundsComparativo() {
 
   const totalPages = Math.max(1, Math.ceil((data?.divergences.total_count ?? 0) / PAGE_SIZE));
 
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      const r = await deleteMutation.mutateAsync({ product: productToDelete });
+      toast({
+        title: "Reembolsos externos apagados",
+        description: `${productToDelete}: ${fmtInt(r.deleted)} linha(s) removida(s). Importe o arquivo de novo quando quiser.`,
+      });
+      if (product === productToDelete) setProduct("all");
+    } catch (e) {
+      toast({
+        title: "Erro ao apagar",
+        description: e instanceof Error ? e.message : "Não foi possível apagar.",
+        variant: "destructive",
+      });
+    } finally {
+      setProductToDelete(null);
+    }
+  };
+
   const kpi = (value: number | null | undefined, format: (v: number | null | undefined) => string = fmtInt) =>
     isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold tabular-nums">{format(value)}</div>;
 
@@ -109,14 +137,14 @@ export default function DashboardRefundsComparativo() {
           <h1 className="text-3xl font-semibold tracking-tight">Reembolsos</h1>
           <RefundsSubNav />
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Compara os reembolsos registrados pelos agentes com os exports de pedidos reembolsados das lojas, pedido a
-            pedido, só para os produtos que têm export importado. O período e o agente da barra lateral não se aplicam
-            aqui.
+            Compara os reembolsos registrados pelos agentes (interno) com os reembolsos externos importados por
+            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. O período e o agente da
+            barra lateral não se aplicam aqui.
           </p>
         </div>
         {isManager && (
           <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" /> Importar export da loja
+            <Upload className="mr-2 h-4 w-4" /> Importar reembolso externo
           </Button>
         )}
       </header>
@@ -152,7 +180,7 @@ export default function DashboardRefundsComparativo() {
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos com export</SelectItem>
+              <SelectItem value="all">Todos com reembolso externo</SelectItem>
               {productOptions.map((p) => (
                 <SelectItem key={p} value={p}>
                   {p}
@@ -170,7 +198,7 @@ export default function DashboardRefundsComparativo() {
             <SelectContent>
               <SelectItem value="all">Todos os pedidos</SelectItem>
               <SelectItem value="ambos">Nos dois lados</SelectItem>
-              <SelectItem value="externo">Só na loja</SelectItem>
+              <SelectItem value="externo">Só externo</SelectItem>
               <SelectItem value="interno">Só interno</SelectItem>
               <SelectItem value="tipo">Parcial × integral divergem</SelectItem>
             </SelectContent>
@@ -181,8 +209,8 @@ export default function DashboardRefundsComparativo() {
       {!isLoading && !hasImports && (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Nenhum export de loja foi importado ainda.
-            {isManager ? " Use o botão “Importar export da loja” para começar." : ""}
+            Nenhum reembolso externo foi importado ainda.
+            {isManager ? " Use o botão “Importar reembolso externo” para começar." : ""}
           </CardContent>
         </Card>
       )}
@@ -207,7 +235,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Store className="h-4 w-4 text-primary" /> Loja
+              <Store className="h-4 w-4 text-primary" /> Reembolso externo
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -228,7 +256,7 @@ export default function DashboardRefundsComparativo() {
           <CardContent>
             {kpi(summary?.matched_count)}
             {summary && (
-              <p className="mt-1 text-xs text-muted-foreground">{fmtPct(summary.coverage_pct)} dos pedidos da loja</p>
+              <p className="mt-1 text-xs text-muted-foreground">{fmtPct(summary.coverage_pct)} dos reembolsos externos</p>
             )}
           </CardContent>
         </Card>
@@ -243,7 +271,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Store className="h-4 w-4 text-primary" /> Só na loja
+              <Store className="h-4 w-4 text-primary" /> Só externo
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -258,7 +286,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CircleDollarSign className="h-4 w-4 text-primary" /> Valor na loja
+              <CircleDollarSign className="h-4 w-4 text-primary" /> Valor externo
             </CardTitle>
           </CardHeader>
           <CardContent>{kpi(summary?.external_amount, fmtUsd)}</CardContent>
@@ -271,7 +299,14 @@ export default function DashboardRefundsComparativo() {
           <CardTitle>Reembolsos por produto e mês</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? <Skeleton className="h-48 w-full" /> : <ProductMonthPanels rows={data?.by_product_month ?? []} />}
+          {isLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : (
+            <ProductMonthPanels
+              rows={data?.by_product_month ?? []}
+              onDelete={isManager ? (p) => setProductToDelete(p) : undefined}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -291,14 +326,14 @@ export default function DashboardRefundsComparativo() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Mês</TableHead>
                     <TableHead className="text-right">Interno</TableHead>
-                    <TableHead className="text-right">Loja</TableHead>
+                    <TableHead className="text-right">Externo</TableHead>
                     <TableHead className="text-right">Diferença</TableHead>
-                    <TableHead className="text-right">Casados</TableHead>
                     <TableHead className="text-right">Só interno</TableHead>
-                    <TableHead className="text-right">Só na loja</TableHead>
-                    <TableHead className="min-w-[160px]">Cobertura</TableHead>
+                    <TableHead className="text-right">Só externo</TableHead>
+                    <TableHead className="text-right">% interno</TableHead>
+                    <TableHead className="text-right">% externo</TableHead>
                     <TableHead className="text-right">Integral / parcial</TableHead>
-                    <TableHead className="text-right">Valor na loja</TableHead>
+                    <TableHead className="text-right">Valor externo</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -317,15 +352,11 @@ export default function DashboardRefundsComparativo() {
                         {r.internal_count - r.external_count > 0 ? "+" : ""}
                         {fmtInt(r.internal_count - r.external_count)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtInt(r.matched_count)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(r.internal_only)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(r.external_only)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <CoverageBar value={r.coverage_pct} />
-                          <span className="w-14 text-right text-xs tabular-nums">{fmtPct(r.coverage_pct)}</span>
-                        </div>
-                      </TableCell>
+                      {/* % interno / % externo: regra ainda a definir com a gestora; por enquanto zerados. */}
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmtInt(r.external_full)} / {fmtInt(r.external_partial)}
                       </TableCell>
@@ -344,15 +375,10 @@ export default function DashboardRefundsComparativo() {
                         {summary.internal_count - summary.external_count > 0 ? "+" : ""}
                         {fmtInt(summary.internal_count - summary.external_count)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtInt(summary.matched_count)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(summary.internal_only)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(summary.external_only)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <CoverageBar value={summary.coverage_pct} />
-                          <span className="w-14 text-right text-xs tabular-nums">{fmtPct(summary.coverage_pct)}</span>
-                        </div>
-                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmtInt(summary.external_full)} / {fmtInt(summary.external_partial)}
                       </TableCell>
@@ -362,10 +388,10 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta pela data em que o cliente pediu o reembolso; loja conta pela data do pedido no export.
-                Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = loja{" "}
-                <code>#1896</code>), em qualquer mês. Cobertura = casados ÷ pedidos da loja. Reembolso interno em aberto
-                ainda não aparece na loja — é a causa mais comum de “só interno”.
+                Interno conta pela data em que o cliente pediu o reembolso; externo conta pela data do pedido no arquivo
+                importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
+                <code>#1896</code>), em qualquer mês. Reembolso interno em aberto ainda não aparece no externo — é a causa
+                mais comum de “só interno”. As colunas % interno e % externo ainda serão definidas.
               </p>
             </div>
           )}
@@ -376,7 +402,7 @@ export default function DashboardRefundsComparativo() {
       {hasImports && (
         <Card>
           <CardHeader>
-            <CardTitle>Exports importados</CardTitle>
+            <CardTitle>Reembolsos externos importados</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -456,6 +482,24 @@ export default function DashboardRefundsComparativo() {
       </Card>
 
       {isManager && <ImportExternalRefundsDialog open={importOpen} onOpenChange={setImportOpen} />}
+
+      <AlertDialog open={productToDelete !== null} onOpenChange={(open) => !open && setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar reembolsos externos de {productToDelete}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove todos os meses importados deste produto. Os reembolsos internos não são afetados. Dá para importar
+              o arquivo de novo depois.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? "Apagando..." : "Apagar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

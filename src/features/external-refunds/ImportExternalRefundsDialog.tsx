@@ -45,7 +45,7 @@ function describeImport(r: ImportExternalRefundsResult): string {
 }
 
 /**
- * Importa o export de pedidos reembolsados de UMA loja para UM mês. O arquivo
+ * Importa o arquivo de reembolsos externos de UM produto para UM mês. O arquivo
  * não diz qual produto é nem qual mês cobre, então a gestora informa os dois;
  * a pré-visualização mostra quantas linhas caem fora do mês para pegar engano.
  */
@@ -75,7 +75,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
       setFile({
         name: f.name,
         ...parsed,
-        error: parsed.recognized ? undefined : "Cabeçalho não reconhecido (esperado: export de pedidos da loja).",
+        error: parsed.recognized ? undefined : "Cabeçalho não reconhecido (esperado: arquivo orders_export de reembolsos externos).",
       });
     } catch (e) {
       setFile({ name: f.name, rows: [], orders: 0, invalidDates: 0, recognized: false, error: e instanceof Error ? e.message : "Falha ao ler" });
@@ -118,18 +118,18 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileUp className="h-5 w-5 text-primary" /> Importar export da loja
+            <FileUp className="h-5 w-5 text-primary" /> Importar reembolso externo
           </DialogTitle>
           <DialogDescription>
-            Um arquivo <code>orders_export.csv</code> por produto e mês. Pedido já importado é atualizado, não
-            duplicado.
+            Um arquivo <code>orders_export.csv</code> de reembolsos externos por produto e mês. Pedido já importado é
+            atualizado, não duplicado.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto (loja)</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto</div>
               <Select value={product} onValueChange={setProduct}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Escolha o produto" />

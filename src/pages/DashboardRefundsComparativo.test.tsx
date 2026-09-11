@@ -12,6 +12,7 @@ const queryResult = vi.hoisted(() => ({ current: undefined as unknown }));
 vi.mock("@/features/external-refunds/useExternalRefundComparisonQuery", () => ({
   useExternalRefundComparisonQuery: () => queryResult.current,
   useImportExternalRefundsMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteExternalRefundsMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -49,7 +50,7 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getAllByText("487").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("1.470").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("183").length).toBeGreaterThan(0);
-    expect(screen.getByText("12,4% dos pedidos da loja")).toBeTruthy();
+    expect(screen.getByText("12,4% dos reembolsos externos")).toBeTruthy();
     expect(screen.getAllByText("US$ 429.783,64").length).toBeGreaterThanOrEqual(2);
 
     // Linhas produto × mês (6 produtos × 2 meses) + filtro de produto populado.
@@ -57,8 +58,15 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getAllByText("Horsefil").length).toBeGreaterThan(0);
 
     // Botão de import só para gestora; lotes importados listados.
-    expect(screen.getByRole("button", { name: /Importar export da loja/ })).toBeTruthy();
-    expect(screen.getByText("Exports importados")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Importar reembolso externo/ })).toBeTruthy();
+    expect(screen.getByText("Reembolsos externos importados")).toBeTruthy();
+
+    // Lixeira em cada painel de produto (6 produtos na fixture).
+    expect(screen.getAllByRole("button", { name: /Apagar reembolsos externos de/ })).toHaveLength(6);
+    // Tabela sem "Casados" e com as duas colunas de percentual.
+    expect(screen.queryByText("Casados", { selector: "th" })).toBeNull();
+    expect(screen.getByText("% interno")).toBeTruthy();
+    expect(screen.getByText("% externo")).toBeTruthy();
   });
 
   it("mostra estado vazio quando nada foi importado", () => {
@@ -68,7 +76,7 @@ describe("DashboardRefundsComparativo", () => {
       isError: false,
     };
     renderPage();
-    expect(screen.getByText(/Nenhum export de loja foi importado ainda/)).toBeTruthy();
+    expect(screen.getByText(/Nenhum reembolso externo foi importado ainda/)).toBeTruthy();
   });
 
   it("mostra skeletons enquanto carrega", () => {
