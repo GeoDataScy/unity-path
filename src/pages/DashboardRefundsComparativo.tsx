@@ -392,8 +392,9 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta só reembolsos com plataforma {platform}, pela data em que o cliente pediu o
-                reembolso; externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
+                Interno conta só reembolsos com plataforma {platform}, com a mesma regra da Visão geral: reembolso
+                em aberto entra pela data em que o cliente pediu, e reembolso concluído entra pela data da baixa.
+                Externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
                 <code>#1896</code>), em qualquer mês. Reembolso interno em aberto ainda não aparece no externo — é a causa
                 mais comum de “só interno”. As colunas % interno e % externo ainda serão definidas.
               </p>
