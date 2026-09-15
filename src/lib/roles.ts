@@ -6,14 +6,15 @@
 //   workspace  -> /workspace  (o agente trabalhando os tickets)
 //   analytics  -> /dashboard  (Data Analytics do Suporte)
 //   copy       -> /copy       (time de copy)
-//   produtos   -> /produtos   (time de produtos)
+//   produtos   -> /produtos   (time de produtos — exclusiva da role produto:
+//                               nem a gestora entra)
 //
 // Quem tem mais de uma área não cai direto numa delas depois do login: cai em
 // /areas e escolhe (ver AreaSelect). A ordem do array é significativa — a
 // primeira área é a "casa" do perfil e é o destino quando não há escolha a
 // fazer.
 
-export type AppRole = "agent" | "manager" | "copy_grup";
+export type AppRole = "agent" | "manager" | "copy_grup" | "produto";
 
 export type AppArea = "workspace" | "analytics" | "copy" | "produtos";
 
@@ -44,10 +45,24 @@ export const AREA_SHORT_LABEL: Record<AppArea, string> = {
 };
 
 const ROLE_AREAS: Record<AppRole, readonly AppArea[]> = {
-  manager: ["analytics", "copy", "produtos"],
+  manager: ["analytics", "copy"],
   copy_grup: ["copy", "analytics"],
+  produto: ["produtos"],
   agent: ["workspace"],
 };
+
+/** Como cada role aparece na tela de Usuários da gestora. */
+const ROLE_LABEL: Record<AppRole, string> = {
+  manager: "Manager",
+  agent: "Agente",
+  copy_grup: "Copy",
+  produto: "Produtos",
+};
+
+/** Rótulo da role; role desconhecida cai em "Agente", igual ao mapa de áreas. */
+export function roleLabel(role: string | null | undefined): string {
+  return ROLE_LABEL[role as AppRole] ?? ROLE_LABEL.agent;
+}
 
 /** Última área escolhida (só conveniência de UI — não é permissão). */
 export const LAST_AREA_KEY = "xmx-last-area";

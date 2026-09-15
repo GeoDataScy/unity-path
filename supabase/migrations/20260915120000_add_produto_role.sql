@@ -1,0 +1,23 @@
+-- Nova role para o time de produtos.
+--
+-- Perfis com role = 'produto' caem direto em /produtos (ProdutosLayout) depois
+-- do login e não enxergam nenhuma outra área: nem /workspace (agente), nem
+-- /dashboard (gestora), nem /copy. A área de produtos, por decisão do produto,
+-- é exclusiva dessa role — a gestora deixa de enxergá-la (ver src/lib/roles.ts).
+--
+-- Como todas as RPCs de métricas filtram explicitamente `p.role = 'agent'`, o
+-- novo valor não entra em nenhum número de atendimento/reembolso. me_status,
+-- agent_heartbeat e record_auth_event são role-agnósticos (checam só auth.uid()),
+-- então o shell de sessão do layout funciona sem mudança.
+--
+-- Atenção: o banco tem DOIS enums de role. `public.app_role` é o da migration
+-- original (20260115171248) e hoje está órfão — nenhuma coluna o usa. O tipo
+-- que vale é `public."AppRole"` (camelCase, com aspas), usado por profiles.role,
+-- user_roles.role e has_role(). Os dois são alterados aqui para não deixar a
+-- divergência crescer (handle_new_user ainda faz cast para app_role ao ler a
+-- role do raw_user_meta_data na criação da conta).
+--
+-- ALTER TYPE ... ADD VALUE precisa ficar sozinho na migration: o novo rótulo só
+-- pode ser usado por outras instruções depois que a transação que o criou comita.
+ALTER TYPE public."AppRole" ADD VALUE IF NOT EXISTS 'produto';
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'produto';

@@ -17,6 +17,10 @@ describe("homePathForRole", () => {
     expect(homePathForRole("copy_grup")).toBe("/areas");
   });
 
+  it("manda o time de produtos direto para a área de produtos (só tem uma)", () => {
+    expect(homePathForRole("produto")).toBe("/produtos");
+  });
+
   it("manda o agente direto para o workspace", () => {
     expect(homePathForRole("agent")).toBe("/workspace");
   });
@@ -33,6 +37,21 @@ describe("acesso por área", () => {
     expect(canAccessArea("manager", "analytics")).toBe(true);
     expect(canAccessArea("manager", "copy")).toBe(true);
     expect(defaultAreaForRole("manager")).toBe("analytics");
+  });
+
+  it("a área de produtos é só da role produto — nem a gestora entra", () => {
+    expect(areasForRole("produto")).toEqual(["produtos"]);
+    expect(canAccessArea("produto", "produtos")).toBe(true);
+    expect(canAccessArea("manager", "produtos")).toBe(false);
+    expect(canAccessArea("copy_grup", "produtos")).toBe(false);
+    expect(canAccessArea("agent", "produtos")).toBe(false);
+  });
+
+  it("o time de produtos não entra em nenhuma outra área", () => {
+    expect(canAccessArea("produto", "analytics")).toBe(false);
+    expect(canAccessArea("produto", "copy")).toBe(false);
+    expect(canAccessArea("produto", "workspace")).toBe(false);
+    expect(hasAreaChoice("produto")).toBe(false);
   });
 
   it("copy entra nas duas áreas, e a casa dele é a área de copy", () => {
@@ -59,8 +78,10 @@ describe("acesso por área", () => {
     expect(areasForRole(undefined)).toEqual(["workspace"]);
   });
 
-  it("só quem tem duas áreas precisa escolher", () => {
+  it("só quem tem mais de uma área precisa escolher", () => {
     expect(hasAreaChoice("manager")).toBe(true);
     expect(hasAreaChoice("copy_grup")).toBe(true);
+    expect(hasAreaChoice("produto")).toBe(false);
+    expect(hasAreaChoice("agent")).toBe(false);
   });
 });

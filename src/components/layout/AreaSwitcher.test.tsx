@@ -23,16 +23,14 @@ describe("AreaSwitcher", () => {
     expect(screen.getByText("Data Analytics")).toBeTruthy();
   });
 
-  it("oferece produtos para a gestora e o caminho de volta", () => {
+  it("não oferece produtos para a gestora — a área é só da role produto", () => {
     renderSwitcher("manager", "analytics");
-    expect(screen.getByText("Ir para Produtos")).toBeTruthy();
+    expect(screen.queryByText("Ir para Produtos")).toBeNull();
   });
 
-  it("oferece as outras áreas para a gestora dentro de produtos", () => {
-    renderSwitcher("manager", "produtos");
-    expect(screen.getByText("Produtos")).toBeTruthy();
-    expect(screen.getByText("Ir para Data Analytics")).toBeTruthy();
-    expect(screen.getByText("Ir para Copy")).toBeTruthy();
+  it("não renderiza nada para o time de produtos (área única)", () => {
+    const { container } = renderSwitcher("produto", "produtos");
+    expect(container.firstChild).toBeNull();
   });
 
   it("oferece o analytics para o copy na área dele", () => {
