@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 import { fmtInt, fmtMonth, type ComparisonProductMonthRow } from "./types";
 
-// Azul = interno, laranja = reembolso externo. Mesmo par do card de eficiência por canal,
+// Azul = interno concluído, laranja = total da loja. Mesmo par do card de eficiência por canal,
 // validado para daltonismo nos dois temas. Cada produto tem o próprio painel
 // (small multiples) em vez de um gráfico com seis cores.
 export const COLOR_INTERNAL = "hsl(var(--chart-2))";
@@ -24,7 +24,7 @@ type Point = {
   month: string;
   label: string;
   interno: number;
-  externo: number;
+  total: number;
   casados: number;
 };
 
@@ -34,8 +34,9 @@ function PanelTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   return (
     <div className="rounded-md border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
       <p className="font-medium">{p.label}</p>
-      <p>Interno: {fmtInt(p.interno)}</p>
-      <p>Externo: {fmtInt(p.externo)}</p>
+      <p>Total da loja: {fmtInt(p.total)}</p>
+      <p>Interno concluído: {fmtInt(p.interno)}</p>
+      <p>Externo: {fmtInt(Math.max(p.total - p.interno, 0))}</p>
       <p className="text-muted-foreground">Casados: {fmtInt(p.casados)}</p>
     </div>
   );
@@ -56,7 +57,7 @@ export function ProductMonthPanels({ rows, onDelete, platform }: Props) {
           month,
           label: fmtMonth(month),
           interno: hit?.internal_count ?? 0,
-          externo: hit?.external_count ?? 0,
+          total: hit?.external_count ?? 0,
           casados: hit?.matched_count ?? 0,
         };
       }),
@@ -65,7 +66,7 @@ export function ProductMonthPanels({ rows, onDelete, platform }: Props) {
 
   // Escala compartilhada: sem isso o painel de 7 pedidos parece igual ao de 717.
   const yMax = useMemo(() => {
-    const max = Math.max(0, ...series.flatMap((s) => s.points.flatMap((p) => [p.interno, p.externo])));
+    const max = Math.max(0, ...series.flatMap((s) => s.points.flatMap((p) => [p.interno, p.total])));
     return Math.max(5, Math.ceil((max * 1.15) / 5) * 5);
   }, [series]);
 
@@ -82,7 +83,7 @@ export function ProductMonthPanels({ rows, onDelete, platform }: Props) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR_EXTERNAL }} aria-hidden="true" />
-          Reembolso externo (importado)
+          Total da loja (importado)
         </span>
         <span>Escala igual em todos os painéis.</span>
       </div>
@@ -122,8 +123,8 @@ export function ProductMonthPanels({ rows, onDelete, platform }: Props) {
                   <Bar dataKey="interno" name="Interno" fill={COLOR_INTERNAL} radius={[3, 3, 0, 0]}>
                     <LabelList dataKey="interno" position="top" fontSize={10} fill="hsl(var(--chart-axis))" />
                   </Bar>
-                  <Bar dataKey="externo" name="Externo" fill={COLOR_EXTERNAL} radius={[3, 3, 0, 0]}>
-                    <LabelList dataKey="externo" position="top" fontSize={10} fill="hsl(var(--chart-axis))" />
+                  <Bar dataKey="total" name="Total da loja" fill={COLOR_EXTERNAL} radius={[3, 3, 0, 0]}>
+                    <LabelList dataKey="total" position="top" fontSize={10} fill="hsl(var(--chart-axis))" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
