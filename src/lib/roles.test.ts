@@ -6,6 +6,7 @@ import {
   defaultAreaForRole,
   hasAreaChoice,
   homePathForRole,
+  isKnownRole,
 } from "./roles";
 
 describe("homePathForRole", () => {
@@ -15,6 +16,10 @@ describe("homePathForRole", () => {
 
   it("manda o time de copy para a escolha de área (também tem duas)", () => {
     expect(homePathForRole("copy_grup")).toBe("/areas");
+  });
+
+  it("manda o time de produtos direto para a área de produtos (só tem uma)", () => {
+    expect(homePathForRole("produto")).toBe("/produtos");
   });
 
   it("manda o agente direto para o workspace", () => {
@@ -33,6 +38,21 @@ describe("acesso por área", () => {
     expect(canAccessArea("manager", "analytics")).toBe(true);
     expect(canAccessArea("manager", "copy")).toBe(true);
     expect(defaultAreaForRole("manager")).toBe("analytics");
+  });
+
+  it("a área de produtos é só da role produto — nem a gestora entra", () => {
+    expect(areasForRole("produto")).toEqual(["produtos"]);
+    expect(canAccessArea("produto", "produtos")).toBe(true);
+    expect(canAccessArea("manager", "produtos")).toBe(false);
+    expect(canAccessArea("copy_grup", "produtos")).toBe(false);
+    expect(canAccessArea("agent", "produtos")).toBe(false);
+  });
+
+  it("o time de produtos não entra em nenhuma outra área", () => {
+    expect(canAccessArea("produto", "analytics")).toBe(false);
+    expect(canAccessArea("produto", "copy")).toBe(false);
+    expect(canAccessArea("produto", "workspace")).toBe(false);
+    expect(hasAreaChoice("produto")).toBe(false);
   });
 
   it("copy entra nas duas áreas, e a casa dele é a área de copy", () => {
@@ -59,8 +79,27 @@ describe("acesso por área", () => {
     expect(areasForRole(undefined)).toEqual(["workspace"]);
   });
 
-  it("só quem tem duas áreas precisa escolher", () => {
+  it("só quem tem mais de uma área precisa escolher", () => {
     expect(hasAreaChoice("manager")).toBe(true);
     expect(hasAreaChoice("copy_grup")).toBe(true);
+    expect(hasAreaChoice("produto")).toBe(false);
+    expect(hasAreaChoice("agent")).toBe(false);
+  });
+});
+
+describe("isKnownRole", () => {
+  it("reconhece as quatro roles do app", () => {
+    expect(isKnownRole("agent")).toBe(true);
+    expect(isKnownRole("manager")).toBe(true);
+    expect(isKnownRole("copy_grup")).toBe(true);
+    expect(isKnownRole("produto")).toBe(true);
+  });
+
+  // O banco pode ganhar uma role antes do deploy do front. Sem isso, o guard do
+  // AgentLayout mandaria a conta para /workspace em loop (tela "Carregando...").
+  it("não reconhece role que este bundle ainda não tem", () => {
+    expect(isKnownRole("area_que_ainda_nao_subiu")).toBe(false);
+    expect(isKnownRole(null)).toBe(false);
+    expect(isKnownRole(undefined)).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, ClipboardList, Loader2, LogOut, PenLine } from "lucide-react";
+import { ArrowRight, BarChart3, ClipboardList, Loader2, LogOut, Package, PenLine } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
@@ -41,6 +41,12 @@ const AREA_CARDS: Record<AppArea, AreaCard> = {
     headline: "Área de Copy",
     description: "O que o cliente diz sobre a promessa — insumo para a copy.",
     bullets: ["Motivos de reembolso", "Palavras do cliente", "Recortes por produto e canal"],
+  },
+  produtos: {
+    icon: Package,
+    headline: "Área de Produtos",
+    description: "O espaço do time de produtos — em construção.",
+    bullets: [],
   },
   // O agente nunca chega nesta tela (só tem uma área), mas o mapa é completo
   // para o dia em que alguém acumular workspace + outra área.
@@ -170,7 +176,15 @@ export default function AreaSelect() {
           </div>
         </header>
 
-        <div className={cn("grid gap-4", areas.length > 1 && "sm:grid-cols-2")}>
+        {/* Com 3+ áreas os cards viram uma linha de três: em duas colunas o
+            terceiro card ficaria órfão ocupando metade da segunda linha. */}
+        <div
+          className={cn(
+            "grid gap-4",
+            areas.length === 2 && "sm:grid-cols-2",
+            areas.length >= 3 && "sm:grid-cols-2 lg:grid-cols-3",
+          )}
+        >
           {areas.map((area, index) => {
             const card = AREA_CARDS[area];
             const Icon = card.icon;

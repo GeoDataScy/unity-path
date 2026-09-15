@@ -41,6 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { roleLabel } from "@/lib/roles";
 import {
   type ManagerUser,
   useDeleteAuthUserMutation,
@@ -414,7 +415,7 @@ export default function DashboardUsers() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={isManager ? "default" : "secondary"} className="capitalize">
-                              {isManager ? "Manager" : isAgent ? "Agente" : "Copy"}
+                              {roleLabel(user.role)}
                             </Badge>
                           </TableCell>
                           <TableCell>
