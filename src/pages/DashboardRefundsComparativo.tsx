@@ -142,8 +142,9 @@ export default function DashboardRefundsComparativo() {
           <h1 className="text-3xl font-semibold tracking-tight">Reembolsos</h1>
           <RefundsSubNav />
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Compara os reembolsos registrados pelos agentes (interno) com os reembolsos externos importados por
-            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. O filtro de plataforma vale
+            Compara os reembolsos concluídos pelos agentes (interno) com os reembolsos externos importados por
+            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. Reembolso interno
+            ainda em aberto não entra em nenhum número desta tela. O filtro de plataforma vale
             nos dois lados: externo pelo arquivo importado, interno pela plataforma do reembolso. O período e o agente da
             barra lateral não se aplicam aqui.
           </p>
@@ -241,7 +242,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Database className="h-4 w-4 text-primary" /> Interno ({platform})
+              <Database className="h-4 w-4 text-primary" /> Interno concluído ({platform})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -392,11 +393,11 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta só reembolsos com plataforma {platform}, com a mesma regra da Visão geral: reembolso
-                em aberto entra pela data em que o cliente pediu, e reembolso concluído entra pela data da baixa.
-                Externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
-                <code>#1896</code>), em qualquer mês. Reembolso interno em aberto ainda não aparece no externo — é a causa
-                mais comum de “só interno”. As colunas % interno e % externo ainda serão definidas.
+                Interno conta só reembolsos concluídos com plataforma {platform}, pela data da baixa — o mesmo que
+                a Visão geral mostra com Status “Concluídos”. Externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
+                <code>#1896</code>), em qualquer mês. Pedido que a plataforma reembolsou e que ainda está em aberto no
+                sistema aparece como “só externo”, porque do lado interno o reembolso ainda não foi concluído.
+                As colunas % interno e % externo ainda serão definidas.
               </p>
             </div>
           )}
