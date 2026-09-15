@@ -105,6 +105,14 @@ describe("DashboardRefundsComparativo", () => {
     expect(celulas.some((c) => c && /^2\d\d,\d%$/.test(c))).toBe(true); // interno acima de 100% fica visível
   });
 
+  // O total é um retrato: reimportar o mês muda o número. A tela tem que dizer.
+  it("mostra a data do import como tooltip da coluna Total", () => {
+    queryResult.current = { data: fixture, isLoading: false, isError: false };
+    renderPage();
+    const comData = screen.getAllByTitle(/Retrato do arquivo importado em 10\/09\/2026/);
+    expect(comData.length).toBe(fixture.by_product_month.filter((r) => r.external_count > 0).length + 1); // + linha Todos
+  });
+
   it("sem arquivo importado no período mostra “—” em vez de 0%", () => {
     const semArquivo = {
       ...fixture,
@@ -119,6 +127,7 @@ describe("DashboardRefundsComparativo", () => {
           internal_pct: null,
           external_pct: null,
           inconsistent: false,
+          imported_at: null,
         },
       ],
     };
@@ -128,6 +137,7 @@ describe("DashboardRefundsComparativo", () => {
     const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
     expect(celulas.filter((c) => c === "—")).toHaveLength(2);
     expect(celulas).not.toContain("0,0%");
+    expect(screen.getAllByTitle("Nenhum arquivo importado para este recorte.").length).toBeGreaterThan(0);
   });
 
   it("mostra estado vazio quando nada foi importado", () => {

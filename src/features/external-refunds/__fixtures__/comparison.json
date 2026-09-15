@@ -98,7 +98,8 @@
   "external_diff": 983,
   "internal_pct": 33.1,
   "external_pct": 66.9,
-  "inconsistent": false
+  "inconsistent": false,
+  "imported_at": "2026-09-10T14:22:36.076769-03:00"
  },
  "products": [
   {
@@ -142,7 +143,8 @@
    "external_diff": 42,
    "internal_pct": 56.7,
    "external_pct": 43.3,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "product": "Honeyfil",
@@ -159,7 +161,8 @@
    "external_diff": 259,
    "internal_pct": 28.7,
    "external_pct": 71.3,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "product": "Horsefil",
@@ -176,7 +179,8 @@
    "external_diff": 714,
    "internal_pct": 25.0,
    "external_pct": 75.0,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "product": "Mind Wake",
@@ -193,7 +197,8 @@
    "external_diff": 0,
    "internal_pct": 171.4,
    "external_pct": 0,
-   "inconsistent": true
+   "inconsistent": true,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "product": "Quiet Nerves",
@@ -210,7 +215,8 @@
    "external_diff": 0,
    "internal_pct": 243.3,
    "external_pct": 0,
-   "inconsistent": true
+   "inconsistent": true,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "product": "Youth Within",
@@ -227,7 +233,8 @@
    "external_diff": 16,
    "internal_pct": 23.8,
    "external_pct": 76.2,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   }
  ],
  "divergences": {
@@ -315,7 +322,8 @@
    "external_diff": 61,
    "internal_pct": 25.6,
    "external_pct": 74.4,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-08",
@@ -333,7 +341,8 @@
    "external_diff": 0,
    "internal_pct": 226.7,
    "external_pct": 0,
-   "inconsistent": true
+   "inconsistent": true,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-07",
@@ -351,7 +360,8 @@
    "external_diff": 123,
    "internal_pct": 2.4,
    "external_pct": 97.6,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-08",
@@ -369,7 +379,8 @@
    "external_diff": 136,
    "internal_pct": 42.6,
    "external_pct": 57.4,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-07",
@@ -387,7 +398,8 @@
    "external_diff": 676,
    "internal_pct": 5.7,
    "external_pct": 94.3,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-08",
@@ -405,7 +417,8 @@
    "external_diff": 38,
    "internal_pct": 83.8,
    "external_pct": 16.2,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-07",
@@ -423,7 +436,8 @@
    "external_diff": 0,
    "internal_pct": null,
    "external_pct": null,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": null
   },
   {
    "month": "2026-08",
@@ -441,7 +455,8 @@
    "external_diff": 0,
    "internal_pct": 157.1,
    "external_pct": 0,
-   "inconsistent": true
+   "inconsistent": true,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-07",
@@ -459,7 +474,8 @@
    "external_diff": 0,
    "internal_pct": null,
    "external_pct": null,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": null
   },
   {
    "month": "2026-08",
@@ -477,7 +493,8 @@
    "external_diff": 0,
    "internal_pct": 230.0,
    "external_pct": 0,
-   "inconsistent": true
+   "inconsistent": true,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-07",
@@ -495,7 +512,8 @@
    "external_diff": 9,
    "internal_pct": 0.0,
    "external_pct": 100.0,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   },
   {
    "month": "2026-08",
@@ -513,7 +531,8 @@
    "external_diff": 7,
    "internal_pct": 41.7,
    "external_pct": 58.3,
-   "inconsistent": false
+   "inconsistent": false,
+   "imported_at": "2026-09-10T14:22:36.023169-03:00"
   }
  ]
 }

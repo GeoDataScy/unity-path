@@ -50,6 +50,17 @@ import {
 const PAGE_SIZE = 25;
 
 /**
+ * O arquivo importado é um retrato: lista os pedidos do mês já reembolsados até
+ * o dia em que a gestora gerou o CSV. Reembolsos continuam acontecendo depois,
+ * então reimportar o mesmo mês aumenta o total. A tela precisa dizer isso, senão
+ * o mesmo "agosto" muda de valor entre uma consulta e outra sem explicação.
+ */
+function retratoTitle(importedAt: string | null | undefined): string {
+  if (!importedAt) return "Nenhum arquivo importado para este recorte.";
+  return `Retrato do arquivo importado em ${fmtDate(importedAt)}. Reembolsos que a loja fez depois dessa data só entram se o mês for reimportado.`;
+}
+
+/**
  * Interno maior que o total importado. Não é para esconder: significa que o
  * arquivo daquele período está velho ou faltando, e o denominador das colunas
  * de % não dá para confiar.
@@ -377,7 +388,9 @@ export default function DashboardRefundsComparativo() {
                       <TableCell className="font-medium">{r.product}</TableCell>
                       <TableCell>{fmtMonth(r.month)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fmtInt(r.external_count)}
+                        <span className="cursor-help border-b border-dotted border-muted-foreground/50" title={retratoTitle(r.imported_at)}>
+                          {fmtInt(r.external_count)}
+                        </span>
                         {r.inconsistent && <InconsistentBadge />}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(r.internal_count)}</TableCell>
@@ -399,7 +412,9 @@ export default function DashboardRefundsComparativo() {
                         {month === "all" ? "período" : fmtMonth(month)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fmtInt(summary.external_count)}
+                        <span className="cursor-help border-b border-dotted border-muted-foreground/50" title={retratoTitle(summary.imported_at)}>
+                          {fmtInt(summary.external_count)}
+                        </span>
                         {summary.inconsistent && <InconsistentBadge />}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(summary.internal_count)}</TableCell>
@@ -421,7 +436,14 @@ export default function DashboardRefundsComparativo() {
                 informado na importação. <strong>Interno</strong> são os reembolsos concluídos com plataforma{" "}
                 {platform}, pela data da baixa — o mesmo que a Visão geral mostra com Status “Concluídos”.{" "}
                 <strong>Externo</strong> é o que sobra: total da loja menos o interno. Daí saem{" "}
-                <strong>% interno</strong> (interno ÷ total) e <strong>% externo</strong> (o restante), que somam 100%.
+                <strong>% interno</strong> e <strong>% externo</strong>, que somam 100%.{" "}
+                <strong>
+                  % interno = reembolsos concluídos no mês ÷ pedidos comprados no mês que foram reembolsados, conforme o
+                  arquivo importado.
+                </strong>{" "}
+                Repare que os dois lados usam relógios diferentes: o interno conta pelo mês da baixa e o externo pelo mês
+                da compra. Entre a compra e o reembolso passam-se cerca de 12 dias em média, então parte do interno de um
+                mês corresponde a pedidos comprados no mês anterior.
                 Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%. Se o interno passar do
                 total, o externo fica em 0 e a linha ganha um aviso: o arquivo daquele período está velho ou faltando.
                 As colunas “só interno” e “só externo” vêm do casamento por número de pedido (interno <code>1896</code>{" "}

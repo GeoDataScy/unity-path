@@ -79,6 +79,8 @@ export type ComparisonSummary = {
   external_pct: number | null;
   /** interno maior que o total importado: o período precisa ser reimportado. */
   inconsistent: boolean;
+  /** Quando o arquivo do recorte entrou. O total é um retrato dessa data. */
+  imported_at: string | null;
   type_mismatch_count: number;
 };
 
@@ -98,6 +100,7 @@ export type ComparisonProductRow = {
   internal_pct: number | null;
   external_pct: number | null;
   inconsistent: boolean;
+  imported_at: string | null;
 };
 
 export type ComparisonProductMonthRow = ComparisonProductRow & {
