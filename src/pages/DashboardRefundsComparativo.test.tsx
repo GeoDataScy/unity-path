@@ -46,7 +46,7 @@ describe("DashboardRefundsComparativo", () => {
     renderPage();
 
     // KPIs do período: 487 internos, 1.470 externos.
-    expect(screen.getByText("Interno (Cartpanda)")).toBeTruthy();
+    expect(screen.getByText("Interno concluído (Cartpanda)")).toBeTruthy();
     expect(screen.getAllByText("Plataforma").length).toBeGreaterThanOrEqual(2); // filtro + coluna dos lotes
     // Cada total aparece no card e na linha "Todos" da tabela.
     expect(screen.getAllByText("487").length).toBeGreaterThanOrEqual(2);
