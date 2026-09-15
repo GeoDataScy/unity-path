@@ -6,6 +6,7 @@ import {
   defaultAreaForRole,
   hasAreaChoice,
   homePathForRole,
+  isKnownRole,
 } from "./roles";
 
 describe("homePathForRole", () => {
@@ -83,5 +84,22 @@ describe("acesso por área", () => {
     expect(hasAreaChoice("copy_grup")).toBe(true);
     expect(hasAreaChoice("produto")).toBe(false);
     expect(hasAreaChoice("agent")).toBe(false);
+  });
+});
+
+describe("isKnownRole", () => {
+  it("reconhece as quatro roles do app", () => {
+    expect(isKnownRole("agent")).toBe(true);
+    expect(isKnownRole("manager")).toBe(true);
+    expect(isKnownRole("copy_grup")).toBe(true);
+    expect(isKnownRole("produto")).toBe(true);
+  });
+
+  // O banco pode ganhar uma role antes do deploy do front. Sem isso, o guard do
+  // AgentLayout mandaria a conta para /workspace em loop (tela "Carregando...").
+  it("não reconhece role que este bundle ainda não tem", () => {
+    expect(isKnownRole("area_que_ainda_nao_subiu")).toBe(false);
+    expect(isKnownRole(null)).toBe(false);
+    expect(isKnownRole(undefined)).toBe(false);
   });
 });

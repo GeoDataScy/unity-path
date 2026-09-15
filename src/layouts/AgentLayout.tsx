@@ -13,7 +13,7 @@ import { AgentNotepad } from "@/features/notepad/AgentNotepad";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { homePathForRole } from "@/lib/roles";
+import { homePathForRole, isKnownRole } from "@/lib/roles";
 
 export type AgentOutletContext = {
   userId: string;
@@ -28,6 +28,9 @@ export default function AgentLayout() {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
+  // Role que este bundle não conhece (área nova ainda não publicada): em vez de
+  // redirecionar, a tela explica o que está acontecendo.
+  const [roleSemArea, setRoleSemArea] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [canViewAllTickets, setCanViewAllTickets] = useState(false);
@@ -74,6 +77,16 @@ export default function AgentLayout() {
 
       // Perfil sem role (linha ausente) continua caindo aqui, como antes.
       if (profile?.role && profile.role !== "agent") {
+        // Role que existe no banco mas não neste bundle (área nova publicada no
+        // banco antes do deploy do front) cai aqui pelo fallback de agente de
+        // homePathForRole — o redirect apontaria para /workspace de novo e a
+        // tela ficaria em "Carregando..." para sempre. Melhor dizer o que é.
+        if (!isKnownRole(profile.role)) {
+          if (!active) return;
+          setRoleSemArea(profile.role);
+          setLoading(false);
+          return;
+        }
         navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
@@ -163,6 +176,24 @@ export default function AgentLayout() {
     }
     window.location.href = "/login";
   };
+
+  if (roleSemArea) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md space-y-3 text-center">
+          <img src={logo} alt="XMX" className="mx-auto h-10 w-auto" />
+          <h1 className="text-lg font-semibold">Área em construção</h1>
+          <p className="text-sm text-muted-foreground">
+            Sua conta é do time <span className="font-medium">{roleSemArea}</span>, e a área desse time
+            ainda não está publicada nesta versão do app. Assim que ela subir, o login já cai direto lá.
+          </p>
+          <Button variant="secondary" onClick={handleLogout}>
+            Sair
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || !outletContext) {
     return (

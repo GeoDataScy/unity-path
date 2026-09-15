@@ -71,6 +71,16 @@ export function areasForRole(role: string | null | undefined): readonly AppArea[
   return ROLE_AREAS[role as AppRole] ?? ROLE_AREAS.agent;
 }
 
+/**
+ * true quando a role existe no mapa deste bundle. Serve para separar "role de
+ * outra área" de "role que o front ainda não conhece" — o banco pode ganhar uma
+ * role nova (enum) antes do deploy do front, e nesse intervalo o fallback para
+ * agente faria o guard do AgentLayout redirecionar para /workspace em loop.
+ */
+export function isKnownRole(role: string | null | undefined): boolean {
+  return role != null && Object.prototype.hasOwnProperty.call(ROLE_AREAS, role);
+}
+
 export function canAccessArea(role: string | null | undefined, area: AppArea): boolean {
   return areasForRole(role).includes(area);
 }
