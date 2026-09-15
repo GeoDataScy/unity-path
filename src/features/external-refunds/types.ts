@@ -71,7 +71,14 @@ export type ComparisonSummary = {
   external_full: number;
   external_partial: number;
   external_amount: number;
-  coverage_pct: number | null;
+  /** total - interno, com piso em 0. */
+  external_diff: number;
+  /** interno / total. null quando não há total importado no período. */
+  internal_pct: number | null;
+  /** 100 - internal_pct, com piso em 0. Soma 100 com internal_pct por construção. */
+  external_pct: number | null;
+  /** interno maior que o total importado: o período precisa ser reimportado. */
+  inconsistent: boolean;
   type_mismatch_count: number;
 };
 
@@ -87,7 +94,10 @@ export type ComparisonProductRow = {
   external_full: number;
   external_partial: number;
   external_amount: number;
-  coverage_pct: number | null;
+  external_diff: number;
+  internal_pct: number | null;
+  external_pct: number | null;
+  inconsistent: boolean;
 };
 
 export type ComparisonProductMonthRow = ComparisonProductRow & {
