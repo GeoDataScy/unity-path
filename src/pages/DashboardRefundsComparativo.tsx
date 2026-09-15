@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Building2, CircleDollarSign, Database, Store, Upload } from "lucide-react";
+import { AlertTriangle, Building2, CircleDollarSign, Database, Store, Upload } from "lucide-react";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,23 @@ import {
 } from "@/features/external-refunds/types";
 
 const PAGE_SIZE = 25;
+
+/**
+ * Interno maior que o total importado. Não é para esconder: significa que o
+ * arquivo daquele período está velho ou faltando, e o denominador das colunas
+ * de % não dá para confiar.
+ */
+function InconsistentBadge() {
+  return (
+    <span
+      className="ml-1 inline-flex items-center rounded-sm bg-destructive/15 px-1 text-xs font-medium text-destructive"
+      title="interno excede o total importado; verificar import do período"
+    >
+      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+      <span className="sr-only">interno excede o total importado; verificar import do período</span>
+    </span>
+  );
+}
 
 // "Todos os meses" = do primeiro export importado até hoje. O intervalo largo
 // não pesa: a RPC só olha external_refunds e os refunds dos produtos dela.
@@ -252,7 +269,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Store className="h-4 w-4 text-primary" /> Reembolso externo
+              <Store className="h-4 w-4 text-primary" /> Total da loja
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -261,6 +278,19 @@ export default function DashboardRefundsComparativo() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {fmtInt(summary.external_full)} integrais · {fmtInt(summary.external_partial)} parciais
               </p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Store className="h-4 w-4 text-primary" /> Externo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {kpi(summary?.external_diff)}
+            {summary && (
+              <p className="mt-1 text-xs text-muted-foreground">total da loja menos o interno</p>
             )}
           </CardContent>
         </Card>
@@ -290,7 +320,7 @@ export default function DashboardRefundsComparativo() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CircleDollarSign className="h-4 w-4 text-primary" /> Valor externo
+              <CircleDollarSign className="h-4 w-4 text-primary" /> Valor do total
             </CardTitle>
           </CardHeader>
           <CardContent>{kpi(summary?.external_amount, fmtUsd)}</CardContent>
@@ -330,15 +360,15 @@ export default function DashboardRefundsComparativo() {
                   <TableRow>
                     <TableHead>Produto</TableHead>
                     <TableHead>Mês</TableHead>
+                    <TableHead className="text-right">Total da loja</TableHead>
                     <TableHead className="text-right">Interno</TableHead>
                     <TableHead className="text-right">Externo</TableHead>
-                    <TableHead className="text-right">Diferença</TableHead>
                     <TableHead className="text-right">Só interno</TableHead>
                     <TableHead className="text-right">Só externo</TableHead>
                     <TableHead className="text-right">% interno</TableHead>
                     <TableHead className="text-right">% externo</TableHead>
                     <TableHead className="text-right">Integral / parcial</TableHead>
-                    <TableHead className="text-right">Valor externo</TableHead>
+                    <TableHead className="text-right">Valor do total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -347,21 +377,15 @@ export default function DashboardRefundsComparativo() {
                       <TableCell className="font-medium">{r.product}</TableCell>
                       <TableCell>{fmtMonth(r.month)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fmtInt(r.internal_count)}
-                        {r.internal_open > 0 && (
-                          <span className="ml-1 text-xs text-muted-foreground">({fmtInt(r.internal_open)} em aberto)</span>
-                        )}
+                        {fmtInt(r.external_count)}
+                        {r.inconsistent && <InconsistentBadge />}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtInt(r.external_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {r.internal_count - r.external_count > 0 ? "+" : ""}
-                        {fmtInt(r.internal_count - r.external_count)}
-                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtInt(r.internal_count)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtInt(r.external_diff)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(r.internal_only)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(r.external_only)}</TableCell>
-                      {/* % interno / % externo: regra ainda a definir com a gestora; por enquanto zerados. */}
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtPct(r.internal_pct)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtPct(r.external_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmtInt(r.external_full)} / {fmtInt(r.external_partial)}
                       </TableCell>
@@ -374,16 +398,16 @@ export default function DashboardRefundsComparativo() {
                       <TableCell>
                         {month === "all" ? "período" : fmtMonth(month)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtInt(summary.internal_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtInt(summary.external_count)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {summary.internal_count - summary.external_count > 0 ? "+" : ""}
-                        {fmtInt(summary.internal_count - summary.external_count)}
+                        {fmtInt(summary.external_count)}
+                        {summary.inconsistent && <InconsistentBadge />}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtInt(summary.internal_count)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtInt(summary.external_diff)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(summary.internal_only)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtInt(summary.external_only)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(0)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtPct(summary.internal_pct)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtPct(summary.external_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmtInt(summary.external_full)} / {fmtInt(summary.external_partial)}
                       </TableCell>
@@ -393,11 +417,16 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                Interno conta só reembolsos concluídos com plataforma {platform}, pela data da baixa — o mesmo que
-                a Visão geral mostra com Status “Concluídos”. Externo conta pela data do pedido no arquivo importado. Um pedido casa quando produto e número do pedido coincidem (interno <code>1896</code> = externo{" "}
-                <code>#1896</code>), em qualquer mês. Pedido que a plataforma reembolsou e que ainda está em aberto no
-                sistema aparece como “só externo”, porque do lado interno o reembolso ainda não foi concluído.
-                As colunas % interno e % externo ainda serão definidas.
+                <strong>Total da loja</strong> é a contagem de pedidos distintos do arquivo importado, no mês
+                informado na importação. <strong>Interno</strong> são os reembolsos concluídos com plataforma{" "}
+                {platform}, pela data da baixa — o mesmo que a Visão geral mostra com Status “Concluídos”.{" "}
+                <strong>Externo</strong> é o que sobra: total da loja menos o interno. Daí saem{" "}
+                <strong>% interno</strong> (interno ÷ total) e <strong>% externo</strong> (o restante), que somam 100%.
+                Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%. Se o interno passar do
+                total, o externo fica em 0 e a linha ganha um aviso: o arquivo daquele período está velho ou faltando.
+                As colunas “só interno” e “só externo” vêm do casamento por número de pedido (interno <code>1896</code>{" "}
+                = externo <code>#1896</code>) e servem para a lista pedido a pedido — não entram no cálculo das
+                porcentagens, porque quem não casa por ruído subestimaria o interno.
               </p>
             </div>
           )}

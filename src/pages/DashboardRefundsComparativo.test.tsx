@@ -67,8 +67,67 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getAllByRole("button", { name: /Apagar reembolsos externos de/ })).toHaveLength(6);
     // Tabela sem "Casados" e com as duas colunas de percentual.
     expect(screen.queryByText("Casados", { selector: "th" })).toBeNull();
-    expect(screen.getByText("% interno")).toBeTruthy();
-    expect(screen.getByText("% externo")).toBeTruthy();
+    // aparecem como coluna e como explicação no rodapé
+    expect(screen.getAllByText("% interno").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("% externo").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Total da loja").length).toBeGreaterThanOrEqual(2); // card + coluna
+  });
+
+  // A regra do Webert: total (arquivo) = interno (concluídos) + externo (o resto).
+  // Se os dois percentuais deixarem de somar 100, a conta quebrou em algum lugar.
+  // A exceção é a linha incoerente (interno > total), onde o externo é clampado em 0.
+  it("os percentuais somam 100% sempre que existe total importado", () => {
+    const linhas = [...fixture.by_product_month, fixture.summary];
+    const comTotal = linhas.filter((r) => r.external_count > 0);
+    expect(comTotal.length).toBeGreaterThan(0);
+
+    for (const r of comTotal) {
+      expect(r.internal_pct).not.toBeNull();
+      expect(r.external_diff).toBe(Math.max(r.external_count - r.internal_count, 0));
+      if (r.inconsistent) {
+        expect(r.internal_pct as number).toBeGreaterThan(100);
+        expect(r.external_pct).toBe(0);
+      } else {
+        expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
+      }
+    }
+  });
+
+  it("marca a linha em que o interno passa do total importado", () => {
+    queryResult.current = { data: fixture, isLoading: false, isError: false };
+    renderPage();
+    // Alpharock/ago na fixture tem 34 internos contra 15 no arquivo.
+    const avisos = screen.getAllByTitle("interno excede o total importado; verificar import do período");
+    expect(avisos.length).toBe(fixture.by_product_month.filter((r) => r.inconsistent).length);
+    const linha = avisos[0].closest("tr")!;
+    const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
+    expect(celulas).toContain("0,0%"); // externo clampado
+    expect(celulas.some((c) => c && /^2\d\d,\d%$/.test(c))).toBe(true); // interno acima de 100% fica visível
+  });
+
+  it("sem arquivo importado no período mostra “—” em vez de 0%", () => {
+    const semArquivo = {
+      ...fixture,
+      by_product_month: [
+        {
+          ...fixture.by_product_month[0],
+          product: "Sem Arquivo",
+          month: "2026-09",
+          internal_count: 7,
+          external_count: 0,
+          external_diff: 0,
+          internal_pct: null,
+          external_pct: null,
+          inconsistent: false,
+        },
+      ],
+    };
+    queryResult.current = { data: semArquivo, isLoading: false, isError: false };
+    renderPage();
+    const linha = screen.getAllByText("Sem Arquivo").map((e) => e.closest("tr")).find(Boolean)!;
+    const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
+    expect(celulas.filter((c) => c === "—")).toHaveLength(2);
+    expect(celulas).not.toContain("0,0%");
   });
 
   it("mostra estado vazio quando nada foi importado", () => {
