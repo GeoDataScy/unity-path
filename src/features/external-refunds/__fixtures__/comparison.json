@@ -98,7 +98,8 @@
   "external_diff": 983,
   "internal_pct": 33.1,
   "external_pct": 66.9,
-  "inconsistent": false
+  "inconsistent": false,
+  "internal_not_compared": 43
  },
  "products": [
   {
@@ -514,6 +515,106 @@
    "internal_pct": 41.7,
    "external_pct": 58.3,
    "inconsistent": false
+  }
+ ],
+ "missing_imports": [
+  {
+   "product": "Presgera",
+   "internal_count": 7,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Nad Dermal+",
+   "internal_count": 7,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Steelpower",
+   "internal_count": 6,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Cognivex",
+   "internal_count": 5,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "NerveEase",
+   "internal_count": 4,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Gluco Off",
+   "internal_count": 3,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Arialief",
+   "internal_count": 2,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Blinzador",
+   "internal_count": 2,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Garaherb",
+   "internal_count": 2,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Mahgryn",
+   "internal_count": 1,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Karylief",
+   "internal_count": 1,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Memoryon",
+   "internal_count": 1,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Nexburn",
+   "internal_count": 1,
+   "months": [
+    "2026-08"
+   ]
+  },
+  {
+   "product": "Shapeon",
+   "internal_count": 1,
+   "months": [
+    "2026-08"
+   ]
   }
  ]
 }

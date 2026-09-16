@@ -130,6 +130,34 @@ describe("DashboardRefundsComparativo", () => {
     expect(celulas).not.toContain("0,0%");
   });
 
+  // O comparativo só cobre produto × mês com arquivo importado. Sem este aviso,
+  // "interno 487" se lê como a operação inteira da plataforma — em produção eram
+  // 43 de 124 reembolsos de agosto fora da conta, em silêncio.
+  it("declara os reembolsos que ficaram fora por falta de arquivo", () => {
+    queryResult.current = { data: fixture, isLoading: false, isError: false };
+    renderPage();
+
+    expect(screen.getByText(/43 reembolsos de Cartpanda fora do comparativo/)).toBeTruthy();
+    // Os produtos viram fila de trabalho: quais arquivos o analista precisa buscar.
+    expect(screen.getByText("Presgera")).toBeTruthy();
+    expect(screen.getByText("Shapeon")).toBeTruthy();
+    expect(screen.getAllByText("(ago/2026)").length).toBe(fixture.missing_imports.length);
+  });
+
+  it("não mostra o aviso quando todo o interno está coberto", () => {
+    queryResult.current = {
+      data: {
+        ...fixture,
+        summary: { ...fixture.summary, internal_not_compared: 0 },
+        missing_imports: [],
+      },
+      isLoading: false,
+      isError: false,
+    };
+    renderPage();
+    expect(screen.queryByText(/fora do comparativo/)).toBeNull();
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     queryResult.current = {
       data: { ...fixture, imports: [], by_product_month: [], by_product: [], divergences: { total_count: 0, rows: [] } },

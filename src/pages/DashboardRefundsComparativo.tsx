@@ -45,6 +45,7 @@ import {
   fmtUsd,
   type DivergenceFilter,
   type ExternalPlatform,
+  type MissingImportRow,
 } from "@/features/external-refunds/types";
 
 const PAGE_SIZE = 25;
@@ -63,6 +64,48 @@ function InconsistentBadge() {
       <AlertTriangle className="h-3 w-3" aria-hidden="true" />
       <span className="sr-only">interno excede o total importado; verificar import do período</span>
     </span>
+  );
+}
+
+/**
+ * O que a tela NÃO está comparando. O comparativo só cobre produto × mês que tem
+ * arquivo importado; sem esse aviso, quem lê "interno" acredita estar vendo a
+ * operação inteira da plataforma. Medido em produção (Cartpanda, ago/2026): 43 de
+ * 124 reembolsos concluídos ficavam de fora, em silêncio.
+ *
+ * Serve de fila de trabalho: o analista bate o olho e sabe quais arquivos buscar.
+ */
+function MissingImportsAlert({
+  count,
+  rows,
+  platform,
+}: {
+  count: number;
+  rows: MissingImportRow[];
+  platform: string;
+}) {
+  if (count <= 0) return null;
+  return (
+    <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+      <p className="flex items-center gap-2 font-medium text-amber-800 dark:text-amber-300">
+        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+        {fmtInt(count)} reembolso{count === 1 ? "" : "s"} de {platform} fora do comparativo
+      </p>
+      <p className="mt-1 text-muted-foreground">
+        Concluídos no período, mas sem arquivo importado do mês em que foram baixados — não entram no
+        “Interno” nem nos percentuais acima.
+      </p>
+      {rows.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {rows.map((r) => (
+            <li key={r.product} className="tabular-nums">
+              <span className="font-medium text-foreground">{r.product}</span> {fmtInt(r.internal_count)}
+              <span className="text-muted-foreground/70"> ({r.months.map(fmtMonth).join(", ")})</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -160,7 +203,8 @@ export default function DashboardRefundsComparativo() {
           <RefundsSubNav />
           <p className="max-w-3xl text-sm text-muted-foreground">
             Compara os reembolsos concluídos pelos agentes (interno) com os reembolsos externos importados por
-            arquivo, pedido a pedido, só para os produtos que têm reembolso externo importado. Reembolso interno
+            arquivo, pedido a pedido, só para o produto e o mês que têm reembolso externo importado — o que fica de
+            fora por falta de arquivo aparece no aviso abaixo. Reembolso interno
             ainda em aberto não entra em nenhum número desta tela. O filtro de plataforma vale
             nos dois lados: externo pelo arquivo importado, interno pela plataforma do reembolso. O período e o agente da
             barra lateral não se aplicam aqui.
@@ -252,6 +296,14 @@ export default function DashboardRefundsComparativo() {
             {isManager ? " Use o botão “Importar reembolso externo” para começar." : ""}
           </CardContent>
         </Card>
+      )}
+
+      {!isLoading && summary && (
+        <MissingImportsAlert
+          count={summary.internal_not_compared}
+          rows={data?.missing_imports ?? []}
+          platform={platform}
+        />
       )}
 
       {/* KPIs */}

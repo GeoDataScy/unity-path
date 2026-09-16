@@ -79,7 +79,21 @@ export type ComparisonSummary = {
   external_pct: number | null;
   /** interno maior que o total importado: o período precisa ser reimportado. */
   inconsistent: boolean;
+  /**
+   * Reembolsos concluídos da plataforma, no período, que o comparativo NÃO cobre
+   * porque não existe arquivo importado do mês em que foram baixados. Não entra
+   * em nenhum outro número da tela — é o tamanho do ponto cego.
+   */
+  internal_not_compared: number;
   type_mismatch_count: number;
+};
+
+/** Um produto cujo reembolso interno ficou fora por falta de arquivo. */
+export type MissingImportRow = {
+  product: string;
+  internal_count: number;
+  /** Meses (YYYY-MM) em que faltou arquivo desse produto. */
+  months: string[];
 };
 
 export type ComparisonProductRow = {
@@ -141,6 +155,7 @@ export type ExternalRefundComparison = {
   summary: ComparisonSummary;
   products: Array<{ product: string; external_orders: number }>;
   imports: ComparisonImportBatch[];
+  missing_imports: MissingImportRow[];
   by_product_month: ComparisonProductMonthRow[];
   by_product: ComparisonProductRow[];
   divergences: { total_count: number; rows: DivergenceRow[] };
