@@ -183,6 +183,20 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.queryByText(/segue em aberto/)).toBeNull();
   });
 
+  // Janela entre o deploy do front e a migration: a RPC antiga nao devolve os
+  // campos novos. A tela tem que ficar calada, nao mostrar "0 fora do comparativo".
+  it("nao mostra o aviso enquanto a RPC antiga nao devolve os campos novos", () => {
+    const { internal_not_compared, matched_open_only, ...rpcAntiga } = fixture.summary;
+    queryResult.current = {
+      data: { ...fixture, summary: rpcAntiga, missing_imports: undefined },
+      isLoading: false,
+      isError: false,
+    };
+    renderPage();
+    expect(screen.queryByText(/fora do comparativo/)).toBeNull();
+    expect(screen.queryByText(/segue em aberto/)).toBeNull();
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     queryResult.current = {
       data: { ...fixture, imports: [], by_product_month: [], by_product: [], divergences: { total_count: 0, rows: [] } },

@@ -87,7 +87,10 @@ function MissingImportsAlert({
   rows: MissingImportRow[];
   platform: string;
 }) {
-  if (count <= 0) return null;
+  // `!(count > 0)` e nao `count <= 0`: se o front subir antes da migration, a RPC
+  // antiga nao devolve internal_not_compared e `undefined <= 0` e false em JS — o
+  // aviso apareceria zerado. Assim ele simplesmente nao aparece ate a RPC existir.
+  if (!(count > 0)) return null;
   return (
     <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
       <p className="flex items-center gap-2 font-medium text-amber-800 dark:text-amber-300">
