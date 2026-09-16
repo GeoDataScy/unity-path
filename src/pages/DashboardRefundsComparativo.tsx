@@ -320,9 +320,17 @@ export default function DashboardRefundsComparativo() {
           <CardContent>
             {kpi(summary?.internal_count)}
             {summary && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {fmtInt(summary.matched_count)} casados com o arquivo — é deste número que sai o % interno
-              </p>
+              <>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {fmtInt(summary.matched_count)} casados com o arquivo — é deste número que sai o % interno
+                </p>
+                {summary.matched_open_only > 0 && (
+                  <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                    {fmtInt(summary.matched_open_only)} deles a loja já reembolsou e o registro interno segue em
+                    aberto
+                  </p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -484,8 +492,8 @@ export default function DashboardRefundsComparativo() {
                 número de pedido (interno <code>1896</code> = externo <code>#1896</code>) e olha a base inteira, sem
                 filtro de data.{" "}
                 <strong>% interno</strong> é <em>casados ÷ total</em> — dos pedidos que a loja reembolsou no mês,
-                quantos passaram pelo time, não importa quando o time deu baixa — e <strong>% externo</strong> é o
-                restante; somam 100%. Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%.
+                quantos passaram pelo time, não importa quando o time deu baixa nem se o reembolso interno ainda
+                está em aberto — e <strong>% externo</strong> é o restante; somam 100%. Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%.
                 Repare que <strong>Interno</strong> é volume e não entra na porcentagem: ele conta pela data da baixa,
                 então inclui reembolso de pedido comprado em outro mês, que não está neste arquivo. Quando o Interno
                 passa do Total da loja, a linha ganha um aviso — é pista de arquivo velho ou faltando.

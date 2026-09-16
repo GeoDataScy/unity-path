@@ -163,6 +163,26 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.queryByText(/fora do comparativo/)).toBeNull();
   });
 
+  // Pedido que a loja já reembolsou e cujo registro interno segue em aberto conta
+  // na cobertura (passou pelo time) e é fila de trabalho — a tela diz as duas coisas.
+  it("mostra os casados e quantos deles ainda estão em aberto", () => {
+    queryResult.current = { data: fixture, isLoading: false, isError: false };
+    renderPage();
+
+    expect(screen.getByText(/183 casados com o arquivo/)).toBeTruthy();
+    expect(screen.getByText(/21 deles a loja já reembolsou e o registro interno segue em aberto/)).toBeTruthy();
+  });
+
+  it("omite a linha de em aberto quando não há nenhum", () => {
+    queryResult.current = {
+      data: { ...fixture, summary: { ...fixture.summary, matched_open_only: 0 } },
+      isLoading: false,
+      isError: false,
+    };
+    renderPage();
+    expect(screen.queryByText(/segue em aberto/)).toBeNull();
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     queryResult.current = {
       data: { ...fixture, imports: [], by_product_month: [], by_product: [], divergences: { total_count: 0, rows: [] } },

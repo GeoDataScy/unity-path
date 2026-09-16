@@ -85,6 +85,12 @@ export type ComparisonSummary = {
    * em nenhum outro número da tela — é o tamanho do ponto cego.
    */
   internal_not_compared: number;
+  /**
+   * Dos casados, os que a loja já reembolsou e cujo único registro interno
+   * continua EM ABERTO. Contam na cobertura (o pedido passou pelo time) e são
+   * fila de trabalho: falta dar baixa.
+   */
+  matched_open_only: number;
   type_mismatch_count: number;
 };
 

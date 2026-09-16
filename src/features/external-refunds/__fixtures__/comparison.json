@@ -99,7 +99,8 @@
   "internal_pct": 12.4,
   "external_pct": 87.6,
   "inconsistent": false,
-  "internal_not_compared": 43
+  "internal_not_compared": 43,
+  "matched_open_only": 21
  },
  "products": [
   {
