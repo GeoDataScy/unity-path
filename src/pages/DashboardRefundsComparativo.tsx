@@ -51,18 +51,21 @@ import {
 const PAGE_SIZE = 25;
 
 /**
- * Interno maior que o total importado. Não é para esconder: significa que o
- * arquivo daquele período está velho ou faltando, e o denominador das colunas
- * de % não dá para confiar.
+ * O time baixou, no mês, mais reembolsos do que o arquivo inteiro tem pedidos.
+ * Desde que o percentual passou a sair do casamento, isso não quebra conta
+ * nenhuma — virou o que sempre foi na prática: pista de que o arquivo daquele
+ * mês está velho ou faltando.
  */
+const STALE_FILE_HINT = "o time baixou mais reembolsos no mês do que o arquivo tem pedidos; provável import velho ou faltando";
+
 function InconsistentBadge() {
   return (
     <span
-      className="ml-1 inline-flex items-center rounded-sm bg-destructive/15 px-1 text-xs font-medium text-destructive"
-      title="interno excede o total importado; verificar import do período"
+      className="ml-1 inline-flex items-center rounded-sm bg-amber-500/20 px-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+      title={STALE_FILE_HINT}
     >
       <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-      <span className="sr-only">interno excede o total importado; verificar import do período</span>
+      <span className="sr-only">{STALE_FILE_HINT}</span>
     </span>
   );
 }
@@ -316,6 +319,11 @@ export default function DashboardRefundsComparativo() {
           </CardHeader>
           <CardContent>
             {kpi(summary?.internal_count)}
+            {summary && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {fmtInt(summary.matched_count)} casados com o arquivo — é deste número que sai o % interno
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -342,7 +350,7 @@ export default function DashboardRefundsComparativo() {
           <CardContent>
             {kpi(summary?.external_diff)}
             {summary && (
-              <p className="mt-1 text-xs text-muted-foreground">total da loja menos o interno</p>
+              <p className="mt-1 text-xs text-muted-foreground">pedidos do arquivo sem reembolso interno</p>
             )}
           </CardContent>
         </Card>
@@ -472,13 +480,15 @@ export default function DashboardRefundsComparativo() {
                 <strong>Total da loja</strong> é a contagem de pedidos distintos do arquivo importado, no mês
                 informado na importação. <strong>Interno</strong> são os reembolsos concluídos com plataforma{" "}
                 {platform}, pela data da baixa — o mesmo que a Visão geral mostra com Status “Concluídos”.{" "}
-                <strong>Externo</strong> é o que sobra: total da loja menos o interno. Daí saem{" "}
-                <strong>% interno</strong> (interno ÷ total) e <strong>% externo</strong> (o restante), que somam 100%.
-                Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%. Se o interno passar do
-                total, o externo fica em 0 e a linha ganha um aviso: o arquivo daquele período está velho ou faltando.
-                As colunas “só interno” e “só externo” vêm do casamento por número de pedido (interno <code>1896</code>{" "}
-                = externo <code>#1896</code>) e servem para a lista pedido a pedido — não entram no cálculo das
-                porcentagens, porque quem não casa por ruído subestimaria o interno.
+                <strong>Externo</strong> são os pedidos do arquivo sem nenhum reembolso interno. O casamento é por
+                número de pedido (interno <code>1896</code> = externo <code>#1896</code>) e olha a base inteira, sem
+                filtro de data.{" "}
+                <strong>% interno</strong> é <em>casados ÷ total</em> — dos pedidos que a loja reembolsou no mês,
+                quantos passaram pelo time, não importa quando o time deu baixa — e <strong>% externo</strong> é o
+                restante; somam 100%. Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%.
+                Repare que <strong>Interno</strong> é volume e não entra na porcentagem: ele conta pela data da baixa,
+                então inclui reembolso de pedido comprado em outro mês, que não está neste arquivo. Quando o Interno
+                passa do Total da loja, a linha ganha um aviso — é pista de arquivo velho ou faltando.
               </p>
             </div>
           )}

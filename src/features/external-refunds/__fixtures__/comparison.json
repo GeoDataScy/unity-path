@@ -95,9 +95,9 @@
   "external_partial": 730,
   "type_mismatch_count": 1,
   "internal_without_order": 28,
-  "external_diff": 983,
-  "internal_pct": 33.1,
-  "external_pct": 66.9,
+  "external_diff": 1287,
+  "internal_pct": 12.4,
+  "external_pct": 87.6,
   "inconsistent": false,
   "internal_not_compared": 43
  },
@@ -140,9 +140,9 @@
    "external_amount": 25755.89,
    "external_partial": 46,
    "internal_without_order": 2,
-   "external_diff": 42,
-   "internal_pct": 56.7,
-   "external_pct": 43.3,
+   "external_diff": 79,
+   "internal_pct": 18.6,
+   "external_pct": 81.4,
    "inconsistent": false
   },
   {
@@ -157,9 +157,9 @@
    "external_amount": 107251.0,
    "external_partial": 175,
    "internal_without_order": 4,
-   "external_diff": 259,
-   "internal_pct": 28.7,
-   "external_pct": 71.3,
+   "external_diff": 319,
+   "internal_pct": 12.1,
+   "external_pct": 87.9,
    "inconsistent": false
   },
   {
@@ -174,9 +174,9 @@
    "external_amount": 281364.98,
    "external_partial": 487,
    "internal_without_order": 20,
-   "external_diff": 714,
-   "internal_pct": 25.0,
-   "external_pct": 75.0,
+   "external_diff": 834,
+   "internal_pct": 12.4,
+   "external_pct": 87.6,
    "inconsistent": false
   },
   {
@@ -191,9 +191,9 @@
    "external_amount": 1462.07,
    "external_partial": 2,
    "internal_without_order": 0,
-   "external_diff": 0,
-   "internal_pct": 171.4,
-   "external_pct": 0,
+   "external_diff": 7,
+   "internal_pct": 0.0,
+   "external_pct": 100.0,
    "inconsistent": true
   },
   {
@@ -208,9 +208,9 @@
    "external_amount": 9000.39,
    "external_partial": 13,
    "internal_without_order": 2,
-   "external_diff": 0,
-   "internal_pct": 243.3,
-   "external_pct": 0,
+   "external_diff": 28,
+   "internal_pct": 6.7,
+   "external_pct": 93.3,
    "inconsistent": true
   },
   {
@@ -225,9 +225,9 @@
    "external_amount": 4949.31,
    "external_partial": 7,
    "internal_without_order": 0,
-   "external_diff": 16,
-   "internal_pct": 23.8,
-   "external_pct": 76.2,
+   "external_diff": 20,
+   "internal_pct": 4.8,
+   "external_pct": 95.2,
    "inconsistent": false
   }
  ],
@@ -313,9 +313,9 @@
    "external_amount": 21861.66,
    "external_partial": 39,
    "internal_without_order": 1,
-   "external_diff": 61,
-   "internal_pct": 25.6,
-   "external_pct": 74.4,
+   "external_diff": 68,
+   "internal_pct": 17.1,
+   "external_pct": 82.9,
    "inconsistent": false
   },
   {
@@ -331,9 +331,9 @@
    "external_amount": 3894.23,
    "external_partial": 7,
    "internal_without_order": 1,
-   "external_diff": 0,
-   "internal_pct": 226.7,
-   "external_pct": 0,
+   "external_diff": 11,
+   "internal_pct": 26.7,
+   "external_pct": 73.3,
    "inconsistent": true
   },
   {
@@ -349,9 +349,9 @@
    "external_amount": 37582.54,
    "external_partial": 64,
    "internal_without_order": 1,
-   "external_diff": 123,
-   "internal_pct": 2.4,
-   "external_pct": 97.6,
+   "external_diff": 116,
+   "internal_pct": 7.9,
+   "external_pct": 92.1,
    "inconsistent": false
   },
   {
@@ -367,9 +367,9 @@
    "external_amount": 69668.46,
    "external_partial": 111,
    "internal_without_order": 3,
-   "external_diff": 136,
-   "internal_pct": 42.6,
-   "external_pct": 57.4,
+   "external_diff": 203,
+   "internal_pct": 14.3,
+   "external_pct": 85.7,
    "inconsistent": false
   },
   {
@@ -385,9 +385,9 @@
    "external_amount": 214869.94,
    "external_partial": 369,
    "internal_without_order": 8,
-   "external_diff": 676,
-   "internal_pct": 5.7,
-   "external_pct": 94.3,
+   "external_diff": 628,
+   "internal_pct": 12.4,
+   "external_pct": 87.6,
    "inconsistent": false
   },
   {
@@ -403,9 +403,9 @@
    "external_amount": 66495.04,
    "external_partial": 118,
    "internal_without_order": 12,
-   "external_diff": 38,
-   "internal_pct": 83.8,
-   "external_pct": 16.2,
+   "external_diff": 206,
+   "internal_pct": 12.3,
+   "external_pct": 87.7,
    "inconsistent": false
   },
   {
@@ -439,9 +439,9 @@
    "external_amount": 1462.07,
    "external_partial": 2,
    "internal_without_order": 0,
-   "external_diff": 0,
-   "internal_pct": 157.1,
-   "external_pct": 0,
+   "external_diff": 7,
+   "internal_pct": 0.0,
+   "external_pct": 100.0,
    "inconsistent": true
   },
   {
@@ -475,9 +475,9 @@
    "external_amount": 9000.39,
    "external_partial": 13,
    "internal_without_order": 1,
-   "external_diff": 0,
-   "internal_pct": 230.0,
-   "external_pct": 0,
+   "external_diff": 28,
+   "internal_pct": 6.7,
+   "external_pct": 93.3,
    "inconsistent": true
   },
   {
@@ -511,9 +511,9 @@
    "external_amount": 2607.5,
    "external_partial": 5,
    "internal_without_order": 0,
-   "external_diff": 7,
-   "internal_pct": 41.7,
-   "external_pct": 58.3,
+   "external_diff": 11,
+   "internal_pct": 8.3,
+   "external_pct": 91.7,
    "inconsistent": false
   }
  ],

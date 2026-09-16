@@ -73,36 +73,41 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getAllByText("Total da loja").length).toBeGreaterThanOrEqual(2); // card + coluna
   });
 
-  // A regra do Webert: total (arquivo) = interno (concluídos) + externo (o resto).
-  // Se os dois percentuais deixarem de somar 100, a conta quebrou em algum lugar.
-  // A exceção é a linha incoerente (interno > total), onde o externo é clampado em 0.
-  it("os percentuais somam 100% sempre que existe total importado", () => {
-    const linhas = [...fixture.by_product_month, fixture.summary];
+  // O percentual sai do CASAMENTO por pedido, não do volume interno: dos pedidos
+  // que a loja reembolsou, quantos passaram pelo time. Como casados ⊆ total, o
+  // interno nunca passa de 100% e não há clamp — se essas identidades quebrarem,
+  // a conta voltou a misturar coortes diferentes (ver 20260916200000).
+  it("os percentuais saem de casados ÷ total e somam 100%", () => {
+    const linhas = [...fixture.by_product_month, fixture.by_product, fixture.summary].flat();
     const comTotal = linhas.filter((r) => r.external_count > 0);
     expect(comTotal.length).toBeGreaterThan(0);
 
     for (const r of comTotal) {
-      expect(r.internal_pct).not.toBeNull();
-      expect(r.external_diff).toBe(Math.max(r.external_count - r.internal_count, 0));
-      if (r.inconsistent) {
-        expect(r.internal_pct as number).toBeGreaterThan(100);
-        expect(r.external_pct).toBe(0);
-      } else {
-        expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
-      }
+      expect(r.matched_count).toBeLessThanOrEqual(r.external_count);
+      expect(r.external_diff).toBe(r.external_count - r.matched_count);
+      expect(r.internal_pct).toBeCloseTo((100 * r.matched_count) / r.external_count, 1);
+      expect(r.internal_pct as number).toBeLessThanOrEqual(100);
+      expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
     }
   });
 
-  it("marca a linha em que o interno passa do total importado", () => {
+  // Volume interno acima do arquivo não quebra mais percentual nenhum (o interno
+  // conta pela data da baixa e inclui pedido comprado noutro mês). Segue valendo
+  // como pista de arquivo velho.
+  it("avisa quando o volume interno do mês passa do arquivo", () => {
     queryResult.current = { data: fixture, isLoading: false, isError: false };
     renderPage();
-    // Alpharock/ago na fixture tem 34 internos contra 15 no arquivo.
-    const avisos = screen.getAllByTitle("interno excede o total importado; verificar import do período");
-    expect(avisos.length).toBe(fixture.by_product_month.filter((r) => r.inconsistent).length);
-    const linha = avisos[0].closest("tr")!;
-    const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
-    expect(celulas).toContain("0,0%"); // externo clampado
-    expect(celulas.some((c) => c && /^2\d\d,\d%$/.test(c))).toBe(true); // interno acima de 100% fica visível
+    const incoerentes = fixture.by_product_month.filter((r) => r.inconsistent);
+    expect(incoerentes.length).toBeGreaterThan(0);
+
+    const avisos = screen.getAllByTitle(/provável import velho ou faltando/);
+    expect(avisos.length).toBe(incoerentes.length);
+
+    // O percentual da linha avisada continua válido: sai do casamento, não do volume.
+    for (const r of incoerentes) {
+      expect(r.internal_pct as number).toBeLessThanOrEqual(100);
+      expect(r.internal_count).toBeGreaterThan(r.external_count);
+    }
   });
 
   it("sem arquivo importado no período mostra “—” em vez de 0%", () => {
