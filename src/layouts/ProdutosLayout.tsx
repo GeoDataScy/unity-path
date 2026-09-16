@@ -1,39 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import type { DateRange } from "react-day-picker";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_KEY = "produtos-sidebar-collapsed";
-
-function toISODate(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 export type ProdutosOutletContext = {
   userId: string;
   fullName: string | null;
-  range: DateRange | undefined;
-  setRange: (next: DateRange | undefined) => void;
-  fromISO: string;
-  toISO: string;
 };
 
 const NAV_ITEMS = [
-  { to: "/produtos", end: true, icon: LayoutDashboard, label: "Visão geral" },
+  { to: "/produtos", end: true, icon: PackageSearch, label: "Pedidos em espera" },
 ] as const;
 
 type NavItemProps = {
@@ -84,26 +71,6 @@ export default function ProdutosLayout() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
   });
-
-  // Padrão: últimos 90 dias, igual ao painel do copy — a leitura de produto é
-  // de tendência, e um mês recém-começado deixaria a evolução com um só ponto.
-  const [range, setRange] = useState<DateRange | undefined>(() => {
-    const to = new Date();
-    const from = new Date(to.getFullYear(), to.getMonth(), to.getDate() - 89);
-    return { from, to };
-  });
-
-  const fromISO = useMemo(() => {
-    const d = range?.from;
-    if (d) return toISODate(d);
-    const now = new Date();
-    return toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89));
-  }, [range?.from]);
-
-  const toISO = useMemo(() => {
-    const d = range?.to ?? range?.from;
-    return d ? toISODate(d) : toISODate(new Date());
-  }, [range?.to, range?.from]);
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
@@ -223,8 +190,8 @@ export default function ProdutosLayout() {
 
   const outletContext = useMemo<ProdutosOutletContext | null>(() => {
     if (authLoading || !userId) return null;
-    return { userId, fullName, range, setRange, fromISO, toISO };
-  }, [authLoading, userId, fullName, range, fromISO, toISO]);
+    return { userId, fullName };
+  }, [authLoading, userId, fullName]);
 
   const handleLogout = async () => {
     await recordAuthEvent("logout").catch(() => {});
@@ -277,13 +244,6 @@ export default function ProdutosLayout() {
           </div>
 
           <AreaSwitcher role={role} currentArea="produtos" collapsed={collapsed} />
-
-          {!collapsed && (
-            <div className="space-y-1.5">
-              <p className="px-1 text-[11px] uppercase tracking-wide opacity-70">Período</p>
-              <DateRangePicker value={range} onChange={setRange} />
-            </div>
-          )}
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
             {NAV_ITEMS.map((item) => {

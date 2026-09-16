@@ -69,7 +69,16 @@ function statusBadge(o: ManagerHeldOrder) {
   );
 }
 
-export function HeldOrdersManagerTab() {
+type Props = {
+  /**
+   * Visão só leitura, usada pela Área de Produtos: os mesmos números, filtros e
+   * linhas da gestora, sem as ações que mexem na operação (importar planilha,
+   * distribuir pedidos) e sem a coluna de seleção que só serve a elas.
+   */
+  readOnly?: boolean;
+};
+
+export function HeldOrdersManagerTab({ readOnly = false }: Props) {
   const [statusFilter, setStatusFilter] = useState<ManagerHeldOrderStatusFilter>("all");
   const [productFilter, setProductFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
@@ -81,7 +90,9 @@ export function HeldOrdersManagerTab() {
   const [assignOpen, setAssignOpen] = useState(false);
 
   const { toast } = useToast();
-  const usersQuery = useManagerUsersQuery();
+  // manager_list_users é RPC da gestora: na visão só leitura ela nem é chamada,
+  // e os agentes do filtro saem das próprias linhas de pedido.
+  const usersQuery = useManagerUsersQuery(!readOnly);
   const ordersQuery = useManagerHeldOrdersQuery({
     statusFilter,
     // "unassigned" não é expresso pelo RPC (que filtra por agent_id específico);
@@ -203,12 +214,26 @@ export function HeldOrdersManagerTab() {
     return keys.size;
   }, [allRows, selected]);
 
+  const agentOptions = useMemo(() => {
+    if (!readOnly) {
+      return (usersQuery.data ?? [])
+        .filter((u) => u.role === "agent")
+        .map((u) => ({ id: u.id, name: u.full_name ?? u.email }));
+    }
+    const byId = new Map<string, string>();
+    for (const o of allRows) {
+      if (o.assigned_to) byId.set(o.assigned_to, o.assigned_to_name ?? "Sem nome");
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name, "pt-BR"),
+    );
+  }, [readOnly, usersQuery.data, allRows]);
+
   const agentLabel = useMemo(() => {
     if (agentFilter === "all") return null;
     if (agentFilter === "unassigned") return "Sem agente";
-    const user = (usersQuery.data ?? []).find((u) => u.id === agentFilter);
-    return user?.full_name ?? user?.email ?? "Agente";
-  }, [agentFilter, usersQuery.data]);
+    return agentOptions.find((a) => a.id === agentFilter)?.name ?? "Agente";
+  }, [agentFilter, agentOptions]);
 
   // Exporta as linhas já filtradas — o mesmo array que a tabela renderiza, na
   // mesma ordem.
@@ -366,13 +391,11 @@ export function HeldOrdersManagerTab() {
                 <SelectContent>
                   <SelectItem value="all">Todos agentes</SelectItem>
                   <SelectItem value="unassigned">Sem agente</SelectItem>
-                  {(usersQuery.data ?? [])
-                    .filter((u) => u.role === "agent")
-                    .map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.full_name ?? u.email}
-                      </SelectItem>
-                    ))}
+                  {agentOptions.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {duplicateCount > 0 && (
@@ -393,18 +416,22 @@ export function HeldOrdersManagerTab() {
               >
                 <Download className="mr-1.5 h-4 w-4" /> Exportar ({rows.length})
               </Button>
-              <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <Upload className="mr-1.5 h-4 w-4" /> Importar arquivo
-              </Button>
-              <Button onClick={() => setAssignOpen(true)} disabled={selectedIds.length === 0}>
-                <Send className="mr-1.5 h-4 w-4" /> Distribuir{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
-              </Button>
+              {!readOnly && (
+                <>
+                  <Button variant="outline" onClick={() => setImportOpen(true)}>
+                    <Upload className="mr-1.5 h-4 w-4" /> Importar arquivo
+                  </Button>
+                  <Button onClick={() => setAssignOpen(true)} disabled={selectedIds.length === 0}>
+                    <Send className="mr-1.5 h-4 w-4" /> Distribuir{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {/* Seleção em lote por quantidade */}
-          {selectablePendingIds.length > 0 && (
+          {!readOnly && selectablePendingIds.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
               <ListChecks className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Selecionar as primeiras</span>
@@ -457,14 +484,16 @@ export function HeldOrdersManagerTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={allSelected}
-                        onCheckedChange={toggleAll}
-                        aria-label="Selecionar todos pendentes"
-                        disabled={selectablePendingIds.length === 0}
-                      />
-                    </TableHead>
+                    {!readOnly && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={toggleAll}
+                          aria-label="Selecionar todos pendentes"
+                          disabled={selectablePendingIds.length === 0}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Pedido</TableHead>
                     <TableHead>Loja</TableHead>
                     <TableHead>Motivo</TableHead>
@@ -480,14 +509,16 @@ export function HeldOrdersManagerTab() {
                     const isPending = o.status === "pending" && !isDuplicate;
                     return (
                       <TableRow key={o.id} className={isDuplicate ? "opacity-60" : undefined}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selected.has(o.id)}
-                            onCheckedChange={() => toggleOne(o.id)}
-                            disabled={!isPending}
-                            aria-label={`Selecionar pedido ${o.order_number}`}
-                          />
-                        </TableCell>
+                        {!readOnly && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selected.has(o.id)}
+                              onCheckedChange={() => toggleOne(o.id)}
+                              disabled={!isPending}
+                              aria-label={`Selecionar pedido ${o.order_number}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-mono text-sm">
                           {o.order_number ?? <span className="text-muted-foreground italic">sem número</span>}
                           {o.rma && (
@@ -531,15 +562,19 @@ export function HeldOrdersManagerTab() {
         </CardContent>
       </Card>
 
-      <ImportHeldOrdersDialog open={importOpen} onOpenChange={setImportOpen} />
-      <AssignHeldOrdersDialog
-        open={assignOpen}
-        onOpenChange={setAssignOpen}
-        orderIds={selectedIds}
-        clientCount={selectedClientCount}
-        agents={usersQuery.data ?? []}
-        onAssigned={() => setSelected(new Set())}
-      />
+      {!readOnly && (
+        <>
+          <ImportHeldOrdersDialog open={importOpen} onOpenChange={setImportOpen} />
+          <AssignHeldOrdersDialog
+            open={assignOpen}
+            onOpenChange={setAssignOpen}
+            orderIds={selectedIds}
+            clientCount={selectedClientCount}
+            agents={usersQuery.data ?? []}
+            onAssigned={() => setSelected(new Set())}
+          />
+        </>
+      )}
     </div>
   );
 }
