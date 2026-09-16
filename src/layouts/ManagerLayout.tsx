@@ -17,6 +17,7 @@ import {
   BookOpen,
   ClipboardCheck,
   FileSpreadsheet,
+  Filter,
   Headset,
   LogOut,
   PanelLeftClose,
@@ -54,6 +55,11 @@ function toISODate(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
+/** 2026-09-17 → 17/09/2026 */
+function toBRDate(iso: string) {
+  return iso.split("-").reverse().join("/");
+}
+
 export type ManagerOutletContext = {
   fullName: string | null;
   /** profiles.role de quem está logado (manager | copy_grup). */
@@ -83,12 +89,12 @@ function NavItem({ to, end, icon, label, collapsed, badge }: NavItemProps) {
       className={({ isActive }) =>
         cn(
           "flex items-center gap-2 rounded-md text-sm bg-white/0 hover:bg-white/10 transition",
-          collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
+          collapsed ? "justify-center px-2 py-2 short:py-1.5" : "px-3 py-2 short:py-1.5",
           isActive && "bg-white/15",
         )
       }
     >
-      <span className="relative">
+      <span className="relative inline-flex shrink-0">
         {icon}
         {collapsed && badge}
       </span>
@@ -330,6 +336,14 @@ export default function ManagerLayout() {
     );
   }
 
+  // Rótulos dos filtros para os tooltips do modo encolhido, onde o valor
+  // selecionado não cabe na tela.
+  const periodLabel = `${toBRDate(fromISO)} — ${toBRDate(toISO)}`;
+  const agentLabel =
+    agentId === "all"
+      ? "Todos"
+      : ((agentsQuery.data ?? []).find((a) => a.id === agentId)?.label ?? "Todos");
+
   const isOnRefunds = location.pathname.startsWith("/dashboard/reembolsos");
   const isOnAcompanhamento = location.pathname.startsWith("/dashboard/acompanhamento");
   const isOnInteracoes = location.pathname.startsWith("/dashboard/interacoes");
@@ -339,7 +353,7 @@ export default function ManagerLayout() {
 
   const alertsBadge = overdueCount > 0 ? (
     collapsed ? (
-      <span className="absolute -right-1 -top-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
+      <span className="absolute -right-2 -top-2 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
         {overdueCount > 9 ? "9+" : overdueCount}
       </span>
     ) : (
@@ -357,8 +371,13 @@ export default function ManagerLayout() {
           collapsed ? "w-16" : "w-[260px]",
         )}
       >
-        <div className={cn("h-full flex flex-col gap-6", collapsed ? "p-2" : "p-4")}>
-          <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "justify-between gap-2")}>
+        <div className={cn("h-full flex flex-col overflow-y-auto", collapsed ? "p-2" : "p-4")}>
+          <div
+            className={cn(
+              "shrink-0 flex items-center",
+              collapsed ? "flex-col gap-2" : "justify-between gap-2",
+            )}
+          >
             <div className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}>
               <img src={logo} alt="Logo da empresa" className="h-8 w-auto shrink-0" loading="lazy" />
               {!collapsed && (
@@ -391,9 +410,13 @@ export default function ManagerLayout() {
             </Tooltip>
           </div>
 
-          <AreaSwitcher role={role} currentArea="analytics" collapsed={collapsed} />
+          <div className="shrink-0 mt-4 short:mt-3">
+            <AreaSwitcher role={role} currentArea="analytics" collapsed={collapsed} />
+          </div>
 
-          <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
+          {/* Só a lista de links rola: em telas baixas o período e o rodapé
+              continuam visíveis em vez de serem empurrados para fora. */}
+          <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mt-4 short:mt-3 space-y-1 pr-1 -mr-1">
             <NavItem
               to="/dashboard"
               end
@@ -463,34 +486,81 @@ export default function ManagerLayout() {
             )}
           </nav>
 
-          {!collapsed && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
-                <DateRangePicker value={range} onChange={setRange} />
-                <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
-              </div>
+          {/* Filtros globais: ficam fora da região que rola — em tela baixa eram
+              empurrados para fora da viewport — e viram ícone quando encolhida,
+              onde antes simplesmente não existiam. */}
+          <div
+            className={cn(
+              "shrink-0 border-t border-white/10",
+              collapsed ? "mt-2 pt-2 space-y-1" : "mt-4 short:mt-3 pt-3 short:pt-2 space-y-3 short:space-y-2",
+            )}
+          >
+            {collapsed ? (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DateRangePicker value={range} onChange={setRange} compact />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Período: {periodLabel}</TooltipContent>
+                </Tooltip>
 
-              <div className="space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
-                <Select value={agentId} onValueChange={setAgentId}>
-                  <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50">
-                    <SelectItem value="all">Todos</SelectItem>
-                    {(agentsQuery.data ?? []).map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Select value={agentId} onValueChange={setAgentId}>
+                        <SelectTrigger
+                          aria-label={`Agente: ${agentLabel}`}
+                          className="h-9 w-full justify-center px-0 bg-white/10 border-white/15 text-dashboard-sidebar-foreground [&>svg]:hidden"
+                        >
+                          <span className="flex items-center justify-center">
+                            <Filter className="size-4 shrink-0" />
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent className="z-50">
+                          <SelectItem value="all">Todos</SelectItem>
+                          {(agentsQuery.data ?? []).map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Agente: {agentLabel}</TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
+                  <DateRangePicker value={range} onChange={setRange} />
+                  <div className="text-[11px] opacity-75 short:hidden">Default: mês atual até hoje</div>
+                </div>
 
-          <div className={cn("mt-auto", collapsed ? "space-y-1" : "space-y-2")}>
+                <div className="space-y-2">
+                  <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
+                  <Select value={agentId} onValueChange={setAgentId}>
+                    <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50">
+                      <SelectItem value="all">Todos</SelectItem>
+                      {(agentsQuery.data ?? []).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className={cn("shrink-0 mt-3 short:mt-2", collapsed ? "space-y-1" : "space-y-2")}>
             {collapsed ? (
               <>
                 {isManager && (
@@ -548,7 +618,7 @@ export default function ManagerLayout() {
                   Logout
                 </Button>
 
-                <div className="text-[11px] opacity-70 px-1">
+                <div className="text-[11px] opacity-70 px-1 short:hidden">
                   {isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
                 </div>
               </>
@@ -568,7 +638,7 @@ export default function ManagerLayout() {
         className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
       />
 
-      <main className="flex-1 bg-dashboard-surface p-8">
+      <main className="min-w-0 flex-1 bg-dashboard-surface p-4 md:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
           <Outlet context={outletContext} />
         </div>

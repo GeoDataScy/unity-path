@@ -13,6 +13,11 @@ export default {
       },
     },
     extend: {
+      // Telas baixas (notebooks 1366x768 e afins): a sidebar da gestora usa
+      // esta variante para compactar a densidade e caber sem cortar filtros.
+      screens: {
+        short: { raw: "(max-height: 860px)" },
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
