@@ -20,7 +20,7 @@ export type RefundItem = {
   picked_up_at?: string | null;
 };
 
-export const SALES_PLATFORMS = ["Nenhum", "Cartpanda", "CartCandy", "Buygoods", "ClickBank", "Digistore24", "SalesBound", "LogiCall"] as const;
+export const SALES_PLATFORMS = ["Nenhum", "Cartpanda", "CartCandy", "Buygoods", "ClickBank", "Digistore24", "SalesBound", "LogiCall", "PagAmerican"] as const;
 export type SalesPlatform = (typeof SALES_PLATFORMS)[number];
 
 export const REFUND_PRODUCTS = [
