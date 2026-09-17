@@ -255,3 +255,46 @@ describe("HeldOrdersManagerTab — exportação", () => {
     expect(exportButton()).toBeDisabled();
   });
 });
+
+// Visão da Área de Produtos: os mesmos dados, sem as ações da operação.
+describe("HeldOrdersManagerTab — readOnly (Área de Produtos)", () => {
+  it("mostra as mesmas linhas e continua exportando", () => {
+    setRows([order({ id: "1", order_number: "PED-1" }), order({ id: "2", order_number: "PED-2" })]);
+    render(<HeldOrdersManagerTab readOnly />);
+
+    expect(screen.getByText("PED-1")).toBeInTheDocument();
+    expect(screen.getByText("PED-2")).toBeInTheDocument();
+    expect(exportButton()).toHaveTextContent("Exportar (2)");
+  });
+
+  it("não oferece importar, distribuir nem seleção de pedidos", () => {
+    setRows([order({ id: "1", order_number: "PED-1", status: "pending" })]);
+    render(<HeldOrdersManagerTab readOnly />);
+
+    expect(screen.queryByRole("button", { name: /Importar arquivo/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Distribuir/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Selecionar as primeiras/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  // manager_list_users é RPC da gestora e responde "forbidden" para a role
+  // produto: os agentes do filtro têm de sair das próprias linhas.
+  it("monta o filtro de agentes a partir dos pedidos, não da lista de usuários", () => {
+    setRows([
+      order({ id: "1", order_number: "PED-1", assigned_to: "agente-9", assigned_to_name: "Rita" }),
+      order({ id: "2", order_number: "PED-2", assigned_to: null, assigned_to_name: null }),
+    ]);
+    render(<HeldOrdersManagerTab readOnly />);
+
+    openSelect("Todos agentes");
+    expect(screen.getByRole("option", { name: "Rita" })).toBeInTheDocument();
+    // "Maria" e "João" vêm do mock de manager_list_users — não podem aparecer aqui.
+    expect(screen.queryByRole("option", { name: "Maria" })).not.toBeInTheDocument();
+
+    // A filtragem por agente específico é do RPC (agent_id); o que a tela faz é
+    // carregar o nome escolhido no cabeçalho do relatório.
+    chooseOption("Rita");
+    fireEvent.click(exportButton());
+    expect(exportCall().filters.agent).toBe("Rita");
+  });
+});
