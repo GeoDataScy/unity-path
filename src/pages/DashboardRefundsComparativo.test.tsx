@@ -167,6 +167,34 @@ describe("DashboardRefundsComparativo", () => {
     expect(celulas).not.toContain("0,0%");
   });
 
+  // PagAmerican: o arquivo confirma o reembolso mas nem sempre diz o tipo. Esses
+  // pedidos contam no total (e portanto nas porcentagens, que não usam o tipo),
+  // mas não entram em integral nem em parcial — sem o terceiro número a coluna
+  // não fecharia com o total e a diferença sumiria da tela.
+  it("mostra os reembolsos sem tipo separados na coluna integral / parcial", () => {
+    const comSemTipo = {
+      ...fixture,
+      by_product_month: [
+        { ...fixture.by_product_month[0], product: "Jellyrock", month: "2026-09",
+          external_count: 259, external_full: 104, external_partial: 113,
+          internal_count: 2, external_diff: 257, internal_pct: 0.8, external_pct: 99.2, inconsistent: false },
+      ],
+    };
+    queryResult.current = { data: comSemTipo, isLoading: false, isError: false };
+    renderPage();
+
+    const linha = screen.getAllByText("Jellyrock").map((e) => e.closest("tr")).find(Boolean)!;
+    const texto = linha.textContent ?? "";
+    expect(texto).toContain("104 / 113");
+    expect(texto).toContain("42 s/ tipo"); // 259 - 104 - 113
+  });
+
+  it("não mostra o terceiro número quando todo pedido tem tipo (Cartpanda)", () => {
+    queryResult.current = { data: fixture, isLoading: false, isError: false };
+    renderPage();
+    expect(screen.queryByText(/s\/ tipo/)).toBeNull();
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     queryResult.current = {
       data: { ...fixture, imports: [], by_product_month: [], by_product: [], divergences: { total_count: 0, rows: [] } },

@@ -89,4 +89,5 @@ export const PRODUCTS = [
   "Clear Gaze",
   "PagAmerican",
   "Jellyrock",
+  "Blue Horse",
 ] as const;

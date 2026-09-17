@@ -1,5 +1,7 @@
 import * as XLSX from "xlsx";
 
+import { PRODUCTS } from "@/features/services/products";
+import { REFUND_TYPE_FULL, REFUND_TYPE_PARTIAL, REFUND_TYPE_UNSPECIFIED } from "./types";
 import type { ExternalRefundImportRow } from "./types";
 
 // Export "orders_export.csv" das lojas (uma linha por item do pedido). Cabeçalho:
@@ -161,4 +163,154 @@ export function parseExternalRefundsCsv(data: ArrayBuffer | Uint8Array): ParsedE
 export function countOutsideMonth(rows: ExternalRefundImportRow[], monthRef: string): number {
   const prefix = monthRef.slice(0, 7);
   return rows.filter((r) => r.order_date && !r.order_date.startsWith(prefix)).length;
+}
+
+// ---------------------------------------------------------------------------
+// PagAmerican
+// ---------------------------------------------------------------------------
+// Layout próprio, 12 colunas, UMA LINHA POR PEDIDO (a Cartpanda repete por item):
+//   Vendor Email, Order ID, Order Status, Product Name, Customer Name,
+//   Customer Email, Customer Phone, Refundamount, first refund date, Reason,
+//   chargebackamount, chageback date            <- "chageback" é typo da origem
+//
+// Diferenças que importam, e o que se faz com cada uma:
+//
+// * `first refund date` é a data do REEMBOLSO, não da compra. A Cartpanda só dá
+//   a data da compra, o que obriga a tela a comparar réguas diferentes. Aqui os
+//   dois lados podem ser datados pelo mesmo evento — é a data que define o mês
+//   do lote.
+// * `Refundamount` vem NEGATIVO (-198). Vira valor absoluto.
+// * `Order Status` é o status do PEDIDO, não do reembolso. Quem decide se houve
+//   reembolso é o par valor + data; o status só diz o tipo.
+// * Chargeback (valor/data em chargebackamount/chageback date, sem reembolso)
+//   fica FORA: é contestação no cartão, não passou pelo time.
+// * `Product Name` vem dentro do arquivo e misturado, então um arquivo vira
+//   vários lotes (produto × mês do reembolso).
+
+/** Um lote de importação: o RPC recebe um produto e um mês por chamada. */
+export type ExternalRefundBatch = {
+  /** Grafia do catálogo (o arquivo escreve "Jelly Rock", o catálogo "Jellyrock"). */
+  product: string;
+  /** Nome exatamente como veio no arquivo, para a prévia denunciar troca de produto. */
+  sourceProduct: string;
+  /** Primeiro dia do mês do reembolso, YYYY-MM-DD. */
+  monthRef: string;
+  rows: ExternalRefundImportRow[];
+};
+
+export type ParsedPagAmericanRefunds = {
+  recognized: boolean;
+  batches: ExternalRefundBatch[];
+  /** Reembolsos lidos (soma das linhas dos lotes). */
+  refunds: number;
+  /** Linhas de chargeback, deixadas de fora de propósito. */
+  chargebacks: number;
+  /** Reembolsos sem tipo no arquivo (Order Status fora dos dois conhecidos). */
+  unspecified: number;
+  /** Produtos do arquivo que não existem no catálogo. */
+  unknownProducts: string[];
+};
+
+/**
+ * Canoniza o nome do produto pela grafia do catálogo, ignorando espaços e caixa:
+ * "Jelly Rock" → "Jellyrock", "blue horse" → "Blue Horse". Produto fora do
+ * catálogo passa como veio — a prévia da importação mostra para a gestora.
+ */
+export function canonicalProduct(raw: string): string {
+  const key = raw.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return PRODUCTS.find((p) => p.toLowerCase().replace(/[^a-z0-9]/g, "") === key) ?? raw.trim();
+}
+
+const PAGAMERICAN_TYPE: Record<string, string> = {
+  totally_refunded: REFUND_TYPE_FULL,
+  partially_refunded: REFUND_TYPE_PARTIAL,
+};
+
+function col(headers: string[], name: string): number {
+  return headers.indexOf(name);
+}
+
+/** O arquivo é um export da PagAmerican? */
+export function isPagAmericanHeader(headers: string[]): boolean {
+  return headers.includes("orderid") && headers.includes("orderstatus") && headers.includes("firstrefunddate");
+}
+
+export function parsePagAmericanRefunds(data: ArrayBuffer | Uint8Array): ParsedPagAmericanRefunds {
+  const vazio: ParsedPagAmericanRefunds = {
+    recognized: false, batches: [], refunds: 0, chargebacks: 0, unspecified: 0, unknownProducts: [],
+  };
+  const matrix = readMatrix(data);
+  if (matrix.length < 2) return vazio;
+
+  const headers = matrix[0].map(normalizeHeader);
+  if (!isPagAmericanHeader(headers)) return vazio;
+
+  const iOrder = col(headers, "orderid");
+  const iStatus = col(headers, "orderstatus");
+  const iProduct = col(headers, "productname");
+  const iName = col(headers, "customername");
+  const iPhone = col(headers, "customerphone");
+  const iAmount = col(headers, "refundamount");
+  const iDate = col(headers, "firstrefunddate");
+  // "chageback date" é como a origem escreve; aceita a grafia corrigida também.
+  const iCbDate = col(headers, "chagebackdate") >= 0 ? col(headers, "chagebackdate") : col(headers, "chargebackdate");
+  const iCbAmount = col(headers, "chargebackamount");
+
+  const porLote = new Map<string, ExternalRefundBatch>();
+  const desconhecidos = new Set<string>();
+  let chargebacks = 0;
+  let unspecified = 0;
+  let refunds = 0;
+
+  for (let i = 1; i < matrix.length; i++) {
+    const cols = matrix[i];
+    if (!cols || cols.every((c) => cellToText(c) === "")) continue;
+
+    const orderName = cellToText(cols[iOrder]);
+    const rawDate = cellToText(cols[iDate]);
+    const rawAmount = cellToText(cols[iAmount]);
+    const refundDate = parseExportDate(rawDate);
+
+    // Reembolso é valor + data. Sem os dois, ou é chargeback ou é linha sem uso.
+    if (!orderName || !refundDate || !rawAmount) {
+      const temCb = iCbAmount >= 0 && cellToText(cols[iCbAmount]) !== "" && iCbDate >= 0 && cellToText(cols[iCbDate]) !== "";
+      if (temCb) chargebacks++;
+      continue;
+    }
+
+    const rawProduct = cellToText(cols[iProduct]);
+    const product = canonicalProduct(rawProduct);
+    if (!PRODUCTS.includes(product as (typeof PRODUCTS)[number])) desconhecidos.add(rawProduct);
+
+    const status = cellToText(cols[iStatus]).toLowerCase();
+    const tipo = PAGAMERICAN_TYPE[status] ?? REFUND_TYPE_UNSPECIFIED;
+    if (tipo === REFUND_TYPE_UNSPECIFIED) unspecified++;
+
+    const valor = Number(rawAmount.replace(/[^0-9.-]/g, ""));
+    const monthRef = `${refundDate.slice(0, 7)}-01`;
+
+    const row: ExternalRefundImportRow = {
+      order_name: orderName,
+      order_date: refundDate,
+      refund_amount: Number.isFinite(valor) ? String(Math.abs(valor)) : "0",
+      payment_status: tipo,
+      raw_date: rawDate,
+      product_name: rawProduct || undefined,
+    };
+    const fullName = iName >= 0 ? cellToText(cols[iName]) : "";
+    if (fullName) row.full_name = fullName;
+    const phone = iPhone >= 0 ? cellToText(cols[iPhone]).replace(/\s+/g, "") : "";
+    if (phone) row.mobile_no = phone;
+
+    const chave = `${product}\u0000${monthRef}`;
+    const lote = porLote.get(chave) ?? { product, sourceProduct: rawProduct, monthRef, rows: [] };
+    lote.rows.push(row);
+    porLote.set(chave, lote);
+    refunds++;
+  }
+
+  const batches = Array.from(porLote.values()).sort(
+    (a, b) => a.product.localeCompare(b.product) || a.monthRef.localeCompare(b.monthRef),
+  );
+  return { recognized: true, batches, refunds, chargebacks, unspecified, unknownProducts: Array.from(desconhecidos) };
 }

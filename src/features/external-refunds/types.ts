@@ -30,6 +30,19 @@ export type ExternalRefundImportRow = {
   raw_date?: string;
 };
 
+/**
+ * Tipo do reembolso na plataforma, como gravado em external_refunds.payment_status.
+ *
+ * Os dois primeiros são o vocabulário do export da Cartpanda. O terceiro nasceu
+ * com a PagAmerican: o arquivo confirma o reembolso (tem valor e data) mas não
+ * diz se foi integral ou parcial, e inferir pelo valor não é possível — as
+ * faixas de integral e parcial se sobrepõem. Ele NÃO entra em cálculo nenhum:
+ * % interno e % externo saem do total de pedidos e do interno, nunca do tipo.
+ */
+export const REFUND_TYPE_FULL = "Refunded";
+export const REFUND_TYPE_PARTIAL = "Partially refunded";
+export const REFUND_TYPE_UNSPECIFIED = "Refunded (unspecified)";
+
 /** Plataformas de venda com export de reembolso. Mesmas grafias de refunds.sales_platform. */
 export const EXTERNAL_PLATFORMS = ["Cartpanda", "Buygoods", "PagAmerican"] as const;
 export type ExternalPlatform = (typeof EXTERNAL_PLATFORMS)[number];
