@@ -8,6 +8,11 @@ import fixture from "@/features/external-refunds/__fixtures__/comparison.json";
 // Resposta real da RPC dashboard_external_refund_comparison (jul+ago/2026,
 // gerada no banco local com os 10 exports e uma amostra dos reembolsos internos;
 // clientes/agentes anonimizados). O que se testa aqui é a leitura desse jsonb.
+//
+// Os campos de agregado do summary foram recalculados em 20260917120000, quando o
+// agregado passou a considerar só pares (produto, mês) com arquivo importado: a
+// fixture tem duas linhas em "—" (Mind Wake e Quiet Nerves em julho) com 5
+// reembolsos internos, que o summary somava sem ter denominador para eles.
 const queryResult = vi.hoisted(() => ({ current: undefined as unknown }));
 vi.mock("@/features/external-refunds/useExternalRefundComparisonQuery", () => ({
   useExternalRefundComparisonQuery: () => queryResult.current,
@@ -45,11 +50,11 @@ describe("DashboardRefundsComparativo", () => {
     queryResult.current = { data: fixture, isLoading: false, isError: false };
     renderPage();
 
-    // KPIs do período: 487 internos, 1.470 externos.
+    // KPIs do período: 482 internos (só os meses com arquivo), 1.470 externos.
     expect(screen.getByText("Interno concluído (Cartpanda)")).toBeTruthy();
     expect(screen.getAllByText("Plataforma").length).toBeGreaterThanOrEqual(2); // filtro + coluna dos lotes
     // Cada total aparece no card e na linha "Todos" da tabela.
-    expect(screen.getAllByText("487").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("482").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("1.470").length).toBeGreaterThanOrEqual(2);
     // Card "Casados" foi removido a pedido da gestora.
     expect(screen.queryByText("Casados")).toBeNull();
@@ -91,6 +96,38 @@ describe("DashboardRefundsComparativo", () => {
         expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
       }
     }
+  });
+
+  // O agregado (linha "Todos" e os cards) considera SOMENTE pares (produto, mês)
+  // com arquivo importado: linha em "—" fica fora do numerador E do denominador.
+  // Antes, o interno dessas linhas entrava no numerador sem ter nada para somar
+  // no denominador e inflava o % interno de todo mundo — em produção,
+  // 224/847 = 26,4% no lugar de 86/847 = 10,2%.
+  it("o agregado soma só as linhas com arquivo importado", () => {
+    const comArquivo = fixture.by_product_month.filter((r) => r.external_count > 0);
+    const semArquivo = fixture.by_product_month.filter((r) => r.external_count === 0);
+
+    // Sem os dois casos na fixture o teste não prova nada.
+    expect(comArquivo.length).toBeGreaterThan(0);
+    expect(semArquivo.length).toBeGreaterThan(0);
+    expect(semArquivo.reduce((a, r) => a + r.internal_count, 0)).toBeGreaterThan(0);
+
+    expect(fixture.summary.internal_count).toBe(
+      comArquivo.reduce((a, r) => a + r.internal_count, 0),
+    );
+    // O recorte vale para o agregado inteiro, não só para a fração: senão a linha
+    // "Todos" mostraria "Só interno" acima de "Interno".
+    expect(fixture.summary.internal_only).toBe(
+      comArquivo.reduce((a, r) => a + r.internal_only, 0),
+    );
+    expect(fixture.summary.internal_without_order).toBe(
+      comArquivo.reduce((a, r) => a + r.internal_without_order, 0),
+    );
+    expect(fixture.summary.internal_only).toBeLessThanOrEqual(fixture.summary.internal_count);
+    // O denominador já só tinha linhas com arquivo; continua igual.
+    expect(fixture.summary.external_count).toBe(
+      comArquivo.reduce((a, r) => a + r.external_count, 0),
+    );
   });
 
   it("marca a linha em que o interno passa do total importado", () => {
