@@ -3,7 +3,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-import { fmtDate, fmtUsd, KIND_LABEL, type DivergenceRow } from "./types";
+import {
+  fmtDate,
+  fmtUsd,
+  KIND_LABEL,
+  REFUND_TYPE_FULL,
+  REFUND_TYPE_PARTIAL,
+  type DivergenceRow,
+} from "./types";
 
 type Props = {
   rows: DivergenceRow[];
@@ -23,7 +30,11 @@ function KindBadge({ row }: { row: DivergenceRow }) {
 
 function externalStatusLabel(row: DivergenceRow): string {
   if (!row.payment_status) return "—";
-  return row.payment_status === "Refunded" ? "Integral" : "Parcial";
+  if (row.payment_status === REFUND_TYPE_FULL) return "Integral";
+  if (row.payment_status === REFUND_TYPE_PARTIAL) return "Parcial";
+  // PagAmerican: o arquivo confirma o reembolso mas não diz o tipo. Sem isso
+  // cairia no "Parcial" do else e afirmaria algo que o arquivo não afirma.
+  return "Não informado";
 }
 
 /** Lista pedido a pedido. O número (ou a ausência dele) é a chave de tudo. */

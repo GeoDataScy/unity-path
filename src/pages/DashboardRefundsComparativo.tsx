@@ -66,6 +66,28 @@ function InconsistentBadge() {
   );
 }
 
+/**
+ * Coluna "Integral / parcial". O arquivo da PagAmerican confirma o reembolso mas
+ * em parte dos pedidos não diz o tipo, e esses não entram em nenhum dos dois
+ * números. Sem o terceiro, integral + parcial não fecharia com o total e a
+ * diferença ficaria invisível. Na Cartpanda todo pedido é classificado, o
+ * terceiro é zero e a célula fica idêntica ao que sempre foi.
+ */
+function TypeBreakdown({ row }: { row: { external_count: number; external_full: number; external_partial: number } }) {
+  const semTipo = Math.max(row.external_count - row.external_full - row.external_partial, 0);
+  return (
+    <>
+      {fmtInt(row.external_full)} / {fmtInt(row.external_partial)}
+      {semTipo > 0 && (
+        <span className="text-muted-foreground" title="o arquivo não informa se foi integral ou parcial">
+          {" "}
+          · {fmtInt(semTipo)} s/ tipo
+        </span>
+      )}
+    </>
+  );
+}
+
 // "Todos os meses" = do primeiro export importado até hoje. O intervalo largo
 // não pesa: a RPC só olha external_refunds e os refunds dos produtos dela.
 const ALL_FROM = "2026-01-01";
@@ -387,7 +409,7 @@ export default function DashboardRefundsComparativo() {
                       <TableCell className="text-right tabular-nums">{fmtPct(r.internal_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtPct(r.external_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fmtInt(r.external_full)} / {fmtInt(r.external_partial)}
+                        <TypeBreakdown row={r} />
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{fmtUsd(r.external_amount)}</TableCell>
                     </TableRow>
@@ -409,7 +431,7 @@ export default function DashboardRefundsComparativo() {
                       <TableCell className="text-right tabular-nums">{fmtPct(summary.internal_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtPct(summary.external_pct)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {fmtInt(summary.external_full)} / {fmtInt(summary.external_partial)}
+                        <TypeBreakdown row={summary} />
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{fmtUsd(summary.external_amount)}</TableCell>
                     </TableRow>
@@ -417,13 +439,22 @@ export default function DashboardRefundsComparativo() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-xs text-muted-foreground">
-                <strong>Total da loja</strong> é a contagem de pedidos distintos do arquivo importado, no mês
-                informado na importação. <strong>Interno</strong> são os reembolsos concluídos com plataforma{" "}
+                <strong>Total da loja</strong> é a contagem de pedidos distintos do arquivo importado,{" "}
+                {platform === "PagAmerican"
+                  ? "no mês do reembolso, que o próprio arquivo informa"
+                  : "no mês informado na importação"}
+                . <strong>Interno</strong> são os reembolsos concluídos com plataforma{" "}
                 {platform}, pela data da baixa — o mesmo que a Visão geral mostra com Status “Concluídos”.{" "}
                 <strong>Externo</strong> é o que sobra: total da loja menos o interno. Daí saem{" "}
                 <strong>% interno</strong> (interno ÷ total) e <strong>% externo</strong> (o restante), que somam 100%.
                 Sem arquivo importado para o período, as duas colunas ficam em “—” em vez de 0%. Se o interno passar do
                 total, o externo fica em 0 e a linha ganha um aviso: o arquivo daquele período está velho ou faltando.
+                {platform === "PagAmerican" && (
+                  <>
+                    Nesta plataforma o arquivo confirma o reembolso mas nem sempre diz se foi integral ou parcial: esses
+                    aparecem como “s/ tipo” e contam normalmente no total e nas porcentagens, que não usam o tipo.{" "}
+                  </>
+                )}
                 As colunas “só interno” e “só externo” vêm do casamento por número de pedido (interno <code>1896</code>{" "}
                 = externo <code>#1896</code>) e servem para a lista pedido a pedido — não entram no cálculo das
                 porcentagens, porque quem não casa por ruído subestimaria o interno.
