@@ -99,6 +99,26 @@ All colors MUST be HSL.
     --chart-grid: 220 13% 91%;
     --chart-axis: 220 9% 46%;
 
+    /* ── Pedidos em Espera / Área de Produtos ──────────────────────────────
+       Estes passos NÃO foram escolhidos no olho: são os passos das rampas acima
+       que passam nas checagens de daltonismo, faixa de luminosidade e contraste
+       contra a superfície de cada tema (ΔE CVD ~32 no par entradas/saídas).
+       O âmbar padrão (--chart-4) reprovava por contraste no tema claro (2.08:1),
+       por isso aqui ele aparece um passo mais escuro. */
+    --ho-in: 38 92% 42%;      /* entradas na fila */
+    --ho-out: 221 83% 55%;    /* saídas da fila (concluído + encerrado) */
+    --ho-backlog: 263 70% 62%; /* fila acumulada */
+
+    /* Envelhecimento: rampa SEQUENCIAL de um matiz só, clara -> escura conforme
+       o pedido envelhece. Rampa sequencial se valida por monotonicidade de
+       luminosidade, não pela faixa categórica. */
+    --ho-age-1: 30 88% 72%;
+    --ho-age-2: 30 88% 64%;
+    --ho-age-3: 30 88% 56%;
+    --ho-age-4: 30 88% 48%;
+    --ho-age-5: 30 88% 40%;
+    --ho-age-6: 30 88% 34%;
+
     /* Bloco de notas do agente — papel pautado.
        `paper` é um branco levemente quente (papel, não tela); `rule` é a pauta e
        precisa ficar visível SOB o texto sem competir com ele; `margin` é a linha
@@ -184,6 +204,21 @@ All colors MUST be HSL.
 
     --chart-grid: 220 13% 22%;
     --chart-axis: 220 9% 65%;
+
+    /* Pedidos em Espera — tema escuro é ESCOLHIDO, não é o claro invertido:
+       revalidado contra a superfície escura (--dashboard-surface 220 13% 11%).
+       A rampa de envelhecimento inverte o sentido — no escuro, mais claro é mais
+       saliente, então o pedido mais velho é o passo mais claro. */
+    --ho-in: 30 90% 44%;
+    --ho-out: 221 88% 66%;
+    --ho-backlog: 263 75% 58%;
+
+    --ho-age-1: 30 85% 34%;
+    --ho-age-2: 30 85% 40%;
+    --ho-age-3: 30 85% 46%;
+    --ho-age-4: 30 85% 52%;
+    --ho-age-5: 30 85% 58%;
+    --ho-age-6: 30 85% 64%;
 
     /* Caderno no dark: papel escuro (um degrau acima do fundo do app, para o
        painel se destacar), pauta discreta e margem dessaturada. */
