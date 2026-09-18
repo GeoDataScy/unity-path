@@ -169,6 +169,28 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getByText(/Chargeback sem reembolso não entra na base/)).toBeTruthy();
   });
 
+  // O seletor de período substituiu o select de "Mês": ele faz o mesmo em um
+  // clique (atalhos por mês) e ainda permite o recorte dia a dia, que é o que o
+  // gestor precisa para reproduzir a janela exata de um relatório.
+  it("tem seletor de período com calendário e atalhos por mês", async () => {
+    withData();
+    const botao = screen.getByRole("button", { name: /Escolher o período/ });
+    // sem escolha, mostra o intervalo real dos dados
+    expect(botao.textContent).toContain("12/08/2026 – 16/09/2026");
+    // o select de Mês não existe mais
+    expect(screen.queryByText("Todos os meses importados")).toBeNull();
+
+    fireEvent.click(botao);
+    expect(await screen.findByText("Todo o período importado")).toBeTruthy();
+    // um atalho por mês importado, vindos dos lotes da RPC
+    const meses = new Set(fixture.imports.map((b) => b.month_ref.slice(0, 7)));
+    for (const m of meses) {
+      const [y, mm] = m.split("-");
+      const nome = new Date(Number(y), Number(mm) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+      expect(screen.getAllByText((t) => t.includes(nome.slice(0, 3))).length).toBeGreaterThan(0);
+    }
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     withData({
       ...fixture,

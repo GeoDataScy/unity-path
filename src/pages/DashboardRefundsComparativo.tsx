@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AlertTriangle, Upload } from "lucide-react";
+import type { DateRange } from "react-day-picker";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { RefundsSubNav } from "@/components/dashboard/RefundsSubNav";
 import { DivergencesTable } from "@/features/external-refunds/DivergencesTable";
 import { ImportExternalRefundsDialog } from "@/features/external-refunds/ImportExternalRefundsDialog";
 import { ProductBreakdownCards } from "@/features/external-refunds/ProductBreakdownCards";
+import { RefundPeriodPicker } from "@/features/external-refunds/RefundPeriodPicker";
 import { RefundComposition } from "@/features/external-refunds/RefundComposition";
 import { RefundVolumeChart } from "@/features/external-refunds/RefundVolumeChart";
 import { TeamShareChart } from "@/features/external-refunds/TeamShareChart";
@@ -70,10 +72,8 @@ function todayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function monthRange(month: string): { from: string; to: string } {
-  const [y, m] = month.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
+function toISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** Controle segmentado do layout de referência. */
@@ -159,7 +159,9 @@ export default function DashboardRefundsComparativo() {
   const { role } = useOutletContext<ManagerOutletContext>();
   const isManager = role === "manager";
 
-  const [month, setMonth] = useState<string>("all");
+  // undefined = todo o período importado. O gestor escolhe um intervalo de dias
+  // para reproduzir exatamente a janela de um relatório.
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
   const [product, setProduct] = useState<string>("all");
   const [platform, setPlatform] = useState<ExternalPlatform>(DEFAULT_PLATFORM);
   const [kind, setKind] = useState<DivergenceFilter>("all");
@@ -176,7 +178,7 @@ export default function DashboardRefundsComparativo() {
 
   useEffect(() => {
     setPage(1);
-  }, [month, product, platform, kind]);
+  }, [range, product, platform, kind]);
 
   // Plataforma sem data de reembolso no arquivo só pode ser lida por mês: ali
   // "por dia" seria a data da COMPRA, outra pergunta. Ao trocar de plataforma o
@@ -186,10 +188,12 @@ export default function DashboardRefundsComparativo() {
     if (!grans.includes(gran)) setGran(grans[grans.length - 1]);
   }, [grans, gran]);
 
+  // Enquanto só o primeiro dia foi clicado o intervalo fica incompleto: mantém
+  // o período inteiro em vez de consultar com meia escolha.
   const { from, to } = useMemo(() => {
-    if (month === "all") return { from: ALL_FROM, to: todayISO() };
-    return monthRange(month);
-  }, [month]);
+    if (range?.from && range.to) return { from: toISO(range.from), to: toISO(range.to) };
+    return { from: ALL_FROM, to: todayISO() };
+  }, [range]);
 
   const query = useExternalRefundComparisonQuery({
     from,
@@ -253,11 +257,7 @@ export default function DashboardRefundsComparativo() {
     };
   }, [series, platform]);
 
-  const periodLabel = kpis.first
-    ? `${fmtDate(kpis.first)} – ${fmtDate(kpis.last)}`
-    : month === "all"
-      ? "sem dados importados"
-      : fmtMonth(month);
+  const periodLabel = kpis.first ? `${fmtDate(kpis.first)} – ${fmtDate(kpis.last)}` : "sem dados importados";
 
   const handleDelete = async () => {
     if (!productToDelete) return;
@@ -300,24 +300,6 @@ export default function DashboardRefundsComparativo() {
             {EXTERNAL_PLATFORMS.map((p) => (
               <SelectItem key={p} value={p}>
                 {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ),
-    },
-    {
-      lab: "Mês",
-      node: (
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os meses importados</SelectItem>
-            {monthOptions.map((m) => (
-              <SelectItem key={m} value={m}>
-                {fmtMonth(m)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -381,20 +363,13 @@ export default function DashboardRefundsComparativo() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className="inline-flex items-baseline gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px]"
-              style={{
-                background: "var(--rf-panel)",
-                borderColor: "var(--rf-line)",
-                color: "var(--rf-ink-soft)",
-                boxShadow: "var(--rf-shadow)",
-              }}
-            >
-              período{" "}
-              <b className="rf-display font-semibold" style={{ color: "var(--rf-ink)" }}>
-                {periodLabel}
-              </b>
-            </span>
+            <RefundPeriodPicker
+              value={range}
+              onChange={setRange}
+              months={monthOptions}
+              fallbackLabel={periodLabel}
+              firstDate={kpis.first}
+            />
             {isManager && (
               <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" /> Importar
@@ -409,7 +384,7 @@ export default function DashboardRefundsComparativo() {
           </p>
         )}
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-3">
           {filtros.map((f) => (
             <div key={f.lab} className="space-y-1.5">
               <div className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--rf-ink-faint)" }}>
