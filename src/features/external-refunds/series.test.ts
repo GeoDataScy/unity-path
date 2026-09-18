@@ -59,13 +59,22 @@ describe("buildBuckets", () => {
     expect(b[1].total).toBe(500);
   });
 
-  it("produto escondido sai do total e também da fatia do time", () => {
-    const b = buildBuckets(SERIE, "mes", "qtd", new Set(["Jellyrock"]));
-    expect(b[0].total).toBe(1); // só o Honeyfil de agosto
-    // sem Jellyrock não sobra nenhum casado em agosto
-    expect(b[0].matched).toBe(0);
-    expect(b[0].orders).toBe(1);
-    expect(teamShare(b[0])).toBe(0);
+  // A legenda é um recorte do gráfico de volume, não um filtro da tela — é assim
+  // no painel de referência e foi decisão do gestor manter. A migração do
+  // atendimento continua sobre o período inteiro; quem quer recortar tudo por
+  // produto usa o filtro Produto.
+  it("produto escondido sai do total mas não da fatia do time", () => {
+    const visivel = buildBuckets(SERIE, "mes", "qtd");
+    const escondido = buildBuckets(SERIE, "mes", "qtd", new Set(["Jellyrock"]));
+
+    expect(escondido[0].total).toBe(1); // só o Honeyfil de agosto entra nas barras
+    expect(visivel[0].total).toBe(10);
+
+    // a fatia do time não se mexe
+    expect(escondido[0].matched).toBe(visivel[0].matched);
+    expect(escondido[0].orders).toBe(visivel[0].orders);
+    expect(teamShare(escondido[0])).toBe(teamShare(visivel[0]));
+    expect(teamShare(escondido[0])).toBe(30);
   });
 
   it("a fatia do time é contagem mesmo quando o gráfico mede valor", () => {
