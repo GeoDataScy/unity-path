@@ -474,8 +474,13 @@ export default function DashboardRefundsComparativo() {
 
         <Panel className="px-2 pb-3 pt-5">
           <div className="flex items-baseline justify-between gap-3 px-3.5 pb-1.5">
-            <span className="rf-display text-[15px] font-semibold" style={{ color: "var(--rf-ink)" }}>
-              Reembolsos por {gran === "dia" ? "dia" : gran === "sem" ? "semana" : "mês"}
+            <span className="flex items-baseline gap-2">
+              <span className="rf-display text-[15px] font-semibold" style={{ color: "var(--rf-ink)" }}>
+                Reembolsos por {gran === "dia" ? "dia" : gran === "sem" ? "semana" : "mês"}
+              </span>
+              <span className="text-xs" style={{ color: "var(--rf-ink-faint)" }}>
+                {metric === "qtd" ? "quantidade de reembolsos" : "valor reembolsado (US$)"}
+              </span>
             </span>
             {gran === "dia" && (
               <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--rf-ink-faint)" }}>
@@ -681,11 +686,11 @@ export default function DashboardRefundsComparativo() {
           <b>Base:</b> reembolsos executados pela plataforma, do arquivo importado, sem os chargebacks. Data usada:{" "}
           {hasRefundDate(platform) ? "a do reembolso" : "a da compra, única que o arquivo desta plataforma traz"}.
           <br />
-          <b>% interno:</b> dos pedidos que a plataforma reembolsou, quantos passaram pelo nosso time — casamento pelo
+          <b>% interno:</b> dos pedidos que a plataforma reembolsou, quantos passaram pela sua equipe — casamento pelo
           número do pedido contra a base interna. <b>% externo</b> é o restante; os dois somam 100%.
           <br />
-          <b>Leitura:</b> passe o cursor nas barras para ver o detalhe; clique num produto na legenda para tirá-lo da
-          conta.
+          <b>Leitura:</b> passe o cursor nas barras para ver o detalhe; clique num produto na legenda para tirá-lo do
+          gráfico de volume. Para recortar a tela inteira por produto, use o filtro Produto.
         </footer>
       </div>
 

@@ -227,6 +227,63 @@ describe("DashboardRefundsComparativo", () => {
     }
   });
 
+  // Guarda de INVENTÁRIO, não de números. As auditorias anteriores compararam
+  // valor a valor e passaram três vezes por cima de uma seção inteira que não
+  // tinha sido portada (os cartões do painel de migração): os números que
+  // existiam estavam certos, e os que faltavam não apareciam em lugar nenhum
+  // para serem comparados. Esta lista é o painel de referência, elemento a
+  // elemento.
+  it("tem todas as seções do painel de referência", () => {
+    withData();
+    const presente = (t: string | RegExp) => expect(screen.getAllByText(t).length).toBeGreaterThan(0);
+
+    // cabeçalho e período
+    presente("Volume de reembolsos");
+    expect(screen.getByRole("button", { name: /Escolher o período/ })).toBeTruthy();
+
+    // KPIs do topo (os 4 dele + o % interno, que é a métrica oficial daqui)
+    presente("Reembolsos no período");
+    presente("Valor total reembolsado");
+    presente(/Pico em um único (dia|mês)/);
+    presente("Produto líder");
+    presente("% interno");
+
+    // controles
+    expect(screen.getByRole("group", { name: "agrupar por" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "medir" })).toBeTruthy();
+
+    // gráfico de volume: título, nota do que está sendo medido e legenda
+    presente(/Reembolsos por (dia|semana|mês)/);
+    presente("quantidade de reembolsos");
+    expect(screen.getAllByRole("button", { name: /Jellyrock/ }).length).toBeGreaterThan(0);
+
+    // migração do atendimento: título, dica, os TRÊS cartões e a legenda
+    presente(/Migração do atendimento/);
+    presente(/acompanha a granularidade/);
+    presente("Atendidos pela sua equipe");
+    presente("Atendidos pela plataforma");
+    presente("Evolução da sua fatia");
+    presente("% atendido pela sua equipe");
+    presente("tendência");
+    presente("média do período");
+
+    // composição
+    presente(/Composição/);
+    presente("Parciais");
+    presente("Integrais");
+    presente(/Chargeback sem reembolso não entra na base/);
+
+    // por produto
+    presente("Por produto no período");
+    presente(/reemb\. ·/);
+
+    // lista, arquivos e rodapé
+    presente("Pedido a pedido");
+    presente("Arquivos importados");
+    presente("Base:");
+    presente("Leitura:");
+  });
+
   it("mostra estado vazio quando nada foi importado", () => {
     withData({
       ...fixture,

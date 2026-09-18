@@ -142,14 +142,14 @@ export function TeamShareChart({ buckets, gran, overallPct }: Props) {
           <div className="flex items-center justify-between gap-6 py-0.5">
             <span className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--rf-equipe)" }} />
-              Nosso time
+              Sua equipe
             </span>
             <span className="tabular-nums font-medium">{fmtInt(hover.bucket.matched)}</span>
           </div>
           <div className="flex items-center justify-between gap-6 py-0.5">
             <span className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "var(--rf-plat)" }} />
-              Só na plataforma
+              Plataforma
             </span>
             <span className="tabular-nums font-medium">{fmtInt(hover.bucket.orders - hover.bucket.matched)}</span>
           </div>
@@ -157,7 +157,7 @@ export function TeamShareChart({ buckets, gran, overallPct }: Props) {
             className="mt-1.5 flex items-center justify-between gap-6 border-t pt-1.5 font-semibold"
             style={{ borderColor: "var(--rf-line)" }}
           >
-            <span>% interno</span>
+            <span>Sua fatia</span>
             <span className="tabular-nums">{fmtPct(teamShare(hover.bucket))}</span>
           </div>
         </ChartTooltip>
