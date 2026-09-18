@@ -213,3 +213,83 @@ All colors MUST be HSL.
 .lya-ticker-track:hover {
   animation-play-state: paused;
 }
+
+/* ---------------------------------------------------------------------------
+   Painel de reembolsos externos (/dashboard/reembolsos/comparativo)
+   ---------------------------------------------------------------------------
+   Tokens do layout de referência enviado pelo gestor. Ficam escopados em
+   .refunds-visual para não vazarem no resto do app, que tem a própria paleta
+   em HSL. Aqui são hex porque são os valores exatos do original.
+
+   As quatro primeiras cores de produto são as dele, ligadas ao nome (geleia,
+   mel, castanho, azul). As de reserva entram para produtos que ele não tinha —
+   a Cartpanda sozinha traz sete. Foram escolhidas longe umas das outras em
+   matiz E em luminosidade, porque só matiz não separa em daltonismo.
+*/
+.refunds-visual {
+  --rf-bg: #eef1f4;
+  --rf-panel: #ffffff;
+  --rf-panel-2: #f6f8fa;
+  --rf-ink: #141922;
+  --rf-ink-soft: #5a6472;
+  --rf-ink-faint: #8b95a3;
+  --rf-line: #dce1e8;
+  --rf-line-strong: #c3cad4;
+  --rf-focus: #2b6cff;
+
+  --rf-p1: #c33d78; /* Jellyrock — geleia */
+  --rf-p2: #e3a11c; /* Honeyfil — mel */
+  --rf-p3: #9a6a3f; /* Horsefil — castanho */
+  --rf-p4: #3e6db5; /* Blue Horse — azul */
+  --rf-p5: #2f8f6f;
+  --rf-p6: #7a5cc4;
+  --rf-p7: #b4543a;
+  --rf-p8: #4a7f9e;
+
+  --rf-ma: #1e2733;
+  --rf-parcial: #1f9e8f;
+  --rf-total: #48566a;
+  --rf-outros: #c0c8d2;
+  --rf-equipe: #6d54d8;
+  --rf-plat: #cbd2db;
+  --rf-trend: #d9455f;
+  --rf-shadow: 0 1px 2px rgba(20, 25, 34, 0.05), 0 8px 24px rgba(20, 25, 34, 0.06);
+}
+
+.dark .refunds-visual {
+  --rf-bg: #0e1218;
+  --rf-panel: #161c25;
+  --rf-panel-2: #1c232e;
+  --rf-ink: #eef2f7;
+  --rf-ink-soft: #9aa5b3;
+  --rf-ink-faint: #6b7684;
+  --rf-line: #28313d;
+  --rf-line-strong: #3a4552;
+  --rf-focus: #5b8bff;
+
+  --rf-p1: #e0619a;
+  --rf-p2: #f0b845;
+  --rf-p3: #c08a58;
+  --rf-p4: #6b95d8;
+  --rf-p5: #4cbf99;
+  --rf-p6: #a992e8;
+  --rf-p7: #e08065;
+  --rf-p8: #79aecd;
+
+  --rf-ma: #eaf0f7;
+  --rf-parcial: #35c2ad;
+  --rf-total: #8a97a8;
+  --rf-outros: #3f4a58;
+  --rf-equipe: #9b8bf0;
+  --rf-plat: #3a4552;
+  --rf-trend: #ff6b81;
+  --rf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.refunds-visual .rf-display {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+.refunds-visual .rf-body {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
