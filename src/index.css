@@ -253,6 +253,7 @@ All colors MUST be HSL.
   --rf-equipe: #6d54d8;
   --rf-plat: #cbd2db;
   --rf-trend: #d9455f;
+  --rf-up: #1f9e5f;
   --rf-shadow: 0 1px 2px rgba(20, 25, 34, 0.05), 0 8px 24px rgba(20, 25, 34, 0.06);
 }
 
@@ -283,6 +284,7 @@ All colors MUST be HSL.
   --rf-equipe: #9b8bf0;
   --rf-plat: #3a4552;
   --rf-trend: #ff6b81;
+  --rf-up: #3fca7f;
   --rf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 

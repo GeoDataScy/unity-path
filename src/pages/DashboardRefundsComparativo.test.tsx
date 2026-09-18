@@ -155,6 +155,42 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getAllByText(String(maiorMes)).length).toBeGreaterThanOrEqual(1);
   });
 
+  // Os três cartões dentro do painel de migração, como no painel de referência.
+  // A evolução compara SEMPRE o primeiro mês com o último, mesmo que o gráfico
+  // esteja em dia ou semana — fatia dia a dia é ruído.
+  it("mostra os cartões de equipe × plataforma com a evolução entre meses", () => {
+    const total = fixture.series.reduce((a, r) => a + r.orders, 0);
+    const equipe = fixture.series.reduce((a, r) => a + r.matched, 0);
+    const porMes = new Map<string, { t: number; p: number }>();
+    for (const r of fixture.series) {
+      const k = r.date.slice(0, 7);
+      const c = porMes.get(k) ?? { t: 0, p: 0 };
+      c.t += r.orders;
+      c.p += r.matched;
+      porMes.set(k, c);
+    }
+    const meses = [...porMes.keys()].sort();
+    expect(meses.length).toBe(2);
+    const pctUltimo = (porMes.get(meses[1])!.p / porMes.get(meses[1])!.t) * 100;
+    const pctPrimeiro = (porMes.get(meses[0])!.p / porMes.get(meses[0])!.t) * 100;
+
+    withData();
+    expect(screen.getByText("Atendidos pela sua equipe")).toBeTruthy();
+    expect(screen.getByText("Atendidos pela plataforma")).toBeTruthy();
+    expect(screen.getByText("Evolução da sua fatia")).toBeTruthy();
+
+    // equipe + plataforma = total do período
+    expect(screen.getAllByText(String(equipe)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(String(total - equipe)).length).toBeGreaterThan(0);
+
+    // a evolução mostra o último mês, e o subtítulo traz o primeiro com a seta
+    const fmt = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
+    expect(screen.getAllByText(fmt(pctUltimo)).length).toBeGreaterThan(0);
+    expect(screen.getByText(new RegExp(`ago/2026 ${fmt(pctPrimeiro).replace(",", ",")}`))).toBeTruthy();
+    expect(pctUltimo).toBeGreaterThan(pctPrimeiro); // sobe, então vai de verde com ▲
+    expect(screen.getByText("▲")).toBeTruthy();
+  });
+
   it("mantém importação, filtro de plataforma e lista pedido a pedido", () => {
     withData();
     expect(screen.getByRole("button", { name: /Importar/ })).toBeTruthy();
