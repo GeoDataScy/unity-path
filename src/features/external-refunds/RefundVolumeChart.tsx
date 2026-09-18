@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { computeSlot, GAP, labelStep, PAD, tickCount, useMeasuredWidth } from "./chartLayout";
 import { movingAverage, niceMax, type Bucket, type ChartMetric, type Granularity } from "./series";
 import { fmtInt, fmtUsd, fmtUsdCompact } from "./types";
 
@@ -15,7 +16,7 @@ type Props = {
 type Hover = { x: number; y: number; bucket: Bucket } | null;
 
 const H = 360;
-const PAD = { l: 46, r: 14, t: 18, b: 42 };
+const PAD_Y = { t: 18, b: 42 };
 
 /**
  * Barras empilhadas por produto, uma barra por balde de tempo.
@@ -28,18 +29,22 @@ const PAD = { l: 46, r: 14, t: 18, b: 42 };
  */
 export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: Props) {
   const [hover, setHover] = useState<Hover>(null);
+  const [boxRef, boxW] = useMeasuredWidth<HTMLDivElement>();
 
   const visible = products.filter((p) => !hidden.has(p.key));
   const isDay = gran === "dia";
-  const slot = isDay ? 26 : gran === "sem" ? 90 : 150;
-  const gap = isDay ? 6 : 26;
+  const slot = computeSlot(boxW, buckets.length, gran);
+  const gap = GAP[gran];
   const barW = slot - gap;
-  const W = PAD.l + PAD.r + buckets.length * slot;
-  const plotH = H - PAD.t - PAD.b;
+  const W = Math.max(boxW, PAD.l + PAD.r + buckets.length * slot);
+  const plotH = H - PAD_Y.t - PAD_Y.b;
 
   const top = useMemo(() => niceMax(Math.max(1, ...buckets.map((b) => b.total))), [buckets]);
-  const y = (v: number) => PAD.t + plotH - (v / top) * plotH;
+  const ticks = tickCount(top);
+  const y = (v: number) => PAD_Y.t + plotH - (v / top) * plotH;
   const cx = (i: number) => PAD.l + i * slot + gap / 2 + barW / 2;
+  // "12/08" ocupa ~32px; semana e mês pedem mais espaço por rótulo.
+  const step = labelStep(slot, isDay ? 34 : gran === "sem" ? 76 : 48);
 
   const ma = useMemo(
     () => (isDay ? movingAverage(buckets.map((b) => b.total), 7) : null),
@@ -58,7 +63,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
 
   return (
     <div className="relative">
-      <div className="overflow-x-auto px-1.5" onScroll={() => setHover(null)}>
+      <div ref={boxRef} className="overflow-x-auto px-1.5" onScroll={() => setHover(null)}>
         <svg
           width={W}
           height={H}
@@ -68,8 +73,8 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
           className="rf-body mx-auto block"
         >
           {/* grade e eixo y */}
-          {[0, 1, 2, 3, 4].map((t) => {
-            const val = (top * t) / 4;
+          {Array.from({ length: ticks + 1 }, (_, t) => {
+            const val = (top * t) / ticks;
             return (
               <g key={t}>
                 <line x1={PAD.l} y1={y(val)} x2={W - PAD.r} y2={y(val)} stroke="var(--rf-line)" strokeWidth={1} />
@@ -83,7 +88,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
           {buckets.map((b, i) => {
             const x = PAD.l + i * slot + gap / 2;
             let acc = 0;
-            const skipLabel = isDay && buckets.length > 26 && i % 2 !== 0;
+            const skipLabel = i % step !== 0;
             return (
               <g
                 key={b.id}
@@ -92,7 +97,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
                 onMouseLeave={() => setHover(null)}
               >
                 {/* alvo de mouse do balde inteiro, para não piscar entre segmentos */}
-                <rect x={x} y={PAD.t} width={barW} height={plotH} fill="transparent" />
+                <rect x={x} y={PAD_Y.t} width={barW} height={plotH} fill="transparent" />
                 {visible.map((p) => {
                   const v = b.byProduct[p.key] ?? 0;
                   if (v <= 0) return null;
@@ -108,10 +113,10 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
                 )}
                 {!skipLabel && (
                   <>
-                    <text x={x + barW / 2} y={H - PAD.b + 16} textAnchor="middle" fill="var(--rf-ink-soft)" fontSize={isDay ? 10 : 11}>
+                    <text x={x + barW / 2} y={H - PAD_Y.b + 16} textAnchor="middle" fill="var(--rf-ink-soft)" fontSize={isDay ? 10 : 11}>
                       {b.label}
                     </text>
-                    <text x={x + barW / 2} y={H - PAD.b + 29} textAnchor="middle" fill="var(--rf-ink-faint)" fontSize={10}>
+                    <text x={x + barW / 2} y={H - PAD_Y.b + 29} textAnchor="middle" fill="var(--rf-ink-faint)" fontSize={10}>
                       {b.sub}
                     </text>
                   </>
