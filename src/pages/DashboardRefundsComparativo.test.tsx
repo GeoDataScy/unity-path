@@ -1,18 +1,14 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import DashboardRefundsComparativo from "./DashboardRefundsComparativo";
 import fixture from "@/features/external-refunds/__fixtures__/comparison.json";
 
-// Resposta real da RPC dashboard_external_refund_comparison (jul+ago/2026,
-// gerada no banco local com os 10 exports e uma amostra dos reembolsos internos;
-// clientes/agentes anonimizados). O que se testa aqui é a leitura desse jsonb.
-//
-// Os campos de agregado do summary foram recalculados em 20260917120000, quando o
-// agregado passou a considerar só pares (produto, mês) com arquivo importado: a
-// fixture tem duas linhas em "—" (Mind Wake e Quiet Nerves em julho) com 5
-// reembolsos internos, que o summary somava sem ter denominador para eles.
+// Resposta real da RPC dashboard_external_refund_comparison, gerada em Postgres
+// local com os dois exports da PagAmerican e os reembolsos internos copiados de
+// produção (clientes, e-mails e agentes anonimizados). O que se testa aqui é a
+// leitura desse jsonb — os números vêm do banco, não escritos à mão.
 const queryResult = vi.hoisted(() => ({ current: undefined as unknown }));
 vi.mock("@/features/external-refunds/useExternalRefundComparisonQuery", () => ({
   useExternalRefundComparisonQuery: () => queryResult.current,
@@ -27,7 +23,6 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
-// recharts mede o container com ResizeObserver, que o jsdom não tem.
 beforeAll(() => {
   class RO {
     observe() {}
@@ -45,163 +40,166 @@ function renderPage() {
   );
 }
 
+function withData(data: unknown = fixture) {
+  queryResult.current = { data, isLoading: false, isError: false };
+  return renderPage();
+}
+
 describe("DashboardRefundsComparativo", () => {
-  it("mostra os totais da RPC e a tabela produto × mês", () => {
-    queryResult.current = { data: fixture, isLoading: false, isError: false };
-    renderPage();
-
-    // KPIs do período: 482 internos (só os meses com arquivo), 1.470 externos.
-    expect(screen.getByText("Interno concluído (Cartpanda)")).toBeTruthy();
-    expect(screen.getAllByText("Plataforma").length).toBeGreaterThanOrEqual(2); // filtro + coluna dos lotes
-    // Cada total aparece no card e na linha "Todos" da tabela.
-    expect(screen.getAllByText("482").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("1.470").length).toBeGreaterThanOrEqual(2);
-    // Card "Casados" foi removido a pedido da gestora.
-    expect(screen.queryByText("Casados")).toBeNull();
-    expect(screen.getAllByText("US$ 429.783,64").length).toBeGreaterThanOrEqual(2);
-
-    // Linhas produto × mês (6 produtos × 2 meses) + filtro de produto populado.
-    expect(screen.getAllByText("jul/2026").length).toBeGreaterThanOrEqual(6);
-    expect(screen.getAllByText("Horsefil").length).toBeGreaterThan(0);
-
-    // Botão de import só para gestora; lotes importados listados.
-    expect(screen.getByRole("button", { name: /Importar reembolso externo/ })).toBeTruthy();
-    expect(screen.getByText("Reembolsos externos importados")).toBeTruthy();
-
-    // Lixeira em cada painel de produto (6 produtos na fixture).
-    expect(screen.getAllByRole("button", { name: /Apagar reembolsos externos de/ })).toHaveLength(6);
-    // Tabela sem "Casados" e com as duas colunas de percentual.
-    expect(screen.queryByText("Casados", { selector: "th" })).toBeNull();
-    // aparecem como coluna e como explicação no rodapé
-    expect(screen.getAllByText("% interno").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("% externo").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("Total da loja").length).toBeGreaterThanOrEqual(2); // card + coluna
+  it("mostra os KPIs do período a partir da série", () => {
+    withData();
+    // 622 reembolsos e US$ 220.031,36 são a soma da série na fixture.
+    expect(screen.getByText("Reembolsos no período")).toBeTruthy();
+    expect(screen.getAllByText("622").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/220\.031,36/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Produto líder")).toBeTruthy();
+    expect(screen.getAllByText("Jellyrock").length).toBeGreaterThan(0);
   });
 
-  // A regra do Webert: total (arquivo) = interno (concluídos) + externo (o resto).
-  // Se os dois percentuais deixarem de somar 100, a conta quebrou em algum lugar.
-  // A exceção é a linha incoerente (interno > total), onde o externo é clampado em 0.
-  it("os percentuais somam 100% sempre que existe total importado", () => {
+  // A conta oficial do gestor: dos pedidos que a plataforma reembolsou, quantos
+  // passaram pelo time. O numerador é o CASAMENTO, não o volume interno — o
+  // volume (14 na fixture) é maior que os casados (12) e não pode aparecer no
+  // lugar dele.
+  it("o % interno sai do casamento, não do volume interno", () => {
+    const s = fixture.summary;
+    expect(s.matched_count).toBe(12);
+    expect(s.internal_count).toBe(14);
+    expect(s.internal_pct).toBeCloseTo((100 * s.matched_count) / s.external_count, 1);
+
+    withData();
+    expect(screen.getByText("1,9%")).toBeTruthy();
+    expect(screen.getByText(/98,1% externo · 12 de 622 pedidos/)).toBeTruthy();
+  });
+
+  it("os percentuais somam 100 e o externo é o que não casou", () => {
     const linhas = [...fixture.by_product_month, fixture.summary];
     const comTotal = linhas.filter((r) => r.external_count > 0);
     expect(comTotal.length).toBeGreaterThan(0);
-
     for (const r of comTotal) {
-      expect(r.internal_pct).not.toBeNull();
-      expect(r.external_diff).toBe(Math.max(r.external_count - r.internal_count, 0));
-      if (r.inconsistent) {
-        expect(r.internal_pct as number).toBeGreaterThan(100);
-        expect(r.external_pct).toBe(0);
-      } else {
-        expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
-      }
+      expect(r.external_diff).toBe(r.external_count - r.matched_count);
+      expect((r.internal_pct as number) + (r.external_pct as number)).toBeCloseTo(100, 5);
+      // casados ⊆ total: o interno nunca passa de 100%
+      expect(r.matched_count).toBeLessThanOrEqual(r.external_count);
     }
   });
 
-  // O agregado (linha "Todos" e os cards) considera SOMENTE pares (produto, mês)
-  // com arquivo importado: linha em "—" fica fora do numerador E do denominador.
-  // Antes, o interno dessas linhas entrava no numerador sem ter nada para somar
-  // no denominador e inflava o % interno de todo mundo — em produção,
-  // 224/847 = 26,4% no lugar de 86/847 = 10,2%.
+  // Invariante do agregado (20260917120000): o período só soma os pares
+  // (produto, mês) que têm arquivo importado.
   it("o agregado soma só as linhas com arquivo importado", () => {
     const comArquivo = fixture.by_product_month.filter((r) => r.external_count > 0);
-    const semArquivo = fixture.by_product_month.filter((r) => r.external_count === 0);
-
-    // Sem os dois casos na fixture o teste não prova nada.
-    expect(comArquivo.length).toBeGreaterThan(0);
-    expect(semArquivo.length).toBeGreaterThan(0);
-    expect(semArquivo.reduce((a, r) => a + r.internal_count, 0)).toBeGreaterThan(0);
-
-    expect(fixture.summary.internal_count).toBe(
-      comArquivo.reduce((a, r) => a + r.internal_count, 0),
-    );
-    // O recorte vale para o agregado inteiro, não só para a fração: senão a linha
-    // "Todos" mostraria "Só interno" acima de "Interno".
-    expect(fixture.summary.internal_only).toBe(
-      comArquivo.reduce((a, r) => a + r.internal_only, 0),
-    );
-    expect(fixture.summary.internal_without_order).toBe(
-      comArquivo.reduce((a, r) => a + r.internal_without_order, 0),
-    );
-    expect(fixture.summary.internal_only).toBeLessThanOrEqual(fixture.summary.internal_count);
-    // O denominador já só tinha linhas com arquivo; continua igual.
-    expect(fixture.summary.external_count).toBe(
-      comArquivo.reduce((a, r) => a + r.external_count, 0),
-    );
+    const soma = (k: "internal_count" | "matched_count" | "external_count") =>
+      comArquivo.reduce((a, r) => a + r[k], 0);
+    expect(fixture.summary.internal_count).toBe(soma("internal_count"));
+    expect(fixture.summary.matched_count).toBe(soma("matched_count"));
+    expect(fixture.summary.external_count).toBe(soma("external_count"));
   });
 
-  it("marca a linha em que o interno passa do total importado", () => {
-    queryResult.current = { data: fixture, isLoading: false, isError: false };
-    renderPage();
-    // Alpharock/ago na fixture tem 34 internos contra 15 no arquivo.
-    const avisos = screen.getAllByTitle("interno excede o total importado; verificar import do período");
-    expect(avisos.length).toBe(fixture.by_product_month.filter((r) => r.inconsistent).length);
-    const linha = avisos[0].closest("tr")!;
-    const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
-    expect(celulas).toContain("0,0%"); // externo clampado
-    expect(celulas.some((c) => c && /^2\d\d,\d%$/.test(c))).toBe(true); // interno acima de 100% fica visível
+  // A série é a base dos gráficos: se ela não fechar com o summary, o gráfico
+  // conta uma história e os cards outra.
+  it("a série fecha com o summary", () => {
+    const s = fixture.summary;
+    const soma = (k: "orders" | "matched" | "full" | "partial" | "unspecified") =>
+      fixture.series.reduce((a, r) => a + r[k], 0);
+    expect(soma("orders")).toBe(s.external_count);
+    expect(soma("matched")).toBe(s.matched_count);
+    expect(soma("full")).toBe(s.external_full);
+    expect(soma("partial")).toBe(s.external_partial);
+    expect(soma("full") + soma("partial") + soma("unspecified")).toBe(s.external_count);
+    expect(fixture.series.reduce((a, r) => a + Number(r.amount), 0)).toBeCloseTo(Number(s.external_amount), 2);
   });
 
-  it("sem arquivo importado no período mostra “—” em vez de 0%", () => {
-    const semArquivo = {
-      ...fixture,
-      by_product_month: [
-        {
-          ...fixture.by_product_month[0],
-          product: "Sem Arquivo",
-          month: "2026-09",
-          internal_count: 7,
-          external_count: 0,
-          external_diff: 0,
-          internal_pct: null,
-          external_pct: null,
-          inconsistent: false,
-        },
-      ],
-    };
-    queryResult.current = { data: semArquivo, isLoading: false, isError: false };
-    renderPage();
-    const linha = screen.getAllByText("Sem Arquivo").map((e) => e.closest("tr")).find(Boolean)!;
-    const celulas = Array.from(linha.querySelectorAll("td")).map((c) => c.textContent);
-    expect(celulas.filter((c) => c === "—")).toHaveLength(2);
-    expect(celulas).not.toContain("0,0%");
+  it("clicar no produto da legenda tira ele da conta", () => {
+    withData();
+    const legenda = screen.getAllByRole("button", { name: /Jellyrock/ })[0];
+    expect(legenda.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(legenda);
+    expect(legenda.getAttribute("aria-pressed")).toBe("false");
   });
 
-  // PagAmerican: o arquivo confirma o reembolso mas nem sempre diz o tipo. Esses
-  // pedidos contam no total (e portanto nas porcentagens, que não usam o tipo),
-  // mas não entram em integral nem em parcial — sem o terceiro número a coluna
-  // não fecharia com o total e a diferença sumiria da tela.
-  it("mostra os reembolsos sem tipo separados na coluna integral / parcial", () => {
-    const comSemTipo = {
-      ...fixture,
-      by_product_month: [
-        { ...fixture.by_product_month[0], product: "Jellyrock", month: "2026-09",
-          external_count: 259, external_full: 104, external_partial: 113,
-          internal_count: 2, external_diff: 257, internal_pct: 0.8, external_pct: 99.2, inconsistent: false },
-      ],
-    };
-    queryResult.current = { data: comSemTipo, isLoading: false, isError: false };
-    renderPage();
-
-    const linha = screen.getAllByText("Jellyrock").map((e) => e.closest("tr")).find(Boolean)!;
-    const texto = linha.textContent ?? "";
-    expect(texto).toContain("104 / 113");
-    expect(texto).toContain("42 s/ tipo"); // 259 - 104 - 113
+  // A Cartpanda (plataforma padrão da tela) só tem a data da COMPRA no arquivo.
+  // Oferecer "Diário" ali seria rotular compra como reembolso, então o controle
+  // nasce com uma opção só. A regra por plataforma está coberta em series.test.
+  it("na Cartpanda o gráfico só oferece a visão mensal", () => {
+    withData();
+    const grupo = screen.getByRole("group", { name: "agrupar por" });
+    expect(within(grupo).getByText("Mensal")).toBeTruthy();
+    expect(within(grupo).queryByText("Diário")).toBeNull();
+    expect(within(grupo).queryByText("Semanal")).toBeNull();
+    // e a tela diz por quê, em vez de deixar o controle mudo
+    expect(screen.getByText(/traz a data da compra, não a do reembolso/)).toBeTruthy();
   });
 
-  it("não mostra o terceiro número quando todo pedido tem tipo (Cartpanda)", () => {
-    queryResult.current = { data: fixture, isLoading: false, isError: false };
-    renderPage();
-    expect(screen.queryByText(/s\/ tipo/)).toBeNull();
+  // O pico e a contagem de períodos têm de seguir a régua do arquivo. A fixture
+  // tem 35 dias espalhados por 2 meses; com a Cartpanda (que só tem data de
+  // compra, logo só visão mensal) somar por dia e rotular "meses" diria
+  // "35 meses com reembolso".
+  it("na Cartpanda o pico e a contagem são por mês, não por dia", () => {
+    const dias = new Set(fixture.series.map((r) => r.date)).size;
+    const meses = new Set(fixture.series.map((r) => r.date.slice(0, 7))).size;
+    expect(dias).toBe(35);
+    expect(meses).toBe(2);
+
+    withData();
+    expect(screen.getByText(`${meses} meses com reembolso`)).toBeTruthy();
+    expect(screen.queryByText(`${dias} meses com reembolso`)).toBeNull();
+    expect(screen.getByText("Pico em um único mês")).toBeTruthy();
+
+    // o maior mês da fixture, não o maior dia
+    const porMes = new Map<string, number>();
+    for (const r of fixture.series) porMes.set(r.date.slice(0, 7), (porMes.get(r.date.slice(0, 7)) ?? 0) + r.orders);
+    const maiorMes = Math.max(...porMes.values());
+    const maiorDia = Math.max(
+      ...[...fixture.series.reduce((m, r) => m.set(r.date, (m.get(r.date) ?? 0) + r.orders), new Map<string, number>()).values()],
+    );
+    expect(maiorMes).toBeGreaterThan(maiorDia);
+    expect(screen.getAllByText(String(maiorMes)).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("mantém importação, filtro de plataforma e lista pedido a pedido", () => {
+    withData();
+    expect(screen.getByRole("button", { name: /Importar/ })).toBeTruthy();
+    expect(screen.getAllByText("Plataforma").length).toBeGreaterThan(0);
+    expect(screen.getByText("Pedido a pedido")).toBeTruthy();
+    expect(screen.getByText("Arquivos importados")).toBeTruthy();
+  });
+
+  it("mostra a composição com o terceiro tipo quando o arquivo não classifica", () => {
+    withData();
+    expect(screen.getByText("Sem tipo no arquivo")).toBeTruthy();
+    expect(screen.getByText(/Chargeback sem reembolso não entra na base/)).toBeTruthy();
+  });
+
+  // O seletor de período substituiu o select de "Mês": ele faz o mesmo em um
+  // clique (atalhos por mês) e ainda permite o recorte dia a dia, que é o que o
+  // gestor precisa para reproduzir a janela exata de um relatório.
+  it("tem seletor de período com calendário e atalhos por mês", async () => {
+    withData();
+    const botao = screen.getByRole("button", { name: /Escolher o período/ });
+    // sem escolha, mostra o intervalo real dos dados
+    expect(botao.textContent).toContain("12/08/2026 – 16/09/2026");
+    // o select de Mês não existe mais
+    expect(screen.queryByText("Todos os meses importados")).toBeNull();
+
+    fireEvent.click(botao);
+    expect(await screen.findByText("Todo o período importado")).toBeTruthy();
+    // um atalho por mês importado, vindos dos lotes da RPC
+    const meses = new Set(fixture.imports.map((b) => b.month_ref.slice(0, 7)));
+    for (const m of meses) {
+      const [y, mm] = m.split("-");
+      const nome = new Date(Number(y), Number(mm) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+      expect(screen.getAllByText((t) => t.includes(nome.slice(0, 3))).length).toBeGreaterThan(0);
+    }
   });
 
   it("mostra estado vazio quando nada foi importado", () => {
-    queryResult.current = {
-      data: { ...fixture, imports: [], by_product_month: [], by_product: [], divergences: { total_count: 0, rows: [] } },
-      isLoading: false,
-      isError: false,
-    };
-    renderPage();
+    withData({
+      ...fixture,
+      imports: [],
+      series: [],
+      by_product_month: [],
+      by_product: [],
+      divergences: { total_count: 0, rows: [] },
+    });
     expect(screen.getByText(/Nenhum reembolso externo de Cartpanda foi importado ainda/)).toBeTruthy();
   });
 

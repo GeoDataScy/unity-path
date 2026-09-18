@@ -70,6 +70,28 @@ export type ImportExternalRefundsResult = {
 export type ExternalRefundKind = "ambos" | "externo" | "interno";
 export type DivergenceFilter = "all" | ExternalRefundKind | "tipo";
 
+/**
+ * Uma linha por (data, produto) do recorte. É a base dos gráficos: a tela agrega
+ * em dia, semana ou mês. `date` é a data do arquivo — reembolso na PagAmerican,
+ * compra na Cartpanda —, e é por isso que só a primeira oferece dia e semana.
+ */
+export type ComparisonSeriesRow = {
+  /** YYYY-MM-DD. */
+  date: string;
+  product: string;
+  orders: number;
+  amount: number;
+  /** Reembolso integral. */
+  full: number;
+  /** Reembolso parcial. */
+  partial: number;
+  /** O arquivo confirma o reembolso mas não diz o tipo. */
+  unspecified: number;
+  partial_amount: number;
+  /** Pedidos que casaram com o interno: o numerador de % interno. */
+  matched: number;
+};
+
 export type ComparisonSummary = {
   from_date: string;
   to_date: string;
@@ -84,11 +106,16 @@ export type ComparisonSummary = {
   external_full: number;
   external_partial: number;
   external_amount: number;
-  /** total - interno, com piso em 0. */
+  /** total - casados: os pedidos do arquivo que não passaram pelo time. */
   external_diff: number;
-  /** interno / total. null quando não há total importado no período. */
+  /**
+   * REGRA OFICIAL: casados ÷ total. "Dos pedidos que a plataforma reembolsou,
+   * quantos passaram pelo nosso time." null quando não há total importado.
+   * Não é o volume interno ÷ total — esse continua em internal_count, como
+   * volume, e é o número que bate com a Visão geral em "Concluídos".
+   */
   internal_pct: number | null;
-  /** 100 - internal_pct, com piso em 0. Soma 100 com internal_pct por construção. */
+  /** 100 - internal_pct. Soma 100 com internal_pct por construção. */
   external_pct: number | null;
   /** interno maior que o total importado: o período precisa ser reimportado. */
   inconsistent: boolean;
@@ -156,6 +183,7 @@ export type ExternalRefundComparison = {
   imports: ComparisonImportBatch[];
   by_product_month: ComparisonProductMonthRow[];
   by_product: ComparisonProductRow[];
+  series: ComparisonSeriesRow[];
   divergences: { total_count: number; rows: DivergenceRow[] };
 };
 
@@ -191,6 +219,19 @@ export function fmtPct(value: number | null | undefined, digits = 1): string {
 export function fmtUsd(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   return `US$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * Dólar curto, para rótulo de eixo, onde não cabe o valor inteiro.
+ * O painel de referência usava "R$"; o dado sempre foi dólar — a loja é
+ * americana e o arquivo traz o valor na moeda dela. Aqui é só o símbolo certo,
+ * sem conversão nenhuma.
+ */
+export function fmtUsdCompact(value: number): string {
+  if (value >= 1000) {
+    return `US$${(value / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`;
+  }
+  return `US$${Math.round(value)}`;
 }
 
 /** 'YYYY-MM-DD' → 'DD/MM/YYYY' sem passar por Date (evita fuso). */
