@@ -23,6 +23,7 @@ import { RefundPeriodPicker } from "@/features/external-refunds/RefundPeriodPick
 import { RefundComposition } from "@/features/external-refunds/RefundComposition";
 import { RefundVolumeChart } from "@/features/external-refunds/RefundVolumeChart";
 import { TeamShareChart } from "@/features/external-refunds/TeamShareChart";
+import { TeamShareKpis } from "@/features/external-refunds/TeamShareKpis";
 import { assignProductColors } from "@/features/external-refunds/productColors";
 import {
   buildBuckets,
@@ -522,7 +523,7 @@ export default function DashboardRefundsComparativo() {
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
-              Migração do atendimento: nosso time × plataforma
+              Migração do atendimento: sua equipe × plataforma
             </h2>
             <span className="text-xs" style={{ color: "var(--rf-ink-faint)" }}>
               acompanha a granularidade escolhida acima
@@ -530,13 +531,23 @@ export default function DashboardRefundsComparativo() {
           </div>
           <Panel className="px-2 pb-4 pt-4">
             {isLoading ? (
-              <Skeleton className="mx-3 h-[220px]" />
+              <>
+                <div className="mb-[18px] grid gap-3.5 px-3 sm:grid-cols-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-[92px] rounded-[14px]" />
+                  ))}
+                </div>
+                <Skeleton className="mx-3 h-[220px]" />
+              </>
             ) : (
-              <TeamShareChart buckets={buckets} gran={gran} overallPct={summary?.internal_pct ?? null} />
+              <>
+                <TeamShareKpis series={series} />
+                <TeamShareChart buckets={buckets} gran={gran} overallPct={summary?.internal_pct ?? null} />
+              </>
             )}
             <div className="flex flex-wrap gap-4 px-4 pt-3 text-xs" style={{ color: "var(--rf-ink-soft)" }}>
               <span className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded" style={{ background: "var(--rf-equipe)" }} /> % interno no período
+                <span className="h-3 w-3 rounded" style={{ background: "var(--rf-equipe)" }} /> % atendido pela sua equipe
               </span>
               <span className="flex items-center gap-2">
                 <span className="inline-block h-0 w-5 border-t-2 border-dashed" style={{ borderColor: "var(--rf-trend)" }} />{" "}
