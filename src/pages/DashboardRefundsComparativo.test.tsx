@@ -129,6 +129,32 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getByText(/traz a data da compra, não a do reembolso/)).toBeTruthy();
   });
 
+  // O pico e a contagem de períodos têm de seguir a régua do arquivo. A fixture
+  // tem 35 dias espalhados por 2 meses; com a Cartpanda (que só tem data de
+  // compra, logo só visão mensal) somar por dia e rotular "meses" diria
+  // "35 meses com reembolso".
+  it("na Cartpanda o pico e a contagem são por mês, não por dia", () => {
+    const dias = new Set(fixture.series.map((r) => r.date)).size;
+    const meses = new Set(fixture.series.map((r) => r.date.slice(0, 7))).size;
+    expect(dias).toBe(35);
+    expect(meses).toBe(2);
+
+    withData();
+    expect(screen.getByText(`${meses} meses com reembolso`)).toBeTruthy();
+    expect(screen.queryByText(`${dias} meses com reembolso`)).toBeNull();
+    expect(screen.getByText("Pico em um único mês")).toBeTruthy();
+
+    // o maior mês da fixture, não o maior dia
+    const porMes = new Map<string, number>();
+    for (const r of fixture.series) porMes.set(r.date.slice(0, 7), (porMes.get(r.date.slice(0, 7)) ?? 0) + r.orders);
+    const maiorMes = Math.max(...porMes.values());
+    const maiorDia = Math.max(
+      ...[...fixture.series.reduce((m, r) => m.set(r.date, (m.get(r.date) ?? 0) + r.orders), new Map<string, number>()).values()],
+    );
+    expect(maiorMes).toBeGreaterThan(maiorDia);
+    expect(screen.getAllByText(String(maiorMes)).length).toBeGreaterThanOrEqual(1);
+  });
+
   it("mantém importação, filtro de plataforma e lista pedido a pedido", () => {
     withData();
     expect(screen.getByRole("button", { name: /Importar/ })).toBeTruthy();

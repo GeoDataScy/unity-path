@@ -221,8 +221,16 @@ export default function DashboardRefundsComparativo() {
   const kpis = useMemo(() => {
     const totOrders = series.reduce((s, r) => s + r.orders, 0);
     const totAmount = series.reduce((s, r) => s + Number(r.amount), 0);
+    // O pico e a contagem de períodos seguem a régua do arquivo: por DIA onde
+    // existe data de reembolso, por MÊS onde só existe a data da compra. Somar
+    // por dia e rotular "meses" diria que a Cartpanda teve 60 meses com
+    // reembolso.
+    const porDia = hasRefundDate(platform);
     const perDate = new Map<string, number>();
-    for (const r of series) perDate.set(r.date, (perDate.get(r.date) ?? 0) + r.orders);
+    for (const r of series) {
+      const k = porDia ? r.date : r.date.slice(0, 7);
+      perDate.set(k, (perDate.get(k) ?? 0) + r.orders);
+    }
     let peakDate: string | null = null;
     let peak = 0;
     for (const [d, n] of perDate) if (n > peak) [peak, peakDate] = [n, d];
@@ -231,7 +239,7 @@ export default function DashboardRefundsComparativo() {
     let leader: string | null = null;
     let leaderN = 0;
     for (const [p, n] of perProduct) if (n > leaderN) [leaderN, leader] = [n, p];
-    const dates = [...perDate.keys()].sort();
+    const dates = [...new Set(series.map((r) => r.date))].sort();
     return {
       totOrders,
       totAmount,
@@ -243,7 +251,7 @@ export default function DashboardRefundsComparativo() {
       first: dates[0],
       last: dates[dates.length - 1],
     };
-  }, [series]);
+  }, [series, platform]);
 
   const periodLabel = kpis.first
     ? `${fmtDate(kpis.first)} – ${fmtDate(kpis.last)}`
@@ -448,7 +456,7 @@ export default function DashboardRefundsComparativo() {
               <Kpi
                 label={hasRefundDate(platform) ? "Pico em um único dia" : "Pico em um único mês"}
                 value={fmtInt(kpis.peak)}
-                sub={kpis.peakDate ? fmtDate(kpis.peakDate) : undefined}
+                sub={kpis.peakDate ? (hasRefundDate(platform) ? fmtDate(kpis.peakDate) : fmtMonth(kpis.peakDate)) : undefined}
               />
               <Kpi
                 label="Produto líder"
