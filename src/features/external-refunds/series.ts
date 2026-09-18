@@ -84,8 +84,12 @@ function bucketKey(dateISO: string, gran: Granularity): { id: string; label: str
 }
 
 /**
- * Agrupa a série no balde escolhido. `hidden` tira o produto do total (e do
- * gráfico), como a legenda clicável do painel de referência.
+ * Agrupa a série no balde escolhido.
+ *
+ * `hidden` tira o produto do total e das barras de volume, como a legenda
+ * clicável do painel de referência. Os campos `matched`/`orders`, que alimentam
+ * a migração do atendimento, ignoram `hidden` — também como no painel de
+ * referência. Para recortar a tela inteira por produto existe o filtro Produto.
  */
 export function buildBuckets(
   rows: ComparisonSeriesRow[],
@@ -104,12 +108,15 @@ export function buildBuckets(
     b.byProduct[r.product] = (b.byProduct[r.product] ?? 0) + (metric === "qtd" ? r.orders : Number(r.amount));
     // A fatia do time é sempre contagem: "que fração dos pedidos passou pelo
     // time" não muda de significado quando o gráfico está medindo dinheiro.
-    // Produto escondido também sai daqui, senão a fatia não corresponderia às
-    // barras que estão na tela.
-    if (!hidden.has(r.product)) {
-      b.matched += r.matched;
-      b.orders += r.orders;
-    }
+    //
+    // E NÃO responde ao `hidden`: esconder um produto na legenda mexe só nas
+    // barras de volume; a migração do atendimento continua sobre o período
+    // inteiro. É o comportamento do painel de referência, e foi decisão do
+    // gestor mantê-lo — ali a legenda é um recorte do gráfico de cima, não um
+    // filtro da tela. Quem quiser a fatia de um produto usa o filtro Produto,
+    // que recorta tudo de uma vez.
+    b.matched += r.matched;
+    b.orders += r.orders;
   }
   const out = [...map.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const b of out) {
