@@ -12,6 +12,8 @@ const mem = (name: string, extra: Partial<LyaMemory> = {}): LyaMemory => ({
   body: "",
   author_id: null,
   seed: false,
+  origem: "treino",
+  file_id: null,
   created_at: "2026-09-07T10:00:00Z",
   updated_at: "2026-09-07T10:00:00Z",
   ...extra,
