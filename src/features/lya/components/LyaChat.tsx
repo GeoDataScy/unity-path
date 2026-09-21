@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import type { LyaContexto } from "../types";
 import { newChatId, useDeleteLyaChat, useLyaChatsQuery } from "../useLyaChats";
 import { useLyaConversation } from "../useLyaConversation";
-import { LyaAvatar } from "./ChatActivity";
 import { LyaComposer } from "./LyaComposer";
+import { LyaMark } from "./LyaMark";
 import { LyaMessages } from "./LyaMessages";
 
 // Tela cheia da Lya: lista de conversas à esquerda + conversa à direita, no
@@ -159,8 +159,8 @@ export function LyaChat({
       <section className="flex min-w-0 flex-1 flex-col">
         {!started ? (
           <div className="flex flex-1 flex-col items-center justify-center px-2">
-            <div className="mb-8 flex items-center gap-3">
-              <LyaAvatar className="h-10 w-10" />
+            <div className="mb-8 flex flex-col items-center gap-4">
+              <LyaMark size={72} estado={conv.estado} />
               <h1 className="text-[26px] font-normal text-foreground sm:text-[32px]">
                 {greeting()}, <span className="text-primary">{firstName}</span>
               </h1>
@@ -194,7 +194,7 @@ export function LyaChat({
                 Não foi possível carregar esta conversa. Tente abrir de novo.
               </div>
             )}
-            <LyaMessages messages={conv.messages} loading={conv.loading} loadingHistory={conv.loadingHistory} />
+            <LyaMessages messages={conv.messages} loading={conv.loading} loadingHistory={conv.loadingHistory} estado={conv.estado} />
             <div className="pb-2 pt-2">
               {avisos}
               {composer}

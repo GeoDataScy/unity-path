@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { streamLyaChat } from "./api";
-import type { LyaContexto, LyaMessage } from "./types";
+import type { LyaContexto, LyaEstado, LyaMessage } from "./types";
 import { useLyaChatQuery, useSaveLyaChat } from "./useLyaChats";
+
+/** Depois disso o pulso elástico cansa: volta para o pêndulo até o fim do stream. */
+const TETO_RESPONDENDO_MS = 60_000;
+/** Quanto o símbolo fica no "resolvido" antes de assentar em repouso. */
+const RESOLVIDO_MS = 2_500;
 
 // Estado de UMA conversa com a Lya, compartilhado pela tela cheia e pelo balão.
 //
@@ -24,6 +29,7 @@ interface Options {
 export function useLyaConversation({ chatId = null, persist = false, onNeedChatId, contexto, modoTreino }: Options) {
   const [messages, setMessages] = useState<LyaMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [estado, setEstado] = useState<LyaEstado>("repouso");
   const [aviso, setAviso] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
   const saveChat = useSaveLyaChat();
@@ -31,6 +37,11 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
   const hydratedRef = useRef<string | null | undefined>(undefined);
   const turnoNaTelaRef = useRef<symbol | null>(null);
   const emVooRef = useRef(new Map<string, { token: symbol; turno: LyaMessage[] }>());
+  const resolvidoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // O "resolvido" roda uma vez e assenta sozinho; se a tela sair antes disso,
+  // o timer morre junto.
+  useEffect(() => () => clearTimeout(resolvidoTimerRef.current ?? undefined), []);
 
   const chatQuery = useLyaChatQuery(persist ? chatId : null);
   const loadingHistory = persist && Boolean(chatId) && chatQuery.isLoading;
@@ -44,6 +55,7 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
     hydratedRef.current = chatId;
     turnoNaTelaRef.current = null;
     setLoading(false);
+    setEstado("repouso");
     setAviso(null);
     if (!chatId) {
       setMessages([]);
@@ -54,6 +66,9 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
       turnoNaTelaRef.current = emVoo.token;
       setMessages(emVoo.turno.slice());
       setLoading(true);
+      // Reatando no meio da resposta: volta ao pêndulo; o próximo token
+      // devolve o pulso.
+      setEstado("pensando");
       return;
     }
     setMessages([]);
@@ -80,6 +95,18 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
       const turnoToken = Symbol("turno");
       turnoNaTelaRef.current = turnoToken;
       setAviso(null);
+
+      // ── Símbolo da Lya: pensando → respondendo → resolvido ──
+      // Só mexe no símbolo quando este turno é o que está na tela; trocar de
+      // conversa no meio da resposta não pode animar a conversa errada.
+      clearTimeout(resolvidoTimerRef.current ?? undefined);
+      const irPara = (s: LyaEstado) => {
+        if (turnoNaTelaRef.current === turnoToken) setEstado(s);
+      };
+      let tetoTimer: ReturnType<typeof setTimeout> | null = null;
+      let cansado = false; // já passou do teto: fica no pêndulo até o fim
+      let houveErro = false;
+      irPara("pensando");
 
       const userMsg: LyaMessage = { role: "user", content: text };
       const history = [...messages, userMsg];
@@ -119,23 +146,49 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
           modoTreino,
           contexto,
           onEvent: (evt) => {
-            if (evt.type === "token") aplicar((cur) => ({ ...cur, content: cur.content + evt.text }));
-            else if (evt.type === "tool") aplicar((cur) => ({ ...cur, tools: [...(cur.tools || []), { name: evt.name }] }));
-            else if (evt.type === "chart") aplicar((cur) => ({ ...cur, charts: [...(cur.charts || []), evt.chart] }));
+            if (evt.type === "token") {
+              aplicar((cur) => ({ ...cur, content: cur.content + evt.text }));
+              if (!cansado) {
+                if (!tetoTimer) {
+                  tetoTimer = setTimeout(() => {
+                    cansado = true;
+                    irPara("pensando");
+                  }, TETO_RESPONDENDO_MS);
+                }
+                irPara("respondendo");
+              }
+            } else if (evt.type === "tool") {
+              aplicar((cur) => ({ ...cur, tools: [...(cur.tools || []), { name: evt.name }] }));
+              irPara("pensando"); // consulta a ferramenta/base também é pensar
+            } else if (evt.type === "chart") aplicar((cur) => ({ ...cur, charts: [...(cur.charts || []), evt.chart] }));
             else if (evt.type === "memoria") aplicar((cur) => ({ ...cur, memorias: [...(cur.memorias || []), evt.memoria] }));
             else if (evt.type === "revisao") aplicar((cur) => ({ ...cur, revisao: evt.revisao }));
             else if (evt.type === "aviso") setAviso(evt.message || "Esta resposta saiu sem as memórias treinadas da Lya.");
-            else if (evt.type === "error") aplicar((cur) => ({ ...cur, content: `${cur.content}${cur.content ? "\n\n" : ""}⚠️ ${evt.message || "Falha ao responder."}` }));
+            else if (evt.type === "error") {
+              houveErro = true;
+              aplicar((cur) => ({ ...cur, content: `${cur.content}${cur.content ? "\n\n" : ""}⚠️ ${evt.message || "Falha ao responder."}` }));
+            }
             salvarParcial();
           },
         });
       } catch (err) {
+        houveErro = true;
         const message = err instanceof Error ? err.message : "falha de rede";
         aplicar((cur) => ({ ...cur, content: `${cur.content}${cur.content ? "\n\n" : ""}⚠️ ${message}` }));
       } finally {
         document.removeEventListener("visibilitychange", aoEsconder);
+        clearTimeout(tetoTimer ?? undefined);
         if (id && emVooRef.current.get(id)?.token === turnoToken) emVooRef.current.delete(id);
         if (turnoNaTelaRef.current === turnoToken) setLoading(false);
+        // Erro, timeout ou resposta vazia voltam para repouso — um símbolo que
+        // pensa para sempre parece sistema travado. Resposta entregue floresce
+        // uma vez e assenta.
+        if (houveErro || !turno[turno.length - 1].content.trim()) {
+          irPara("repouso");
+        } else {
+          irPara("resolvido");
+          resolvidoTimerRef.current = setTimeout(() => irPara("repouso"), RESOLVIDO_MS);
+        }
         if (persist && id) {
           const ok = await saveChat(id, turno);
           if (!ok && turnoNaTelaRef.current === turnoToken) setSaveError(true);
@@ -147,14 +200,18 @@ export function useLyaConversation({ chatId = null, persist = false, onNeedChatI
 
   const reset = useCallback(() => {
     turnoNaTelaRef.current = null;
+    clearTimeout(resolvidoTimerRef.current ?? undefined);
     setMessages([]);
     setLoading(false);
+    setEstado("repouso");
     setAviso(null);
   }, []);
 
   return {
     messages,
     loading,
+    /** Estado do símbolo da Lya — ver `LyaMark`. */
+    estado,
     loadingHistory,
     historyError,
     aviso,

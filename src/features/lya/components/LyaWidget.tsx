@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Maximize2, MessageCircle, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 
 import type { LyaContexto } from "../types";
 import { useLyaConversation } from "../useLyaConversation";
-import { LyaAvatar } from "./ChatActivity";
 import { LyaComposer } from "./LyaComposer";
+import { LyaMark } from "./LyaMark";
 import { LyaMessages } from "./LyaMessages";
 
 const SUGESTOES = [
@@ -33,7 +33,9 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-5 right-5 z-[60] grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-primary to-violet-700 text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
       >
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {/* Fechado, o botão é a própria Lya: mostra se ela está pensando mesmo
+            com o painel recolhido. Mono branca porque o fundo é roxo. */}
+        {open ? <X className="h-6 w-6" /> : <LyaMark size={30} tone="branco" estado={conv.estado} label={null} />}
       </button>
 
       {open && (
@@ -42,7 +44,7 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
           style={{ height: "min(640px, calc(100vh - 8rem))" }}
         >
           <header className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary to-violet-700 px-4 py-3 text-primary-foreground">
-            <LyaAvatar className="h-9 w-9 bg-white/15 from-transparent to-transparent" />
+            <LyaMark size={36} tone="branco" estado={conv.estado} label={null} />
             <div className="min-w-0 flex-1 leading-tight">
               <p className="text-sm font-semibold">Lya</p>
               <p className="truncate text-xs text-primary-foreground/75">Pergunte sobre os dados do suporte</p>
@@ -54,7 +56,7 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
 
           {conv.messages.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
-              <LyaAvatar className="mb-3 h-12 w-12" />
+              <LyaMark size={56} estado={conv.estado} className="mb-3" />
               <p className="mb-1 text-sm font-medium text-foreground">Como posso ajudar?</p>
               <p className="mb-4 text-xs text-muted-foreground">Respondo com os números do painel, do banco e da Base de Suporte.</p>
               <div className="flex w-full flex-col gap-2">

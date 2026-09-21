@@ -10,7 +10,6 @@ import {
   Database,
   Loader2,
   RefreshCcw,
-  Sparkles,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -114,14 +113,6 @@ export function ThinkingIndicator({ label = "Pensando" }: { label?: string }) {
     <span className="inline-flex items-center gap-2.5 text-muted-foreground">
       <ThinkingDots />
       <span className="text-[13px] font-medium">{label}…</span>
-    </span>
-  );
-}
-
-export function LyaAvatar({ className }: { className?: string }) {
-  return (
-    <span className={cn("grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-violet-700 text-primary-foreground", className)}>
-      <Sparkles className="h-[55%] w-[55%]" />
     </span>
   );
 }
