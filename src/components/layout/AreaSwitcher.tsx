@@ -43,9 +43,9 @@ export function AreaSwitcher({ role, currentArea, collapsed }: Props) {
                 type="button"
                 onClick={() => go(area)}
                 aria-label={`Ir para ${AREA_SHORT_LABEL[area]}`}
-                className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/5 hover:bg-white/12 transition"
+                className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 transition-colors hover:bg-white/15"
               >
-                <ArrowLeftRight className="h-4 w-4" />
+                <ArrowLeftRight className="h-[18px] w-[18px]" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">Ir para {AREA_SHORT_LABEL[area]}</TooltipContent>
