@@ -16,6 +16,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useRadarBadgeQuery } from "@/features/radar/useMyRadarQuery";
+import { cn } from "@/lib/utils";
 
 const items = [
   { title: "Comece por aqui", to: "/workspace/comece-aqui", icon: GraduationCap },
@@ -63,9 +64,11 @@ export function AgentSidebar() {
     >
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">Painel</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-[10px] font-medium uppercase tracking-[0.12em] text-sidebar-foreground/40">
+            Painel
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-0.5">
               {items.map((item) => {
                 const isActive = activeMap.get(item.to) ?? false;
                 const Icon = item.icon;
@@ -77,10 +80,38 @@ export function AgentSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={showBadge ? `${item.title} — ${needsAttention} para hoje` : item.title}
+                      className={cn(
+                        "h-9 gap-3 rounded-lg font-normal text-sidebar-foreground/65",
+                        "transition-colors duration-150",
+                        // `--sidebar-accent` e branco puro: o padrao do shadcn pinta
+                        // hover E ativo como uma pilula branca solida, que com oito
+                        // itens vira uma parede. A hierarquia aqui e por opacidade.
+                        "hover:bg-white/[0.06] hover:text-sidebar-foreground",
+                        "data-[active=true]:bg-white/[0.10] data-[active=true]:font-medium",
+                        "data-[active=true]:text-sidebar-foreground",
+                        // Faixa fina a esquerda: marca o item atual sem tirar o olho
+                        // do resto da lista.
+                        "relative before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[3px]",
+                        "before:-translate-y-1/2 before:rounded-full before:bg-primary",
+                        "before:transition-[height] before:duration-200 data-[active=true]:before:h-4",
+                      )}
                     >
                       <NavLink to={item.to} end>
                         <span className="relative">
-                          <Icon />
+                          {/* strokeWidth 1.5: no padrao (2) um icone de 16px
+                              fecha os proprios vaos e vira mancha. */}
+                          <Icon
+                            strokeWidth={1.5}
+                            className={cn(
+                              // `size-4` explicito: a regra do shadcn e
+                              // `[&>svg]:size-4`, seletor de FILHO DIRETO do
+                              // botao. Como o icone vive dentro do <span> que
+                              // ancora o ponto de alerta, ela nao casa mais e o
+                              // Lucide volta ao padrao de 24px.
+                              "size-4 shrink-0 transition-colors",
+                              isActive ? "text-primary" : "text-sidebar-foreground/45",
+                            )}
+                          />
                           {/* Colapsada, a sidebar esconde o badge numérico; o ponto
                               mantém o alerta visível. */}
                           {showBadge && collapsed && (
@@ -96,11 +127,15 @@ export function AgentSidebar() {
                     </SidebarMenuButton>
                     {showBadge && (
                       <SidebarMenuBadge
-                        className={
+                        className={cn(
+                          // Menor e um grau abaixo da saturacao cheia: precisa
+                          // ser notado, nao gritar em cima do rotulo.
+                          "top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[10px] font-semibold",
+                          "ring-1 ring-inset ring-white/15",
                           overdue > 0
-                            ? "bg-destructive text-destructive-foreground"
-                            : "bg-status-open text-status-open-foreground"
-                        }
+                            ? "bg-destructive/85 text-destructive-foreground"
+                            : "bg-status-open/90 text-status-open-foreground",
+                        )}
                         aria-label={`${needsAttention} acompanhamentos para hoje`}
                       >
                         {needsAttention}

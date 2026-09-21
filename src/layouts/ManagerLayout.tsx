@@ -82,9 +82,21 @@ function NavItem({ to, end, icon, label, collapsed, badge }: NavItemProps) {
       end={end}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-2 rounded-md text-sm bg-white/0 hover:bg-white/10 transition",
+          // Mesma linguagem da sidebar do agente: a hierarquia e feita por
+          // opacidade e por uma faixa fina a esquerda, nao por blocos cheios.
+          "relative flex items-center gap-3 rounded-lg text-sm transition-colors duration-150",
+          "[&_svg]:transition-colors",
           collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
-          isActive && "bg-white/15",
+          "before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[3px]",
+          "before:-translate-y-1/2 before:rounded-full before:bg-primary",
+          "before:transition-[height] before:duration-200",
+          isActive
+            ? "bg-white/[0.10] font-medium text-dashboard-sidebar-foreground before:h-4 [&_svg]:text-primary"
+            : cn(
+                "text-dashboard-sidebar-foreground/65",
+                "hover:bg-white/[0.06] hover:text-dashboard-sidebar-foreground",
+                "[&_svg]:text-dashboard-sidebar-foreground/45",
+              ),
         )
       }
     >
@@ -397,25 +409,25 @@ export default function ManagerLayout() {
             <NavItem
               to="/dashboard"
               end
-              icon={<BarChart3 className="h-4 w-4" />}
+              icon={<BarChart3 strokeWidth={1.5} className="h-4 w-4" />}
               label="Atendimentos"
               collapsed={collapsed}
             />
             <NavItem
               to="/dashboard/reembolsos"
-              icon={<RefreshCcw className="h-4 w-4" />}
+              icon={<RefreshCcw strokeWidth={1.5} className="h-4 w-4" />}
               label="Reembolsos"
               collapsed={collapsed}
             />
             <NavItem
               to="/dashboard/acompanhamento"
-              icon={<ClipboardCheck className="h-4 w-4" />}
+              icon={<ClipboardCheck strokeWidth={1.5} className="h-4 w-4" />}
               label="Acompanhamento"
               collapsed={collapsed}
             />
             <NavItem
               to="/dashboard/interacoes"
-              icon={<Activity className="h-4 w-4" />}
+              icon={<Activity strokeWidth={1.5} className="h-4 w-4" />}
               label="Interacoes"
               collapsed={collapsed}
             />
@@ -432,20 +444,20 @@ export default function ManagerLayout() {
               <>
                 <NavItem
                   to="/dashboard/alertas"
-                  icon={<AlertTriangle className="h-4 w-4" />}
+                  icon={<AlertTriangle strokeWidth={1.5} className="h-4 w-4" />}
                   label="Alertas"
                   collapsed={collapsed}
                   badge={alertsBadge}
                 />
                 <NavItem
                   to="/dashboard/usuarios"
-                  icon={<Users className="h-4 w-4" />}
+                  icon={<Users strokeWidth={1.5} className="h-4 w-4" />}
                   label="Usuários"
                   collapsed={collapsed}
                 />
                 <NavItem
                   to="/dashboard/base"
-                  icon={<BookOpen className="h-4 w-4" />}
+                  icon={<BookOpen strokeWidth={1.5} className="h-4 w-4" />}
                   label="Base de Suporte"
                   collapsed={collapsed}
                 />
