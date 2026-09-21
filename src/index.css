@@ -355,6 +355,36 @@ All colors MUST be HSL.
   }
 }
 
+/* ---------- o item da Lya na sidebar ----------
+   Mesmo ciano da bolha, mas num volume muito menor: aqui ela divide espaço
+   com onze irmãos e um contorno forte viraria disputa, não destaque. É um
+   fio de 1px por dentro mais um brilho de fora, respirando no mesmo compasso
+   de 4,2s — a bolha e a sidebar pulsam juntas, não em contratempo. */
+@keyframes lya-nav-respiro {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(125 245 255 / 0.18),
+      0 0 8px -4px rgb(125 245 255 / 0.22);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(125 245 255 / 0.34),
+      0 0 13px -3px rgb(125 245 255 / 0.4);
+  }
+}
+.lya-nav {
+  animation: lya-nav-respiro 4.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lya-nav {
+    animation: none !important;
+    box-shadow:
+      inset 0 0 0 1px rgb(125 245 255 / 0.26),
+      0 0 10px -4px rgb(125 245 255 / 0.3);
+  }
+}
+
 .lya svg {
   display: block;
   width: 100%;
