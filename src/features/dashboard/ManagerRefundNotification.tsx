@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,9 @@ export function ManagerRefundNotification() {
 
   return (
     <>
+      {/* Sem "fechar" no canto: o X fazia exatamente o mesmo que o "Ciente"
+          logo abaixo, e dois jeitos de dispensar o mesmo aviso só dividem a
+          atenção de quem precisa decidir se vai ver os agentes. */}
       <div className="fixed top-4 right-4 z-50 w-[320px]">
         <div className="rounded-xl border border-amber-400/40 bg-card shadow-2xl ring-1 ring-black/5 dark:ring-white/5 p-4">
           <div className="flex items-start gap-3">
@@ -42,14 +45,6 @@ export function ManagerRefundNotification() {
                 {data.agents_affected === 1 ? "agente" : "agentes"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={acknowledge}
-              aria-label="Fechar"
-              className="shrink-0 rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
           </div>
 
           <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-3">
