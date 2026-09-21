@@ -153,7 +153,7 @@ export default function ManagerLayout() {
 
       if (!active) return;
       setRole(profile?.role ?? null);
-      setFullName(profile?.role === "manager" ? "Ester" : (profile?.full_name ?? null));
+      setFullName(profile?.full_name ?? null);
       setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
       setAuthLoading(false);
     };

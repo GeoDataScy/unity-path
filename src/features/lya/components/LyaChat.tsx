@@ -43,7 +43,8 @@ export function LyaChat({
 }: {
   contexto: LyaContexto;
   canTrain: boolean;
-  firstName: string;
+  /** Primeiro nome de quem está logado; `null` quando o perfil não tem nome. */
+  firstName: string | null;
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [modoTreino, setModoTreino] = useState(false);
@@ -162,7 +163,12 @@ export function LyaChat({
             <div className="mb-8 flex flex-col items-center gap-4">
               <LyaMark size={72} estado={conv.estado} />
               <h1 className="text-[26px] font-normal text-foreground sm:text-[32px]">
-                {greeting()}, <span className="text-primary">{firstName}</span>
+                {greeting()}
+                {firstName && (
+                  <>
+                    , <span className="text-primary">{firstName}</span>
+                  </>
+                )}
               </h1>
             </div>
             <div className="w-full max-w-3xl">
