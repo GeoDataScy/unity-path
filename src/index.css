@@ -214,6 +214,210 @@ All colors MUST be HSL.
   animation-play-state: paused;
 }
 
+/* ===== Lya · avatar animado (símbolo "Juba") =========================
+   Três arcos concêntricos + ponto rosa. Lê como juba de leão e como onda
+   de sinal. Estados: repouso | pensando | respondendo | resolvido.
+   Uso: <LyaMark estado="pensando" size={40} /> (src/features/lya/components).
+
+   Regra que não pode ser violada: "pensando" é um PÊNDULO com desaceleração
+   nas pontas, nunca rotação linear — giro linear é a assinatura de "máquina
+   carregando" e mata a percepção de que existe alguém do outro lado.
+
+   Tudo é escopado em `.lya` e não vaza. Os únicos hexadecimais da marca
+   moram aqui; trocar os quatro tokens muda o símbolo inteiro.
+   ==================================================================== */
+
+.lya {
+  --lya-roxo-esc: #4c1d95;
+  --lya-roxo: #6d28d9;
+  --lya-lilas: #a78bfa;
+  --lya-rosa: #f0709f;
+
+  display: inline-block;
+  width: 40px; /* o tamanho vem daqui, nunca de width/height no SVG */
+  height: 40px;
+  line-height: 0;
+}
+
+/* Dark: a escada de roxos sobe um degrau para não sumir no fundo escuro.
+   A leitura (três níveis + ponto quente) é a mesma. */
+.dark .lya {
+  --lya-roxo-esc: #7c3aed;
+  --lya-roxo: #a78bfa;
+  --lya-lilas: #c4b5fd;
+  --lya-rosa: #f489b0;
+}
+
+/* Monocromática em branco — para superfícies roxas, onde o arco externo
+   lilás perde contraste (cabeçalho do balão, botão flutuante, sidebar). */
+.lya[data-lya-tone="branco"] {
+  --lya-roxo-esc: #ffffff;
+  --lya-roxo: #ffffff;
+  --lya-lilas: #ffffff;
+  --lya-rosa: #ffffff;
+}
+
+.lya svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* transform-box garante que toda rotação gire no centro do viewBox */
+.lya svg * {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+
+.lya circle {
+  fill: none;
+  stroke-linecap: round;
+}
+.lya .lya-arc1 {
+  stroke: var(--lya-lilas);
+}
+.lya .lya-arc2 {
+  stroke: var(--lya-roxo);
+}
+.lya .lya-arc3 {
+  stroke: var(--lya-roxo-esc);
+}
+.lya .lya-dot {
+  fill: var(--lya-rosa);
+  stroke: none;
+}
+.lya .lya-halo {
+  stroke: var(--lya-rosa);
+  stroke-width: 3;
+  opacity: 0;
+}
+
+/* ---------- vocabulário de movimento ---------- */
+@keyframes lya-sway {
+  0%,
+  100% {
+    transform: rotate(-3.5deg) scale(1);
+  }
+  50% {
+    transform: rotate(3.5deg) scale(1.035);
+  }
+}
+@keyframes lya-swing {
+  0%,
+  100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(14deg);
+  }
+}
+@keyframes lya-brh {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes lya-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  28% {
+    transform: scale(1.2);
+  }
+  58% {
+    transform: scale(0.96);
+  }
+}
+@keyframes lya-bloom {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.14) rotate(2deg);
+  }
+  100% {
+    transform: scale(1.05) rotate(0deg);
+  }
+}
+@keyframes lya-halo {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+}
+
+/* ---------- REPOUSO — presença, quase imperceptível ---------- */
+.lya[data-lya-state="repouso"] .lya-l1 {
+  animation: lya-sway 6.4s ease-in-out infinite;
+}
+.lya[data-lya-state="repouso"] .lya-l2 {
+  animation: lya-sway 6.4s ease-in-out 0.5s infinite;
+}
+.lya[data-lya-state="repouso"] .lya-l3 {
+  animation: lya-brh 4.6s ease-in-out infinite;
+}
+
+/* ---------- PENSANDO — pêndulo com desaceleração ---------- */
+.lya[data-lya-state="pensando"] .lya-l1 {
+  animation: lya-swing 2s ease-in-out infinite;
+}
+.lya[data-lya-state="pensando"] .lya-l2 {
+  animation: lya-swing 2s ease-in-out 0.16s infinite;
+}
+.lya[data-lya-state="pensando"] .lya-l3 {
+  animation: lya-brh 2s ease-in-out infinite;
+}
+
+/* ---------- RESPONDENDO — pulso elástico em cascata ---------- */
+.lya[data-lya-state="respondendo"] .lya-l1 {
+  animation: lya-pop 1s cubic-bezier(0.34, 1.35, 0.5, 1) infinite;
+}
+.lya[data-lya-state="respondendo"] .lya-l2 {
+  animation: lya-pop 1s cubic-bezier(0.34, 1.35, 0.5, 1) 0.1s infinite;
+}
+.lya[data-lya-state="respondendo"] .lya-l3 {
+  animation: lya-pop 1s cubic-bezier(0.34, 1.35, 0.5, 1) 0.2s infinite;
+}
+
+/* ---------- RESOLVIDO — floresce, assenta e abre o halo ---------- */
+.lya[data-lya-state="resolvido"] .lya-l1,
+.lya[data-lya-state="resolvido"] .lya-l2,
+.lya[data-lya-state="resolvido"] .lya-l3 {
+  animation: lya-bloom 0.8s cubic-bezier(0.25, 1.3, 0.45, 1) forwards;
+}
+.lya[data-lya-state="resolvido"] .lya-l2 {
+  animation-delay: 0.06s;
+}
+.lya[data-lya-state="resolvido"] .lya-l3 {
+  animation-delay: 0.12s;
+}
+.lya[data-lya-state="resolvido"] .lya-halo {
+  animation: lya-halo 0.8s cubic-bezier(0.25, 1.3, 0.45, 1) 0.1s forwards;
+}
+
+/* ---------- congelar: abaixo de 24px, fora da conversa ativa e por
+             preferência do usuário ---------- */
+.lya[data-lya-static="true"] svg * {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lya svg * {
+    animation: none !important;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Painel de reembolsos externos (/dashboard/reembolsos/comparativo)
    ---------------------------------------------------------------------------

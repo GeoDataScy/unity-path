@@ -7,6 +7,13 @@
 
 export type LyaRole = "user" | "assistant";
 
+/**
+ * Estado do símbolo da Lya (ver `LyaMark` e o bloco `.lya` em `index.css`).
+ * Cada estado tem um movimento próprio — é por movimento, não por cor, que o
+ * usuário sabe em que ponto do turno a Lya está.
+ */
+export type LyaEstado = "repouso" | "pensando" | "respondendo" | "resolvido";
+
 export interface LyaToolCall {
   name: string;
 }

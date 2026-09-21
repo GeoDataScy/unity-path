@@ -3,23 +3,29 @@ import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { LyaMessage } from "../types";
+import type { LyaEstado, LyaMessage } from "../types";
 import { ChartCard } from "./ChartCard";
-import { LyaAvatar, MemoryCard, RevisaoNotas, ThinkingDots, ThinkingIndicator, ToolActivity } from "./ChatActivity";
+import { MemoryCard, RevisaoNotas, ThinkingDots, ThinkingIndicator, ToolActivity } from "./ChatActivity";
+import { LyaMark } from "./LyaMark";
 import { Markdown } from "./Markdown";
 
 // Lista de mensagens de uma conversa com a Lya (compartilhada pelo balão e
 // pela tela cheia). Rola para o fim a cada mudança.
+//
+// Só o símbolo da última resposta anima — os das mensagens anteriores ficam
+// congelados. Uma thread de 50 mensagens não pode ter 50 SVGs animando juntos.
 export function LyaMessages({
   messages,
   loading,
   loadingHistory,
   compact = false,
+  estado = "repouso",
 }: {
   messages: LyaMessage[];
   loading: boolean;
   loadingHistory?: boolean;
   compact?: boolean;
+  estado?: LyaEstado;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +55,15 @@ export function LyaMessages({
               </div>
             ) : (
               <div className={cn("flex w-full gap-3", compact && "gap-2.5")}>
-                {!compact && <LyaAvatar className="mt-1 h-7 w-7" />}
+                {!compact && (
+                  <LyaMark
+                    size={28}
+                    estado={ultima ? estado : "repouso"}
+                    congelado={!ultima}
+                    label={null}
+                    className="mt-0.5"
+                  />
+                )}
                 <div className="min-w-0 flex-1">
                   {m.tools && m.tools.length > 0 && <ToolActivity tools={m.tools} active={!m.content && loading && ultima} />}
                   <div className={cn("text-foreground", compact ? "text-sm leading-relaxed" : "text-[15px] leading-[1.7]")}>

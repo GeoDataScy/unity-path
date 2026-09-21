@@ -24,7 +24,6 @@ import {
   RefreshCcw,
   Users,
   Brain,
-  Sparkles,
 } from "lucide-react";
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
@@ -35,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { LyaMark } from "@/features/lya/components/LyaMark";
 import { LyaWidget } from "@/features/lya/components/LyaWidget";
 import type { LyaContexto } from "@/features/lya/types";
 
@@ -422,7 +422,9 @@ export default function ManagerLayout() {
             <NavItem
               to="/dashboard/lya"
               end
-              icon={<Sparkles className="h-4 w-4" />}
+              // A marca da Lya no lugar do ícone genérico. 16px = congelada:
+              // movimento minúsculo na sidebar é ruído, não charme.
+              icon={<LyaMark size={16} tone="branco" label={null} />}
               label="Lya"
               collapsed={collapsed}
             />
