@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { DateRange } from "react-day-picker";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { LyaMark } from "@/features/lya/components/LyaMark";
 import { LyaWidget } from "@/features/lya/components/LyaWidget";
 import type { LyaContexto } from "@/features/lya/types";
@@ -65,47 +66,6 @@ export type ManagerOutletContext = {
   fromISO: string;
   toISO: string;
 };
-
-type NavItemProps = {
-  to: string;
-  end?: boolean;
-  icon: React.ReactNode;
-  label: string;
-  collapsed: boolean;
-  badge?: React.ReactNode;
-};
-
-function NavItem({ to, end, icon, label, collapsed, badge }: NavItemProps) {
-  const content = (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center gap-2 rounded-md text-sm bg-white/0 hover:bg-white/10 transition",
-          collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
-          isActive && "bg-white/15",
-        )
-      }
-    >
-      <span className="relative">
-        {icon}
-        {collapsed && badge}
-      </span>
-      {!collapsed && <span className="flex-1">{label}</span>}
-      {!collapsed && badge}
-    </NavLink>
-  );
-
-  if (!collapsed) return content;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export default function ManagerLayout() {
   const navigate = useNavigate();
@@ -339,11 +299,11 @@ export default function ManagerLayout() {
 
   const alertsBadge = overdueCount > 0 ? (
     collapsed ? (
-      <span className="absolute -right-1 -top-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
+      <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
         {overdueCount > 9 ? "9+" : overdueCount}
       </span>
     ) : (
-      <span className="rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold min-w-[20px] h-5 flex items-center justify-center px-1.5">
+      <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-destructive-foreground">
         {overdueCount}
       </span>
     )
@@ -351,113 +311,120 @@ export default function ManagerLayout() {
 
   return (
     <div className="min-h-screen flex">
+      {/* A sidebar tem altura fixa de viewport e três zonas: topo e rodapé
+          presos, miolo rolável. Antes era uma coluna só, então numa tela baixa
+          o Logout simplesmente saía por baixo da janela. */}
       <aside
         className={cn(
-          "shrink-0 sticky top-0 h-screen bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
+          "sticky top-0 flex h-screen shrink-0 flex-col bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[260px]",
         )}
       >
-        <div className={cn("h-full flex flex-col gap-6", collapsed ? "p-2" : "p-4")}>
-          <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "justify-between gap-2")}>
-            <div className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}>
-              <img src={logo} alt="Logo da empresa" className="h-8 w-auto shrink-0" loading="lazy" />
-              {!collapsed && (
-                <div className="leading-tight truncate">
-                  <div className="text-sm font-semibold">
-                    {isManager ? "Painel da Gestora" : "Data Analytics"}
-                  </div>
-                  <div className="text-xs opacity-80">{isManager ? "Analytics" : "Suporte"}</div>
+        <div className={cn("flex shrink-0 items-center", collapsed ? "flex-col gap-2 p-2" : "justify-between gap-1 p-4")}>
+          <div className={cn("flex min-w-0 items-center gap-2", collapsed && "justify-center")}>
+            <img src={logo} alt="Logo da empresa" className="h-7 w-auto shrink-0" loading="lazy" />
+            {!collapsed && (
+              <div className="leading-tight truncate">
+                <div className="text-[13px] font-semibold">
+                  {isManager ? "Painel da Gestora" : "Data Analytics"}
                 </div>
-              )}
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setCollapsed((v) => !v)}
-                  aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/0 hover:bg-white/10 transition shrink-0"
-                >
-                  {collapsed ? (
-                    <PanelLeftOpen className="h-4 w-4" />
-                  ) : (
-                    <PanelLeftClose className="h-4 w-4" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {collapsed ? "Expandir menu" : "Encolher menu"}
-              </TooltipContent>
-            </Tooltip>
+                <div className="text-xs opacity-80">{isManager ? "Analytics" : "Suporte"}</div>
+              </div>
+            )}
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setCollapsed((v) => !v)}
+                aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+              >
+                {collapsed ? <PanelLeftOpen className={SIDEBAR_ICON} /> : <PanelLeftClose className={SIDEBAR_ICON} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {collapsed ? "Expandir menu" : "Encolher menu"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
+        {/* Miolo rolável: são onze itens de menu mais os filtros, e não cabem
+            em tela baixa. `min-h-0` é o que deixa este flex item encolher em
+            vez de empurrar o rodapé para fora. */}
+        <div
+          className={cn(
+            "sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
+            collapsed ? "space-y-3 px-2 pb-3" : "space-y-5 px-4 pb-4",
+          )}
+        >
           <AreaSwitcher role={role} currentArea="analytics" collapsed={collapsed} />
 
-          <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
-            <NavItem
+          <nav className={cn(collapsed ? "space-y-1" : "space-y-1")}>
+            <SidebarNavItem
               to="/dashboard"
               end
-              icon={<BarChart3 className="h-4 w-4" />}
+              icon={<BarChart3 className={SIDEBAR_ICON} />}
               label="Atendimentos"
               collapsed={collapsed}
             />
-            <NavItem
+            <SidebarNavItem
               to="/dashboard/reembolsos"
-              icon={<RefreshCcw className="h-4 w-4" />}
+              icon={<RefreshCcw className={SIDEBAR_ICON} />}
               label="Reembolsos"
               collapsed={collapsed}
             />
-            <NavItem
+            <SidebarNavItem
               to="/dashboard/acompanhamento"
-              icon={<ClipboardCheck className="h-4 w-4" />}
+              icon={<ClipboardCheck className={SIDEBAR_ICON} />}
               label="Acompanhamento"
               collapsed={collapsed}
             />
-            <NavItem
+            <SidebarNavItem
               to="/dashboard/interacoes"
-              icon={<Activity className="h-4 w-4" />}
+              icon={<Activity className={SIDEBAR_ICON} />}
               label="Interacoes"
               collapsed={collapsed}
             />
-            <NavItem
+            <SidebarNavItem
               to="/dashboard/lya"
               end
-              // A marca da Lya no lugar do ícone genérico. 16px = congelada:
-              // movimento minúsculo na sidebar é ruído, não charme.
-              icon={<LyaMark size={16} tone="branco" label={null} />}
+              // A marca da Lya no lugar do ícone genérico. Abaixo de 24px ela
+              // congela sozinha: movimento minúsculo na sidebar é ruído.
+              icon={<LyaMark size={18} tone="branco" label={null} />}
               label="Lya"
               collapsed={collapsed}
             />
             {isManager && (
               <>
-                <NavItem
+                <SidebarNavItem
                   to="/dashboard/alertas"
-                  icon={<AlertTriangle className="h-4 w-4" />}
+                  icon={<AlertTriangle className={SIDEBAR_ICON} />}
                   label="Alertas"
                   collapsed={collapsed}
                   badge={alertsBadge}
                 />
-                <NavItem
+                <SidebarNavItem
                   to="/dashboard/usuarios"
-                  icon={<Users className="h-4 w-4" />}
+                  icon={<Users className={SIDEBAR_ICON} />}
                   label="Usuários"
                   collapsed={collapsed}
                 />
-                <NavItem
+                <SidebarNavItem
                   to="/dashboard/base"
-                  icon={<BookOpen className="h-4 w-4" />}
+                  icon={<BookOpen className={SIDEBAR_ICON} />}
                   label="Base de Suporte"
                   collapsed={collapsed}
                 />
-                <NavItem
+                <SidebarNavItem
                   to="/dashboard/zendesk"
-                  icon={<Headset className="h-4 w-4" />}
+                  icon={<Headset className={SIDEBAR_ICON} />}
                   label="Zendesk"
                   collapsed={collapsed}
                 />
-                <NavItem
+                <SidebarNavItem
                   to="/dashboard/lya/cerebro"
-                  icon={<Brain className="h-4 w-4" />}
+                  icon={<Brain className={SIDEBAR_ICON} />}
                   label="Cérebro da Lya"
                   collapsed={collapsed}
                 />
@@ -469,7 +436,7 @@ export default function ManagerLayout() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
-                <DateRangePicker value={range} onChange={setRange} />
+                <DateRangePicker value={range} onChange={setRange} className="px-3" />
                 <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
               </div>
 
@@ -491,9 +458,17 @@ export default function ManagerLayout() {
               </div>
             </div>
           )}
+        </div>
 
-          <div className={cn("mt-auto", collapsed ? "space-y-1" : "space-y-2")}>
-            {collapsed ? (
+        {/* Rodapé preso: Extrair Relatório e Logout não podem depender de o
+            menu caber na tela. A borda separa do conteúdo que rola por baixo. */}
+        <div
+          className={cn(
+            "shrink-0 border-t border-white/10",
+            collapsed ? "space-y-1 p-2" : "space-y-2 p-4",
+          )}
+        >
+          {collapsed ? (
               <>
                 {isManager && (
                   <Tooltip>
@@ -503,9 +478,9 @@ export default function ManagerLayout() {
                         onClick={handleExportReport}
                         disabled={exporting}
                         aria-label={exporting ? "Extraindo relatório" : "Extrair relatório"}
-                        className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition disabled:opacity-60"
+                        className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15 disabled:opacity-60"
                       >
-                        <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
+                        <FileSpreadsheet className={cn(SIDEBAR_ICON, exporting && "animate-pulse")} />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
@@ -520,9 +495,9 @@ export default function ManagerLayout() {
                       type="button"
                       onClick={handleLogout}
                       aria-label="Sair"
-                      className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition"
+                      className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15"
                     >
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className={SIDEBAR_ICON} />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right">Sair</TooltipContent>
@@ -537,7 +512,7 @@ export default function ManagerLayout() {
                     variant="secondary"
                     className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
                   >
-                    <FileSpreadsheet className={cn("h-4 w-4", exporting && "animate-pulse")} />
+                    <FileSpreadsheet className={cn(SIDEBAR_ICON, exporting && "animate-pulse")} />
                     {exporting ? "Extraindo..." : "Extrair Relatório"}
                   </Button>
                 )}
@@ -554,8 +529,7 @@ export default function ManagerLayout() {
                   {isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
                 </div>
               </>
-            )}
-          </div>
+          )}
         </div>
       </aside>
 

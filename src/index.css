@@ -214,6 +214,31 @@ All colors MUST be HSL.
   animation-play-state: paused;
 }
 
+/* ── Rolagem da sidebar ──
+   A barra lateral escura precisa de um scrollbar discreto: o nativo do macOS
+   some, mas no Windows/Linux ele aparece claro e corta o desenho da barra.
+   Some por completo quando não está rolando o mouse por cima. */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.sidebar-scroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
 /* ===== Lya · avatar animado (símbolo "Juba") =========================
    Três arcos concêntricos + ponto rosa. Lê como juba de leão e como onda
    de sinal. Estados: repouso | pensando | respondendo | resolvido.

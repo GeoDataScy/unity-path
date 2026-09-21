@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import logo from "@/assets/logo-xmx.png";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
@@ -22,42 +23,6 @@ export type ProdutosOutletContext = {
 const NAV_ITEMS = [
   { to: "/produtos", end: true, icon: PackageSearch, label: "Pedidos em espera" },
 ] as const;
-
-type NavItemProps = {
-  to: string;
-  end?: boolean;
-  icon: React.ReactNode;
-  label: string;
-  collapsed: boolean;
-};
-
-function NavItem({ to, end, icon, label, collapsed }: NavItemProps) {
-  const content = (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center gap-2 rounded-md text-sm bg-white/0 hover:bg-white/10 transition",
-          collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
-          isActive && "bg-white/15",
-        )
-      }
-    >
-      <span className="relative">{icon}</span>
-      {!collapsed && <span className="flex-1">{label}</span>}
-    </NavLink>
-  );
-
-  if (!collapsed) return content;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export default function ProdutosLayout() {
   const navigate = useNavigate();
@@ -213,17 +178,16 @@ export default function ProdutosLayout() {
     <div className="min-h-screen flex">
       <aside
         className={cn(
-          "shrink-0 sticky top-0 h-screen bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
+          "sticky top-0 flex h-screen shrink-0 flex-col bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[260px]",
         )}
       >
-        <div className={cn("h-full flex flex-col gap-6", collapsed ? "p-2" : "p-4")}>
-          <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "justify-between gap-2")}>
-            <div className={cn("flex items-center gap-3 min-w-0", collapsed && "justify-center")}>
-              <img src={logo} alt="Logo da empresa" className="h-8 w-auto shrink-0" loading="lazy" />
+        <div className={cn("flex shrink-0 items-center", collapsed ? "flex-col gap-2 p-2" : "justify-between gap-1 p-4")}>
+          <div className={cn("flex min-w-0 items-center gap-2", collapsed && "justify-center")}>
+            <img src={logo} alt="Logo da empresa" className="h-7 w-auto shrink-0" loading="lazy" />
               {!collapsed && (
                 <div className="leading-tight truncate">
-                  <div className="text-sm font-semibold">Painel de Produtos</div>
+                  <div className="text-[13px] font-semibold">Painel de Produtos</div>
                   <div className="text-xs opacity-80">Produtos</div>
                 </div>
               )}
@@ -234,26 +198,35 @@ export default function ProdutosLayout() {
                   type="button"
                   onClick={() => setCollapsed((v) => !v)}
                   aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/0 hover:bg-white/10 transition shrink-0"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
                 >
-                  {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                  {collapsed ? <PanelLeftOpen className={SIDEBAR_ICON} /> : <PanelLeftClose className={SIDEBAR_ICON} />}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">{collapsed ? "Expandir menu" : "Encolher menu"}</TooltipContent>
             </Tooltip>
-          </div>
+        </div>
 
+        {/* Miolo rolável: o menu e os filtros não podem empurrar o rodapé para
+            fora da janela numa tela baixa. `min-h-0` é o que deixa este flex
+            item encolher em vez de estourar. */}
+        <div
+          className={cn(
+            "sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
+            collapsed ? "space-y-3 px-2 pb-3" : "space-y-5 px-4 pb-4",
+          )}
+        >
           <AreaSwitcher role={role} currentArea="produtos" collapsed={collapsed} />
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
-                <NavItem
+                <SidebarNavItem
                   key={item.to}
                   to={item.to}
                   end={item.end}
-                  icon={<Icon className="h-4 w-4" />}
+                  icon={<Icon className={SIDEBAR_ICON} />}
                   label={item.label}
                   collapsed={collapsed}
                 />
@@ -261,7 +234,10 @@ export default function ProdutosLayout() {
             })}
           </nav>
 
-          <div className={cn("mt-auto", collapsed ? "space-y-1" : "space-y-2")}>
+        </div>
+
+        {/* Rodapé preso: o Sair não depende de o menu caber na tela. */}
+        <div className={cn("shrink-0 border-t border-white/10", collapsed ? "space-y-1 p-2" : "space-y-2 p-4")}>
             {collapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -269,9 +245,9 @@ export default function ProdutosLayout() {
                     type="button"
                     onClick={handleLogout}
                     aria-label="Sair"
-                    className="inline-flex h-9 w-full items-center justify-center rounded-md bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15 transition"
+                    className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className={SIDEBAR_ICON} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Sair</TooltipContent>
@@ -283,14 +259,13 @@ export default function ProdutosLayout() {
                   variant="secondary"
                   className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className={SIDEBAR_ICON} />
                   Sair
                 </Button>
 
                 {fullName && <div className="text-[11px] opacity-70 px-1 truncate">Logado como {fullName}</div>}
               </>
-            )}
-          </div>
+          )}
         </div>
       </aside>
 
