@@ -395,6 +395,9 @@ export default function ManagerLayout() {
               icon={<LyaMark size={18} tone="branco" label={null} />}
               label="Lya"
               collapsed={collapsed}
+              // Contorno neon: é o único item da sidebar que abre uma
+              // conversa, e some entre onze irmãos de mesmo peso.
+              className="lya-nav"
             />
             {isManager && (
               <>

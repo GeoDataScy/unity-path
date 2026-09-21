@@ -20,9 +20,11 @@ type Props = {
   label: string;
   collapsed: boolean;
   badge?: React.ReactNode;
+  /** Extra do chamador — hoje só a Lya usa, para o contorno neon. */
+  className?: string;
 };
 
-export function SidebarNavItem({ to, end, icon, label, collapsed, badge }: Props) {
+export function SidebarNavItem({ to, end, icon, label, collapsed, badge, className }: Props) {
   // `isActive` sai daqui, e não da forma de função do `className` do NavLink:
   // recolhido, o item entra num `TooltipTrigger asChild`, e o Slot do Radix
   // serializa a função para dentro do atributo `class` — o item ficava
@@ -37,6 +39,7 @@ export function SidebarNavItem({ to, end, icon, label, collapsed, badge }: Props
         "flex h-9 items-center rounded-lg text-sm transition-colors hover:bg-white/10",
         collapsed ? "mx-auto w-9 justify-center" : "gap-2.5 px-3",
         isActive && "bg-white/15 font-medium",
+        className,
       )}
     >
       {/* O slot precisa ser uma caixa de verdade (inline-flex com tamanho): é

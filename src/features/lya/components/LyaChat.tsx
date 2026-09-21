@@ -43,13 +43,20 @@ export function LyaChat({
   contexto,
   canTrain,
   firstName,
+  initialChatId = null,
 }: {
   contexto: LyaContexto;
   canTrain: boolean;
   /** Primeiro nome de quem está logado; `null` quando o perfil não tem nome. */
   firstName: string | null;
+  /**
+   * Conversa a abrir na montagem — vem do `?chat=` de quem expandiu o balão.
+   * Só semeia o estado inicial: trocar de conversa depois é do usuário, e
+   * a URL não manda mais nada.
+   */
+  initialChatId?: string | null;
 }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(initialChatId);
   const [modoTreino, setModoTreino] = useState(false);
   const [anexos, setAnexos] = useState<LyaArquivoAnexado[]>([]);
   const [anexando, setAnexando] = useState<string | null>(null);

@@ -13,3 +13,8 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+// jsdom não implementa scrollTo/scrollIntoView. Qualquer lista que se rola
+// sozinha (as mensagens da Lya, por exemplo) estoura no efeito de montagem.
+Element.prototype.scrollTo = Element.prototype.scrollTo ?? (() => {});
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView ?? (() => {});

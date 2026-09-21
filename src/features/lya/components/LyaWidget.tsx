@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Maximize2, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import type { LyaContexto } from "../types";
+import { newChatId } from "../useLyaChats";
 import { useLyaConversation } from "../useLyaConversation";
 import { LyaComposer } from "./LyaComposer";
 import { LyaMark } from "./LyaMark";
@@ -17,12 +18,27 @@ const SUGESTOES = [
 ];
 
 // Balão flutuante (canto inferior direito) que abre um painel de chat com a
-// Lya em qualquer tela do painel. A conversa aqui é da sessão (não vai para o
-// histórico); a tela cheia (/dashboard/lya) é a que persiste.
+// Lya em qualquer tela do painel.
+//
+// A conversa daqui é uma conversa de verdade: grava no histórico como a da
+// tela cheia. Antes era só da sessão, e quem começasse aqui e clicasse em
+// expandir caía numa tela vazia, sem achar o que tinha acabado de perguntar.
+// O id nasce no primeiro envio (`onNeedChatId`) e vai junto no link de
+// expandir — é ele que costura as duas telas.
 export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const conv = useLyaConversation({ persist: false, contexto });
+  const [chatId, setChatId] = useState<string | null>(null);
+
+  // Primeiro envio do balão: cria a conversa e guarda o id para o link de
+  // expandir. Sem envio nenhum, não existe conversa para levar.
+  const onNeedChatId = useCallback(() => {
+    const id = newChatId();
+    setChatId(id);
+    return id;
+  }, []);
+
+  const conv = useLyaConversation({ chatId, persist: true, onNeedChatId, contexto });
 
   // Na tela cheia a própria Lya já ocupa a página — esconde o balão.
   if (pathname.startsWith("/dashboard/lya")) return null;
@@ -62,7 +78,11 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
               <p className="text-sm font-semibold">Lya</p>
               <p className="truncate text-xs text-primary-foreground/75">Pergunte sobre os dados do suporte</p>
             </div>
-            <Link to="/dashboard/lya" title="Abrir em tela cheia" className="rounded-md p-1.5 hover:bg-white/15">
+            <Link
+              to={chatId ? `/dashboard/lya?chat=${chatId}` : "/dashboard/lya"}
+              title="Abrir em tela cheia"
+              className="rounded-md p-1.5 hover:bg-white/15"
+            >
               <Maximize2 className="h-4 w-4" />
             </Link>
           </header>
