@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCcw,
+  Table2,
   Users,
   Brain,
 } from "lucide-react";
@@ -46,7 +47,7 @@ const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 // e continuam guardadas por is_manager() no Postgres. O time de copy entra na
 // área de analytics só para ler os números, então essas rotas não aparecem para
 // ele — e um acesso direto pela URL volta para o dashboard.
-const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base", "/dashboard/lya/cerebro"];
+const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base", "/dashboard/lya/cerebro", "/dashboard/lya/arquivos"];
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -426,6 +427,12 @@ export default function ManagerLayout() {
                   to="/dashboard/lya/cerebro"
                   icon={<Brain className={SIDEBAR_ICON} />}
                   label="Cérebro da Lya"
+                  collapsed={collapsed}
+                />
+                <SidebarNavItem
+                  to="/dashboard/lya/arquivos"
+                  icon={<Table2 className={SIDEBAR_ICON} />}
+                  label="Arquivos da Lya"
                   collapsed={collapsed}
                 />
               </>

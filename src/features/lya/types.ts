@@ -77,6 +77,8 @@ export interface LyaContexto {
   usuario_nome?: string | null;
   usuario_role?: string | null;
   tela?: string | null;
+  /** Arquivos anexados nesta pergunta — a Lya lê antes de responder. */
+  arquivos?: LyaArquivoAnexado[];
 }
 
 /** Eventos do SSE da Edge Function. */
@@ -90,9 +92,87 @@ export type LyaEvent =
   | { type: "error"; message?: string }
   | { type: "done" };
 
+// ── Arquivos (planilhas e documentos que a gestora dá para a Lya) ───────────
+//
+// Uma planilha vira DUAS coisas: metadados + perfil das colunas em `lya_files`, e
+// uma linha por linha do arquivo em `lya_file_rows(data jsonb)`. É a segunda que
+// deixa a Lya CRUZAR o arquivo com services/refunds no sandbox de SQL — sem ela
+// o arquivo seria só texto colado no contexto.
+
+export type LyaArquivoTipo = "csv" | "markdown";
+export type LyaArquivoStatus = "processando" | "pronto" | "erro";
+export type LyaColunaTipo = "texto" | "numero" | "data" | "booleano";
+
+/** Perfil de uma coluna, calculado no parse (o banco só guarda). */
+export interface LyaColuna {
+  nome: string;
+  tipo: LyaColunaTipo;
+  /** Quantas linhas têm valor nessa coluna. */
+  preenchidas: number;
+  distintos: number;
+  /** Até 3 valores de exemplo, para a Lya entender o formato. */
+  exemplos: string[];
+}
+
+/** Uma linha do acervo (`lya_list_files`) — sem o conteúdo, que é pesado. */
+export interface LyaArquivo {
+  id: string;
+  nome: string;
+  arquivo: string;
+  tipo: LyaArquivoTipo;
+  status: LyaArquivoStatus;
+  colunas: LyaColuna[];
+  total_linhas: number;
+  /** Interpretação escrita pela Lya na ingestão. */
+  resumo: string;
+  tags: string[];
+  erro: string | null;
+  bytes: number;
+  uploaded_by: string | null;
+  uploaded_by_nome: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** `lya_get_file`: o arquivo inteiro mais uma amostra das linhas. */
+export interface LyaArquivoDetalhe extends LyaArquivo {
+  /** Markdown: o corpo inteiro. CSV: vazio. */
+  conteudo: string;
+  amostra: { linha: number; data: Record<string, unknown> }[];
+}
+
+/** Saída do parse no browser, antes de subir. */
+export interface LyaArquivoParse {
+  tipo: LyaArquivoTipo;
+  /** Nome original do arquivo escolhido. */
+  arquivo: string;
+  bytes: number;
+  colunas: LyaColuna[];
+  /** CSV: uma entrada por linha, chaves em snake_case. Markdown: vazio. */
+  linhas: Record<string, unknown>[];
+  /** Markdown: o corpo inteiro. CSV: vazio. */
+  conteudo: string;
+}
+
+/** O mínimo que o turno do chat precisa saber sobre um arquivo anexado. */
+export interface LyaArquivoAnexado {
+  id: string;
+  nome: string;
+  tipo: LyaArquivoTipo;
+  total_linhas: number;
+  colunas: string[];
+}
+
 // ── Cérebro ─────────────────────────────────────────────────────────────────
 
 export type LyaMemoryType = "user" | "feedback" | "project" | "reference" | "nota";
+
+/**
+ * De onde nasceu a memória. `treino` = a gestora ensinou; `arquivo` = a Lya
+ * escreveu sozinha ao interpretar um arquivo; `sistema` = veio do catálogo do
+ * que ela alcança. É o que deixa o grafo separar treino de cognição própria.
+ */
+export type LyaMemoryOrigem = "treino" | "arquivo" | "sistema";
 
 export interface LyaMemory {
   id: number;
@@ -103,6 +183,9 @@ export interface LyaMemory {
   body: string;
   author_id: string | null;
   seed: boolean;
+  origem: LyaMemoryOrigem;
+  /** Preenchido quando `origem = 'arquivo'`: o arquivo que a gerou. */
+  file_id: string | null;
   created_at: string;
   updated_at: string;
 }

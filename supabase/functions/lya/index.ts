@@ -6,10 +6,12 @@
 // usuário: cada RPC de painel aplica o mesmo guard que aplica na tela.
 //
 // Ações (body JSON `{ action, ... }`):
-//   chat           → turno do agente com TOOL CALLING, resposta em SSE
-//                    (eventos: tool, token, chart, memoria, aviso, revisao, error, done)
-//   memoria_salvar → grava uma memória no cérebro (treinador + RPC); só gestora
-//   ping           → saúde + se a chave está configurada
+//   chat                → turno do agente com TOOL CALLING, resposta em SSE
+//                         (eventos: tool, token, chart, memoria, aviso, revisao, error, done)
+//   memoria_salvar      → grava uma memória no cérebro (treinador + RPC); só gestora
+//   arquivo_interpretar → lê um arquivo recém-subido, escreve o resumo e cria o
+//                         nó de cognição dele no cérebro; só gestora
+//   ping                → saúde + se a chave está configurada
 //
 // Arquitetura do turno (espelho do Daniel/CBIE):
 //   recall das memórias → system (estático cacheado + contexto da tela + memórias)
@@ -18,6 +20,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { anthropic, apiKeyConfigurada, CHAT_EFFORT, CHAT_MODEL, MAX_TOKENS, type Anthropic } from "./anthropic.ts";
 import { blocoContexto, blocoMemorias, type ContextoTela, type Recall, SYSTEM, systemTreinoComMemorias } from "./prompt.ts";
 import { REGRAS_DO_SISTEMA } from "./prompt.ts";
+import { interpretarArquivo } from "./arquivos.ts";
 import { anthropicToolDefs, anthropicTrainingToolDefs, getTool, salvarMemoriaNoCerebro, type ToolContext } from "./tools.ts";
 import { type Evidencia, revisar } from "./verificador.ts";
 
@@ -283,6 +286,20 @@ Deno.serve(async (req) => {
 
   if (action === "ping") {
     return json({ ok: true, chave_configurada: apiKeyConfigurada(), modelo: CHAT_MODEL, role });
+  }
+
+  // Vem ANTES do portão da chave de propósito: sem a Anthropic a interpretação
+  // cai no resumo montado em código, e é melhor o arquivo entrar no acervo sem
+  // leitura de negócio do que ficar preso em 'processando' para sempre.
+  if (action === "arquivo_interpretar") {
+    if (role !== "manager") return json({ error: "Só a gestora pode dar arquivos para a Lya." }, 403);
+    const fileId = String(body.file_id ?? "").trim();
+    if (!fileId) return json({ error: "Informe o arquivo a interpretar." }, 400);
+    try {
+      return json(await interpretarArquivo(supabase, fileId), 200);
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : "Falha ao interpretar o arquivo." }, 400);
+    }
   }
 
   if (!apiKeyConfigurada()) {

@@ -1,15 +1,18 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { Brain, Clock, Hash, Link2, Sparkles, Star, type LucideIcon } from "lucide-react";
+import { Brain, Clock, Hash, Link2, Radar, Sparkles, Star, Table2, type LucideIcon } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-import { buildGraph, desde } from "../graph";
-import { TIPO_MEMORIA_MAP, type LyaMemory, type LyaMemoryType } from "../types";
+import { buildGraph, desde, type LyaSistemaNo } from "../graph";
+import { TIPO_MEMORIA_MAP, type LyaArquivo, type LyaMemory, type LyaMemoryType } from "../types";
 
 // Faixa de métricas do Cérebro da Lya — o "ticker" do topo (herdado do
-// CerebroTicker do Daniel). Tudo é derivado da própria lista de memórias, sem
-// endpoint novo: treinar uma memória invalida a query e o número sobe aqui.
-// O mouse em cima para a esteira; cada item tem tooltip com o que significa.
+// CerebroTicker do Daniel). Tudo é derivado das listas que o grafo já carrega,
+// sem endpoint novo: treinar uma memória ou subir um arquivo invalida a query e
+// o número sobe aqui. O mouse em cima para a esteira; cada item tem tooltip.
+//
+// Conta as TRÊS camadas do cérebro (memória, arquivo, sistema) — se contasse só
+// memórias, a faixa diria que a Lya sabe menos do que ela alcança.
 
 const MINUTO_MS = 60_000;
 const DIA_MS = 86_400_000;
@@ -39,43 +42,86 @@ interface Metrica {
 }
 
 const corta = (s: string, n = 28) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+const numero = (n: number) => n.toLocaleString("pt-BR");
 
-export function LyaCerebroTicker({ memorias, carregando }: { memorias: LyaMemory[]; carregando: boolean }) {
+export function LyaCerebroTicker({
+  memorias,
+  arquivos = [],
+  sistema = [],
+  carregando,
+}: {
+  memorias: LyaMemory[];
+  arquivos?: LyaArquivo[];
+  sistema?: LyaSistemaNo[];
+  carregando: boolean;
+}) {
   const minuto = useSyncExternalStore(assinarRelogio, minutoAgora, minutoAgora);
 
   const metricas = useMemo<Metrica[]>(() => {
     const agora = minuto * MINUTO_MS;
     const out: Metrica[] = [];
-    if (memorias.length === 0) return out;
+    if (memorias.length === 0 && arquivos.length === 0 && sistema.length === 0) return out;
 
-    const novasSemana = memorias.filter((m) => agora - new Date(m.created_at).getTime() < 7 * DIA_MS).length;
-    const hoje = memorias.filter((m) => agora - new Date(m.updated_at).getTime() < DIA_MS).length;
-    out.push({
-      key: "memorias",
-      icon: Brain,
-      label: "Memórias",
-      valor: String(memorias.length),
-      nota: novasSemana > 0 ? `+${novasSemana} na semana` : undefined,
-      cor: "#a78bfa",
-      descricao: "Tudo que a Lya já aprendeu com a gestora. Cada memória entra no contexto dela quando a pergunta tem a ver.",
-    });
-    out.push({
-      key: "hoje",
-      icon: Sparkles,
-      label: "Treinadas hoje",
-      valor: String(hoje),
-      cor: "#34d399",
-      descricao: "Memórias criadas ou corrigidas nas últimas 24 horas.",
-    });
+    // ── Camada das memórias treinadas ──
+    if (memorias.length > 0) {
+      const novasSemana = memorias.filter((m) => agora - new Date(m.created_at).getTime() < 7 * DIA_MS).length;
+      const hoje = memorias.filter((m) => agora - new Date(m.updated_at).getTime() < DIA_MS).length;
+      out.push({
+        key: "memorias",
+        icon: Brain,
+        label: "Memórias",
+        valor: String(memorias.length),
+        nota: novasSemana > 0 ? `+${novasSemana} na semana` : undefined,
+        cor: "#a78bfa",
+        descricao: "Tudo que a Lya já aprendeu com a gestora. Cada memória entra no contexto dela quando a pergunta tem a ver.",
+      });
+      out.push({
+        key: "hoje",
+        icon: Sparkles,
+        label: "Treinadas hoje",
+        valor: String(hoje),
+        cor: "#34d399",
+        descricao: "Memórias criadas ou corrigidas nas últimas 24 horas.",
+      });
+    }
 
-    const grafo = buildGraph(memorias);
+    // ── As duas camadas novas ──
+    if (arquivos.length > 0) {
+      const linhas = arquivos.reduce((t, f) => t + (f.total_linhas ?? 0), 0);
+      out.push({
+        key: "arquivos",
+        icon: Table2,
+        label: "Arquivos",
+        valor: String(arquivos.length),
+        nota: linhas > 0 ? `${numero(linhas)} linhas` : undefined,
+        cor: "#e2e8f0",
+        descricao:
+          "Planilhas e documentos que a gestora deu para a Lya. Ela lê as linhas e cruza com os dados da plataforma quando a pergunta pede.",
+      });
+    }
+    if (sistema.length > 0) {
+      const alcancados = sistema.reduce((t, n) => t + (n.total ?? 0), 0);
+      out.push({
+        key: "alcance",
+        icon: Radar,
+        label: "Alcance",
+        valor: String(sistema.length),
+        nota: alcancados > 0 ? `${numero(alcancados)} registros` : undefined,
+        cor: "#94a3b8",
+        descricao:
+          "Tabelas e telas que a Lya consegue consultar de verdade neste momento, com o total de registros que elas têm hoje.",
+      });
+    }
+
+    const grafo = buildGraph(memorias, arquivos, sistema);
     out.push({
       key: "conexoes",
       icon: Link2,
       label: "Conexões",
       valor: String(grafo.links.length),
       cor: "#60a5fa",
-      descricao: "Ligações entre memórias: [[wikilinks]] no texto e tags em comum. Quanto mais conectado, mais contexto a Lya puxa junto.",
+      descricao:
+        "Ligações do cérebro: [[wikilinks]] e tags entre memórias, a memória que nasceu de cada arquivo, o arquivo que cita uma tabela e as tabelas entre si.",
     });
 
     const hub = [...grafo.nodes].sort((a, b) => b.val - a.val)[0];
@@ -91,43 +137,46 @@ export function LyaCerebroTicker({ memorias, carregando }: { memorias: LyaMemory
       });
     }
 
-    const porTipo = new Map<LyaMemoryType, number>();
-    for (const m of memorias) porTipo.set(m.type, (porTipo.get(m.type) ?? 0) + 1);
-    for (const [tipo, n] of [...porTipo.entries()].sort((a, b) => b[1] - a[1])) {
+    // ── Recortes que só fazem sentido sobre as memórias ──
+    if (memorias.length > 0) {
+      const porTipo = new Map<LyaMemoryType, number>();
+      for (const m of memorias) porTipo.set(m.type, (porTipo.get(m.type) ?? 0) + 1);
+      for (const [tipo, n] of [...porTipo.entries()].sort((a, b) => b[1] - a[1])) {
+        out.push({
+          key: `tipo-${tipo}`,
+          icon: Hash,
+          label: TIPO_MEMORIA_MAP[tipo]?.label ?? tipo,
+          valor: String(n),
+          cor: COR_TIPO[tipo],
+          descricao: TIPO_MEMORIA_MAP[tipo]?.hint ?? "",
+        });
+      }
+
+      const tags = new Set(memorias.flatMap((m) => m.tags ?? []));
       out.push({
-        key: `tipo-${tipo}`,
+        key: "tags",
         icon: Hash,
-        label: TIPO_MEMORIA_MAP[tipo]?.label ?? tipo,
-        valor: String(n),
-        cor: COR_TIPO[tipo],
-        descricao: TIPO_MEMORIA_MAP[tipo]?.hint ?? "",
+        label: "Tags",
+        valor: String(tags.size),
+        cor: "#cbd5e1",
+        descricao: "Palavras-chave distintas. São elas que fazem uma memória ser encontrada quando a pergunta usa outras palavras.",
       });
+
+      const ultima = [...memorias].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+      if (ultima) {
+        out.push({
+          key: "ultima",
+          icon: Clock,
+          label: "Último treino",
+          valor: desde(ultima.updated_at, agora),
+          nota: corta(ultima.description || ultima.name, 24),
+          cor: "#34d399",
+          descricao: "Quando a gestora ensinou ou corrigiu algo pela última vez.",
+        });
     }
-
-    const tags = new Set(memorias.flatMap((m) => m.tags ?? []));
-    out.push({
-      key: "tags",
-      icon: Hash,
-      label: "Tags",
-      valor: String(tags.size),
-      cor: "#cbd5e1",
-      descricao: "Palavras-chave distintas. São elas que fazem uma memória ser encontrada quando a pergunta usa outras palavras.",
-    });
-
-    const ultima = [...memorias].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
-    if (ultima) {
-      out.push({
-        key: "ultima",
-        icon: Clock,
-        label: "Último treino",
-        valor: desde(ultima.updated_at, agora),
-        nota: corta(ultima.description || ultima.name, 24),
-        cor: "#34d399",
-        descricao: "Quando a gestora ensinou ou corrigiu algo pela última vez.",
-      });
     }
     return out;
-  }, [memorias, minuto]);
+  }, [memorias, arquivos, sistema, minuto]);
 
   const itens = [...metricas, ...metricas]; // duplicado para o loop da esteira ser contínuo
 

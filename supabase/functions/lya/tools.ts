@@ -1,12 +1,14 @@
 // Registry de TOOLS da Lya.
 //
-// Quatro famílias (ver prompt.ts):
+// Famílias (ver prompt.ts):
 //   painel_* / listar_* → os MESMOS RPCs que alimentam as telas da gestora,
 //                          chamados com o JWT do usuário (os guards do banco —
 //                          is_manager / can_view_support_analytics — valem
 //                          igual ao que vale na tela);
 //   consultar_banco      → SELECT livre no sandbox lya_exec_sql;
 //   buscar_base_suporte  → conteúdo editorial da Base de Suporte;
+//   listar_arquivos /
+//   ler_arquivo          → acervo de planilhas e documentos da gestora;
 //   gerar_grafico        → artefato para a UI (não volta ao modelo);
 //   salvar_memoria       → só no modo treino (cérebro da Lya).
 //
@@ -489,6 +491,116 @@ const buscarBaseSuporte: AgentTool = {
   },
 };
 
+// ── Arquivos da Lya (acervo da gestora) ─────────────────────────────────────
+//
+// O que a gestora trouxe DE FORA do sistema: planilhas e documentos. As tools
+// daqui são a porta de entrada — descobrir o que existe e abrir um arquivo. Para
+// o arquivo INTEIRO (contar, somar, cruzar com a plataforma) quem serve é
+// `consultar_banco` sobre lya_file_rows; está no CATALOGO_SQL, com exemplos.
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const listarArquivos: AgentTool = {
+  name: "listar_arquivos",
+  origem: "banco",
+  description:
+    "Lista o ACERVO DE ARQUIVOS da Lya (planilhas e documentos que a gestora subiu na tela 'Arquivos da Lya'): " +
+    "id, nome, tipo, nº de linhas, nomes das colunas, o resumo do que o arquivo é e as tags. Comece por aqui " +
+    "sempre que a pergunta citar 'a planilha', 'o arquivo', 'a lista que te mandei' — é como você descobre o id " +
+    "que as outras consultas pedem. Não confunda com os dados da plataforma: isto é material trazido de fora.",
+  input_schema: { type: "object", properties: {} },
+  async execute(_input, ctx) {
+    const data = await rpc(ctx, "lya_list_files", {});
+    const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+    if (rows.length === 0) {
+      return "Fonte: acervo de arquivos da Lya — nenhum arquivo foi subido ainda. (Quem sobe é a gestora, na tela 'Arquivos da Lya'.)";
+    }
+    const enxuto = rows.map((r) => ({
+      id: r.id,
+      nome: r.nome,
+      arquivo_original: r.arquivo,
+      tipo: r.tipo,
+      status: r.status,
+      total_linhas: r.total_linhas,
+      colunas: Array.isArray(r.colunas) ? (r.colunas as Record<string, unknown>[]).map((c) => c?.nome) : [],
+      resumo: r.resumo,
+      tags: r.tags,
+      subido_por: r.uploaded_by_nome,
+      subido_em: r.created_at,
+    }));
+    return cabecalho("acervo de arquivos da Lya — lya_list_files", { arquivos: rows.length }) + clip(enxuto);
+  },
+};
+
+// Nome -> id. A gestora fala "a planilha da PagAmerican", não o uuid.
+async function acharArquivo(ctx: ToolContext, alvo: string): Promise<string> {
+  if (UUID.test(alvo)) return alvo;
+  const data = await rpc(ctx, "lya_list_files", {});
+  const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+  const chave = alvo.toLowerCase();
+  const casa = (r: Record<string, unknown>) =>
+    String(r.nome ?? "").toLowerCase().includes(chave) || String(r.arquivo ?? "").toLowerCase().includes(chave);
+  const achados = rows.filter(casa);
+  if (achados.length === 0) {
+    const nomes = rows.map((r) => `"${r.nome}"`).join(", ");
+    throw new Error(
+      `Não achei arquivo com "${alvo}" no acervo.` + (nomes ? ` Os que existem são: ${nomes}.` : " O acervo está vazio."),
+    );
+  }
+  if (achados.length > 1) {
+    const nomes = achados.map((r) => `"${r.nome}" (id ${r.id})`).join(", ");
+    throw new Error(`"${alvo}" casa com mais de um arquivo: ${nomes}. Repita com o id exato.`);
+  }
+  return String(achados[0].id);
+}
+
+const lerArquivo: AgentTool = {
+  name: "ler_arquivo",
+  origem: "banco",
+  description:
+    "Abre UM arquivo do acervo: o perfil de cada coluna (tipo, quantas preenchidas, quantos valores distintos, " +
+    "exemplos), uma AMOSTRA das primeiras linhas e, em documento markdown, o texto. Use para entender o formato " +
+    "antes de escrever o SQL. ATENÇÃO: a amostra é só o começo (máx. 50 linhas) — para contar, somar, filtrar, " +
+    "ranquear ou CRUZAR o arquivo inteiro com a plataforma, use consultar_banco em lya_file_rows com " +
+    "WHERE file_id = '<id>'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      arquivo: { type: "string", description: "Id (uuid) do arquivo, ou parte do nome dele (use listar_arquivos para ver)." },
+      amostra: { type: "integer", description: "Quantas linhas trazer na amostra (default 20, teto 50)." },
+    },
+    required: ["arquivo"],
+  },
+  async execute(input, ctx) {
+    const alvo = texto(input.arquivo);
+    if (!alvo) throw new Error("'arquivo' é obrigatório: passe o id ou parte do nome.");
+    const amostra = Math.min(50, Math.max(1, Number(input.amostra ?? 20) || 20));
+    const id = await acharArquivo(ctx, alvo);
+    const data = (await rpc(ctx, "lya_get_file", { p_file_id: id, p_amostra: amostra })) as Record<string, unknown> | null;
+    if (!data || !data.id) throw new Error(`Arquivo ${id} não está mais no acervo.`);
+    const tipo = String(data.tipo ?? "csv");
+    const corpo = {
+      id: data.id,
+      nome: data.nome,
+      arquivo_original: data.arquivo,
+      tipo,
+      status: data.status,
+      total_linhas: data.total_linhas,
+      resumo: data.resumo,
+      tags: data.tags,
+      colunas: data.colunas,
+      // markdown não tem linha: o que importa é o texto
+      ...(tipo === "markdown" ? { conteudo: data.conteudo } : { amostra: data.amostra }),
+    };
+    const aviso =
+      tipo === "markdown"
+        ? ""
+        : `\n(Amostra de ${Array.isArray(data.amostra) ? (data.amostra as unknown[]).length : 0} de ${Number(data.total_linhas ?? 0)} linha(s). ` +
+          `Para o arquivo inteiro: consultar_banco em lya_file_rows WHERE file_id = '${data.id}'.)`;
+    return cabecalho("arquivo do acervo da Lya — lya_get_file", { arquivo: data.nome, id: data.id }) + clip(corpo) + aviso;
+  },
+};
+
 // ── Gráfico (artefato para a UI) ────────────────────────────────────────────
 
 const CHART_PROPERTIES = {
@@ -677,7 +789,8 @@ const salvarMemoria: AgentTool = {
 export const TOOLS: AgentTool[] = [
   painelAtendimentos, painelStatusTickets, painelCanais, painelInteracoes, painelPadraoHorarios, painelRepeticoes,
   painelReembolsos, painelReembolsosMotivo, painelAlertas, painelUsuarios, painelPedidosEspera,
-  listarAtendimentos, listarReembolsos, listarAgentes, consultarBanco, buscarBaseSuporte, gerarGrafico,
+  listarAtendimentos, listarReembolsos, listarAgentes, consultarBanco, buscarBaseSuporte,
+  listarArquivos, lerArquivo, gerarGrafico,
 ];
 
 const TOOL_MAP = new Map([...TOOLS, salvarMemoria].map((t) => [t.name, t]));
