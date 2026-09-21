@@ -28,7 +28,9 @@ export default function DashboardLya() {
     };
   }, [fromISO, toISO, agentId, agents.data, fullName, role]);
 
-  const firstName = (fullName || "").split(" ")[0] || "olá";
+  // Sem nome no perfil, a saudação fica só "Boa tarde" — melhor que
+  // "Boa tarde, olá". Há conta de gestora com full_name nulo no banco.
+  const firstName = (fullName ?? "").trim().split(" ")[0] || null;
 
   return <LyaChat contexto={contexto} canTrain={role === "manager"} firstName={firstName} />;
 }
