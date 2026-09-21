@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LyaBrainGraph } from "@/features/lya/components/LyaBrainGraph";
 import { LyaCerebroTicker } from "@/features/lya/components/LyaCerebroTicker";
 import { LyaTreinar } from "@/features/lya/components/LyaTreinar";
+import { useLyaArquivosGrafoQuery, useLyaSistemaQuery } from "@/features/lya/sistema";
 import type { LyaMemory } from "@/features/lya/types";
 import { useDeleteLyaMemory, useDeleteSeedMemories, useLyaMemoriesQuery } from "@/features/lya/useLyaMemories";
 import {
@@ -23,9 +24,15 @@ type Aba = "grafo" | "treinar";
 
 /**
  * Cérebro da Lya (/dashboard/lya/cerebro) — só gestora.
- * Aba Grafo: a memória como um grafo ao vivo (estilo Obsidian). Aba Treinar:
- * o console de treino. As duas leem a MESMA query de memórias: treinar na
+ * Aba Grafo: o cérebro como um grafo ao vivo (estilo Obsidian), em três
+ * camadas — as memórias treinadas, os arquivos que ela ingeriu e o alcance
+ * real dela (as tabelas e telas que consegue consultar). Aba Treinar: o
+ * console de treino. As duas leem a MESMA query de memórias: treinar na
  * segunda faz o nó nascer na primeira.
+ *
+ * As três camadas vêm de queries separadas de propósito: o polling curto do
+ * "ao vivo" é só das memórias (é o que muda a cada treino); arquivos e catálogo
+ * mudam devagar e têm staleTime próprio, para não bater no banco a cada 4 s.
  */
 export default function DashboardLyaCerebro() {
   const { toast } = useToast();
@@ -36,6 +43,8 @@ export default function DashboardLyaCerebro() {
   // Polling curto na aba do grafo: é o "ao vivo" — memórias ensinadas pelo
   // chat (modo treino) ou por outra gestora aparecem nascendo aqui.
   const memorias = useLyaMemoriesQuery(true, aba === "grafo" ? 4000 : false);
+  const arquivos = useLyaArquivosGrafoQuery(true);
+  const sistema = useLyaSistemaQuery(true);
   const apagar = useDeleteLyaMemory();
   const apagarExemplos = useDeleteSeedMemories();
   const [confirmarExemplos, setConfirmarExemplos] = useState(false);
@@ -82,11 +91,18 @@ export default function DashboardLyaCerebro() {
         </div>
       </header>
 
-      <LyaCerebroTicker memorias={memorias.data ?? []} carregando={memorias.isLoading} />
+      <LyaCerebroTicker
+        memorias={memorias.data ?? []}
+        arquivos={arquivos.data ?? []}
+        sistema={sistema.data?.nos ?? []}
+        carregando={memorias.isLoading}
+      />
 
       {aba === "grafo" ? (
         <LyaBrainGraph
           memorias={memorias.data ?? []}
+          arquivos={arquivos.data ?? []}
+          sistema={sistema.data?.nos ?? []}
           carregando={memorias.isLoading}
           treinando={treinando}
           onEditar={editarNoTreino}

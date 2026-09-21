@@ -1,28 +1,35 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { ForceGraphMethods, LinkObject, NodeObject } from "react-force-graph-2d";
-import { Brain, Eraser, Maximize2, Pencil, RotateCcw, Search, Settings2, Sparkles, Trash2, X } from "lucide-react";
+import { Brain, Eraser, ExternalLink, Maximize2, Pencil, RotateCcw, Search, Settings2, Sparkles, Trash2, X } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-import { buildGraph, desde, type BrainGraph, type GraphLink, type GraphNode } from "../graph";
-import { TIPO_MEMORIA_MAP, TIPOS_MEMORIA, type LyaMemory, type LyaMemoryType } from "../types";
+import { buildGraph, desde, type BrainGraph, type GraphCamada, type GraphLink, type GraphNode, type LyaSistemaNo } from "../graph";
+import { TIPO_MEMORIA_MAP, TIPOS_MEMORIA, type LyaArquivo, type LyaMemory, type LyaMemoryType } from "../types";
 
 // LyaBrainGraph — o cérebro da Lya como um GRAFO ao estilo Obsidian: fundo
-// escuro profundo, cada memória é um nó (cor por tipo, tamanho pelo número de
-// conexões), arestas finas; passar o mouse acende a vizinhança, clicar abre o
-// painel da memória. AO VIVO: a lista de memórias é repuxada de tempos em
-// tempos e memórias novas NASCEM com um flash + ondas.
+// escuro profundo, cada nó é uma coisa que ela sabe ou alcança (tamanho pelo
+// número de conexões), arestas finas; passar o mouse acende a vizinhança,
+// clicar abre o painel do nó. AO VIVO: as listas são repuxadas de tempos em
+// tempos e o que é novo NASCE com um flash + ondas.
+//
+// TRÊS CAMADAS (ver graph.ts): memória treinada, arquivo ingerido e nó de
+// sistema. Elas se distinguem pela FORMA, não por mais uma cor — círculo cheio
+// (memória, cor pelo tipo), quadrado arredondado (arquivo) e anel vazado
+// (sistema). O grafo já gasta 5 cores nos tipos de memória e roxo/azul são
+// indistinguíveis em protanopia: mais uma escala de cor aqui não seria lida.
 //
 // Manipulável como o grafo do Obsidian: arrastar nós (ficam onde soltar, ou
 // não — ajuste), painel de forças (repulsão, distância das ligações, força
-// central), filtros por tipo, órfãos, rótulos, tamanho dos nós e espessura das
-// linhas. Os ajustes ficam no navegador (localStorage).
+// central), filtros por camada e por tipo, órfãos, rótulos, tamanho dos nós e
+// espessura das linhas. Os ajustes ficam no navegador (localStorage).
 //
 // Herdado do BrainGraph do Daniel (CBIE); o grafo é montado no browser
-// (graph.ts) a partir das memórias.
+// (graph.ts) a partir das três listas.
 
 const ForceGraph2D = lazy(() => import("react-force-graph-2d"));
 
@@ -45,6 +52,49 @@ const COR_TIPO: Record<LyaMemoryType, string> = {
   nota: "#cbd5e1", // cinza claro — notas
 };
 const HALO = "#a78bfa";
+
+// Arquivo e sistema são NEUTROS de propósito: quem separa as camadas é a forma
+// (ver o comentário do topo), então uma cor a mais só competiria com os tipos.
+const COR_ARQUIVO = "#e2e8f0";
+const COR_SISTEMA = "#94a3b8";
+const CAMADAS: { value: GraphCamada; label: string; cor: string }[] = [
+  { value: "memoria", label: "Memórias", cor: COR_TIPO.project },
+  { value: "arquivo", label: "Arquivos", cor: COR_ARQUIVO },
+  { value: "sistema", label: "Sistema", cor: COR_SISTEMA },
+];
+const SISTEMA_CAMADA_LABEL: Record<LyaSistemaNo["camada"], string> = {
+  tabela: "Tabela do banco",
+  tela: "Tela do painel",
+  base: "Base de conhecimento",
+};
+const numero = (n: number) => n.toLocaleString("pt-BR");
+
+// O que a faixa anuncia quando um nó nasce, por camada.
+const NASCIMENTO_LABEL: Record<GraphCamada, string> = {
+  memoria: "nova memória:",
+  arquivo: "novo arquivo:",
+  sistema: "novo alcance:",
+};
+
+const corDoNo = (n: GraphNode) =>
+  n.camada === "arquivo" ? COR_ARQUIVO : n.camada === "sistema" ? COR_SISTEMA : COR_TIPO[n.type ?? "nota"] ?? COR_TIPO.nota;
+
+// A FORMA é o que separa as três camadas (ver o comentário do topo): círculo
+// para memória, quadrado arredondado para arquivo — lê como folha de planilha —
+// e o nó de sistema, que também é círculo, sai vazado no desenho. Aqui só se
+// traça o caminho; quem decide preencher ou contornar é `desenharNo`.
+function tracarForma(ctx: CanvasRenderingContext2D, n: GraphNode, x: number, y: number, r: number) {
+  ctx.beginPath();
+  if (n.camada === "arquivo") {
+    const lado = r * 1.7;
+    const canto = Math.min(lado / 3, 2.2);
+    // roundRect é recente; onde não existir, o quadrado reto ainda distingue.
+    if (typeof ctx.roundRect === "function") ctx.roundRect(x - lado / 2, y - lado / 2, lado, lado, canto);
+    else ctx.rect(x - lado / 2, y - lado / 2, lado, lado);
+    return;
+  }
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+}
 
 type NodeExtra = GraphNode & { _born?: number };
 type NodeRuntime = NodeObject<NodeExtra>;
@@ -69,6 +119,7 @@ interface Ajustes {
   fixar: boolean; // nó arrastado fica onde soltar
   orfaos: boolean; // mostrar nós sem conexão
   tipos: Record<LyaMemoryType, boolean>;
+  camadas: Record<GraphCamada, boolean>;
 }
 
 const AJUSTES_PADRAO: Ajustes = {
@@ -81,14 +132,23 @@ const AJUSTES_PADRAO: Ajustes = {
   fixar: true,
   orfaos: true,
   tipos: { feedback: true, user: true, project: true, reference: true, nota: true },
+  camadas: { memoria: true, arquivo: true, sistema: true },
 };
 
+// Quem já usa a tela tem ajustes salvos sem os campos novos: o merge com o
+// padrão (raso + um nível nos mapas) é o que faz `camadas` nascer ligada em vez
+// de `undefined` — sem ele o grafo abriria vazio para essas pessoas.
 function lerAjustes(): Ajustes {
   try {
     const raw = window.localStorage.getItem(AJUSTES_KEY);
     if (!raw) return AJUSTES_PADRAO;
     const p = JSON.parse(raw) as Partial<Ajustes>;
-    return { ...AJUSTES_PADRAO, ...p, tipos: { ...AJUSTES_PADRAO.tipos, ...(p.tipos ?? {}) } };
+    return {
+      ...AJUSTES_PADRAO,
+      ...p,
+      tipos: { ...AJUSTES_PADRAO.tipos, ...(p.tipos ?? {}) },
+      camadas: { ...AJUSTES_PADRAO.camadas, ...(p.camadas ?? {}) },
+    };
   } catch {
     return AJUSTES_PADRAO;
   }
@@ -96,6 +156,8 @@ function lerAjustes(): Ajustes {
 
 export function LyaBrainGraph({
   memorias,
+  arquivos = [],
+  sistema = [],
   carregando,
   treinando,
   onEditar,
@@ -104,6 +166,10 @@ export function LyaBrainGraph({
   onRemoverExemplos,
 }: {
   memorias: LyaMemory[];
+  /** Acervo de arquivos ingeridos — a camada `arquivo`. */
+  arquivos?: LyaArquivo[];
+  /** Catálogo do que a Lya alcança — a camada `sistema`. */
+  sistema?: LyaSistemaNo[];
   carregando: boolean;
   /** true enquanto o treinador está classificando uma memória nova. */
   treinando: boolean;
@@ -117,7 +183,7 @@ export function LyaBrainGraph({
   const [sel, setSel] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
-  const [novaMemoria, setNovaMemoria] = useState<string | null>(null);
+  const [novoNo, setNovoNo] = useState<{ label: string; camada: GraphCamada } | null>(null);
   const [dims, setDims] = useState({ w: 800, h: 600 });
   const [ajustes, setAjustes] = useState<Ajustes>(lerAjustes);
   const [painelAjustes, setPainelAjustes] = useState(false);
@@ -148,13 +214,17 @@ export function LyaBrainGraph({
   // simulados — só nós/arestas realmente novos entram (novos ganham _born).
   useEffect(() => {
     if (carregando && memorias.length === 0) return;
-    const fresh = buildGraph(memorias);
+    const fresh = buildGraph(memorias, arquivos, sistema);
     const prev = graphRef.current;
     if (primeiraRef.current || prev.nodes.length === 0) {
       primeiraRef.current = false;
       setGraph(fresh);
       return;
     }
+    // Uma camada só "nasce" com flash depois que ela já existia no grafo. As
+    // três listas chegam de queries diferentes: sem isso, os ~20 nós de sistema
+    // (e o acervo inteiro) piscariam de uma vez toda vez que a tela abre.
+    const camadasConhecidas = new Set((prev.nodes as NodeRuntime[]).map((n) => n.camada));
     const conhecidos = new Map((prev.nodes as NodeRuntime[]).map((n) => [n.id, n]));
     const freshIds = new Set(fresh.nodes.map((n) => n.id));
     const nodes: NodeRuntime[] = (prev.nodes as NodeRuntime[]).filter((n) => freshIds.has(n.id));
@@ -168,10 +238,14 @@ export function LyaBrainGraph({
         velho.tags = fn.tags;
         velho.type = fn.type;
         velho.updated_at = fn.updated_at;
+        // payloads das outras camadas mudam sozinhos (resumo da Lya, total ao
+        // vivo): o painel lateral lê deles, então têm que acompanhar
+        velho.arquivo = fn.arquivo;
+        velho.sistema = fn.sistema;
       } else {
-        const novo: NodeRuntime = { ...fn, _born: agora };
-        nodes.push(novo);
-        nascidos.push(fn);
+        const estreia = !camadasConhecidas.has(fn.camada);
+        nodes.push(estreia ? { ...fn } : { ...fn, _born: agora });
+        if (!estreia) nascidos.push(fn);
       }
     }
     const chave = (l: LinkRuntime) => [idOf(l.source), idOf(l.target)].sort().join("|") + l.kind;
@@ -183,20 +257,21 @@ export function LyaBrainGraph({
     if (!mudou) return;
     setGraph({ nodes, links });
     if (nascidos.length) {
-      setNovaMemoria(nascidos[nascidos.length - 1].label);
+      const ultimo = nascidos[nascidos.length - 1];
+      setNovoNo({ label: ultimo.label, camada: ultimo.camada });
       try {
         fgRef.current?.d3ReheatSimulation();
       } catch {
         /* noop */
       }
     }
-  }, [memorias, carregando]);
+  }, [memorias, arquivos, sistema, carregando]);
 
   useEffect(() => {
-    if (!novaMemoria) return;
-    const t = setTimeout(() => setNovaMemoria(null), 4200);
+    if (!novoNo) return;
+    const t = setTimeout(() => setNovoNo(null), 4200);
     return () => clearTimeout(t);
-  }, [novaMemoria]);
+  }, [novoNo]);
 
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -213,9 +288,15 @@ export function LyaBrainGraph({
     return () => window.clearTimeout(t);
   }, [dims]);
 
-  // ── Filtro por tipo / órfãos: mesmos objetos de nó (posições preservadas) ──
+  // ── Filtro por camada / tipo / órfãos: mesmos objetos de nó (posições preservadas) ──
+  // O filtro por TIPO só se aplica a memória: arquivo e sistema não têm tipo, e
+  // deixá-los presos a ele sumiria com as duas camadas novas sem explicação.
   const visivel = useMemo<BrainGraph>(() => {
-    const ok = new Set((graph.nodes as NodeRuntime[]).filter((n) => ajustes.tipos[n.type]).map((n) => String(n.id)));
+    const ok = new Set(
+      (graph.nodes as NodeRuntime[])
+        .filter((n) => ajustes.camadas[n.camada] && (n.camada !== "memoria" || ajustes.tipos[n.type ?? "nota"]))
+        .map((n) => String(n.id)),
+    );
     const links = (graph.links as LinkRuntime[]).filter((l) => ok.has(idOf(l.source)) && ok.has(idOf(l.target)));
     let nodes = (graph.nodes as NodeRuntime[]).filter((n) => ok.has(String(n.id)));
     if (!ajustes.orfaos) {
@@ -227,7 +308,7 @@ export function LyaBrainGraph({
       nodes = nodes.filter((n) => comLigacao.has(String(n.id)));
     }
     return { nodes, links };
-  }, [graph, ajustes.tipos, ajustes.orfaos]);
+  }, [graph, ajustes.camadas, ajustes.tipos, ajustes.orfaos]);
 
   // ── Forças (as "Forces" do Obsidian) ─────────────────────────────────────
   useEffect(() => {
@@ -269,12 +350,13 @@ export function LyaBrainGraph({
 
   const raio = useCallback((n: NodeRuntime) => (2 + Math.sqrt(n.val) * 1.6) * ajustes.tamanho, [ajustes.tamanho]);
 
+
   const desenharNo = useCallback(
     (node: NodeRuntime, ctx: CanvasRenderingContext2D, scale: number) => {
       const n = node;
       if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) return;
       const x = n.x as number, y = n.y as number;
-      const cor = COR_TIPO[n.type] ?? COR_TIPO.nota;
+      const cor = corDoNo(n);
       const apagadoPelaBusca = buscados ? !buscados.has(n.id) : false;
       const emFoco = (!focoId || vizinhos.has(n.id)) && !apagadoPelaBusca;
       const r = raio(n);
@@ -330,21 +412,29 @@ export function LyaBrainGraph({
       ctx.globalAlpha = emFoco ? 1 : 0.18;
       ctx.shadowColor = nascendo ? "#ffffff" : cor;
       ctx.shadowBlur = brilho;
-      ctx.beginPath();
-      ctx.arc(x, y, rEff, 0, 2 * Math.PI);
-      ctx.fillStyle = cor;
-      ctx.fill();
+      tracarForma(ctx, n, x, y, rEff);
+      if (n.camada === "sistema") {
+        // Anel vazado: o nó de sistema não é algo que a Lya sabe, é um lugar
+        // onde ela chega. O miolo aberto marca essa diferença já de longe.
+        ctx.lineWidth = Math.max(1.1 / scale, rEff * 0.45);
+        ctx.strokeStyle = cor;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = cor;
+        ctx.fill();
+      }
       if (focoId === n.id) {
         ctx.shadowBlur = brilho * 1.6;
-        ctx.fill();
+        if (n.camada === "sistema") ctx.stroke();
+        else ctx.fill();
+        tracarForma(ctx, n, x, y, rEff + 1.5 / scale);
         ctx.lineWidth = 1.2 / scale;
         ctx.strokeStyle = "#ffffff";
         ctx.stroke();
       }
       // nó fixado (arrastado): anel discreto, como o Obsidian marca nó "preso"
       if (n.fx != null && !nascendo) {
-        ctx.beginPath();
-        ctx.arc(x, y, rEff + 2 / scale, 0, 2 * Math.PI);
+        tracarForma(ctx, n, x, y, rEff + 2 / scale);
         ctx.lineWidth = 0.8 / scale;
         ctx.strokeStyle = hexToRgba(cor, 0.6);
         ctx.shadowBlur = 0;
@@ -411,6 +501,14 @@ export function LyaBrainGraph({
   };
 
   const selecionada = sel ? porNome.get(sel) ?? null : null;
+  // O nó selecionado pode ser de qualquer camada; `selecionada` só resolve
+  // memória (é ela que tem editar/apagar). Arquivo e sistema saem daqui.
+  const noSelecionado = useMemo(
+    () => (sel ? (graph.nodes as NodeRuntime[]).find((n) => String(n.id) === sel) ?? null : null),
+    [sel, graph.nodes],
+  );
+  const arquivoSel = noSelecionado?.camada === "arquivo" ? noSelecionado.arquivo ?? null : null;
+  const sistemaSel = noSelecionado?.camada === "sistema" ? noSelecionado.sistema ?? null : null;
   const recentes = useMemo(
     () => [...memorias].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 6),
     [memorias],
@@ -433,8 +531,8 @@ export function LyaBrainGraph({
             "carregando…"
           ) : (
             <>
-              {visivel.nodes.length} memórias · {visivel.links.length} conexões
-              {ocultos > 0 && <span className="text-slate-500"> · {ocultos} ocultas</span>}
+              {visivel.nodes.length} nós · {visivel.links.length} conexões
+              {ocultos > 0 && <span className="text-slate-500"> · {ocultos} ocultos</span>}
             </>
           )}
           <span className="flex items-center gap-1 text-emerald-400/90">
@@ -445,6 +543,34 @@ export function LyaBrainGraph({
             ao vivo
           </span>
         </span>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {CAMADAS.map((cm) => {
+            const on = ajustes.camadas[cm.value];
+            return (
+              <button
+                key={cm.value}
+                type="button"
+                onClick={() => setAjuste("camadas", { ...ajustes.camadas, [cm.value]: !on })}
+                title={on ? `Ocultar ${cm.label}` : `Mostrar ${cm.label}`}
+                className={cn(
+                  "flex items-center gap-1.5 text-[11px] font-medium transition-opacity",
+                  on ? "text-slate-200" : "text-slate-500 opacity-50 line-through",
+                )}
+              >
+                {/* a marca repete a FORMA do nó, não só a cor */}
+                <span
+                  className={cn(
+                    "inline-block h-2.5 w-2.5 shrink-0",
+                    cm.value === "arquivo" ? "rounded-[3px]" : "rounded-full",
+                    cm.value === "sistema" && "border-2 bg-transparent",
+                  )}
+                  style={cm.value === "sistema" ? { borderColor: cm.cor } : { background: cm.cor }}
+                />
+                {cm.label}
+              </button>
+            );
+          })}
+        </div>
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
           {TIPOS_MEMORIA.map((tp) => {
             const on = ajustes.tipos[tp.value];
@@ -505,13 +631,13 @@ export function LyaBrainGraph({
         </div>
       )}
 
-      {/* toast: nasceu uma memória */}
-      {novaMemoria && !treinando && (
+      {/* toast: nasceu um nó (o rótulo diz de que camada, porque agora são três) */}
+      {novoNo && !treinando && (
         <div className="pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2">
           <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs text-slate-100 shadow-2xl backdrop-blur-xl">
             <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: HALO }} />
-            <span className="text-slate-400">nova memória:</span>
-            <span className="max-w-[280px] truncate font-medium">{novaMemoria}</span>
+            <span className="text-slate-400">{NASCIMENTO_LABEL[novoNo.camada]}</span>
+            <span className="max-w-[280px] truncate font-medium">{novoNo.label}</span>
           </div>
         </div>
       )}
@@ -660,6 +786,98 @@ export function LyaBrainGraph({
                 <Trash2 className="h-3.5 w-3.5" /> Apagar
               </button>
             </div>
+          </>
+        ) : arquivoSel ? (
+          <>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                  style={{ background: hexToRgba(COR_ARQUIVO, 0.16), color: COR_ARQUIVO }}
+                >
+                  {arquivoSel.tipo === "csv" ? "Planilha" : "Documento"}
+                </span>
+                {arquivoSel.status !== "pronto" && (
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                    {arquivoSel.status === "processando" ? "lendo…" : "com erro"}
+                  </span>
+                )}
+              </span>
+              <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <h3 className="text-sm font-semibold leading-snug">{arquivoSel.nome}</h3>
+            <p className="mt-0.5 truncate text-[11px] text-slate-500" title={arquivoSel.arquivo}>
+              {arquivoSel.arquivo}
+            </p>
+            {arquivoSel.resumo && (
+              <p className="mt-2 max-h-36 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
+                {arquivoSel.resumo}
+              </p>
+            )}
+            {arquivoSel.colunas.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap gap-1">
+                {arquivoSel.colunas.slice(0, 12).map((c) => (
+                  <span key={c.nome} className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10.5px] text-slate-400" title={`${c.tipo} · ${numero(c.preenchidas)} preenchidas`}>
+                    {c.nome}
+                  </span>
+                ))}
+                {arquivoSel.colunas.length > 12 && (
+                  <span className="px-1 py-0.5 text-[10.5px] text-slate-500">+{arquivoSel.colunas.length - 12}</span>
+                )}
+              </div>
+            )}
+            {arquivoSel.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {arquivoSel.tags.map((tg) => (
+                  <button
+                    key={tg}
+                    type="button"
+                    onClick={() => setBusca(tg)}
+                    className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                  >
+                    #{tg}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+              {numero(arquivoSel.total_linhas)} linha(s) · {arquivoSel.colunas.length} coluna(s) · {desde(arquivoSel.updated_at)}
+            </p>
+            <Link
+              to="/dashboard/lya/arquivos"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1 text-[12px] hover:bg-white/10"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Abrir no acervo
+            </Link>
+          </>
+        ) : sistemaSel ? (
+          <>
+            <div className="mb-2 flex items-center justify-between">
+              <span
+                className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                style={{ background: hexToRgba(COR_SISTEMA, 0.16), color: COR_SISTEMA }}
+              >
+                {SISTEMA_CAMADA_LABEL[sistemaSel.camada]}
+              </span>
+              <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <h3 className="text-sm font-semibold leading-snug">{sistemaSel.label}</h3>
+            {sistemaSel.detalhe && (
+              <p className="mt-2 text-[12px] leading-relaxed text-slate-300">{sistemaSel.detalhe}</p>
+            )}
+            {sistemaSel.total != null && (
+              <p className="mt-2.5 text-[12px] text-slate-200">
+                <span className="text-lg font-semibold">{numero(sistemaSel.total)}</span>{" "}
+                <span className="text-slate-400">registro(s) agora</span>
+              </p>
+            )}
+            <p className="mt-3 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+              {Math.max(0, vizinhos.size - 1)} conexõe(s) · a Lya consulta isto ao responder
+            </p>
           </>
         ) : (
           <>
