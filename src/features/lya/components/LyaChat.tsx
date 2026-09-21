@@ -2,9 +2,12 @@ import { useCallback, useMemo, useState } from "react";
 import { Activity, AlertTriangle, BarChart3, ClipboardCheck, MessageSquarePlus, RefreshCcw, Trash2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-import type { LyaContexto } from "../types";
+import { LyaArquivoChip } from "../arquivos/LyaArquivoChip";
+import { useEnviarLyaArquivo } from "../arquivos/useLyaArquivos";
+import type { LyaArquivoAnexado, LyaContexto } from "../types";
 import { newChatId, useDeleteLyaChat, useLyaChatsQuery } from "../useLyaChats";
 import { useLyaConversation } from "../useLyaConversation";
 import { LyaComposer } from "./LyaComposer";
@@ -48,8 +51,12 @@ export function LyaChat({
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [modoTreino, setModoTreino] = useState(false);
+  const [anexos, setAnexos] = useState<LyaArquivoAnexado[]>([]);
+  const [anexando, setAnexando] = useState<string | null>(null);
   const chats = useLyaChatsQuery();
   const deleteChat = useDeleteLyaChat();
+  const { toast } = useToast();
+  const upload = useEnviarLyaArquivo();
 
   const onNeedChatId = useCallback(() => {
     const id = newChatId();
@@ -57,13 +64,66 @@ export function LyaChat({
     return id;
   }, []);
 
+  // O arquivo anexado vira contexto do turno: a Edge Function recebe os ids e
+  // lê o arquivo antes de responder.
+  const contextoComArquivos = useMemo<LyaContexto>(
+    () => (anexos.length > 0 ? { ...contexto, arquivos: anexos } : contexto),
+    [contexto, anexos],
+  );
+
   const conv = useLyaConversation({
     chatId: activeId,
     persist: true,
     onNeedChatId,
-    contexto,
+    contexto: contextoComArquivos,
     modoTreino: canTrain && modoTreino,
   });
+
+  /**
+   * Anexar sobe o arquivo na hora (acervo permanente), e não "cola" o conteúdo
+   * na pergunta: é o que deixa a Lya cruzar a planilha com o banco depois, em
+   * qualquer conversa.
+   */
+  const anexar = useCallback(
+    async (file: File) => {
+      setAnexando(file.name);
+      try {
+        // `xlsx` entra só quando alguém anexa: o chat não precisa carregar o
+        // parser de planilha para abrir.
+        const { parseLyaFile } = await import("../arquivos/parseLyaFile");
+        const parse = parseLyaFile(await file.arrayBuffer(), file.name);
+        const nome = file.name.replace(/\.[^.]+$/, "") || file.name;
+        const { arquivo, interpretado, aviso } = await upload.enviar(nome, parse);
+        setAnexos((prev) => [
+          ...prev.filter((a) => a.id !== arquivo.id),
+          {
+            id: arquivo.id,
+            nome: arquivo.nome,
+            tipo: arquivo.tipo,
+            total_linhas: arquivo.total_linhas,
+            colunas: arquivo.colunas.map((c) => c.nome),
+          },
+        ]);
+        toast(
+          interpretado
+            ? { title: "Arquivo anexado", description: `A Lya já leu ${arquivo.nome} e pode consultar na resposta.` }
+            : {
+                title: "Arquivo anexado sem a leitura da Lya",
+                description: aviso ?? "O arquivo subiu e está consultável, mas ela não conseguiu interpretá-lo agora.",
+              },
+        );
+      } catch (err) {
+        toast({
+          title: "Não consegui anexar o arquivo",
+          description: err instanceof Error ? err.message : undefined,
+          variant: "destructive",
+        });
+      } finally {
+        setAnexando(null);
+      }
+    },
+    [toast, upload],
+  );
 
   const started = conv.messages.length > 0 || conv.loadingHistory;
   const sessions = useMemo(() => chats.data ?? [], [chats.data]);
@@ -93,14 +153,35 @@ export function LyaChat({
   );
 
   const composer = (
-    <LyaComposer
-      onSend={conv.send}
-      loading={conv.loading}
-      disabled={conv.loadingHistory || conv.historyError}
-      canTrain={canTrain}
-      modoTreino={modoTreino}
-      onToggleTreino={() => setModoTreino((v) => !v)}
-    />
+    <>
+      {(anexos.length > 0 || anexando) && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {anexos.map((a) => (
+            <LyaArquivoChip
+              key={a.id}
+              arquivo={a}
+              onRemover={() => setAnexos((prev) => prev.filter((p) => p.id !== a.id))}
+            />
+          ))}
+          {anexando && (
+            <LyaArquivoChip
+              carregando
+              arquivo={{ id: "enviando", nome: anexando, tipo: "csv", total_linhas: 0, colunas: [] }}
+            />
+          )}
+        </div>
+      )}
+      <LyaComposer
+        onSend={conv.send}
+        loading={conv.loading}
+        disabled={conv.loadingHistory || conv.historyError}
+        canTrain={canTrain}
+        modoTreino={modoTreino}
+        onToggleTreino={() => setModoTreino((v) => !v)}
+        onAnexar={anexar}
+        anexando={Boolean(anexando)}
+      />
+    </>
   );
 
   return (

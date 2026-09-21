@@ -24,6 +24,7 @@ const DashboardBaseSuporte = lazy(() => import("./pages/DashboardBaseSuporte"));
 const DashboardZendesk = lazy(() => import("./pages/DashboardZendesk"));
 const DashboardLya = lazy(() => import("./pages/DashboardLya"));
 const DashboardLyaCerebro = lazy(() => import("./pages/DashboardLyaCerebro"));
+const DashboardLyaArquivos = lazy(() => import("./pages/DashboardLyaArquivos"));
 const AgentLayout = lazy(() => import("./layouts/AgentLayout"));
 const Atendimentos = lazy(() => import("./pages/agent/Atendimentos"));
 const PedidosEspera = lazy(() => import("./pages/agent/PedidosEspera"));
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="zendesk" element={<DashboardZendesk />} />
             <Route path="lya" element={<DashboardLya />} />
             <Route path="lya/cerebro" element={<DashboardLyaCerebro />} />
+            <Route path="lya/arquivos" element={<DashboardLyaArquivos />} />
           </Route>
           <Route path="/workspace" element={<AgentLayout />}>
             <Route index element={<Atendimentos />} />
