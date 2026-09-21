@@ -54,4 +54,9 @@ describe("LyaMark", () => {
     const { container } = render(<LyaMark tone="branco" />);
     expect(marca(container)).toHaveAttribute("data-lya-tone", "branco");
   });
+
+  it("aceita o tom neon da bolha flutuante", () => {
+    const { container } = render(<LyaMark tone="neon" />);
+    expect(marca(container)).toHaveAttribute("data-lya-tone", "neon");
+  });
 });

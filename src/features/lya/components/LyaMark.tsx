@@ -13,14 +13,19 @@ import type { LyaEstado } from "../types";
 // Regras de aplicação (ver prompt de identidade visual):
 //  · abaixo de 24px o símbolo congela — movimento minúsculo é ruído, não charme;
 //  · sobre superfície roxa, usar `tone="branco"` (o lilás externo some no roxo);
+//  · `tone="neon"` é só da bolha flutuante — e é a única exceção ao "sem sombra";
 //  · o símbolo nunca é distorcido, recortado, nem recebe sombra ou gradiente.
 
 interface LyaMarkProps {
   estado?: LyaEstado;
   /** Lado do quadrado, em px. O tamanho vem sempre daqui, nunca do SVG. */
   size?: number;
-  /** Monocromática branca, para fundo roxo. */
-  tone?: "branco";
+  /**
+   * `branco` = monocromática, para fundo roxo. `neon` = ciano bem claro com
+   * halo curto, exclusivo da bolha flutuante (ver `.lya-bolha` no index.css):
+   * é o único lugar onde a marca precisa puxar o olho de longe.
+   */
+  tone?: "branco" | "neon";
   /**
    * Congela a animação mesmo acima de 24px. Usado nos avatares das mensagens
    * antigas: uma thread longa não pode ter dezenas de SVGs animando juntos.

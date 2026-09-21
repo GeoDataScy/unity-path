@@ -282,6 +282,79 @@ All colors MUST be HSL.
   --lya-rosa: #ffffff;
 }
 
+/* Neon — só a bolha flutuante. Branco puro sobre roxo é correto mas apaga: a
+   bolha precisa puxar o olho de quem está trabalhando em outra tela. O ciano
+   é o que mais separa do violeta sem sair do registro "clean"; a saturação
+   sobe do arco externo (quase branco) para o ponto central, então o olho cai
+   no miolo em vez de se espalhar.
+
+   Exceção consciente à regra "o símbolo nunca recebe sombra": neon sem halo
+   lê como ciano claro, não como neon. O brilho é curto (3px) e vive SÓ neste
+   tom — sidebar, cabeçalho e avatares seguem com a marca limpa. */
+.lya[data-lya-tone="neon"] {
+  --lya-roxo-esc: #b9fbff;
+  --lya-roxo: #d6fdff;
+  --lya-lilas: #ecfeff;
+  --lya-rosa: #7df5ff;
+}
+.lya[data-lya-tone="neon"] svg {
+  filter: drop-shadow(0 0 3px rgb(125 245 255 / 0.55));
+}
+
+/* ---------- a bolha flutuante ----------
+   O movimento mora AQUI, não no repouso da marca: acelerar o repouso deixaria
+   a sidebar e os avatares das mensagens inquietos, e repouso é justamente o
+   estado que deve passar despercebido. A aura é uma onda lenta (4,2s) que sai
+   da bolha e some — mesmo vocabulário do halo de "resolvido", nunca um giro
+   linear, que é assinatura de "máquina carregando". */
+@keyframes lya-bolha-onda {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@keyframes lya-bolha-respiro {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 20px -6px rgb(109 40 217 / 0.5),
+      0 0 14px -2px rgb(125 245 255 / 0.25);
+  }
+  50% {
+    box-shadow:
+      0 10px 26px -6px rgb(109 40 217 / 0.6),
+      0 0 22px 0 rgb(125 245 255 / 0.45);
+  }
+}
+
+.lya-bolha {
+  animation: lya-bolha-respiro 4.2s ease-in-out infinite;
+}
+.lya-bolha-onda {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1.5px solid rgb(125 245 255 / 0.9);
+  pointer-events: none;
+  animation: lya-bolha-onda 4.2s cubic-bezier(0.25, 0.8, 0.35, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lya-bolha,
+  .lya-bolha-onda {
+    animation: none !important;
+  }
+  .lya-bolha-onda {
+    opacity: 0;
+  }
+}
+
 .lya svg {
   display: block;
   width: 100%;

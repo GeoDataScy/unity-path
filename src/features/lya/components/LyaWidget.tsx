@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Maximize2, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 import type { LyaContexto } from "../types";
 import { useLyaConversation } from "../useLyaConversation";
 import { LyaComposer } from "./LyaComposer";
@@ -31,11 +33,22 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
         type="button"
         aria-label={open ? "Fechar a Lya" : "Perguntar à Lya"}
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-[60] grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-primary to-violet-700 text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+        // Disco menor e marca maior de propósito: o que identifica a Lya é o
+        // símbolo, não o roxo em volta — o roxo é só o assento dele.
+        // `lya-bolha` (respiro) só quando fechada: aberta, o botão vira um X e
+        // nada ali precisa chamar atenção.
+        className={cn(
+          "fixed bottom-5 right-5 z-[60] grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary to-violet-700 text-primary-foreground transition-transform hover:scale-105 active:scale-95",
+          open ? "shadow-lg shadow-primary/30" : "lya-bolha",
+        )}
       >
+        {/* A onda sai de trás da bolha e some. Só em repouso: pensando e
+            respondendo a própria marca já se mexe, e duas animações juntas
+            viram agitação. */}
+        {!open && conv.estado === "repouso" && <span aria-hidden="true" className="lya-bolha-onda" />}
         {/* Fechado, o botão é a própria Lya: mostra se ela está pensando mesmo
-            com o painel recolhido. Mono branca porque o fundo é roxo. */}
-        {open ? <X className="h-6 w-6" /> : <LyaMark size={30} tone="branco" estado={conv.estado} label={null} />}
+            com o painel recolhido. */}
+        {open ? <X className="h-6 w-6" /> : <LyaMark size={34} tone="neon" estado={conv.estado} label={null} />}
       </button>
 
       {open && (
