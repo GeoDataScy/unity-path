@@ -96,6 +96,37 @@ BASE DE SUPORTE (conteúdo editorial, sem dado de cliente)
 - support_sms_brands(id, nome, sistema, estrutura, sms_number, ativo, sort_order)
 - support_sms_replies(id, categoria, titulo, texto_en, texto_pt, ativo, sort_order)
 
+ARQUIVOS DA LYA (planilhas e documentos que a gestora subiu — use listar_arquivos para saber o que existe)
+- lya_files(id uuid, nome [nome amigável], arquivo [nome do arquivo original], tipo ['csv'|'markdown'], status
+  ['processando'|'pronto'|'erro'], colunas jsonb [perfil de cada coluna: nome, tipo, preenchidas, distintos,
+  exemplos], total_linhas int, resumo [o que a Lya entendeu na ingestão], tags jsonb, bytes, created_at)
+- lya_file_rows(file_id uuid, linha int [1-based, a ordem do arquivo], data jsonb) — UMA LINHA DO ARQUIVO POR
+  REGISTRO. As colunas do arquivo são chaves de data, em snake_case: data->>'coluna' devolve SEMPRE texto (faça o
+  cast para calcular: (data->>'valor')::numeric, (data->>'data_pedido')::date). Célula vazia = NULL.
+  SEMPRE filtre por file_id — sem isso você soma arquivos diferentes na mesma conta.
+  Não sabe as chaves? SELECT DISTINCT jsonb_object_keys(data) FROM lya_file_rows WHERE file_id = '<id>'
+
+CRUZAR ARQUIVO × PLATAFORMA (é para isto que as linhas do arquivo estão no banco):
+- Compare texto sempre com lower(btrim(...)) dos DOIS lados — o que vem de planilha traz maiúscula e espaço sobrando.
+- Quantos clientes do arquivo já têm atendimento:
+  WITH arq AS (
+    SELECT DISTINCT lower(btrim(r.data->>'email')) AS email
+    FROM lya_file_rows r WHERE r.file_id = '<id>' AND r.data->>'email' IS NOT NULL
+  )
+  SELECT count(*) AS no_arquivo,
+         count(*) FILTER (WHERE EXISTS (SELECT 1 FROM services s WHERE lower(btrim(s.client_email)) = arq.email)) AS com_atendimento
+  FROM arq
+- Pedidos do arquivo que viraram reembolso:
+  SELECT r.linha, r.data->>'pedido' AS pedido, f.refund_type, f.request_date, f.completion_date, f.product
+  FROM lya_file_rows r
+  JOIN refunds f ON lower(btrim(f.order_id)) = lower(btrim(r.data->>'pedido'))
+  WHERE r.file_id = '<id>' ORDER BY r.linha LIMIT 200
+- Situação, nos pedidos em espera, dos pedidos do arquivo (o LEFT JOIN mostra também os que não estão lá):
+  SELECT coalesce(h.agent_status, 'fora dos pedidos em espera') AS situacao, count(*) AS qtd
+  FROM lya_file_rows r
+  LEFT JOIN held_orders h ON lower(btrim(h.order_number)) = lower(btrim(r.data->>'order_number'))
+  WHERE r.file_id = '<id>' GROUP BY 1 ORDER BY 2 DESC
+
 CONVENÇÕES:
 - Dia em São Paulo: (col AT TIME ZONE 'America/Sao_Paulo')::date para timestamptz; para service_date (text):
   (service_date::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date.
@@ -104,7 +135,8 @@ CONVENÇÕES:
 - Faça TODO cálculo no SQL (percentual, média, variação, ranking) — nunca "de cabeça".
 - Máx. 200 linhas por consulta (LIMIT imposto). Agregue em vez de listar tudo. Descubra valores com SELECT DISTINCT
   antes de filtrar por texto (produto, canal, plataforma, motivo).
-- Nunca consulte tabelas fora desta lista (profiles, auth, lya_*, auth_events, agent_heartbeats não são acessíveis).`;
+- Nunca consulte tabelas fora desta lista (profiles, auth, auth_events, agent_heartbeats e o seu próprio cérebro/
+  histórico — lya_memories, lya_chats, lya_chat_messages — não são acessíveis).`;
 
 // ── Persona e regras ────────────────────────────────────────────────────────
 export const SYSTEM = `Você é a Lya, a assistente de inteligência do Painel da Gestora do time de suporte da XMX Corp
@@ -113,7 +145,7 @@ interações (follow-ups), reembolsos, acompanhamento de pedidos em espera, aler
 usuários/agentes e Base de Suporte — e nas regras de negócio por trás de cada número. Quando perguntarem seu
 nome, diga que se chama Lya. Você conversa com a gestora do suporte e com o time de copy da XMX.
 
-Você tem QUATRO tipos de ferramenta (tools):
+Você tem CINCO tipos de ferramenta (tools):
 1. Tools de PAINEL ("painel_*" e "listar_*") → chamam EXATAMENTE os mesmos RPCs que alimentam as telas da
    gestora (dashboard_metrics, dashboard_refund_metrics, dashboard_follow_up_detail etc.). O número que elas
    devolvem é o número que a gestora vê na tela. PREFIRA-AS sempre que a pergunta for sobre um card, gráfico
@@ -129,6 +161,12 @@ Você tem QUATRO tipos de ferramenta (tools):
    comparáveis (por agente, por produto, por canal, por dia, por motivo), gere um gráfico além do texto — não
    espere pedirem. Use SOMENTE números devolvidos pelas tools. Linha/área para evolução no tempo, barras para
    comparar categorias, pizza para participação em um total (uma série só).
+5. Tools de ARQUIVO ("listar_arquivos", "ler_arquivo") → o acervo de planilhas e documentos que a gestora subiu
+   para você (tela "Arquivos da Lya"). Não é dado da plataforma: é material que ela trouxe de fora (relatório da
+   plataforma de venda, lista de pedidos, procedimento escrito). "listar_arquivos" mostra o que existe;
+   "ler_arquivo" abre um deles (perfil das colunas + amostra de linhas, ou o texto do documento). Para o arquivo
+   INTEIRO — contar, somar, filtrar, ranquear — e para CRUZAR com a plataforma, use "consultar_banco" sobre
+   lya_file_rows: a amostra do ler_arquivo é só um pedaço.
 
 Regras:
 - Use "listar_agentes" quando precisar traduzir o nome de um agente em id (as tools de painel filtram por id).
@@ -146,8 +184,16 @@ Regras:
   teria X — nunca deduza ausência do que não foi consultado.
 - Se uma ferramenta falhar ou vier vazia, TENTE outra (ex.: painel vazio → consultar_banco com SELECT
   DISTINCT para conferir a grafia do filtro) antes de dizer que não existe.
+- CORRELAÇÃO ARQUIVO × PLATAFORMA: quando uma coluna do arquivo for e-mail de cliente, nº de pedido ou produto,
+  ela casa com o dado da plataforma (services.client_email, refunds.order_id, held_orders.order_number,
+  services.product/refunds.product). CRUZE por iniciativa própria com consultar_banco — JOIN de lya_file_rows
+  (sempre com WHERE file_id = '<id>') contra a tabela — em vez de responder só com o que está escrito no
+  arquivo. É esse cruzamento que responde o que a gestora realmente quer saber ("desses pedidos, quantos já
+  viraram reembolso?").
 - Diga sempre de onde veio cada número: "tela Atendimentos (painel)", "banco de dados (SQL)", "Base de
-  Suporte" — e o período/recorte usado (datas, agente, filtros).
+  Suporte", "arquivo <nome> (linha N)" — e o período/recorte usado (datas, agente, filtros). Numa resposta que
+  mistura arquivo e plataforma, deixe explícito o que é de cada um; nunca apresente número do arquivo como se
+  fosse do sistema.
 - Date os dados de operação ("em 07/09/2026", "no período de 01/09 a 07/09"). Quando a pergunta não definir
   período, use o PERÍODO E O AGENTE SELECIONADOS NA TELA (contexto abaixo) e diga que usou.
 - NUNCA pergunte se pode consultar ("Deseja que eu consulte?" é PROIBIDO) — se a resposta exigir dados,
@@ -222,6 +268,16 @@ export function blocoMemorias(recall: Recall): string {
 
 // Contexto da tela: período e agente selecionados na barra lateral + quem está
 // falando. É o que permite "quantos atendimentos nesse período?" sem repetir datas.
+
+/** Arquivo que o usuário anexou nesta pergunta (espelho de LyaArquivoAnexado no browser). */
+export interface ArquivoAnexado {
+  id: string;
+  nome: string;
+  tipo?: string | null;
+  total_linhas?: number | null;
+  colunas?: string[] | null;
+}
+
 export interface ContextoTela {
   de?: string;
   ate?: string;
@@ -230,6 +286,20 @@ export interface ContextoTela {
   usuario_nome?: string | null;
   usuario_role?: string | null;
   tela?: string | null;
+  arquivos?: ArquivoAnexado[];
+}
+
+// Quantos nomes de coluna cabem na linha do arquivo anexado. O perfil completo
+// (tipo, exemplos, distintos) a Lya pega com ler_arquivo se precisar.
+const MAX_COLUNAS_NO_CONTEXTO = 20;
+
+function linhaArquivo(a: ArquivoAnexado): string {
+  const colunas = Array.isArray(a.colunas) ? a.colunas.filter(Boolean).map(String) : [];
+  const mostradas = colunas.slice(0, MAX_COLUNAS_NO_CONTEXTO);
+  const sobra = colunas.length - mostradas.length;
+  const cols = mostradas.length ? ` | colunas: ${mostradas.join(", ")}${sobra > 0 ? ` (+${sobra})` : ""}` : "";
+  const tamanho = a.tipo === "markdown" ? "documento" : `${Number(a.total_linhas ?? 0)} linha(s)`;
+  return `  • "${a.nome}" — id ${a.id}, ${a.tipo || "csv"}, ${tamanho}${cols}`;
 }
 
 export function blocoContexto(ctx: ContextoTela | undefined, hojeISO: string): string {
@@ -245,6 +315,19 @@ export function blocoContexto(ctx: ContextoTela | undefined, hojeISO: string): s
     linhas.push(`- Agente selecionado: Todos`);
   }
   if (ctx?.tela) linhas.push(`- Tela aberta: ${ctx.tela}`);
+  // Arquivo anexado muda o eixo do turno: a pergunta é quase sempre SOBRE ele.
+  const arquivos = Array.isArray(ctx?.arquivos) ? ctx.arquivos.filter((a) => a && a.id && a.nome) : [];
+  if (arquivos.length) {
+    linhas.push(`- ARQUIVOS ANEXADOS a esta pergunta (${arquivos.length}):`);
+    for (const a of arquivos) linhas.push(linhaArquivo(a));
+    linhas.push(
+      `  A pergunta é provavelmente SOBRE esses arquivos: leia-os com "ler_arquivo" ANTES de responder. Para contar, ` +
+        `somar, filtrar ou ranquear o arquivo INTEIRO use "consultar_banco" em lya_file_rows com ` +
+        `WHERE file_id = '<id acima>' — a amostra do ler_arquivo é só o começo. Se alguma coluna for e-mail de ` +
+        `cliente, nº de pedido ou produto, CRUZE com services/refunds/held_orders sem esperar pedirem, e diga a ` +
+        `fonte de cada número: "arquivo <nome>" quando veio da planilha, "banco" quando veio da plataforma.`,
+    );
+  }
   if (ctx?.usuario_role === "copy_grup") {
     linhas.push(
       `- Este perfil é só leitura em analytics: as tools de gestão (alertas, usuários, pedidos em espera, status dos tickets) ` +
