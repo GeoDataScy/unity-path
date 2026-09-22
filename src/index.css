@@ -89,6 +89,13 @@ All colors MUST be HSL.
     --chart-8: 25 85% 55%;  /* laranja */
 
     /* Tokens semânticos para charts (status, tendências) */
+    /* Visão Geral Atendimentos: roxo da marca = tickets abertos, verde
+       corporativo = concluídos. Par conferido em daltonismo (ΔE 22,9 deutan)
+       nos dois temas — por isso o verde do modo escuro é escurecido em vez de
+       seguir o --chart-success, que estoura a faixa de luminosidade. */
+    --chart-ticket-open: 263 70% 62%;
+    --chart-ticket-done: 152 60% 40%;
+
     --chart-success: 142 71% 45%;
     --chart-warning: 38 92% 50%;
     --chart-danger: 0 72% 55%;
@@ -175,6 +182,9 @@ All colors MUST be HSL.
     --chart-6: 173 80% 52%;
     --chart-7: 330 85% 72%;
     --chart-8: 25 90% 65%;
+
+    --chart-ticket-open: 263 75% 66%;
+    --chart-ticket-done: 152 60% 42%;
 
     --chart-success: 142 75% 55%;
     --chart-warning: 38 95% 60%;

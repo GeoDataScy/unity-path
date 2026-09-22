@@ -3,15 +3,23 @@ import { useOutletContext } from "react-router-dom";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { AtendimentosSubNav } from "@/components/dashboard/AtendimentosSubNav";
-import { Card, CardContent } from "@/components/ui/card";
+import { TicketsAbertosConcluidos } from "@/features/dashboard/TicketsAbertosConcluidos";
+import { useDashboardDailyTicketsQuery } from "@/features/dashboard/useDashboardDailyTicketsQuery";
 
 /**
  * Visão Geral dos Atendimentos — segunda aba da área de Atendimentos.
- * Nasce sem gráficos: a página existe para a gestora já alternar entre as duas
- * visões enquanto os indicadores desta são definidos.
+ * Aqui a unidade é o TICKET (quantos chamados entram e saem por dia), não a
+ * interação: a leitura por agente é a outra aba.
  */
 export default function DashboardAtendimentosVisaoGeral() {
   const { fullName, fromISO, toISO, agentId } = useOutletContext<ManagerOutletContext>();
+
+  const dailyQuery = useDashboardDailyTicketsQuery({
+    enabled: true,
+    from: fromISO,
+    to: toISO,
+    agentId: agentId === "all" ? undefined : agentId,
+  });
 
   return (
     <div className="space-y-6">
@@ -26,11 +34,9 @@ export default function DashboardAtendimentosVisaoGeral() {
         </div>
       </header>
 
-      <Card>
-        <CardContent className="py-16 text-center text-sm text-muted-foreground">
-          Em breve os indicadores da visão geral dos atendimentos.
-        </CardContent>
-      </Card>
+      <section>
+        <TicketsAbertosConcluidos data={dailyQuery.data} isLoading={dailyQuery.isLoading} />
+      </section>
     </div>
   );
 }
