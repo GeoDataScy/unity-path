@@ -130,6 +130,16 @@ const PRODUCTS = [
   "PagAmerican",
   "Jellyrock",
   "Blue Horse",
+  "Nail Defender",
+  "Mind Honey Trick",
+  "Nerve Relief Protocol",
+  "Lean Leg",
+  "Soda Burn",
+  "Nerve Stride",
+  "Honey Vital",
+  "Cardio Honey",
+  "Gut Active",
+  "Military Honey",
 ] as const;
 
 const PLATFORMS = [
