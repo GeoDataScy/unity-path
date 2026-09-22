@@ -32,6 +32,7 @@ import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { useDashboardMetricsQuery } from "@/features/dashboard/useDashboardMetricsQuery";
 import { useDashboardAuditQuery } from "@/features/dashboard/useDashboardAuditQuery";
 import { useFollowUpInsightsQuery } from "@/features/dashboard/useFollowUpInsightsQuery";
+import { AtendimentosSubNav } from "@/components/dashboard/AtendimentosSubNav";
 import { ChannelDetailModal } from "@/components/dashboard/ChannelDetailModal";
 import { TendenciaTemporal } from "@/features/dashboard/TendenciaTemporal";
 import { PadraoHorarios } from "@/features/dashboard/PadraoHorarios";
@@ -251,9 +252,10 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
-        <div>
+        <div className="space-y-2">
           <p className="text-lg font-semibold text-muted-foreground">Olá {fullName ?? ""}!</p>
           <h1 className="text-3xl font-semibold tracking-tight">Atendimentos</h1>
+          <AtendimentosSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
           </p>

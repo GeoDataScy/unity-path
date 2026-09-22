@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 const ManagerLayout = lazy(() => import("./layouts/ManagerLayout"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DashboardRefunds = lazy(() => import("./pages/DashboardRefunds"));
+const DashboardAtendimentosVisaoGeral = lazy(() => import("./pages/DashboardAtendimentosVisaoGeral"));
 const DashboardRefundsComparativo = lazy(() => import("./pages/DashboardRefundsComparativo"));
 const DashboardAcompanhamento = lazy(() => import("./pages/DashboardAcompanhamento"));
 const DashboardInteracoes = lazy(() => import("./pages/DashboardInteracoes"));
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/areas" element={<AreaSelect />} />
           <Route path="/dashboard" element={<ManagerLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="visao-geral" element={<DashboardAtendimentosVisaoGeral />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />
             <Route path="reembolsos/comparativo" element={<DashboardRefundsComparativo />} />
             <Route path="acompanhamento" element={<DashboardAcompanhamento />} />

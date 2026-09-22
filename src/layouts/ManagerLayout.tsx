@@ -365,6 +365,7 @@ export default function ManagerLayout() {
             <SidebarNavItem
               to="/dashboard"
               end
+              matchAlso="/dashboard/visao-geral"
               icon={<BarChart3 className={SIDEBAR_ICON} />}
               label="Atendimentos"
               collapsed={collapsed}
