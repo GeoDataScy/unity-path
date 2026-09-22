@@ -965,6 +965,10 @@ export type Database = {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
       }
+      dashboard_daily_tickets: {
+        Args: { agent_id?: string; from_date: string; to_date: string }
+        Returns: Json
+      }
       dashboard_export_extras: {
         Args: { agent_id?: string; from_date: string; to_date: string }
         Returns: Json
