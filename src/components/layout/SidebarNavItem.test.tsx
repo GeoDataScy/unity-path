@@ -47,6 +47,16 @@ describe("SidebarNavItem", () => {
     expect(screen.getByRole("link").className).toContain("bg-white/15");
   });
 
+  it("marca também a rota irmã declarada em `matchAlso`", () => {
+    renderItem({ to: "/dashboard", end: true, matchAlso: "/dashboard/visao-geral" }, "/dashboard/visao-geral");
+    expect(screen.getByRole("link").className).toContain("bg-white/15");
+  });
+
+  it("sem `matchAlso`, o item com `end` não vaza para as rotas filhas", () => {
+    renderItem({ to: "/dashboard", end: true }, "/dashboard/visao-geral");
+    expect(screen.getByRole("link").className).not.toContain("bg-white/15");
+  });
+
   it("recolhido, o badge fica dentro do slot do ícone — é ele que ancora", () => {
     renderItem({ collapsed: true, badge: <span data-testid="badge" /> });
     const slot = screen.getByTestId("icone").parentElement!;

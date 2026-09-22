@@ -20,16 +20,25 @@ type Props = {
   label: string;
   collapsed: boolean;
   badge?: React.ReactNode;
+  /**
+   * Outra rota que também marca este item — para abas da mesma área que moram
+   * fora do caminho do link (ex.: "Atendimentos" aponta para /dashboard com
+   * `end`, mas a aba Visão Geral é /dashboard/visao-geral).
+   */
+  matchAlso?: string;
   /** Extra do chamador — hoje só a Lya usa, para o contorno neon. */
   className?: string;
 };
 
-export function SidebarNavItem({ to, end, icon, label, collapsed, badge, className }: Props) {
+export function SidebarNavItem({ to, end, icon, label, collapsed, badge, matchAlso, className }: Props) {
   // `isActive` sai daqui, e não da forma de função do `className` do NavLink:
   // recolhido, o item entra num `TooltipTrigger asChild`, e o Slot do Radix
   // serializa a função para dentro do atributo `class` — o item ficava
   // literalmente sem estilo, sem centralizar e sem marcar a página atual.
-  const isActive = Boolean(useMatch({ path: to, end: Boolean(end) }));
+  // Padrão que nunca casa quando não há rota irmã: `useMatch` é hook e precisa
+  // ser chamado sempre, na mesma ordem.
+  const isAlsoActive = Boolean(useMatch({ path: matchAlso ?? "/__sem_rota_irma__", end: false }));
+  const isActive = Boolean(useMatch({ path: to, end: Boolean(end) })) || isAlsoActive;
 
   const content = (
     <NavLink
