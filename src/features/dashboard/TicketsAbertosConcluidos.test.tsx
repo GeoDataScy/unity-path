@@ -17,6 +17,8 @@ const dados: DailyTickets = {
   ],
   total_opened: 826,
   total_closed: 296,
+  platforms: [],
+  products: [],
 };
 
 const botao = (nome: RegExp) => screen.getByRole("button", { name: nome });
@@ -71,7 +73,7 @@ describe("TicketsAbertosConcluidos", () => {
   it("período sem nenhum ticket cai no estado vazio, não num gráfico de zeros", () => {
     render(
       <TicketsAbertosConcluidos
-        data={{ by_day: [{ day: "2026-09-06", opened: 0, closed: 0 }], total_opened: 0, total_closed: 0 }}
+        data={{ by_day: [{ day: "2026-09-06", opened: 0, closed: 0 }], total_opened: 0, total_closed: 0, platforms: [], products: [] }}
         isLoading={false}
       />,
     );
