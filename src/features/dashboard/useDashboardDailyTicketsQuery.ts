@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 type Params = {
@@ -6,7 +6,14 @@ type Params = {
   from: string; // YYYY-MM-DD
   to: string; // YYYY-MM-DD
   agentId?: string;
+  /** Valor gravado em `services.platform`; `SEM_VALOR` = ticket sem plataforma. */
+  platform?: string;
+  /** Valor gravado em `services.product`; `SEM_VALOR` = ticket sem produto. */
+  product?: string;
 };
+
+/** Opção dos filtros para ticket sem valor gravado (no histórico há plataforma NULL). */
+export const SEM_VALOR = "__sem__";
 
 export type DailyTicketsRow = {
   /** YYYY-MM-DD, dia de São Paulo. */
@@ -21,6 +28,13 @@ export type DailyTickets = {
   by_day: DailyTicketsRow[];
   total_opened: number;
   total_closed: number;
+  /**
+   * Plataformas e produtos que aparecem nos tickets do período (abertos ou
+   * concluídos nele) para o agente filtrado. Não dependem dos próprios filtros:
+   * escolher uma plataforma não esvazia a lista.
+   */
+  platforms: string[];
+  products: string[];
 };
 
 async function requireSession() {
@@ -39,9 +53,13 @@ async function requireSession() {
  * A regra inteira mora no banco — inclusive o preenchimento dos dias sem
  * movimento, para o gráfico não precisar adivinhar buraco de fim de semana.
  */
-export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId }: Params) {
+export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId, platform, product }: Params) {
   return useQuery({
-    queryKey: ["dashboard", "daily-tickets", { from, to, agentId: agentId ?? "all" }],
+    queryKey: [
+      "dashboard",
+      "daily-tickets",
+      { from, to, agentId: agentId ?? "all", platform: platform ?? "all", product: product ?? "all" },
+    ],
     enabled,
     queryFn: async (): Promise<DailyTickets> => {
       await requireSession();
@@ -50,11 +68,16 @@ export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId }: Pa
         from_date: from,
         to_date: to,
         agent_id: agentId || null,
+        platform_filter: platform || null,
+        product_filter: product || null,
       });
 
       if (error) throw error;
       return data as unknown as DailyTickets;
     },
+    // Trocar um filtro mantém o gráfico e as opções anteriores na tela até a
+    // resposta chegar — senão os selects piscam vazios a cada escolha.
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   });
 }

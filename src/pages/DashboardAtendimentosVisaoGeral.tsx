@@ -6,6 +6,7 @@ import { useOutletContext } from "react-router-dom";
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
 import { AtendimentosSubNav } from "@/components/dashboard/AtendimentosSubNav";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { FiltroVisaoGeral, TODOS } from "@/features/dashboard/FiltroVisaoGeral";
 import { TicketsAbertosConcluidos } from "@/features/dashboard/TicketsAbertosConcluidos";
 import { useDashboardDailyTicketsQuery } from "@/features/dashboard/useDashboardDailyTicketsQuery";
 
@@ -27,11 +28,16 @@ function periodoPadrao(): DateRange {
  * valor é copiado do período da sidebar, para a tela abrir mostrando o que a
  * gestora já tinha escolhido; a partir do primeiro clique aqui, os dois andam
  * separados de propósito.
+ *
+ * Plataforma e produto seguem o mesmo modelo do período: estado local, só
+ * desta tela. O recorte é feito na RPC, pelo que está gravado no ticket.
  */
 export default function DashboardAtendimentosVisaoGeral() {
   const { fullName, range: rangeSidebar, agentId } = useOutletContext<ManagerOutletContext>();
 
   const [range, setRange] = useState<DateRange | undefined>(() => rangeSidebar ?? periodoPadrao());
+  const [platform, setPlatform] = useState<string>(TODOS);
+  const [product, setProduct] = useState<string>(TODOS);
 
   // O calendário permite fechar o intervalo em um dia só (`to` vazio enquanto a
   // segunda data não é escolhida): aí o período é esse único dia, e não "até
@@ -48,6 +54,8 @@ export default function DashboardAtendimentosVisaoGeral() {
     from: fromISO,
     to: toISO,
     agentId: agentId === "all" ? undefined : agentId,
+    platform: platform === TODOS ? undefined : platform,
+    product: product === TODOS ? undefined : product,
   });
 
   return (
@@ -62,15 +70,33 @@ export default function DashboardAtendimentosVisaoGeral() {
           </p>
         </div>
 
-        <div className="w-full space-y-1.5 sm:w-[300px]">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Período desta tela
-          </span>
-          <DateRangePicker
-            value={range}
-            onChange={setRange}
-            className="border bg-background text-foreground hover:bg-accent"
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[180px_220px_300px]">
+          <FiltroVisaoGeral
+            label="Plataforma"
+            semValorLabel="Sem plataforma"
+            value={platform}
+            onChange={setPlatform}
+            options={dailyQuery.data?.platforms}
+            disabled={dailyQuery.isLoading}
           />
+          <FiltroVisaoGeral
+            label="Produto"
+            semValorLabel="Sem produto"
+            value={product}
+            onChange={setProduct}
+            options={dailyQuery.data?.products}
+            disabled={dailyQuery.isLoading}
+          />
+          <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Período desta tela
+            </span>
+            <DateRangePicker
+              value={range}
+              onChange={setRange}
+              className="border bg-background text-foreground hover:bg-accent"
+            />
+          </div>
         </div>
       </header>
 
