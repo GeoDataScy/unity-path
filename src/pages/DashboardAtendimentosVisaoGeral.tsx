@@ -8,7 +8,7 @@ import { AtendimentosSubNav } from "@/components/dashboard/AtendimentosSubNav";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { FiltroVisaoGeral, TODOS } from "@/features/dashboard/FiltroVisaoGeral";
 import { TicketsAbertosConcluidos } from "@/features/dashboard/TicketsAbertosConcluidos";
-import { useDashboardDailyTicketsQuery } from "@/features/dashboard/useDashboardDailyTicketsQuery";
+import { CANAIS, useDashboardDailyTicketsQuery } from "@/features/dashboard/useDashboardDailyTicketsQuery";
 
 const toISODate = (d: Date) => format(d, "yyyy-MM-dd");
 
@@ -31,6 +31,9 @@ function periodoPadrao(): DateRange {
  *
  * Plataforma e produto seguem o mesmo modelo do período: estado local, só
  * desta tela. O recorte é feito na RPC, pelo que está gravado no ticket.
+ *
+ * O canal (Email / SMS) é o da abertura do ticket: a tela continua contando só
+ * aberturas e conclusões, nunca interação.
  */
 export default function DashboardAtendimentosVisaoGeral() {
   const { fullName, range: rangeSidebar, agentId } = useOutletContext<ManagerOutletContext>();
@@ -38,6 +41,7 @@ export default function DashboardAtendimentosVisaoGeral() {
   const [range, setRange] = useState<DateRange | undefined>(() => rangeSidebar ?? periodoPadrao());
   const [platform, setPlatform] = useState<string>(TODOS);
   const [product, setProduct] = useState<string>(TODOS);
+  const [channel, setChannel] = useState<string>(TODOS);
 
   // O calendário permite fechar o intervalo em um dia só (`to` vazio enquanto a
   // segunda data não é escolhida): aí o período é esse único dia, e não "até
@@ -56,6 +60,7 @@ export default function DashboardAtendimentosVisaoGeral() {
     agentId: agentId === "all" ? undefined : agentId,
     platform: platform === TODOS ? undefined : platform,
     product: product === TODOS ? undefined : product,
+    channel: channel === TODOS ? undefined : channel,
   });
 
   return (
@@ -70,7 +75,15 @@ export default function DashboardAtendimentosVisaoGeral() {
           </p>
         </div>
 
-        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[180px_220px_300px]">
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[140px_180px_220px_300px]">
+          <FiltroVisaoGeral
+            label="Por canal"
+            semValorLabel="Sem canal"
+            value={channel}
+            onChange={setChannel}
+            options={CANAIS}
+            disabled={dailyQuery.isLoading}
+          />
           <FiltroVisaoGeral
             label="Plataforma"
             semValorLabel="Sem plataforma"

@@ -968,6 +968,7 @@ export type Database = {
       dashboard_daily_tickets: {
         Args: {
           agent_id?: string
+          channel_filter?: string
           from_date: string
           platform_filter?: string
           product_filter?: string
