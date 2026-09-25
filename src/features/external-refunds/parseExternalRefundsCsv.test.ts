@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   countOutsideMonth,
   parseExportDate,
+  parseBuygoodsRefunds,
+  parseEnglishDate,
   parseExternalRefundsCsv,
   parsePagAmericanRefunds,
 } from "./parseExternalRefundsCsv";
@@ -154,5 +156,74 @@ describe("parsePagAmericanRefunds", () => {
     );
     expect(p.unknownProducts).toEqual(["Produto Fantasma"]);
     expect(p.batches[0].product).toBe("Produto Fantasma");
+  });
+});
+
+// Relatório Customer_Refunds da Buygoods: separado por TAB, um arquivo por
+// produto, uma linha por ESTORNO (o pedido pode ter vários) e data do reembolso.
+const BG_HEADER =
+  "Order Date\tRefund Date\tOrder ID\tProduct Codename\tProduct Name\tFirstname\tLastname\tReason\tAmount\tAffiliate ID\r\n";
+
+describe("parseEnglishDate", () => {
+  it("lê a data por extenso do relatório", () => {
+    expect(parseEnglishDate("September 23, 2026")).toBe("2026-09-23");
+    expect(parseEnglishDate("June 02, 2026")).toBe("2026-06-02");
+    expect(parseEnglishDate("June 7, 2026, 6:07PM")).toBe("2026-06-07");
+    expect(parseEnglishDate("Smarch 1, 2026")).toBe("");
+  });
+});
+
+describe("parseBuygoodsRefunds", () => {
+  const tsv =
+    BG_HEADER +
+    // dois estornos do mesmo pedido no mesmo dia: soma exata em centavos
+    "June 7, 2026, 6:07PM\tSeptember 23, 2026\tA9AZ351H\tcalls_alp6b, calls_ship\tAlphaRock 6 Bottles, Priority Shipping\tMichael L\tBech\tagent_initiated\t311.64\t23\r\n" +
+    "June 7, 2026, 6:07PM\tSeptember 23, 2026\tA9AZ351H\tcalls_alp6b, calls_ship\tAlphaRock 6 Bottles, Priority Shipping\tMichael L\tBech\tagent_initiated\t21.15\t23\r\n" +
+    // parcial em agosto e o restante em setembro: o pedido fica no mês do 1º estorno
+    "July 30, 2026, 9:00AM\tSeptember 01, 2026\tA9AZ2ABC\tcalls_alp2b\tAlphaRock 2 Bottles\tAna\tP\tChargeback alert\t128.49\t0\r\n" +
+    "July 30, 2026, 9:00AM\tAugust 24, 2026\tA9AZ2ABC\tcalls_alp2b\tAlphaRock 2 Bottles\tAna\tP\tPartial Refund - Saved Sale\t39.50\t0\r\n" +
+    // upsell de outro produto dentro do pedido do funil
+    "May 31, 2026, 5:59AM\tJune 01, 2026\tA9AZ307W\talp2b, vir6u\tAlphaRock 2 Bottles\tLarry\tmiller\tNot happy with product\t39.50\t122\r\n" +
+    "May 31, 2026, 5:59AM\tJune 01, 2026\tA9AZ307W\tvir6u\tVirilMax 6 Bottles (Upgrade)\tLarry\tmiller\tNot happy with product\t60.00\t122\r\n";
+
+  it("junta os estornos em um pedido e separa lotes pelo mês do reembolso", () => {
+    const p = parseBuygoodsRefunds(csvBytes(tsv), "Alpharock");
+    expect(p.recognized).toBe(true);
+    expect(p.lines).toBe(6);
+    expect(p.refunds).toBe(3);
+    expect(p.batches.map((b) => [b.monthRef, b.product, b.rows.length])).toEqual([
+      ["2026-06-01", "Alpharock", 1],
+      ["2026-08-01", "Alpharock", 1],
+      ["2026-09-01", "Alpharock", 1],
+    ]);
+
+    const rows = p.batches.flatMap((b) => b.rows);
+    const set = rows.find((r) => r.order_name === "A9AZ351H")!;
+    expect(set.refund_amount).toBe("332.79");
+    expect(set.order_date).toBe("2026-09-23");
+    expect(set.full_name).toBe("Michael L Bech");
+
+    const dois = rows.find((r) => r.order_name === "A9AZ2ABC")!;
+    expect(dois.order_date).toBe("2026-08-24");
+    expect(dois.raw_date).toBe("August 24, 2026");
+    expect(dois.refund_amount).toBe("167.99");
+
+    const upsell = rows.find((r) => r.order_name === "A9AZ307W")!;
+    expect(upsell.product_name).toBe("AlphaRock 2 Bottles | VirilMax 6 Bottles (Upgrade)");
+    expect(upsell.refund_amount).toBe("99.50");
+  });
+
+  it("não afirma tipo que o arquivo não traz", () => {
+    const p = parseBuygoodsRefunds(csvBytes(tsv), "Alpharock");
+    expect(new Set(p.batches.flatMap((b) => b.rows).map((r) => r.payment_status))).toEqual(
+      new Set(["Refunded (unspecified)"]),
+    );
+  });
+
+  it("não confunde com os outros formatos", () => {
+    expect(parseBuygoodsRefunds(csvBytes(PA_HEADER + "v@x.com,1,completed,X,N,e,1,-1,2026-09-01,r,,\n"), "X").recognized).toBe(false);
+    expect(parseBuygoodsRefunds(csvBytes(HEADER + "2026/31/07,#1,a,,1,c,p,1,1,1,n,1,Free,Open,10,Refunded,,P,V\n"), "X").recognized).toBe(false);
+    expect(parseExternalRefundsCsv(csvBytes(tsv)).recognized).toBe(false);
+    expect(parsePagAmericanRefunds(csvBytes(tsv)).recognized).toBe(false);
   });
 });

@@ -16,9 +16,11 @@ import { REFUND_PRODUCTS } from "@/features/refunds/types";
 
 import {
   countOutsideMonth,
+  parseBuygoodsRefunds,
   parseExternalRefundsCsv,
   parsePagAmericanRefunds,
   type ExternalRefundBatch,
+  type ParsedBuygoodsRefunds,
   type ParsedExternalRefunds,
   type ParsedPagAmericanRefunds,
 } from "./parseExternalRefundsCsv";
@@ -40,6 +42,12 @@ type Props = {
  * importadas em lote, sem a gestora escolher produto nem mês.
  */
 const AUTO_SPLIT: ExternalPlatform[] = ["PagAmerican"];
+
+/**
+ * Plataformas em que a gestora escolhe o produto (um arquivo por produto), mas
+ * o mês sai da data do reembolso de cada linha: um arquivo vira um lote por mês.
+ */
+const MONTH_SPLIT: ExternalPlatform[] = ["Buygoods"];
 
 /** Últimos 12 meses como 'YYYY-MM-01', do mais recente para o mais antigo. */
 function recentMonths(): string[] {
@@ -91,19 +99,25 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const autoSplit = AUTO_SPLIT.includes(platform);
+  const monthSplit = MONTH_SPLIT.includes(platform);
+  const manual = !autoSplit && !monthSplit;
 
   // O arquivo é lido de novo quando a plataforma muda: trocar de plataforma troca
   // o formato esperado, sem a gestora ter que escolher o arquivo outra vez.
   const cartpanda: ParsedExternalRefunds | null = useMemo(
-    () => (picked && !autoSplit ? parseExternalRefundsCsv(picked.bytes) : null),
-    [picked, autoSplit],
+    () => (picked && manual ? parseExternalRefundsCsv(picked.bytes) : null),
+    [picked, manual],
   );
   const pagamerican: ParsedPagAmericanRefunds | null = useMemo(
     () => (picked && autoSplit ? parsePagAmericanRefunds(picked.bytes) : null),
     [picked, autoSplit],
   );
+  const buygoods: ParsedBuygoodsRefunds | null = useMemo(
+    () => (picked && monthSplit ? parseBuygoodsRefunds(picked.bytes, product) : null),
+    [picked, monthSplit, product],
+  );
 
-  const recognized = autoSplit ? pagamerican?.recognized : cartpanda?.recognized;
+  const recognized = autoSplit ? pagamerican?.recognized : monthSplit ? buygoods?.recognized : cartpanda?.recognized;
   const parseError = !picked
     ? null
     : readError ??
@@ -111,17 +125,27 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
         ? null
         : autoSplit
           ? "Cabeçalho não reconhecido. Esperado o export da PagAmerican (Order ID, Order Status, first refund date)."
-          : "Cabeçalho não reconhecido. Esperado o orders_export da loja (order_name, Payment status).");
+          : monthSplit
+            ? "Cabeçalho não reconhecido. Esperado o relatório de reembolsos da Buygoods (Order ID, Refund Date, Product Codename)."
+            : "Cabeçalho não reconhecido. Esperado o orders_export da loja (order_name, Payment status).");
 
-  const batches: ExternalRefundBatch[] = pagamerican?.batches ?? [];
-  const totalRows = autoSplit ? (pagamerican?.refunds ?? 0) : (cartpanda?.rows.length ?? 0);
-  const outsideMonth = !autoSplit && cartpanda && monthRef ? countOutsideMonth(cartpanda.rows, monthRef) : 0;
+  const batches: ExternalRefundBatch[] = (autoSplit ? pagamerican?.batches : buygoods?.batches) ?? [];
+  const totalRows = autoSplit
+    ? (pagamerican?.refunds ?? 0)
+    : monthSplit
+      ? (buygoods?.refunds ?? 0)
+      : (cartpanda?.rows.length ?? 0);
+  const outsideMonth = manual && cartpanda && monthRef ? countOutsideMonth(cartpanda.rows, monthRef) : 0;
 
   const canImport =
     !parseError &&
     totalRows > 0 &&
     !importMutation.isPending &&
-    (autoSplit ? batches.length > 0 : Boolean(product) && Boolean(monthRef));
+    (autoSplit
+      ? batches.length > 0
+      : monthSplit
+        ? Boolean(product) && batches.length > 0
+        : Boolean(product) && Boolean(monthRef));
 
   const reset = () => {
     setPicked(null);
@@ -146,10 +170,10 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
     if (!canImport || !picked) return;
     try {
       // O RPC recebe um produto e um mês por chamada. Na Cartpanda a gestora
-      // informa os dois; na PagAmerican eles saem do próprio arquivo, então é
-      // uma chamada por lote. O upsert torna a repetição segura se algo falhar
+      // informa os dois; na PagAmerican eles saem do próprio arquivo e na Buygoods
+      // o mês sai do arquivo, então é uma chamada por lote. O upsert torna a repetição segura se algo falhar
       // no meio: reimportar o arquivo inteiro atualiza, não duplica.
-      const lotes = autoSplit
+      const lotes = !manual
         ? batches.map((b) => ({ product: b.product, monthRef: b.monthRef, rows: b.rows }))
         : [{ product, monthRef, rows: cartpanda!.rows }];
 
@@ -218,12 +242,14 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
           <DialogDescription>
             {autoSplit
               ? "O arquivo da PagAmerican já traz o produto e a data do reembolso, então produto e mês saem dele. Pedido já importado é atualizado, não duplicado."
-              : "Um arquivo de reembolsos externos por plataforma, produto e mês. Pedido já importado é atualizado, não duplicado."}
+              : monthSplit
+                ? "Um arquivo da Buygoods por produto. O mês sai da data do reembolso de cada pedido. Pedido já importado é atualizado, não duplicado."
+                : "Um arquivo de reembolsos externos por plataforma, produto e mês. Pedido já importado é atualizado, não duplicado."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className={autoSplit ? "grid gap-3" : "grid gap-3 sm:grid-cols-3"}>
+          <div className={autoSplit ? "grid gap-3" : monthSplit ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-3"}>
             <div className="space-y-2">
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Plataforma</div>
               <Select value={platform} onValueChange={(v) => setPlatform(v as ExternalPlatform)}>
@@ -256,7 +282,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
               </Select>
             </div>
             )}
-            {!autoSplit && (
+            {manual && (
             <div className="space-y-2">
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mês do arquivo</div>
               <Select value={monthRef} onValueChange={setMonthRef}>
@@ -315,31 +341,20 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                       casar com o interno.
                     </p>
                   )}
-                  <div className="mt-2 max-h-40 overflow-y-auto rounded border">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-2 py-1 text-left font-medium">Produto</th>
-                          <th className="px-2 py-1 text-left font-medium">Mês</th>
-                          <th className="px-2 py-1 text-right font-medium">Pedidos</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {batches.map((b) => (
-                          <tr key={`${b.product}-${b.monthRef}`} className="border-t">
-                            <td className="px-2 py-1">
-                              {b.product}
-                              {b.sourceProduct !== b.product && (
-                                <span className="text-muted-foreground"> (arquivo: {b.sourceProduct})</span>
-                              )}
-                            </td>
-                            <td className="px-2 py-1">{fmtMonth(b.monthRef)}</td>
-                            <td className="px-2 py-1 text-right tabular-nums">{b.rows.length}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <BatchTable batches={batches} />
+                </>
+              ) : monthSplit ? (
+                <>
+                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                    {buygoods!.refunds} pedido(s) reembolsado(s) em {batches.length} mês(es) · {buygoods!.lines} estorno(s)
+                    no arquivo
+                    {buygoods!.invalid > 0 && <> · {buygoods!.invalid} linha(s) ilegível(is) (serão ignoradas)</>}
+                  </p>
+                  {product ? (
+                    <BatchTable batches={batches} />
+                  ) : (
+                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">Escolha o produto do arquivo.</p>
+                  )}
                 </>
               ) : (
                 <p className="mt-1 text-xs text-muted-foreground tabular-nums">
@@ -371,5 +386,36 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Prévia dos lotes (produto × mês) que viram uma chamada do RPC cada. */
+function BatchTable({ batches }: { batches: ExternalRefundBatch[] }) {
+  return (
+    <div className="mt-2 max-h-40 overflow-y-auto rounded border">
+      <table className="w-full text-xs">
+        <thead className="bg-muted/50">
+          <tr>
+            <th className="px-2 py-1 text-left font-medium">Produto</th>
+            <th className="px-2 py-1 text-left font-medium">Mês</th>
+            <th className="px-2 py-1 text-right font-medium">Pedidos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {batches.map((b) => (
+            <tr key={`${b.product}-${b.monthRef}`} className="border-t">
+              <td className="px-2 py-1">
+                {b.product}
+                {b.sourceProduct !== b.product && (
+                  <span className="text-muted-foreground"> (arquivo: {b.sourceProduct})</span>
+                )}
+              </td>
+              <td className="px-2 py-1">{fmtMonth(b.monthRef)}</td>
+              <td className="px-2 py-1 text-right tabular-nums">{b.rows.length}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

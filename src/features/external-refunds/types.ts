@@ -72,8 +72,8 @@ export type DivergenceFilter = "all" | ExternalRefundKind | "tipo";
 
 /**
  * Uma linha por (data, produto) do recorte. É a base dos gráficos: a tela agrega
- * em dia, semana ou mês. `date` é a data do arquivo — reembolso na PagAmerican,
- * compra na Cartpanda —, e é por isso que só a primeira oferece dia e semana.
+ * em dia, semana ou mês. `date` é a data do arquivo — reembolso na PagAmerican e
+ * na Buygoods, compra na Cartpanda —, e é por isso que só a Cartpanda fica no mês.
  */
 export type ComparisonSeriesRow = {
   /** YYYY-MM-DD. */

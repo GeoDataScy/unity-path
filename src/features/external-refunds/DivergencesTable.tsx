@@ -32,7 +32,7 @@ function externalStatusLabel(row: DivergenceRow): string {
   if (!row.payment_status) return "—";
   if (row.payment_status === REFUND_TYPE_FULL) return "Integral";
   if (row.payment_status === REFUND_TYPE_PARTIAL) return "Parcial";
-  // PagAmerican: o arquivo confirma o reembolso mas não diz o tipo. Sem isso
+  // PagAmerican e Buygoods: o arquivo confirma o reembolso mas não diz o tipo. Sem isso
   // cairia no "Parcial" do else e afirmaria algo que o arquivo não afirma.
   return "Não informado";
 }

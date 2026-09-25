@@ -19,7 +19,7 @@ export type ChartMetric = "qtd" | "valor";
  * outra pergunta. Por isso a tela oferece só Mensal quando a plataforma não está
  * nesta lista — e o mês, sendo o mês informado na importação, continua honesto.
  */
-const PLATFORMS_WITH_REFUND_DATE: ExternalPlatform[] = ["PagAmerican"];
+const PLATFORMS_WITH_REFUND_DATE: ExternalPlatform[] = ["PagAmerican", "Buygoods"];
 
 export function hasRefundDate(platform: ExternalPlatform): boolean {
   return PLATFORMS_WITH_REFUND_DATE.includes(platform);
