@@ -95,14 +95,15 @@ describe("buildBuckets", () => {
 });
 
 describe("granularidade por plataforma", () => {
-  it("só a PagAmerican tem data de reembolso", () => {
+  it("PagAmerican e Buygoods têm data de reembolso; Cartpanda não", () => {
     expect(hasRefundDate("PagAmerican")).toBe(true);
+    expect(hasRefundDate("Buygoods")).toBe(true);
     expect(hasRefundDate("Cartpanda")).toBe(false);
-    expect(hasRefundDate("Buygoods")).toBe(false);
   });
 
   it("plataforma sem data de reembolso só oferece mês", () => {
     expect(granularitiesFor("PagAmerican")).toEqual(["dia", "sem", "mes"]);
+    expect(granularitiesFor("Buygoods")).toEqual(["dia", "sem", "mes"]);
     expect(granularitiesFor("Cartpanda")).toEqual(["mes"]);
   });
 });

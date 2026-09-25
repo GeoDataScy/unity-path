@@ -314,3 +314,128 @@ export function parsePagAmericanRefunds(data: ArrayBuffer | Uint8Array): ParsedP
   );
   return { recognized: true, batches, refunds, chargebacks, unspecified, unknownProducts: Array.from(desconhecidos) };
 }
+
+// ---------------------------------------------------------------------------
+// Buygoods
+// ---------------------------------------------------------------------------
+// Relatório "Customer_Refunds" da Buygoods, separado por TAB apesar do .csv:
+//   Order Date, Refund Date, Order ID, Product Codename, Product Name,
+//   Firstname, Lastname, Reason, Amount, Affiliate ID
+//
+// Diferenças que importam, e o que se faz com cada uma:
+//
+// * Um arquivo por produto, como na Cartpanda: a gestora escolhe o produto.
+//   Os itens do pedido (upsell de outro produto, frete prioritário) aparecem em
+//   Product Name, mas o pedido é do funil do produto do arquivo.
+// * `Refund Date` é a data do REEMBOLSO, como na PagAmerican. O mês do lote sai
+//   daí, então um arquivo vira um lote por mês.
+// * Cada linha é UM ESTORNO, não um item: o mesmo pedido pode ter vários
+//   (parcial em agosto e o resto em setembro, por exemplo), com valores
+//   diferentes. A RPC do comparativo lê uma linha por pedido, então as linhas se
+//   juntam aqui: valor = soma dos estornos, data = a do primeiro estorno.
+// * Não há coluna de tipo. O motivo (Reason) é texto do atendente e não fecha a
+//   conta — há pedido com "Partial Refund" seguido de estorno do restante —, então
+//   todo pedido entra como "não informado", que não pesa em cálculo nenhum.
+// * Datas em inglês por extenso: "September 23, 2026" e "June 02, 2026".
+
+const MONTHS_EN = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+];
+
+/** 'September 23, 2026' (hora opcional depois de outra vírgula) → '2026-09-23'. */
+export function parseEnglishDate(v: unknown): string {
+  const m = /^([a-z]+)\s+(\d{1,2}),\s*(\d{4})/i.exec(String(v ?? "").trim());
+  if (!m) return parseExportDate(v);
+  const month = MONTHS_EN.indexOf(m[1].toLowerCase()) + 1;
+  const day = Number(m[2]);
+  if (month < 1 || day < 1 || day > 31) return "";
+  return `${m[3]}-${pad(month)}-${pad(day)}`;
+}
+
+/** O arquivo é um relatório de reembolsos da Buygoods? */
+export function isBuygoodsHeader(headers: string[]): boolean {
+  return headers.includes("orderid") && headers.includes("refunddate") && headers.includes("productcodename");
+}
+
+export type ParsedBuygoodsRefunds = {
+  recognized: boolean;
+  /** Um lote por mês do primeiro estorno, todos com o produto escolhido. */
+  batches: ExternalRefundBatch[];
+  /** Pedidos distintos (soma das linhas dos lotes). */
+  refunds: number;
+  /** Linhas de estorno lidas; é mais que `refunds` quando o pedido teve vários. */
+  lines: number;
+  /** Linhas sem pedido, data ou valor legível. */
+  invalid: number;
+};
+
+export function parseBuygoodsRefunds(data: ArrayBuffer | Uint8Array, product: string): ParsedBuygoodsRefunds {
+  const vazio: ParsedBuygoodsRefunds = { recognized: false, batches: [], refunds: 0, lines: 0, invalid: 0 };
+  const matrix = readMatrix(data);
+  if (matrix.length < 2) return vazio;
+
+  const headers = matrix[0].map(normalizeHeader);
+  if (!isBuygoodsHeader(headers)) return vazio;
+
+  const iOrder = col(headers, "orderid");
+  const iDate = col(headers, "refunddate");
+  const iProduct = col(headers, "productname");
+  const iFirst = col(headers, "firstname");
+  const iLast = col(headers, "lastname");
+  const iAmount = col(headers, "amount");
+
+  type Pedido = { date: string; rawDate: string; cents: number; names: string[]; fullName: string };
+  const pedidos = new Map<string, Pedido>();
+  let lines = 0;
+  let invalid = 0;
+
+  for (let i = 1; i < matrix.length; i++) {
+    const cols = matrix[i];
+    if (!cols || cols.every((c) => cellToText(c) === "")) continue;
+    lines++;
+
+    const orderName = cellToText(cols[iOrder]).toUpperCase();
+    const rawDate = cellToText(cols[iDate]);
+    const date = parseEnglishDate(rawDate);
+    const valor = Number(cellToText(cols[iAmount]).replace(/[^0-9.-]/g, ""));
+    if (!orderName || !date || !Number.isFinite(valor) || cellToText(cols[iAmount]) === "") {
+      invalid++;
+      continue;
+    }
+
+    const p = pedidos.get(orderName) ?? { date, rawDate, cents: 0, names: [], fullName: "" };
+    // Centavos inteiros: somar 311.64 + 21.15 em float dá 332.78999…
+    p.cents += Math.round(Math.abs(valor) * 100);
+    if (date < p.date) {
+      p.date = date;
+      p.rawDate = rawDate;
+    }
+    const nome = iProduct >= 0 ? cellToText(cols[iProduct]) : "";
+    if (nome && !p.names.includes(nome)) p.names.push(nome);
+    if (!p.fullName) {
+      p.fullName = [iFirst, iLast].map((idx) => (idx >= 0 ? cellToText(cols[idx]) : "")).filter(Boolean).join(" ");
+    }
+    pedidos.set(orderName, p);
+  }
+
+  const porMes = new Map<string, ExternalRefundBatch>();
+  for (const [orderName, p] of pedidos) {
+    const monthRef = `${p.date.slice(0, 7)}-01`;
+    const row: ExternalRefundImportRow = {
+      order_name: orderName,
+      order_date: p.date,
+      refund_amount: (p.cents / 100).toFixed(2),
+      payment_status: REFUND_TYPE_UNSPECIFIED,
+      raw_date: p.rawDate,
+      product_name: p.names.join(" | ") || undefined,
+    };
+    if (p.fullName) row.full_name = p.fullName;
+    const lote = porMes.get(monthRef) ?? { product, sourceProduct: product, monthRef, rows: [] };
+    lote.rows.push(row);
+    porMes.set(monthRef, lote);
+  }
+
+  const batches = Array.from(porMes.values()).sort((a, b) => a.monthRef.localeCompare(b.monthRef));
+  return { recognized: true, batches, refunds: pedidos.size, lines, invalid };
+}
