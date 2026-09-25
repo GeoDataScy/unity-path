@@ -10,10 +10,15 @@ type Params = {
   platform?: string;
   /** Valor gravado em `services.product`; `SEM_VALOR` = ticket sem produto. */
   product?: string;
+  /** Canal gravado na abertura do ticket (`services.channel`): "Email" ou "SMS". */
+  channel?: string;
 };
 
 /** Opção dos filtros para ticket sem valor gravado (no histórico há plataforma NULL). */
 export const SEM_VALOR = "__sem__";
+
+/** Canais do filtro "Por canal" — valores exatos de `services.channel`. */
+export const CANAIS = ["Email", "SMS"];
 
 export type DailyTicketsRow = {
   /** YYYY-MM-DD, dia de São Paulo. */
@@ -53,12 +58,19 @@ async function requireSession() {
  * A regra inteira mora no banco — inclusive o preenchimento dos dias sem
  * movimento, para o gráfico não precisar adivinhar buraco de fim de semana.
  */
-export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId, platform, product }: Params) {
+export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId, platform, product, channel }: Params) {
   return useQuery({
     queryKey: [
       "dashboard",
       "daily-tickets",
-      { from, to, agentId: agentId ?? "all", platform: platform ?? "all", product: product ?? "all" },
+      {
+        from,
+        to,
+        agentId: agentId ?? "all",
+        platform: platform ?? "all",
+        product: product ?? "all",
+        channel: channel ?? "all",
+      },
     ],
     enabled,
     queryFn: async (): Promise<DailyTickets> => {
@@ -70,6 +82,7 @@ export function useDashboardDailyTicketsQuery({ enabled, from, to, agentId, plat
         agent_id: agentId || null,
         platform_filter: platform || null,
         product_filter: product || null,
+        channel_filter: channel || null,
       });
 
       if (error) throw error;
