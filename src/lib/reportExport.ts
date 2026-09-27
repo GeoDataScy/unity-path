@@ -95,17 +95,17 @@ const SHEET_SPECS = {
   valoresResumo: {
     name: "Valores - Resumo",
     title: "Valores financeiros de reembolsos",
-    columns: ["Tipo", "Valor (R$)"],
+    columns: ["Tipo", "Valor (US$)"],
   },
   valoresCanal: {
     name: "Valores por Canal",
     title: "Valor de reembolso por canal de atendimento",
-    columns: ["Canal", "Valor (R$)"],
+    columns: ["Canal", "Valor (US$)"],
   },
   valoresProduto: {
     name: "Valores por Produto",
     title: "Valor de reembolso por produto",
-    columns: ["Produto", "Valor (R$)"],
+    columns: ["Produto", "Valor (US$)"],
   },
 } as const satisfies Record<string, SheetSpec>;
 
@@ -616,7 +616,7 @@ export async function exportRefundReasonDetail(params: RefundReasonExportParams)
     "Pedido",
     "Canal",
     "Tipo",
-    "Valor (R$)",
+    "Valor (US$)",
     "Motivo original",
   ];
 

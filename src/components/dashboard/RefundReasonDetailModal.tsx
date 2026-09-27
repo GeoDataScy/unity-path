@@ -32,7 +32,8 @@ function formatDate(value: string | null): string {
 
 function formatValue(v: number | null): string {
   if (v === null || v === undefined) return "—";
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  // refunds.refund_value é dólar (o agente digita com "$" em Reembolsos.tsx).
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "USD" });
 }
 
 type Props = {
