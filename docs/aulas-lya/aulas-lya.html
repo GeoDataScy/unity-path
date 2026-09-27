@@ -1,0 +1,712 @@
+<title>Aulas da Lya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F1EFF5;
+    --card: #FFFFFF;
+    --ink: #201C2A;
+    --ink-2: #574F6C;
+    --muted: #857D99;
+    --line: #DAD5E6;
+    --violet: #5B3DF5;
+    --violet-ink: #4A31D6;
+    --violet-soft: #E9E4FD;
+    --mint: #0B8E77;
+    --mint-soft: #DDF1EC;
+    --amber: #A6631A;
+    --amber-soft: #F9EEDF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #15131C;
+      --card: #1E1A28;
+      --ink: #EDEAF4;
+      --ink-2: #B4ACC6;
+      --muted: #857D99;
+      --line: #322C42;
+      --violet: #A996FF;
+      --violet-ink: #C2B4FF;
+      --violet-soft: #2A2440;
+      --mint: #57C8AE;
+      --mint-soft: #16302B;
+      --amber: #E0A45F;
+      --amber-soft: #33260F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #15131C;
+    --card: #1E1A28;
+    --ink: #EDEAF4;
+    --ink-2: #B4ACC6;
+    --muted: #857D99;
+    --line: #322C42;
+    --violet: #A996FF;
+    --violet-ink: #C2B4FF;
+    --violet-soft: #2A2440;
+    --mint: #57C8AE;
+    --mint-soft: #16302B;
+    --amber: #E0A45F;
+    --amber-soft: #33260F;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Karla, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: Fraunces, Georgia, serif;
+    font-weight: 600;
+    line-height: 1.12;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); letter-spacing: -0.015em; }
+  h3 { font-size: 1.15rem; font-weight: 600; }
+  p { margin: 0 0 .9rem; max-width: 64ch; }
+  ul { margin: 0 0 .9rem; padding-left: 1.2rem; max-width: 64ch; }
+  li { margin-bottom: .3rem; }
+  li::marker { color: var(--violet); }
+  strong { font-weight: 700; }
+  a { color: var(--violet-ink); }
+  a:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; }
+
+  .eyebrow {
+    font-size: .7rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--violet-ink);
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.4rem; }
+
+  /* ── Abertura ── */
+  header.hero { padding: 3.4rem 0 2.2rem; }
+  header.hero .lead {
+    font-size: 1.15rem; color: var(--ink-2); max-width: 54ch; margin-top: 1.1rem;
+  }
+  .cursos {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem; margin-top: 2rem;
+  }
+  .curso {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .35rem;
+  }
+  .curso .dur {
+    font-family: "IBM Plex Mono", monospace; font-size: .78rem; font-weight: 500;
+    color: var(--violet-ink); letter-spacing: .04em;
+  }
+  .curso h3 { font-size: 1.25rem; }
+  .curso p { font-size: .92rem; color: var(--ink-2); margin: 0; }
+
+  .comousar {
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 1.4rem 0; margin: 2.4rem 0 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.4rem;
+  }
+  .comousar div p { font-size: .9rem; color: var(--ink-2); margin: .3rem 0 0; }
+  .comousar h3 { font-size: .98rem; }
+
+  /* ── Aula ── */
+  .aula { padding: 3.4rem 0 1rem; }
+  .aula-head {
+    display: grid; grid-template-columns: auto 1fr; gap: 1.4rem; align-items: start;
+    padding-bottom: 1.6rem; border-bottom: 2px solid var(--ink);
+  }
+  .aula-num {
+    font-family: Fraunces, Georgia, serif; font-weight: 700;
+    font-size: clamp(3rem, 8vw, 5rem); line-height: .82; color: var(--violet);
+    letter-spacing: -0.04em;
+  }
+  .aula-head .promessa { color: var(--ink-2); margin: .7rem 0 0; font-size: 1.02rem; }
+  .chip {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem; font-weight: 500; letter-spacing: .04em;
+    border: 1px solid var(--violet); color: var(--violet-ink);
+    padding: .12rem .5rem; border-radius: 999px; vertical-align: .25em; margin-left: .6rem;
+  }
+
+  /* ── Roteiro em duas colunas ── */
+  .roteiro { margin-top: .4rem; }
+  .beat {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr) minmax(0, 14rem);
+    gap: 1.2rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+  .beat .t {
+    font-family: "IBM Plex Mono", monospace; font-size: .78rem; font-weight: 500;
+    color: var(--muted); font-variant-numeric: tabular-nums; padding-top: .35rem;
+    white-space: nowrap;
+  }
+  .beat .fala { font-size: 1.06rem; line-height: 1.62; }
+  .beat .fala p { max-width: 52ch; }
+  .beat .fala p:last-child { margin-bottom: 0; }
+  .beat .fala em { font-style: normal; background: var(--violet-soft); padding: 0 .18em; border-radius: 3px; }
+  .beat .tela {
+    border-left: 2px solid var(--mint); padding-left: .9rem;
+    font-size: .88rem; color: var(--ink-2);
+  }
+  .beat .tela .lbl {
+    display: block; font-size: .64rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--mint); margin-bottom: .25rem;
+  }
+  .beat .tela p { margin: 0; max-width: none; }
+
+  /* ── Figuras ── */
+  figure { margin: 2rem 0; }
+  figure .fig {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.4rem 1rem; overflow-x: auto;
+  }
+  /* `fill` é herdado: quem não declara cor própria pega o texto do tema.
+     Sem isto, todo <text> sem fill renderiza preto e some no tema escuro. */
+  figure svg {
+    display: block; max-width: 100%; height: auto; margin: 0 auto;
+    color: var(--ink); fill: currentColor; font-family: Karla, sans-serif;
+  }
+  figcaption { font-size: .86rem; color: var(--ink-2); margin-top: .7rem; max-width: 62ch; }
+
+  /* ── Blocos de fechamento ── */
+  .fecho { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; margin: 2rem 0 0; }
+  .box { border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .box .lbl {
+    display: block; font-size: .66rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; margin-bottom: .5rem;
+  }
+  .box.resumo { background: var(--violet-soft); }
+  .box.resumo .lbl { color: var(--violet-ink); }
+  .box.resumo p {
+    font-family: Fraunces, Georgia, serif; font-size: 1.2rem; line-height: 1.35;
+    margin: 0; font-weight: 500;
+  }
+  .box.perguntas { background: var(--amber-soft); }
+  .box.perguntas .lbl { color: var(--amber); }
+  .box.perguntas dl { margin: 0; }
+  .box.perguntas dt { font-weight: 700; font-size: .93rem; margin-top: .6rem; }
+  .box.perguntas dt:first-child { margin-top: 0; }
+  .box.perguntas dd { margin: .1rem 0 0; font-size: .93rem; color: var(--ink-2); }
+
+  /* ── Arquivos ── */
+  .arquivos { padding: 3.6rem 0 4.5rem; }
+  .arquivos > .intro { border-top: 2px solid var(--ink); padding-top: 1.6rem; }
+  .files { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1rem; margin: 1.6rem 0 2rem; }
+  .file {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.2rem;
+    display: flex; flex-direction: column; gap: .45rem;
+  }
+  .file code {
+    font-family: "IBM Plex Mono", monospace; font-size: .8rem; color: var(--violet-ink);
+    background: var(--violet-soft); padding: .15rem .4rem; border-radius: 4px; align-self: flex-start;
+  }
+  .file h3 { font-size: 1.05rem; }
+  .file p { font-size: .9rem; color: var(--ink-2); margin: 0; }
+  .file .para { font-size: .78rem; color: var(--muted); margin-top: auto; padding-top: .5rem; }
+  ol.passos { counter-reset: p; list-style: none; padding: 0; max-width: 62ch; }
+  ol.passos li { counter-increment: p; display: grid; grid-template-columns: 1.8rem 1fr; gap: .5rem; margin-bottom: .6rem; }
+  ol.passos li::before {
+    content: counter(p); font-family: "IBM Plex Mono", monospace; font-size: .78rem;
+    color: var(--violet-ink); font-weight: 500; padding-top: .22rem;
+  }
+  footer { color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+
+  @media (max-width: 820px) {
+    .beat { grid-template-columns: 3.6rem minmax(0, 1fr); }
+    .beat .tela { grid-column: 2; margin-top: .3rem; }
+    .aula-head { grid-template-columns: 1fr; gap: .4rem; }
+  }
+
+  /* ── Impressão / PDF ──────────────────────────────────────────────────
+     Papel é branco: o tema claro vale sempre. As cores de fundo dos blocos
+     precisam de print-color-adjust, senão o navegador as descarta. E nada
+     do roteiro pode partir no meio de um bloco de fala. */
+  @media print {
+    :root, :root[data-theme="dark"] {
+      --paper: #FFFFFF;
+      --card: #FFFFFF;
+      --ink: #201C2A;
+      --ink-2: #4A4360;
+      --muted: #6E6785;
+      --line: #CFC9DE;
+      --violet: #5B3DF5;
+      --violet-ink: #4A31D6;
+      --violet-soft: #EDE9FC;
+      --mint: #0B7A66;
+      --mint-soft: #E3F3EE;
+      --amber: #91560F;
+      --amber-soft: #FAF0E1;
+    }
+    @page { size: A4; margin: 14mm 12mm; }
+    html, body {
+      background: #FFFFFF;
+      font-size: 10.5pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .wrap { max-width: none; padding: 0; }
+    header.hero { padding: 0 0 1.4rem; }
+    h1 { font-size: 30pt; }
+    h2 { font-size: 18pt; }
+    header.hero .lead { font-size: 11.5pt; }
+    .aula { padding: 0; }
+    .aula-num { font-size: 34pt; }
+    .beat { padding: .75rem 0; }
+    .beat .fala { font-size: 10.5pt; }
+    .beat .fala em { background: var(--violet-soft); }
+
+    /* nada parte no meio */
+    .beat, figure, .box, .file, .curso, .comousar > div, ol.passos li { break-inside: avoid; }
+    .aula-head, .files, .fecho { break-inside: avoid; }
+    h1, h2, h3 { break-after: avoid; }
+
+    /* cada aula e o anexo começam em página nova */
+    section.aula, section.arquivos { break-before: page; }
+    footer { break-inside: avoid; }
+  }
+</style>
+
+<header class="wrap hero">
+  <span class="eyebrow">Material de treinamento · XMX Suporte</span>
+  <h1>Aulas da Lya</h1>
+  <p class="lead">Duas aulas curtas sobre a assistente que roda dentro do Painel da Gestora. Sem termo técnico, sem código. Ao final, quem assistir leva três arquivos para construir o próprio agente.</p>
+
+  <div class="cursos">
+    <div class="curso">
+      <span class="dur">AULA 1 · 5 MIN</span>
+      <h3>Como a Lya funciona</h3>
+      <p>O que acontece entre a sua pergunta e a resposta dela. Ferramentas, o ciclo de trabalho, de onde vem cada número e por que ela não inventa.</p>
+    </div>
+    <div class="curso">
+      <span class="dur">AULA 2 · 3 MIN</span>
+      <h3>Como se treina a Lya</h3>
+      <p>Por que treinar aqui não é ensinar a inteligência artificial de novo. As duas gavetas da memória, como corrigir e como ver o cérebro dela.</p>
+    </div>
+  </div>
+
+  <div class="comousar">
+    <div>
+      <h3>A coluna larga é a fala</h3>
+      <p>É o texto para narrar, na ordem. Cada bloco tem o minuto em que começa.</p>
+    </div>
+    <div>
+      <h3>A coluna estreita é a tela</h3>
+      <p>O que mostrar enquanto fala. Quase tudo é o próprio painel, ao vivo.</p>
+    </div>
+    <div>
+      <h3>Os desenhos são slides</h3>
+      <p>As três figuras podem ir para o vídeo como estão. Foram feitas para quem nunca programou.</p>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ AULA 1 ══════════════════ -->
+<section class="wrap aula" id="aula1">
+  <div class="aula-head">
+    <div class="aula-num">1</div>
+    <div>
+      <h2>Como a Lya funciona<span class="chip">5 min</span></h2>
+      <p class="promessa">Ao final, a pessoa entende que a Lya não sabe nada sozinha: ela pede, o sistema busca, e o número que ela mostra é o mesmo que está na tela.</p>
+    </div>
+  </div>
+
+  <div class="roteiro">
+
+    <div class="beat">
+      <div class="t">0:00</div>
+      <div class="fala">
+        <p>A Lya é a assistente que fica dentro do Painel da Gestora. Você pergunta em português e ela responde com os números do painel.</p>
+        <p>Em cinco minutos você vai entender exatamente o que acontece entre a sua pergunta e a resposta dela. Não precisa saber programar.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>O painel aberto, com o balão da Lya no canto. Clicar e perguntar algo simples.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">0:25</div>
+      <div class="fala">
+        <p>Por trás da Lya existe um modelo de inteligência artificial. Pense nele como um funcionário novo, muito inteligente, que leu quase tudo o que existe.</p>
+        <p>Ele sabe raciocinar, escrever e explicar. Mas no primeiro dia ele não sabe absolutamente nada sobre a XMX. Não sabe quantos atendimentos tivemos ontem, não conhece nossos produtos e não tem senha de nada. <em>Ele nem consegue abrir o painel.</em></p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Um retângulo vazio com um ponto de interrogação. Nada de código.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">1:00</div>
+      <div class="fala">
+        <p>Então demos ferramentas a ele. Ferramenta, aqui, é um pedido que ele pode fazer ao sistema.</p>
+        <p>A Lya tem dezessete. Uma delas é "me dá os atendimentos deste período". Outra é "me dá os reembolsos em aberto". Outra é "desenha um gráfico".</p>
+        <p>E aqui está o detalhe que quase ninguém percebe: <em>ela nunca vai buscar o dado sozinha</em>. Ela pede, o sistema busca e devolve pronto.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Uma lista simples de três ou quatro pedidos, escritos em português.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">1:45</div>
+      <div class="fala">
+        <p>Agora, o que separa a Lya de um chat comum.</p>
+        <p>Ela não responde de primeira. Ela lê a pergunta, escolhe uma ferramenta, olha o que voltou e decide: já dá para responder, ou preciso de mais uma coisa? Esse vaivém pode acontecer até dez vezes numa pergunta só.</p>
+        <p>É por isso que às vezes aparece "consultando" antes da resposta. <em>Ela está trabalhando, não travada.</em></p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>A figura do ciclo. Depois, uma pergunta real com as etapas aparecendo.</p>
+      </div>
+    </div>
+
+    <figure>
+      <div class="fig">
+      <svg viewBox="0 0 820 250" role="img" aria-label="O ciclo de trabalho da Lya: você pergunta, ela escolhe uma ferramenta, o sistema busca o dado, ela olha o que voltou e decide se já responde ou se precisa de mais alguma coisa. O vaivém pode repetir até dez vezes.">
+        <defs>
+          <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <rect x="14" y="66" width="150" height="72" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="89" y="98" font-size="15" font-weight="700" text-anchor="middle">Você pergunta</text>
+        <text x="89" y="119" font-size="13" text-anchor="middle" fill="var(--muted)">em português</text>
+
+        <rect x="204" y="66" width="150" height="72" rx="10" fill="var(--violet-soft)" stroke="var(--violet)" stroke-width="1.6"/>
+        <text x="279" y="92" font-size="15" font-weight="700" text-anchor="middle">A Lya escolhe</text>
+        <text x="279" y="112" font-size="15" font-weight="700" text-anchor="middle">a ferramenta</text>
+        <text x="279" y="130" font-size="13" text-anchor="middle" fill="var(--muted)">ela decide, não você</text>
+
+        <rect x="394" y="66" width="150" height="72" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="469" y="92" font-size="15" font-weight="700" text-anchor="middle">O sistema</text>
+        <text x="469" y="112" font-size="15" font-weight="700" text-anchor="middle">busca o dado</text>
+        <text x="469" y="130" font-size="13" text-anchor="middle" fill="var(--muted)">o mesmo do painel</text>
+
+        <rect x="584" y="66" width="150" height="72" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="659" y="92" font-size="15" font-weight="700" text-anchor="middle">Ela olha</text>
+        <text x="659" y="112" font-size="15" font-weight="700" text-anchor="middle">e decide</text>
+        <text x="659" y="130" font-size="13" text-anchor="middle" fill="var(--muted)">basta? ou falta algo?</text>
+
+        <line x1="164" y1="102" x2="200" y2="102" stroke="currentColor" stroke-width="1.4" marker-end="url(#s1)"/>
+        <line x1="354" y1="102" x2="390" y2="102" stroke="currentColor" stroke-width="1.4" marker-end="url(#s1)"/>
+        <line x1="544" y1="102" x2="580" y2="102" stroke="currentColor" stroke-width="1.4" marker-end="url(#s1)"/>
+
+        <line x1="734" y1="102" x2="790" y2="102" stroke="currentColor" stroke-width="1.4" marker-end="url(#s1)"/>
+        <text x="772" y="88" font-size="13" text-anchor="middle" font-weight="700">basta</text>
+        <text x="772" y="134" font-size="13" text-anchor="middle" fill="var(--muted)">responde</text>
+
+        <path d="M659,138 L659,186 L279,186 L279,142" fill="none" stroke="var(--violet)" stroke-width="1.6" marker-end="url(#s1)"/>
+        <text x="469" y="207" font-size="14" text-anchor="middle" fill="var(--violet-ink)" font-weight="700">falta algo: pede outra ferramenta — até 10 vezes</text>
+
+        <text x="14" y="40" font-size="13" fill="var(--muted)">O ciclo, uma pergunta de cada vez</text>
+      </svg>
+      </div>
+      <figcaption>Este vaivém é a diferença entre um agente e um chat comum. O chat responde com o que já sabe; a Lya para, busca e só então responde.</figcaption>
+    </figure>
+
+    <div class="beat">
+      <div class="t">2:30</div>
+      <div class="fala">
+        <p>Agora a decisão mais importante do projeto inteiro.</p>
+        <p>As ferramentas da Lya não fazem conta nova. Elas chamam exatamente a mesma conta que desenha os cards do painel.</p>
+        <p>Quando você pergunta "quantos atendimentos tivemos essa semana", ela não recalcula nada: ela busca o mesmo número que já está na tela. <em>Por isso os dois nunca vão divergir.</em> E se divergissem uma única vez, você nunca mais confiaria nela.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Perguntar à Lya e depois abrir a tela Atendimentos lado a lado. O número é o mesmo.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">3:05</div>
+      <div class="fala">
+        <p>Tem pergunta que o painel não responde. "Quais clientes pediram reembolso duas vezes do mesmo produto?" Não existe tela para isso.</p>
+        <p>Nesse caso a Lya escreve uma consulta ao banco de dados. E aqui fomos rigorosos: ela só pode <em>ler</em>, nunca alterar nem apagar nada. Só enxerga as tabelas que liberamos. Não enxerga e-mail de login de ninguém. E a consulta tem tempo e tamanho limitados.</p>
+        <p>Mesmo que alguém peça para ela apagar alguma coisa, ela não consegue. Não é só uma instrução: <em>o banco não deixa</em>.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Fazer um pedido de exclusão e mostrar a recusa. É a demonstração que mais tranquiliza.</p>
+      </div>
+    </div>
+
+    <figure>
+      <div class="fig">
+      <svg viewBox="0 0 820 270" role="img" aria-label="De onde vem cada resposta: das telas do painel, do banco de dados em modo somente leitura, ou da Base de Suporte. Quando nenhuma das três responde, a Lya diz que não encontrou.">
+        <text x="14" y="30" font-size="13" fill="var(--muted)">De onde vem cada resposta</text>
+
+        <rect x="14" y="52" width="248" height="94" rx="10" fill="var(--violet-soft)" stroke="var(--violet)" stroke-width="1.6"/>
+        <text x="34" y="80" font-size="16" font-weight="700">As telas do painel</text>
+        <text x="34" y="104" font-size="13.5" fill="var(--ink-2)">A mesma conta que faz os cards.</text>
+        <text x="34" y="124" font-size="13.5" fill="var(--ink-2)">É a fonte preferida dela.</text>
+
+        <rect x="286" y="52" width="248" height="94" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="306" y="80" font-size="16" font-weight="700">O banco de dados</text>
+        <text x="306" y="104" font-size="13.5" fill="var(--ink-2)">Para o que a tela não responde.</text>
+        <text x="306" y="124" font-size="13.5" fill="var(--ink-2)">Só leitura, sempre.</text>
+
+        <rect x="558" y="52" width="248" height="94" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="578" y="80" font-size="16" font-weight="700">A Base de Suporte</text>
+        <text x="578" y="104" font-size="13.5" fill="var(--ink-2)">Produtos, links, respostas</text>
+        <text x="578" y="124" font-size="13.5" fill="var(--ink-2)">prontas de SMS.</text>
+
+        <line x1="14" y1="182" x2="806" y2="182" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="410" y="216" font-size="16" font-weight="700" text-anchor="middle">Se nenhuma das três responde, ela diz:</text>
+        <text x="410" y="243" font-size="17" font-weight="700" text-anchor="middle" fill="var(--violet-ink)" font-family="Fraunces, Georgia, serif">"Não encontrei isso nos dados disponíveis."</text>
+      </svg>
+      </div>
+      <figcaption>A Lya é proibida de completar com o que ela "acha". Quando nenhuma fonte responde, a resposta certa é dizer que não encontrou, e parar por aí.</figcaption>
+    </figure>
+
+    <div class="beat">
+      <div class="t">3:45</div>
+      <div class="fala">
+        <p>Outra proteção, e essa é importante para todo mundo entender.</p>
+        <p>A Lya entra com o <em>seu</em> crachá, não com um crachá de administrador. Quem é do time de copy vê menos coisas no painel do que a gestora, e com a Lya funciona igual: se você não pode ver aquele dado na tela, ela não te conta.</p>
+        <p>A inteligência artificial não é um atalho para furar permissão.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Se der, a mesma pergunta em duas contas diferentes. Se não der, só a fala basta.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">4:15</div>
+      <div class="fala">
+        <p>Por último, existe um segundo revisor.</p>
+        <p>Quando a Lya termina de escrever, uma outra inteligência artificial, menor e mais rápida, relê a resposta e confere frase por frase contra o que foi buscado. Se aparecer alguma afirmação sem base, ela marca. É o bloco "Revisão automática" que às vezes aparece no final.</p>
+        <p>E existe uma regra que ela nunca pode quebrar: <em>é proibido responder de cabeça</em>. Parece pouco. É o que impede a Lya de inventar.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Uma resposta com o bloco de revisão, se houver uma à mão.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">4:50</div>
+      <div class="fala">
+        <p>Resumindo: uma inteligência artificial que raciocina, ferramentas que buscam o dado, o mesmo número da tela, o seu crachá e um revisor no fim.</p>
+        <p>É essa a Lya.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>A figura do ciclo de novo, agora inteira.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="fecho">
+    <div class="box resumo">
+      <span class="lbl">A frase que precisa ficar</span>
+      <p>A Lya não sabe nada sozinha. Ela pede, o sistema busca, e o número dela é o mesmo da tela.</p>
+    </div>
+    <div class="box perguntas">
+      <span class="lbl">Se perguntarem</span>
+      <dl>
+        <dt>Ela pode apagar ou mudar alguma coisa?</dt>
+        <dd>Não. Nenhuma ferramenta dela escreve. O banco só a deixa ler.</dd>
+        <dt>Ela guarda o que eu pergunto?</dt>
+        <dd>A conversa fica salva só para você. Nem a gestora vê a conversa dos outros.</dd>
+        <dt>Ela erra?</dt>
+        <dd>Pode errar na interpretação da pergunta. Nos números, não: eles vêm prontos do painel.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ AULA 2 ══════════════════ -->
+<section class="wrap aula" id="aula2">
+  <div class="aula-head">
+    <div class="aula-num">2</div>
+    <div>
+      <h2>Como se treina a Lya<span class="chip">3 min</span></h2>
+      <p class="promessa">Ao final, a pessoa entende que treinar é escrever um bilhete que ela lê antes de responder, e sabe a diferença entre ensinar o jeito e tentar ensinar um número.</p>
+    </div>
+  </div>
+
+  <div class="roteiro">
+
+    <div class="beat">
+      <div class="t">0:00</div>
+      <div class="fala">
+        <p>"Treinar a Lya" não é o que a maioria das pessoas imagina.</p>
+        <p>Ninguém está reensinando a inteligência artificial. Isso levaria semanas e custaria caro. O que fazemos é muito mais simples: <em>escrever um bilhete que ela lê antes de cada resposta</em>.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>A tela Cérebro da Lya, fechada. Só o título.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">0:25</div>
+      <div class="fala">
+        <p>A Lya tem duas camadas de treino.</p>
+        <p>A primeira é a personalidade, que está no código: o que ela é, o que pode e o que não pode. Isso só muda com desenvolvedor.</p>
+        <p>A segunda é a memória, e essa é da gestora. Ela abre a tela Cérebro da Lya, escreve em português o que quer ensinar, e pronto: <em>vale já na próxima pergunta</em>. Sem espera, sem programador.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Abrir a aba Treinar e escrever uma memória curta, ao vivo.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">0:50</div>
+      <div class="fala">
+        <p>A memória tem duas gavetas, e a diferença entre elas é o que mais confunde.</p>
+        <p>A primeira gaveta é <em>preferência</em>: o jeito de responder. "Sempre me mostre a meta junto com o ranking." "Nunca liste e-mail de cliente." Essas entram em toda resposta, sempre.</p>
+        <p>A segunda gaveta é <em>fato</em>: coisas que ela precisa saber. "O produto tal saiu de linha em agosto." Essas só entram quando têm a ver com a pergunta. Senão a cabeça dela viveria cheia de coisa irrelevante.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>A figura das duas gavetas.</p>
+      </div>
+    </div>
+
+    <figure>
+      <div class="fig">
+      <svg viewBox="0 0 820 250" role="img" aria-label="As duas gavetas da memória: preferências entram em toda resposta; fatos entram só quando combinam com a pergunta.">
+        <text x="14" y="30" font-size="13" fill="var(--muted)">As duas gavetas da memória</text>
+
+        <rect x="14" y="52" width="386" height="170" rx="10" fill="var(--violet-soft)" stroke="var(--violet)" stroke-width="1.6"/>
+        <text x="36" y="84" font-size="18" font-weight="700">Preferência</text>
+        <text x="36" y="108" font-size="14" fill="var(--ink-2)">O jeito de responder.</text>
+        <text x="36" y="136" font-size="14.5" font-style="italic">"Sempre mostre a meta junto do ranking."</text>
+        <text x="36" y="158" font-size="14.5" font-style="italic">"Nunca liste e-mail de cliente."</text>
+        <line x1="36" y1="176" x2="378" y2="176" stroke="var(--violet)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="36" y="202" font-size="15" font-weight="700" fill="var(--violet-ink)">Entra em TODA resposta</text>
+
+        <rect x="420" y="52" width="386" height="170" rx="10" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <text x="442" y="84" font-size="18" font-weight="700">Fato</text>
+        <text x="442" y="108" font-size="14" fill="var(--ink-2)">Algo que ela precisa saber.</text>
+        <text x="442" y="136" font-size="14.5" font-style="italic">"O produto tal saiu de linha em agosto."</text>
+        <text x="442" y="158" font-size="14.5" font-style="italic">"A brand X usa outro número de SMS."</text>
+        <line x1="442" y1="176" x2="784" y2="176" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="442" y="202" font-size="15" font-weight="700">Entra quando combina com a pergunta</text>
+      </svg>
+      </div>
+      <figcaption>Regra prática para quem vai treinar: se o que você quer ensinar começa com "sempre" ou "nunca", é preferência. Se é uma informação sobre alguma coisa, é fato.</figcaption>
+    </figure>
+
+    <div class="beat">
+      <div class="t">1:25</div>
+      <div class="fala">
+        <p>E tem um detalhe que faz toda a diferença.</p>
+        <p>Quando você escreve uma memória, ela não vai direto para o cérebro. Antes, uma segunda inteligência artificial lê o que você escreveu, decide em qual gaveta aquilo vai, melhora o texto e acrescenta as palavras que você provavelmente usaria ao perguntar.</p>
+        <p>Por quê? Porque <em>uma memória que ninguém encontra é uma memória que não existe</em>. Se você escreve "estorno" e depois pergunta "devolução", o cérebro precisa saber que é a mesma coisa.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Salvar a memória e mostrar o tipo e as etiquetas que apareceram sozinhas.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">2:00</div>
+      <div class="fala">
+        <p>Se a Lya errar, você corrige conversando.</p>
+        <p>No modo treino você diz o que ficou errado, e ela regrava aquela mesma memória por cima da antiga. <em>Ela não acumula duas versões que se contradizem</em>: o que era regra vira a regra nova.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>Ligar o modo treino no chat e corrigir a memória que acabou de ser criada.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">2:25</div>
+      <div class="fala">
+        <p>E você consegue ver o cérebro dela.</p>
+        <p>Na tela Cérebro, cada bolinha é uma memória e cada linha liga memórias que falam do mesmo assunto. Memórias novas nascem ali na hora, na sua frente.</p>
+        <p>Serve para enxergar o que ela já sabe, o que está solto e o que ninguém ensinou ainda.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>O grafo. Salvar uma memória com ele aberto e mostrar o nó nascendo.</p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="t">2:50</div>
+      <div class="fala">
+        <p>Uma regra para fechar: <em>memória manda no jeito, ferramenta manda no número</em>.</p>
+        <p>Você pode ensinar a Lya a responder do jeito que preferir. Você não pode ensinar a ela um número diferente do que está no banco. E isso é de propósito.</p>
+      </div>
+      <div class="tela">
+        <span class="lbl">Na tela</span>
+        <p>A frase, sozinha.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="fecho">
+    <div class="box resumo">
+      <span class="lbl">A frase que precisa ficar</span>
+      <p>Memória manda no jeito. Ferramenta manda no número.</p>
+    </div>
+    <div class="box perguntas">
+      <span class="lbl">Se perguntarem</span>
+      <dl>
+        <dt>Se eu ensinar errado, estraga tudo?</dt>
+        <dd>Não. É só corrigir ou apagar aquela memória. Nada fica gravado no modelo.</dd>
+        <dt>Todo mundo pode treinar?</dt>
+        <dd>Não. Quem pergunta é a área de analytics inteira. Quem treina é só a gestora.</dd>
+        <dt>Ela aprende sozinha com as conversas?</dt>
+        <dd>Não, e é de propósito. Só entra no cérebro o que alguém escreveu de propósito.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ ARQUIVOS ══════════════════ -->
+<section class="wrap arquivos">
+  <div class="intro">
+    <span class="eyebrow">Vai junto com as aulas</span>
+    <h2>Os três arquivos</h2>
+    <p style="margin-top:.8rem">Quem assistir leva estes arquivos para construir o próprio agente com a mesma arquitetura da Lya. Eles descrevem um sistema que está em produção, não um exemplo: cada armadilha listada neles custou tempo de alguém.</p>
+  </div>
+
+  <div class="files">
+    <div class="file">
+      <code>01-backend-do-agente.md</code>
+      <h3>A planta do servidor</h3>
+      <p>O ciclo do agente, as ferramentas, o sandbox onde ele escreve consultas sem poder alterar nada, as regras do prompt que impedem a invenção, o cérebro e o revisor.</p>
+      <p class="para">Entregue a um assistente de código junto com a descrição do seu sistema.</p>
+    </div>
+    <div class="file">
+      <code>02-frontend-do-agente.md</code>
+      <h3>A planta da interface</h3>
+      <p>Como receber a resposta ao vivo, como guardar a conversa sem perder nada quando a pessoa troca de tela, e a lista de erros que só aparecem depois de tudo rodando.</p>
+      <p class="para">Entregue depois do arquivo do servidor.</p>
+    </div>
+    <div class="file">
+      <code>skills/cerebro-grafo/SKILL.md</code>
+      <h3>A tela do cérebro</h3>
+      <p>Uma habilidade pronta que constrói o grafo no estilo Obsidian: memórias como bolinhas, ligações por assunto, nós que se arrastam e memórias novas que nascem animadas.</p>
+      <p class="para">Copie a pasta para <code style="background:none;padding:0">.claude/skills/</code> do seu projeto.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom:.6rem">Como usar</h3>
+  <ol class="passos">
+    <li>Escolha o assistente de código que você já usa.</li>
+    <li>Entregue a planta do servidor junto com uma descrição do seu sistema: quais telas existem, quais números aparecem nelas e quais tabelas há no banco.</li>
+    <li>Depois entregue a planta da interface.</li>
+    <li>Por último, instale a habilidade do cérebro e peça a tela do grafo.</li>
+  </ol>
+  <p>A ordem importa. A interface só faz sentido quando o servidor já responde, e o cérebro só faz sentido quando existe um agente para treinar.</p>
+
+  <footer>Material preparado a partir da Lya em produção no XMX Suporte, em 10/09/2026.</footer>
+</section>
