@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isoInstant, uuid } from "./common";
+import { isoInstant, uuid } from "./common.js";
 
 /**
  * GET /me — substitui `me_status`, as três leituras de `profiles` por

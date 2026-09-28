@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { isoDate, isoInstant, moneySchema, numberedPage, pageParams, uuid } from "./common";
-import { catalogRefSchema } from "./tickets";
+import { isoDate, isoInstant, moneySchema, numberedPage, pageParams, uuid } from "./common.js";
+import { catalogRefSchema } from "./tickets.js";
 
 /**
  * Reembolsos.
