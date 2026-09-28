@@ -1,0 +1,10 @@
+{
+  "name": "@xmx/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate:local": "psql -v ON_ERROR_STOP=1 -d $PGDATABASE -f migrations/0001_core.sql",
+    "test:local": "psql -v ON_ERROR_STOP=1 -d $PGDATABASE -f tests/0001_core.test.sql"
+  }
+}

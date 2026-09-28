@@ -1,0 +1,235 @@
+/**
+ * Testes de ponta a ponta da API.
+ *
+ * Batem nas rotas de verdade, contra um Postgres de verdade, com as
+ * migrations de `packages/db` aplicadas. Não há simulação de banco: o
+ * que falha aqui falharia em produção.
+ *
+ * Reporta o denominador — quantas verificações rodaram, não só quantas
+ * falharam. "Nenhuma falha" sem "sobre quantas" não prova nada.
+ */
+import { execFileSync } from "node:child_process";
+import { app } from "../app.ts";
+import { sql } from "../db.ts";
+
+const DB = process.env.PGDATABASE ?? "xmx_api_test";
+const AGENT = "11111111-1111-1111-1111-111111111111";
+const OUTRO = "22222222-2222-2222-2222-222222222222";
+const SUPER = "33333333-3333-3333-3333-333333333333";
+
+let passed = 0;
+let failed = 0;
+
+function check(label: string, ok: boolean, extra?: unknown) {
+  if (ok) {
+    passed++;
+    console.log(`  ok    ${label}`);
+  } else {
+    failed++;
+    console.log(`  FALHOU ${label}`, extra !== undefined ? JSON.stringify(extra) : "");
+  }
+}
+
+const psql = (args: string[]) => execFileSync("psql", args, { stdio: "pipe" });
+
+function resetDatabase() {
+  execFileSync("dropdb", ["--if-exists", DB], { stdio: "pipe" });
+  execFileSync("createdb", [DB], { stdio: "pipe" });
+  const root = new URL("../../../../packages/db/migrations/", import.meta.url).pathname;
+  for (const f of ["0001_core.sql", "0002_catalogos.sql"]) {
+    psql(["-q", "-d", DB, "-v", "ON_ERROR_STOP=1", "-f", root + f]);
+  }
+}
+
+async function seed() {
+  await sql`INSERT INTO core.users (id, email, full_name, role, legacy_id) VALUES
+    (${AGENT}::uuid, 'ana@xmx.test',  'Ana',   'agent',   'u-ana'),
+    (${OUTRO}::uuid, 'bia@xmx.test',  'Bia',   'agent',   'u-bia'),
+    (${SUPER}::uuid, 'sup@xmx.test',  'Super', 'agent',   'u-sup')`;
+  await sql`UPDATE core.users SET can_view_all_tickets = true, can_register_duplicate_emails = true
+             WHERE id = ${SUPER}::uuid`;
+  await sql`INSERT INTO core.products (name) VALUES ('Arialief'), ('Jellyrock')`;
+}
+
+const call = (path: string, init: RequestInit & { as?: string } = {}) =>
+  app.fetch(
+    new Request(`http://t/api/v1${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        ...(init.as === null ? {} : { authorization: `Bearer dev:${init.as ?? AGENT}` }),
+        ...(init.headers ?? {}),
+      },
+    }),
+  );
+
+const json = async (r: Response) => ({ status: r.status, body: await r.json() as any });
+
+async function main() {
+  console.log("preparando banco…");
+  resetDatabase();
+  await seed();
+
+  const cat = await json(await call("/catalogs"));
+  const platformCartpanda = cat.body.salesPlatforms.find((p: any) => p.code === "Cartpanda");
+  const platformNenhum = cat.body.salesPlatforms.find((p: any) => p.kind === "not_applicable");
+  const channelEmail = cat.body.channels.find((c: any) => c.code === "Email");
+  const produto = cat.body.products.find((p: any) => p.name === "Arialief");
+
+  console.log("\n— sessão e catálogo —");
+  const me = await json(await call("/me"));
+  check("GET /me devolve perfil e capacidades", me.status === 200 && me.body.role === "agent");
+  check("GET /me sem token é recusado", (await call("/me", { as: null as any })).status === 401);
+  check("catálogo traz 10 plataformas numa lista só", cat.body.salesPlatforms.length === 10);
+  check("PagAmerican está lá — faltava na tela de reembolso",
+    cat.body.salesPlatforms.some((p: any) => p.code === "PagAmerican"));
+
+  console.log("\n— criar atendimento —");
+  const criado = await json(
+    await call("/tickets", {
+      method: "POST",
+      body: JSON.stringify({
+        clientEmail: "  Cliente@Exemplo.COM ",
+        productId: produto.id,
+        platformId: platformCartpanda.id,
+        channelId: channelEmail.id,
+        contactReason: "duvida_de_uso",
+        hasTrackingCode: false,
+      }),
+    }),
+  );
+  check("POST /tickets cria e devolve 201", criado.status === 201, criado.body);
+  check("nasce como 'novo' com contagem 1",
+    criado.body.derivedStatus === "novo" && criado.body.interactionCount === 1);
+  check("o dia é o dia de São Paulo, não UTC",
+    criado.body.businessDay === new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+
+  const t1 = criado.body.id;
+
+  console.log("\n— validação é do servidor, não da tela —");
+  const semNota = await json(await call("/tickets", {
+    method: "POST",
+    body: JSON.stringify({ clientEmail: "x@y.com", productId: produto.id,
+      contactReason: "outro", hasTrackingCode: false }),
+  }));
+  check("motivo 'outro' sem nota é recusado", semNota.status === 400 &&
+    semNota.body.error.code === "VALIDATION_FAILED");
+
+  const semPedido = await json(await call("/tickets", {
+    method: "POST",
+    body: JSON.stringify({ clientEmail: "x@y.com", productId: produto.id,
+      contactReason: "reembolso", hasTrackingCode: false }),
+  }));
+  check("reembolso sem número de pedido é recusado — hoje só a tela exigia",
+    semPedido.status === 400);
+
+  console.log("\n— duplicidade de e-mail —");
+  const dupMesmo = await json(await call("/tickets", {
+    method: "POST",
+    body: JSON.stringify({ clientEmail: "cliente@exemplo.com", productId: produto.id,
+      contactReason: "duvida_de_uso", hasTrackingCode: false }),
+  }));
+  check("mesmo agente, e-mail já aberto: recusado (e ignora a caixa)",
+    dupMesmo.status === 409 && dupMesmo.body.error.code === "TICKET_DUPLICATE_SAME_AGENT", dupMesmo.body);
+
+  const dupOutro = await json(await call("/tickets", {
+    as: OUTRO,
+    method: "POST",
+    body: JSON.stringify({ clientEmail: "cliente@exemplo.com", productId: produto.id,
+      contactReason: "duvida_de_uso", hasTrackingCode: false }),
+  }));
+  check("outro agente: recusado com o dono no detalhe",
+    dupOutro.status === 409 && dupOutro.body.error.code === "TICKET_DUPLICATE_OTHER_AGENT" &&
+    dupOutro.body.error.details?.ownerName === "Ana", dupOutro.body);
+
+  const dupSuper = await json(await call("/tickets", {
+    as: SUPER,
+    method: "POST",
+    body: JSON.stringify({ clientEmail: "cliente@exemplo.com", productId: produto.id,
+      contactReason: "duvida_de_uso", hasTrackingCode: false }),
+  }));
+  check("quem tem a capacidade de duplicar consegue — a flag não é código morto",
+    dupSuper.status === 201, dupSuper.body);
+
+  console.log("\n— registrar interação —");
+  const i1 = await json(await call(`/tickets/${t1}/interactions`, {
+    method: "POST",
+    body: JSON.stringify({ status: "em_andamento", observation: "primeiro contato" }),
+  }));
+  check("POST interação devolve 201", i1.status === 201, i1.body);
+  check("o número da interação nasce no banco", i1.body.interaction.seq === 1);
+  check("o ticket volta já atualizado, sem a tela recalcular",
+    i1.body.ticket.derivedStatus === "em_andamento" && i1.body.ticket.lastInteractionAt !== null);
+
+  const i2 = await json(await call(`/tickets/${t1}/interactions`, {
+    method: "POST",
+    body: JSON.stringify({ status: "concluido" }),
+  }));
+  check("concluir muda o estado na mesma resposta",
+    i2.body.ticket.derivedStatus === "concluido" && i2.body.interaction.seq === 2, i2.body.ticket);
+  check("sem bloqueio das 18h — a decisão D1 removeu", i2.status === 201);
+
+  const alheio = await json(await call(`/tickets/${t1}/interactions`, {
+    as: OUTRO,
+    method: "POST",
+    body: JSON.stringify({ status: "em_andamento" }),
+  }));
+  check("agente sem permissão não escreve em ticket alheio",
+    alheio.status === 403 && alheio.body.error.code === "FORBIDDEN", alheio.body);
+
+  console.log("\n— leitura —");
+  const hist = await json(await call(`/tickets/${t1}/interactions`));
+  check("histórico sob demanda traz as duas interações", hist.body.items.length === 2);
+
+  const lista = await json(await call("/tickets?limit=2"));
+  check("lista devolve envelope com cursor",
+    Array.isArray(lista.body.items) && "nextCursor" in lista.body && "hasMore" in lista.body);
+  check("lista traz o estado pronto na linha",
+    lista.body.items.every((t: any) => typeof t.derivedStatus === "string" && typeof t.interactionCount === "number"));
+  check("agente comum só vê os próprios",
+    lista.body.items.every((t: any) => t.isMine === true));
+
+  const cursorInvalido = await json(await call("/tickets?cursor=lixo"));
+  check("cursor inválido é recusado, não devolve lista vazia",
+    cursorInvalido.status === 400 && cursorInvalido.body.error.code === "INVALID_CURSOR");
+
+  // Paginação: cria o suficiente para virar página.
+  for (let i = 0; i < 4; i++) {
+    await call("/tickets", {
+      method: "POST",
+      body: JSON.stringify({ clientEmail: `p${i}@exemplo.com`, productId: produto.id,
+        contactReason: "duvida_de_uso", hasTrackingCode: false }),
+    });
+  }
+  const p1 = await json(await call("/tickets?limit=2"));
+  const p2 = await json(await call(`/tickets?limit=2&cursor=${encodeURIComponent(p1.body.nextCursor)}`));
+  const ids1 = p1.body.items.map((t: any) => t.id);
+  const ids2 = p2.body.items.map((t: any) => t.id);
+  check("página 1 respeita o limite", ids1.length === 2);
+  check("página 2 não repete nada da página 1", ids2.every((id: string) => !ids1.includes(id)));
+
+  const lookup = await json(await call("/tickets/lookup?email=CLIENTE@exemplo.com"));
+  check("busca por e-mail ignora caixa e diz se o dono está disponível",
+    lookup.body.ticket !== null && typeof lookup.body.ownerIsAvailable === "boolean", lookup.body);
+
+  console.log("\n— quem vê tudo —");
+  const listaSuper = await json(await call("/tickets?limit=50", { as: SUPER }));
+  check("supervisor vê tickets de outros agentes",
+    listaSuper.body.items.some((t: any) => t.isMine === false), listaSuper.body.items.length);
+
+  console.log("\n— tamanho da resposta (G10.2) —");
+  const raw = await (await call("/tickets?limit=25")).text();
+  const kb = Buffer.byteLength(raw) / 1024;
+  check(`lista de 25 cabe no orçamento (${kb.toFixed(1)} kB < 50 kB)`, kb < 50);
+
+  console.log(`\n────────────────────────────────`);
+  console.log(`verificações: ${passed + failed}   ok: ${passed}   falhas: ${failed}`);
+  await sql.end();
+  process.exit(failed === 0 ? 0 : 1);
+}
+
+main().catch(async (e) => {
+  console.error("erro fatal na suíte:", e);
+  await sql.end().catch(() => {});
+  process.exit(1);
+});
