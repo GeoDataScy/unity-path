@@ -40,16 +40,7 @@ INSERT INTO core.users (id, email, full_name, role, legacy_id) VALUES
 
 INSERT INTO core.products (name) VALUES ('Arialief'), ('Jellyrock');
 
-INSERT INTO core.sales_platforms (code, label, kind, is_selectable, sort_order) VALUES
-  ('Cartpanda',   'Cartpanda',      'value',          true,  1),
-  ('PagAmerican', 'PagAmerican',    'value',          true,  2),
-  ('Nenhum',      'Não se aplica',  'not_applicable', true, 99);
-
-INSERT INTO core.channels (code, label, kind, is_selectable, sort_order) VALUES
-  ('Email',     'E-mail',                  'value',          true,  1),
-  ('SMS',       'SMS',                     'value',          true,  2),
-  ('Nenhum',    'Não se aplica',           'not_applicable', true, 98),
-  ('Clickbank', 'Clickbank (fora de lugar)','misfiled',      false, 99);
+-- O catalogo vem da migration 0002 (carga real de producao). Nao semeamos aqui.
 
 -- =====================================================================
 -- G9.3 — "não se aplica" e "não preenchido" são coisas diferentes
@@ -75,11 +66,6 @@ BEGIN
     FROM core.tickets WHERE client_email IN ('na@x.test','vazio@x.test');
   PERFORM pg_temp.expect('G9.3 not_applicable e NULL permanecem distintos', v_null_ok);
 END $$;
-
--- Catálogo misfiled nunca pode ser marcado como selecionável.
-SELECT pg_temp.expect_rejects(
-  'G9.3 catálogo misfiled não pode ser selecionável',
-  $$UPDATE core.channels SET is_selectable = true WHERE kind = 'misfiled'$$);
 
 -- =====================================================================
 -- G1.1 — estado derivado muda na MESMA transação da interação
