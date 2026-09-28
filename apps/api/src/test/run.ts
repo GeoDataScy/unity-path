@@ -36,7 +36,7 @@ function resetDatabase() {
   execFileSync("dropdb", ["--if-exists", DB], { stdio: "pipe" });
   execFileSync("createdb", [DB], { stdio: "pipe" });
   const root = new URL("../../../../packages/db/migrations/", import.meta.url).pathname;
-  for (const f of ["0001_core.sql", "0002_catalogos.sql"]) {
+  for (const f of ["0001_core.sql", "0002_catalogos.sql", "0004_reembolsos.sql", "0005_transferencias.sql"]) {
     psql(["-q", "-d", DB, "-v", "ON_ERROR_STOP=1", "-f", root + f]);
   }
 }
@@ -46,7 +46,8 @@ async function seed() {
     (${AGENT}::uuid, 'ana@xmx.test',  'Ana',   'agent',   'u-ana'),
     (${OUTRO}::uuid, 'bia@xmx.test',  'Bia',   'agent',   'u-bia'),
     (${SUPER}::uuid, 'sup@xmx.test',  'Super', 'agent',   'u-sup')`;
-  await sql`UPDATE core.users SET can_view_all_tickets = true, can_register_duplicate_emails = true
+  await sql`UPDATE core.users SET can_view_all_tickets = true, can_register_duplicate_emails = true,
+                                  can_approve_takeovers = true
              WHERE id = ${SUPER}::uuid`;
   await sql`INSERT INTO core.products (name) VALUES ('Arialief'), ('Jellyrock')`;
 }
@@ -216,6 +217,113 @@ async function main() {
   const listaSuper = await json(await call("/tickets?limit=50", { as: SUPER }));
   check("supervisor vê tickets de outros agentes",
     listaSuper.body.items.some((t: any) => t.isMine === false), listaSuper.body.items.length);
+
+  console.log("\n— reembolsos —");
+  const rNovo = await json(await call("/refunds", {
+    method: "POST",
+    body: JSON.stringify({ orderId: "PED-100", customerEmail: "reemb@x.test",
+      platformId: platformCartpanda.id, requestDate: "2026-09-20",
+      reason: "nao gostou", itemsReturned: false }),
+  }));
+  check("POST /refunds cria", rNovo.status === 201, rNovo.body);
+  check("nasce aberto, com dias em aberto calculados no servidor",
+    rNovo.body.status === "aberto" && typeof rNovo.body.daysOpen === "number");
+  const rid = rNovo.body.id;
+
+  const rBaixaAntes = await json(await call(`/refunds/${rid}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ completionDate: "2026-09-18", amount: 50, percent: 80,
+      reason: "ok", itemsReturned: false }),
+  }));
+  check("baixa anterior a solicitacao e recusada — hoje so a gestora era barrada",
+    rBaixaAntes.status === 422 &&
+    rBaixaAntes.body.error.code === "REFUND_COMPLETION_BEFORE_REQUEST", rBaixaAntes.body);
+
+  const rBaixa = await json(await call(`/refunds/${rid}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ completionDate: "2026-09-22", amount: 99.9, percent: 80,
+      reason: "reembolso integral", itemsReturned: false }),
+  }));
+  check("baixa valida passa e o status vira concluido",
+    rBaixa.status === 200 && rBaixa.body.status === "concluido", rBaixa.body);
+  check("o valor volta com a moeda junto, nunca numero solto",
+    rBaixa.body.value?.currency === "USD" && rBaixa.body.value?.amount === 99.9, rBaixa.body.value);
+  check("o percentual e numero, nao texto", rBaixa.body.percent === 80);
+
+  const rEv = await json(await call(`/refunds/${rid}/events`));
+  check("toda acao em dinheiro deixa rastro (criacao + baixa)",
+    rEv.body.items.length >= 2 && rEv.body.items.some((e: any) => e.kind === "completed"),
+    rEv.body.items.map((e: any) => e.kind));
+
+  const rLista = await json(await call("/refunds?limit=10&page=1"));
+  check("lista traz pagina numerada com total (decisao D7)",
+    typeof rLista.body.totalCount === "number" && typeof rLista.body.pageCount === "number");
+  check("e a soma do periodo inteiro, nao so da pagina",
+    rLista.body.totalValue?.currency === "USD", rLista.body.totalValue);
+
+  console.log("\n— transferencias —");
+  const tOutro = await json(await call("/tickets", {
+    as: OUTRO, method: "POST",
+    body: JSON.stringify({ clientEmail: "dono-outro@x.test", productId: produto.id,
+      contactReason: "duvida_de_uso", hasTrackingCode: false }),
+  }));
+  const ticketDeOutro = tOutro.body.id;
+
+  const trf = await json(await call("/transfers", {
+    method: "POST",
+    body: JSON.stringify({ ticketId: ticketDeOutro, message: "continua?" }),
+  }));
+  check("POST /transfers cria pedido para o dono original", trf.status === 201, trf.body);
+
+  const trfDup = await json(await call("/transfers", {
+    method: "POST", body: JSON.stringify({ ticketId: ticketDeOutro }),
+  }));
+  check("segundo pedido pendente e recusado pela constraint, nao pelo cliente",
+    trfDup.status === 409 && trfDup.body.error.code === "TRANSFER_ALREADY_PENDING", trfDup.body);
+
+  const nOutro = await json(await call("/notifications", { as: OUTRO }));
+  check("o dono recebeu notificacao — sem sino perguntando a cada 30s",
+    nOutro.body.unseenCount >= 1 &&
+    nOutro.body.items.some((n: any) => n.kind === "transfer_requested"), nOutro.body);
+
+  const trfAlheio = await json(await call(`/transfers/${trf.body.id}/accept`, { method: "POST" }));
+  check("quem nao e o destinatario nao responde pelo pedido", trfAlheio.status === 404);
+
+  const trfOk = await json(await call(`/transfers/${trf.body.id}/accept`, {
+    as: OUTRO, method: "POST", body: JSON.stringify({ responseNote: "sigo eu" }),
+  }));
+  check("o destinatario aceita", trfOk.status === 200 && trfOk.body.status === "accepted", trfOk.body);
+
+  console.log("\n— tomada de ticket —");
+  const tkv = await json(await call("/takeovers", {
+    method: "POST",
+    body: JSON.stringify({ ticketId: ticketDeOutro, note: "dono de folga" }),
+  }));
+  check("POST /takeovers cria pedido", tkv.status === 201, tkv.body);
+
+  const tkvSemPermissao = await json(await call(`/takeovers/${tkv.body.id}/approve`, { method: "POST" }));
+  check("agente comum nao aprova tomada",
+    tkvSemPermissao.status === 403 &&
+    tkvSemPermissao.body.error.code === "MISSING_CAPABILITY", tkvSemPermissao.body);
+
+  const antes = await json(await call(`/tickets/${ticketDeOutro}`, { as: SUPER }));
+  const tkvOk = await json(await call(`/takeovers/${tkv.body.id}/approve`, {
+    as: SUPER, method: "POST", body: JSON.stringify({ note: "aprovado" }),
+  }));
+  check("quem tem a capacidade aprova", tkvOk.status === 200, tkvOk.body);
+
+  const depois = await json(await call(`/tickets/${ticketDeOutro}`, { as: SUPER }));
+  check("aprovar MUDA o dono do ticket — transferencia nao muda, tomada muda",
+    antes.body.ownerId !== depois.body.ownerId && depois.body.ownerId === AGENT,
+    { antes: antes.body.ownerId, depois: depois.body.ownerId });
+
+  const nMe = await json(await call("/notifications"));
+  check("quem pediu foi avisado da aprovacao",
+    nMe.body.items.some((n: any) => n.kind === "takeover_approved"));
+
+  const primeira = nMe.body.items[0];
+  const visto = await json(await call(`/notifications/${primeira.id}/seen`, { method: "POST" }));
+  check("marcar como vista funciona", visto.body.ok === true);
 
   console.log("\n— verificação de token (G3.1) —");
   const forjado = "eyJhbGciOiJFUzI1NiJ9." +

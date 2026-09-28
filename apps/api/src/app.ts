@@ -1,8 +1,15 @@
 import {
+  completeRefundBody,
   createInteractionBody,
+  createRefundBody,
+  createTakeoverBody,
   createTicketBody,
+  createTransferBody,
+  listRefundsQuery,
   listTicketsQuery,
   lookupTicketQuery,
+  respondTakeoverBody,
+  respondTransferBody,
   type MeResponse,
 } from "@xmx/contract";
 import { Hono } from "hono";
@@ -11,7 +18,9 @@ import { ApiError } from "./lib/errors.ts";
 import { decodeCursor } from "./lib/cursor.ts";
 import { requireAuth } from "./middleware/auth.ts";
 import * as repo from "./modules/tickets/repository.ts";
+import * as refunds from "./modules/refunds/service.ts";
 import * as tickets from "./modules/tickets/service.ts";
+import * as transfers from "./modules/transfers/service.ts";
 
 export const app = new Hono().basePath("/api/v1");
 
@@ -47,6 +56,15 @@ app.get("/health", (c) => c.json({ ok: true }));
 app.use("/me", requireAuth());
 app.use("/tickets", requireAuth());
 app.use("/tickets/*", requireAuth());
+app.use("/catalogs", requireAuth());
+app.use("/refunds", requireAuth());
+app.use("/refunds/*", requireAuth());
+app.use("/transfers", requireAuth());
+app.use("/transfers/*", requireAuth());
+app.use("/takeovers", requireAuth());
+app.use("/takeovers/*", requireAuth());
+app.use("/notifications", requireAuth());
+app.use("/notifications/*", requireAuth());
 
 /**
  * GET /me — substitui `me_status`, as três leituras de perfil por login
@@ -137,8 +155,129 @@ app.post("/tickets/:id/interactions", async (c) => {
   return c.json(result, 201);
 });
 
+
+// ---------------------------------------------------------------------
+// Reembolsos — lista fria, paginada por número, com total (decisão D7)
+// ---------------------------------------------------------------------
+
+app.get("/refunds", async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(listRefundsQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => refunds.listRefunds(tx, caller, q)));
+});
+
+app.post("/refunds", async (c) => {
+  const caller = c.get("caller");
+  const body = parse<any>(createRefundBody, await c.req.json());
+  return c.json(await withUser(caller.id, (tx) => refunds.createRefund(tx, caller, body)), 201);
+});
+
+app.get("/refunds/:id", async (c) => {
+  const caller = c.get("caller");
+  const r = await withUser(caller.id, (tx) => refunds.getRefund(tx, c.req.param("id")));
+  if (!r) throw new ApiError("REFUND_NOT_FOUND", "reembolso não encontrado");
+  return c.json(r);
+});
+
+app.post("/refunds/:id/pickup", async (c) => {
+  const caller = c.get("caller");
+  return c.json(await withUser(caller.id, (tx) => refunds.pickUpRefund(tx, caller, c.req.param("id"))));
+});
+
+/** Uma rota só para dar baixa, com a validação que hoje só a gestora enfrenta. */
+app.post("/refunds/:id/complete", async (c) => {
+  const caller = c.get("caller");
+  const body = parse<any>(completeRefundBody, await c.req.json());
+  return c.json(
+    await withUser(caller.id, (tx) => refunds.completeRefund(tx, caller, c.req.param("id"), body)),
+  );
+});
+
+app.get("/refunds/:id/events", async (c) => {
+  const caller = c.get("caller");
+  const items = await withUser(caller.id, (tx) => refunds.listRefundEvents(tx, c.req.param("id")));
+  return c.json({ items });
+});
+
+// ---------------------------------------------------------------------
+// Transferências e tomada de ticket
+// ---------------------------------------------------------------------
+
+app.get("/transfers", async (c) => {
+  const caller = c.get("caller");
+  return c.json({ items: await withUser(caller.id, (tx) => transfers.listTransfers(tx, caller)) });
+});
+
+app.post("/transfers", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(createTransferBody, await c.req.json());
+  return c.json(
+    await withUser(caller.id, (tx) => transfers.createTransfer(tx, caller, b.ticketId, b.message ?? null)),
+    201,
+  );
+});
+
+app.post("/transfers/:id/accept", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(respondTransferBody, await c.req.json().catch(() => ({})));
+  return c.json(await withUser(caller.id, (tx) =>
+    transfers.respondTransfer(tx, caller, c.req.param("id"), true, b.responseNote ?? null)));
+});
+
+app.post("/transfers/:id/decline", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(respondTransferBody, await c.req.json().catch(() => ({})));
+  return c.json(await withUser(caller.id, (tx) =>
+    transfers.respondTransfer(tx, caller, c.req.param("id"), false, b.responseNote ?? null)));
+});
+
+app.get("/takeovers", async (c) => {
+  const caller = c.get("caller");
+  return c.json({ items: await withUser(caller.id, (tx) => transfers.listTakeovers(tx, caller)) });
+});
+
+app.post("/takeovers", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(createTakeoverBody, await c.req.json());
+  return c.json(
+    await withUser(caller.id, (tx) => transfers.createTakeover(tx, caller, b.ticketId, b.note ?? null)),
+    201,
+  );
+});
+
+/** Aprovar é onde o dono do ticket muda de verdade. */
+app.post("/takeovers/:id/approve", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(respondTakeoverBody, await c.req.json().catch(() => ({})));
+  return c.json(await withUser(caller.id, (tx) =>
+    transfers.respondTakeover(tx, caller, c.req.param("id"), true, b.note ?? null)));
+});
+
+app.post("/takeovers/:id/reject", async (c) => {
+  const caller = c.get("caller");
+  const b = parse<any>(respondTakeoverBody, await c.req.json().catch(() => ({})));
+  return c.json(await withUser(caller.id, (tx) =>
+    transfers.respondTakeover(tx, caller, c.req.param("id"), false, b.note ?? null)));
+});
+
+// ---------------------------------------------------------------------
+// Notificações — um sino, uma tabela. Substitui três consultas em laço.
+// ---------------------------------------------------------------------
+
+app.get("/notifications", async (c) => {
+  const caller = c.get("caller");
+  return c.json(await withUser(caller.id, (tx) => transfers.listNotifications(tx, caller)));
+});
+
+app.post("/notifications/:id/seen", async (c) => {
+  const caller = c.get("caller");
+  const ok = await withUser(caller.id, (tx) =>
+    transfers.markNotificationSeen(tx, caller, Number(c.req.param("id"))));
+  return c.json({ ok });
+});
+
 /** Catálogos: uma fonte só, servindo as duas telas. */
-app.get("/catalogs", requireAuth(), async (c) => {
+app.get("/catalogs", async (c) => {
   const caller = c.get("caller");
   return c.json(
     await withUser(caller.id, async (tx) => ({
