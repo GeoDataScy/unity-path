@@ -41,3 +41,7 @@ supabase/.temp/
 /ana_vidotti/
 /novos_atendimentos_modelo/
 /planilhas/
+
+# monorepo v2
+apps/api/node_modules
+packages/*/node_modules
