@@ -130,3 +130,83 @@ INSERT INTO public.service_follow_ups
   -- Órfã: aponta para ticket que virou rejeito.
   ('33333333-0000-4000-8000-000000000005','22222222-0000-4000-8000-000000000001',
    'aaaaaaaa-0000-4000-8000-000000000001',1,'em_andamento','2026-01-02 10:00:00-03','orfa');
+
+-- =====================================================================
+-- Reembolsos, transferências e tomadas — casos medidos em produção
+-- =====================================================================
+CREATE TABLE public.refunds (
+  id text PRIMARY KEY, user_id text, order_id text, customer_email text,
+  sales_platform text, request_date text, completion_date text, reason text,
+  refund_type text, refund_value double precision, items_returned boolean DEFAULT false,
+  created_at timestamp, product text, channel text, service_id text,
+  created_from_service boolean DEFAULT false, picked_up_at timestamptz, picked_up_by text
+);
+CREATE TABLE public.refund_reason_classifications (
+  refund_id text PRIMARY KEY, original_reason text, category text,
+  classification_method text, classified_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE TABLE public.refund_manager_completions (
+  id uuid PRIMARY KEY, refund_id text, refund_owner_id text, completed_by uuid,
+  completion_date text, refund_value double precision, refund_type text, reason text,
+  items_returned boolean DEFAULT false, days_overdue integer, created_at timestamptz DEFAULT now()
+);
+CREATE TABLE public.ticket_transfers (
+  id uuid PRIMARY KEY, service_id text, from_user_id text, to_user_id text,
+  status text, message text, response_note text, created_at timestamptz DEFAULT now(),
+  responded_at timestamptz, recipient_seen_at timestamptz, requester_seen_at timestamptz,
+  assigned_by_manager_id text
+);
+CREATE TABLE public.ticket_takeover_requests (
+  id uuid PRIMARY KEY, service_id text, requester_id text, owner_id text,
+  status text, note text, created_at timestamptz DEFAULT now(),
+  responded_at timestamptz, responded_by text
+);
+
+INSERT INTO public.refunds
+ (id,user_id,order_id,customer_email,sales_platform,request_date,completion_date,
+  reason,refund_type,refund_value,created_at,product,channel,service_id) VALUES
+ -- Normal, com baixa.
+ ('44444444-0000-4000-8000-000000000001','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-1','cli1@x.test','Cartpanda','2026-09-10','2026-09-12','nao gostou','80%',
+  99.90,'2026-09-10 12:00:00','Arialief','Email','11111111-0000-4000-8000-000000000001'),
+ -- Percentual com ZERO A ESQUERDA: quebra ordenacao por texto.
+ ('44444444-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-2','cli2@x.test','Buygoods','2026-09-11',NULL,NULL,'05%',NULL,
+  '2026-09-11 12:00:00','Arialief','SMS',NULL),
+ -- SEM percentual: e o maior grupo do legado, 1.242 linhas.
+ ('44444444-0000-4000-8000-000000000003','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-3','cli3@x.test','ClickBank','2026-09-12',NULL,NULL,NULL,NULL,
+  '2026-09-12 12:00:00','Arialief','Email',NULL),
+ -- Baixa ANTERIOR a solicitacao: 39 linhas no legado. Tem de atravessar.
+ ('44444444-0000-4000-8000-000000000004','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-4','cli4@x.test','Cartpanda','2026-09-20','2026-09-18','erro','100%',50.00,
+  '2026-09-20 12:00:00','Arialief','Email',NULL),
+ -- Valor alto: 88 linhas acima de 2.000 no legado. Dolar confirmado.
+ ('44444444-0000-4000-8000-000000000005','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-5','cli5@x.test','Hotmart','2026-09-21',NULL,NULL,'100%',3500.55,
+  '2026-09-21 12:00:00','Arialief','Email',NULL),
+ -- Data ilegivel: texto livre ate maio/2026.
+ ('44444444-0000-4000-8000-000000000006','aaaaaaaa-0000-4000-8000-000000000001',
+  'PED-6','cli6@x.test','Cartpanda','quinta-feira',NULL,NULL,'50%',10.00,
+  '2026-04-01 12:00:00','Arialief','Email',NULL);
+
+INSERT INTO public.refund_reason_classifications (refund_id,original_reason,category,classification_method)
+ VALUES ('44444444-0000-4000-8000-000000000001','nao gostou','insatisfacao','auto');
+
+INSERT INTO public.refund_manager_completions
+ (id,refund_id,refund_owner_id,completed_by,completion_date,refund_value,refund_type,reason,days_overdue)
+ VALUES ('55555555-0000-4000-8000-000000000001','44444444-0000-4000-8000-000000000001',
+   'aaaaaaaa-0000-4000-8000-000000000001','aaaaaaaa-0000-4000-8000-000000000002',
+   '2026-09-12',99.90,'80%','nao gostou',2);
+
+INSERT INTO public.ticket_transfers (id,service_id,from_user_id,to_user_id,status,message) VALUES
+ ('66666666-0000-4000-8000-000000000001','11111111-0000-4000-8000-000000000001',
+  'aaaaaaaa-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-000000000001','pending','continua?'),
+ -- Orfa: aponta para ticket que virou rejeito.
+ ('66666666-0000-4000-8000-000000000002','22222222-0000-4000-8000-000000000001',
+  'aaaaaaaa-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-000000000001','pending','orfa');
+
+INSERT INTO public.ticket_takeover_requests (id,service_id,requester_id,owner_id,status,note) VALUES
+ ('77777777-0000-4000-8000-000000000001','11111111-0000-4000-8000-000000000002',
+  'aaaaaaaa-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-000000000001','pending','dono de folga');
