@@ -110,4 +110,5 @@ export const REFUND_PRODUCTS = [
   "Cardio Honey",
   "Gut Active",
   "Military Honey",
+  "Golden Nerves",
 ] as const;
