@@ -1,6 +1,7 @@
 import type { Capability, Role } from "@xmx/contract";
 import type { MiddlewareHandler } from "hono";
 import { sql } from "../db.ts";
+import { verifyAccessToken } from "./jwt.ts";
 import { ApiError } from "../lib/errors.ts";
 
 /**
@@ -86,12 +87,12 @@ export const requireAuth = (): MiddlewareHandler => async (c, next) => {
 
   let userId: string;
   if (token.startsWith("dev:")) {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.ALLOW_DEV_TOKENS !== "1") {
       throw new ApiError("UNAUTHENTICATED", "token de desenvolvimento recusado em produção");
     }
     userId = token.slice(4);
   } else {
-    userId = await verifySupabaseJwt(token);
+    userId = (await verifyAccessToken(token)).sub;
   }
 
   c.set("caller", await loadProfile(userId));
@@ -107,25 +108,3 @@ export const requireCapability =
     }
     await next();
   };
-
-/**
- * Validação do JWT do Supabase.
- *
- * TODO: trocar pela verificação de assinatura via JWKS antes de qualquer
- * uso real. Hoje só lê o `sub`, o que NÃO é seguro e por isso está
- * barrado fora de desenvolvimento.
- */
-async function verifySupabaseJwt(token: string): Promise<string> {
-  if (process.env.NODE_ENV === "production") {
-    throw new ApiError("INTERNAL", "verificação de JWT ainda não implementada");
-  }
-  const [, payload] = token.split(".");
-  if (!payload) throw new ApiError("UNAUTHENTICATED", "token malformado");
-  try {
-    const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (typeof claims?.sub !== "string") throw new Error("sem sub");
-    return claims.sub;
-  } catch {
-    throw new ApiError("UNAUTHENTICATED", "token inválido");
-  }
-}
