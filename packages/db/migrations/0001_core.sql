@@ -196,12 +196,15 @@ CREATE TABLE core.tickets (
   )
 );
 
--- Regra que hoje só a interface exige. Entra NOT VALID porque existem
--- 4.985 tickets antigos de reembolso sem número de pedido: passa a valer
--- para toda escrita nova sem rejeitar o histórico.
-ALTER TABLE core.tickets
-  ADD CONSTRAINT tickets_refund_requires_order_id
-  CHECK (contact_reason <> 'reembolso' OR order_id IS NOT NULL) NOT VALID;
+-- A regra "reembolso exige número de pedido" NÃO é CHECK.
+--
+-- `NOT VALID` pula a validação das linhas que já existem, mas continua
+-- barrando INSERT — e o backfill é INSERT. Os 4.985 tickets antigos de
+-- reembolso sem número de pedido seriam rejeitados na travessia.
+--
+-- A regra vive no gatilho de 0002, que a aplica só a linha sem
+-- `legacy_id`, ou seja só a registro novo. É a mesma decisão do
+-- catálogo: o passado entra como está, o futuro obedece.
 
 -- Lista quente do agente: cursor keyset por (created_at, id).
 CREATE INDEX tickets_owner_created_idx

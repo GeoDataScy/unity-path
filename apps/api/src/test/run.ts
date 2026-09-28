@@ -217,6 +217,23 @@ async function main() {
   check("supervisor vê tickets de outros agentes",
     listaSuper.body.items.some((t: any) => t.isMine === false), listaSuper.body.items.length);
 
+  console.log("\n— verificação de token (G3.1) —");
+  const forjado = "eyJhbGciOiJFUzI1NiJ9." +
+    Buffer.from(JSON.stringify({ sub: AGENT, exp: 9999999999 })).toString("base64url") +
+    ".assinaturaFalsa";
+  const r1 = await app.fetch(new Request("http://t/api/v1/me", {
+    headers: { authorization: `Bearer ${forjado}` },
+  }));
+  check("token forjado é recusado (assinatura conferida)", r1.status === 401, await r1.text());
+
+  const semDev = process.env.ALLOW_DEV_TOKENS;
+  delete process.env.ALLOW_DEV_TOKENS;
+  const r2 = await app.fetch(new Request("http://t/api/v1/me", {
+    headers: { authorization: `Bearer dev:${AGENT}` },
+  }));
+  check("atalho de desenvolvimento é recusado sem a variável explícita", r2.status === 401);
+  if (semDev !== undefined) process.env.ALLOW_DEV_TOKENS = semDev;
+
   console.log("\n— tamanho da resposta (G10.2) —");
   const raw = await (await call("/tickets?limit=25")).text();
   const kb = Buffer.byteLength(raw) / 1024;

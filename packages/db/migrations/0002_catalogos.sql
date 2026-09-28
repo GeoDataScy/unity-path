@@ -199,12 +199,19 @@ BEGIN
     END IF;
   END IF;
 
+  -- Reembolso exige numero do pedido. Hoje so a interface exige, e ha
+  -- 4.985 tickets antigos sem ele — que entram pela travessia acima.
+  IF NEW.contact_reason = 'reembolso' AND nullif(btrim(coalesce(NEW.order_id, '')), '') IS NULL THEN
+    RAISE EXCEPTION 'reembolso exige numero do pedido'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
 
 CREATE TRIGGER tickets_enforce_selectable_catalog
-BEFORE INSERT OR UPDATE OF platform_id, channel_id ON core.tickets
+BEFORE INSERT OR UPDATE OF platform_id, channel_id, contact_reason, order_id ON core.tickets
 FOR EACH ROW EXECUTE FUNCTION core.enforce_selectable_catalog();
 
 -- ---------------------------------------------------------------------
