@@ -27,6 +27,10 @@ export async function withUser<T>(
   fn: (tx: postgres.TransactionSql) => Promise<T>,
 ): Promise<T> {
   return sql.begin(async (tx) => {
+    // `SET LOCAL ROLE` cai no commit. A conexao e a do pooler (sem
+    // credencial nova), mas o que roda dentro da transacao tem os
+    // privilegios restritos de `api_request` — e nao os do dono do banco.
+    await tx`SET LOCAL ROLE api_request`;
     await tx`SELECT set_config('app.user_id', ${userId}, true)`;
     return fn(tx);
   }) as Promise<T>;
