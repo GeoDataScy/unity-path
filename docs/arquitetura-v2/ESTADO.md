@@ -13,8 +13,8 @@
 **Última verificação:** 30/09/2026, conferida contra `origin/main`, contra o
 banco de produção e contra `https://xmxapp.vercel.app`.
 
-> **A API está no ar.** `GET /api/v1/health` responde `{"ok":true}` desde
-> 30/09/2026, depois de quatro correções (#94, #95, #97, #99).
+> **A API está no ar E LENDO O BANCO.** Desde 30/09/2026:
+> `/api/v1/health` → `{"ok":true}` e `/api/v1/health/db` → `{"ok":true,"db":"up","ms":116}`.
 
 ---
 
@@ -22,9 +22,9 @@ banco de produção e contra `https://xmxapp.vercel.app`.
 
 Os dados já atravessaram: 103.057 atendimentos e 60.030 interações vivem no
 schema `core` em produção, ao lado do legado intocado, com reconciliação
-assinada. **A API está no ar e autentica corretamente**, com 25 rotas. Faltam
-duas coisas: aplicar duas migrations no banco e pôr a variável de conexão na
-Vercel — as duas na seção 5.
+assinada. **A API está no ar, autentica e lê o banco**, com 26 rotas. A fundação está
+completa. O próximo trabalho é de produto, não de infraestrutura: ligar a tela
+de Atendimentos e construir os módulos restantes (seção 5, passos 4 e 5).
 
 ---
 
@@ -37,21 +37,26 @@ Vercel — as duas na seção 5.
 | Schema `core` (migrations 0001 e 0002) | 28/09 | 11 objetos presentes no catálogo |
 | Travessia dos dados (backfill 0003) | 28/09 | 13 de 13 verificações de reconciliação |
 | **API no ar e autenticando** (#99) | 30/09 | ver a tabela de comportamento abaixo |
+| **Migrations 0004 e 0005 + travessia** | 30/09 | 6 tabelas criadas; contas fechando nos 3 módulos |
+| **Conexão com o banco em produção** (#102) | 30/09 | `/health/db` → `{"ok":true,"db":"up","ms":116}` |
 
 ### Comportamento da API em produção, conferido em 30/09
 
 | Requisição | Resposta |
 |---|---|
 | `GET /api/v1/health` | `{"ok":true}` |
+| `GET /api/v1/health/db` | `{"ok":true,"db":"up","ms":116}` — estável em 3 chamadas |
 | `GET /api/v1/me` sem token | `401 UNAUTHENTICATED` |
 | `GET /api/v1/tickets` sem token | `401` |
 | Token **forjado** | `401` — "assinatura inválida" |
 | Atalho de desenvolvimento | `401` — "recusado em produção" |
 | Rota inexistente | `404` |
 
-A verificação de assinatura funciona contra as chaves reais do Supabase, e o
-atalho de desenvolvimento está barrado. As rotas que tocam o banco ainda
-respondem erro, por falta da variável de conexão.
+A verificação de assinatura funciona contra as chaves reais do Supabase, o
+atalho de desenvolvimento está barrado, **e a conexão com o banco está de pé**.
+
+Volume servido: 104.567 atendimentos, 61.144 interações, 5.903 reembolsos,
+6.246 transferências, 2.649 tomadas de ticket.
 
 ### Números da travessia, medidos em produção
 
@@ -86,10 +91,10 @@ core.refund_events              core.notifications
 Consequência: os módulos de reembolso, transferência e notificação existem em
 código e **não têm onde gravar**. Aplicar é o passo 2 da seção 5.
 
-### 3.2 A API responde, mas sem banco `PARCIAL`
+### 3.2 Nada — a infraestrutura está completa `RESOLVIDO 30/09`
 
-A função carrega e autentica. O que falta é `DATABASE_URL` (passo 3 da
-seção 5): sem ela, toda rota que consulta o banco devolve erro.
+Função no ar, autenticando e lendo o banco. O que falta daqui para a frente é
+produto: ligar as telas e construir os módulos restantes.
 
 ---
 
@@ -155,7 +160,7 @@ Reconciliar depois, e o critério é aritmético:
 linhas no legado = linhas em core + linhas em migration_rejects
 ```
 
-### Passo 3 · Variável de ambiente na Vercel `BLOQUEADO NO DONO`
+### Passo 3 · Variável de ambiente na Vercel `CONCLUIDO 30/09`
 
 > Tarefa pronta para delegar, com a navegação tela a tela:
 > **`TAREFA-vercel-variaveis.md`**.
@@ -353,6 +358,8 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 28/09 | Roteamento e dependências da função (#94, #95) | função passou a ser invocada |
 | 30/09 | Contrato compilado (#97) | `vercel build` local prova que `packages/contract/dist` entra na função |
 | 30/09 | **API no ar e autenticando (#99)** | `/health` → `{"ok":true}`; token forjado → 401 "assinatura inválida"; atalho de dev → 401 |
-| — | **Migrations 0004 e 0005 em produção** | aguardando aplicação — passo 2 |
-| — | **Variável de ambiente na Vercel** | aguardando o dono — passo 3 |
-| — | Tela de Atendimentos ligada na API | não iniciado |
+| 30/09 | Migrations 0004/0005 e travessia dos 3 módulos | contas fechando: refunds 5.905=5.903+2, transfers 6.274=6.246+28, takeovers 2.677=2.649+28 |
+| 30/09 | Sincronizador de edições (#101) | 13/13 na reconciliação com 4 edições simuladas |
+| 30/09 | Rota de prontidão do banco (#102) | 503 limpo com banco inalcançável, sem vazar conexão |
+| 30/09 | **Variáveis na Vercel e conexão de pé** | `/health/db` → `{"ok":true,"db":"up","ms":116}` |
+| — | Tela de Atendimentos ligada na API | **próximo** — passo 4 |
