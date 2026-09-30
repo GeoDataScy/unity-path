@@ -1,4 +1,4 @@
-import { fail } from "./errors.ts";
+import { fail } from "./errors.js";
 
 /**
  * Cursor keyset opaco.

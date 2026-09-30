@@ -5,9 +5,9 @@ import type {
   Refund,
   RefundEvent,
 } from "@xmx/contract";
-import type { Tx } from "../../db.ts";
-import { fail } from "../../lib/errors.ts";
-import type { Caller } from "../../middleware/auth.ts";
+import type { Tx } from "../../db.js";
+import { fail } from "../../lib/errors.js";
+import type { Caller } from "../../middleware/auth.js";
 
 /**
  * Reembolsos.

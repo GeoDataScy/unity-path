@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
-import { ApiError } from "../lib/errors.ts";
+import { ApiError } from "../lib/errors.js";
 
 /**
  * Verificação do token do Supabase Auth.

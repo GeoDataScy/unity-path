@@ -4,10 +4,10 @@ import type {
   Interaction,
   TicketListItem,
 } from "@xmx/contract";
-import type { Tx } from "../../db.ts";
-import { fail } from "../../lib/errors.ts";
-import { getTicket } from "./repository.ts";
-import type { Caller } from "../../middleware/auth.ts";
+import type { Tx } from "../../db.js";
+import { fail } from "../../lib/errors.js";
+import { getTicket } from "./repository.js";
+import type { Caller } from "../../middleware/auth.js";
 
 /**
  * Regras de negócio de atendimento.

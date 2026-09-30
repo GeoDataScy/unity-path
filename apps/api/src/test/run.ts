@@ -9,8 +9,8 @@
  * falharam. "Nenhuma falha" sem "sobre quantas" não prova nada.
  */
 import { execFileSync } from "node:child_process";
-import { app } from "../app.ts";
-import { sql } from "../db.ts";
+import { app } from "../app.js";
+import { sql } from "../db.js";
 
 const DB = process.env.PGDATABASE ?? "xmx_api_test";
 const AGENT = "11111111-1111-1111-1111-111111111111";

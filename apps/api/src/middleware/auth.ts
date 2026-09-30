@@ -1,8 +1,8 @@
 import type { Capability, Role } from "@xmx/contract";
 import type { MiddlewareHandler } from "hono";
-import { sql } from "../db.ts";
-import { verifyAccessToken } from "./jwt.ts";
-import { ApiError } from "../lib/errors.ts";
+import { sql } from "../db.js";
+import { verifyAccessToken } from "./jwt.js";
+import { ApiError } from "../lib/errors.js";
 
 /**
  * Identidade de quem chamou.
