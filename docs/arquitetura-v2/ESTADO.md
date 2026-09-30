@@ -13,15 +13,18 @@
 **Última verificação:** 30/09/2026, conferida contra `origin/main`, contra o
 banco de produção e contra `https://xmxapp.vercel.app`.
 
+> **A API está no ar.** `GET /api/v1/health` responde `{"ok":true}` desde
+> 30/09/2026, depois de quatro correções (#94, #95, #97, #99).
+
 ---
 
 ## 1. Resumo em três linhas
 
 Os dados já atravessaram: 103.057 atendimentos e 60.030 interações vivem no
 schema `core` em produção, ao lado do legado intocado, com reconciliação
-assinada. A API existe em código, com 25 rotas e 50 verificações passando
-localmente, **mas não responde em produção**. Faltam três coisas, todas
-pequenas e listadas na seção 5.
+assinada. **A API está no ar e autentica corretamente**, com 25 rotas. Faltam
+duas coisas: aplicar duas migrations no banco e pôr a variável de conexão na
+Vercel — as duas na seção 5.
 
 ---
 
@@ -33,6 +36,22 @@ pequenas e listadas na seção 5.
 | Moeda dos reembolsos em dólar (PR #91) | 28/09 | varredura dos 160 chunks do bundle: `Valor (R$)` em nenhum, `currency:"BRL"` em nenhum |
 | Schema `core` (migrations 0001 e 0002) | 28/09 | 11 objetos presentes no catálogo |
 | Travessia dos dados (backfill 0003) | 28/09 | 13 de 13 verificações de reconciliação |
+| **API no ar e autenticando** (#99) | 30/09 | ver a tabela de comportamento abaixo |
+
+### Comportamento da API em produção, conferido em 30/09
+
+| Requisição | Resposta |
+|---|---|
+| `GET /api/v1/health` | `{"ok":true}` |
+| `GET /api/v1/me` sem token | `401 UNAUTHENTICATED` |
+| `GET /api/v1/tickets` sem token | `401` |
+| Token **forjado** | `401` — "assinatura inválida" |
+| Atalho de desenvolvimento | `401` — "recusado em produção" |
+| Rota inexistente | `404` |
+
+A verificação de assinatura funciona contra as chaves reais do Supabase, e o
+atalho de desenvolvimento está barrado. As rotas que tocam o banco ainda
+respondem erro, por falta da variável de conexão.
 
 ### Números da travessia, medidos em produção
 
@@ -67,36 +86,42 @@ core.refund_events              core.notifications
 Consequência: os módulos de reembolso, transferência e notificação existem em
 código e **não têm onde gravar**. Aplicar é o passo 2 da seção 5.
 
-### 3.2 A API não responde `PENDENTE`
+### 3.2 A API responde, mas sem banco `PARCIAL`
 
-```
-GET https://xmxapp.vercel.app/api/v1/health
-→ HTTP 500, FUNCTION_INVOCATION_FAILED
-```
-
-Causa conhecida e corrigida no **PR #97, que está aberto e não foi
-mergeado**. Ver seção 4 para entender por que foram três correções.
+A função carrega e autentica. O que falta é `DATABASE_URL` (passo 3 da
+seção 5): sem ela, toda rota que consulta o banco devolve erro.
 
 ---
 
-## 4. As três correções da mesma função — leia antes de mexer nisto
+## 4. As quatro correções da mesma função — leia antes de mexer nisto
 
-A função na Vercel precisou de três correções, e nenhuma delas aparece em
-teste local. Vale entender o padrão para não repetir.
+A função na Vercel precisou de **quatro** correções, e nenhuma delas aparece
+em teste local. Vale entender o padrão para não repetir.
 
 | # | Sintoma em produção | Causa | Situação |
 |---|---|---|---|
 | #94 | `/api/v1/health` devolvia o HTML do app | `vercel.json` mandava **tudo** para `index.html`, inclusive `/api/*` | mergeado |
 | #95 | função invocada mas não carregava | a Vercel roda `npm install` na **raiz**, e a raiz não tinha `hono`, `postgres`, `jose` nem `@xmx/contract` | mergeado |
-| #97 | `FUNCTION_INVOCATION_FAILED` | `@xmx/contract` apontava para TypeScript puro e as importações internas não tinham extensão. A Vercel **não empacota** dependências | **aberto** |
+| #97 | `FUNCTION_INVOCATION_FAILED` | `@xmx/contract` apontava para TypeScript puro e as importações internas não tinham extensão | mergeado |
+| #99 | `FUNCTION_INVOCATION_FAILED` | 29 imports com extensão `.ts` sobreviviam no JS emitido. A Vercel compila com `tsc` e **emite**; `.ts` só funciona com `noEmit` | mergeado |
 
-**A lição.** Todo teste local passava porque o ambiente local sempre
-empacota. A Vercel não. O teste que finalmente isolou a causa foi pedir ao
-Node para carregar o pacote sem empacotador:
+**A lição de método, que vale para todo o resto do projeto.**
+
+As quatro só aparecem em produção porque o ambiente local sempre empacota e a
+Vercel compila. Três foram descobertas às cegas, publicando e vendo quebrar.
+A quarta levou minutos, porque finalmente rodei o build da Vercel na máquina.
+
+**Rode isto antes de publicar qualquer mudança na função:**
 
 ```bash
-node -e "import('@xmx/contract').then(()=>console.log('ok')).catch(e=>console.log(e.message))"
+vercel pull --yes --environment production
+vercel build --prod --yes
+grep -iE "error TS" .vercel/output/../../../tmp/vbuild.log   # ou veja a saída do build
+cd .vercel/output/functions/api/index.func && node -e "import('./api/index.js').then(m=>console.log('CARREGOU:',Object.keys(m))).catch(e=>console.log('FALHOU:',e.message))"
 ```
+
+Se carregar aqui, carrega lá. Esse passo teria encontrado as quatro no
+primeiro dia.
 
 ---
 
@@ -104,23 +129,12 @@ node -e "import('@xmx/contract').then(()=>console.log('ok')).catch(e=>console.lo
 
 Cada passo depende do anterior. Não pule.
 
-### Passo 1 · Mergear o PR #97 `BLOQUEADO NO DONO`
+### Passo 1 · Pôr a função no ar `CONCLUIDO 30/09`
 
-```bash
-gh pr merge 97 --squash --delete-branch
-```
+Feito nos PRs #94, #95, #97 e #99. Conferido em produção — ver a tabela de
+comportamento na seção 2.
 
-Depois do deploy, o teste é este, e a rota não usa banco:
-
-```bash
-curl -s https://xmxapp.vercel.app/api/v1/health
-```
-
-Esperado: `{"ok":true}`. Se vier HTML, o deploy não saiu. Se vier
-`FUNCTION_INVOCATION_FAILED`, há uma quarta causa e ela precisa do mesmo
-tratamento: reproduzir sem empacotador antes de mexer.
-
-### Passo 2 · Aplicar as migrations 0004 e 0005 em produção `BLOQUEADO NO DONO`
+### Passo 2 · Aplicar as migrations 0004 e 0005 em produção `PROXIMO`
 
 Aditivo e reversível: cria tabelas novas no schema `core` e não toca nada do
 legado nem do que já migrou.
@@ -329,7 +343,8 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 28/09 | Travessia dos dados em produção | 13/13 na reconciliação, 3 rejeitos explicados |
 | 28/09 | API com 25 rotas, 50 verificações | suítes locais passando |
 | 28/09 | Roteamento e dependências da função (#94, #95) | função passou a ser invocada |
-| — | **PR #97: contrato compilado** | aguardando merge |
-| — | **Migrations 0004 e 0005 em produção** | aguardando aplicação |
-| — | **Variável de ambiente na Vercel** | aguardando o dono |
+| 30/09 | Contrato compilado (#97) | `vercel build` local prova que `packages/contract/dist` entra na função |
+| 30/09 | **API no ar e autenticando (#99)** | `/health` → `{"ok":true}`; token forjado → 401 "assinatura inválida"; atalho de dev → 401 |
+| — | **Migrations 0004 e 0005 em produção** | aguardando aplicação — passo 2 |
+| — | **Variável de ambiente na Vercel** | aguardando o dono — passo 3 |
 | — | Tela de Atendimentos ligada na API | não iniciado |
