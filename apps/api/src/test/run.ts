@@ -77,6 +77,12 @@ async function main() {
   const channelEmail = cat.body.channels.find((c: any) => c.code === "Email");
   const produto = cat.body.products.find((p: any) => p.name === "Arialief");
 
+  console.log("\n— prontidão do banco —");
+  const hdb = await json(await call("/health/db", { as: null as any }));
+  check("GET /health/db responde sem exigir token", hdb.status === 200, hdb.body);
+  check("diz que o banco esta de pe", hdb.body.ok === true && hdb.body.db === "up", hdb.body);
+  check("nao vaza string de conexao nem host", !JSON.stringify(hdb.body).match(/postgres:|@|password|pooler/i), hdb.body);
+
   console.log("\n— sessão e catálogo —");
   const me = await json(await call("/me"));
   check("GET /me devolve perfil e capacidades", me.status === 200 && me.body.role === "agent");
