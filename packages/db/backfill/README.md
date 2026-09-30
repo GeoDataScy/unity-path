@@ -7,6 +7,7 @@ nenhuma linha do legado é alterada, apagada ou movida.
 |---|---|
 | `0003_backfill.sql` | a travessia; reexecutável, `ON CONFLICT DO NOTHING` |
 | `fixture_legado.sql` | réplica do legado com os casos difíceis medidos em produção |
+| `0005_sync_edicoes.sql` | traz as **edições** feitas no legado; a travessia só pega registro novo |
 | `reconciliacao.sql` | o que assina o corte: 13 verificações (via `psql`) |
 | `reconciliacao-api.sql` | a mesma coisa em SQL puro, para a Management API |
 
@@ -51,3 +52,22 @@ deles. As linhas originais continuam em `public`, intactas.
 
 `reconciliacao.sql` falhou pela Management API por causa do `\set`. Use
 `reconciliacao-api.sql` por esse caminho.
+
+## Por que existe um passo só para edições
+
+A travessia usa `ON CONFLICT (legacy_id) DO NOTHING`. Isso evita duplicar,
+mas significa que ela **pega registro novo e ignora registro alterado**.
+
+Medido em produção em 30/09/2026: 3 atendimentos tiveram a plataforma trocada
+no sistema antigo depois de já terem migrado, e a reconciliação acusou.
+Enquanto os dois sistemas convivem, esse número cresce.
+
+`0005_sync_edicoes.sql` fecha isso. Rode **sempre junto** com a travessia:
+
+```bash
+0003_backfill.sql → 0004_backfill_reembolsos.sql → 0005_sync_edicoes.sql → reconciliacao-api.sql
+```
+
+**Não rode depois que a API virar a dona da escrita.** A partir daí o legado
+deixa de ser a verdade, e sincronizar de volta apagaria o que o time fez no
+sistema novo.
