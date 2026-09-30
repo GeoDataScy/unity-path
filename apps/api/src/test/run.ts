@@ -36,7 +36,7 @@ function resetDatabase() {
   execFileSync("dropdb", ["--if-exists", DB], { stdio: "pipe" });
   execFileSync("createdb", [DB], { stdio: "pipe" });
   const root = new URL("../../../../packages/db/migrations/", import.meta.url).pathname;
-  for (const f of ["0001_core.sql", "0002_catalogos.sql", "0004_reembolsos.sql", "0005_transferencias.sql"]) {
+  for (const f of ["0001_core.sql", "0002_catalogos.sql", "0004_reembolsos.sql", "0005_transferencias.sql", "0006_metricas.sql"]) {
     psql(["-q", "-d", DB, "-v", "ON_ERROR_STOP=1", "-f", root + f]);
   }
 }
@@ -330,6 +330,41 @@ async function main() {
   const primeira = nMe.body.items[0];
   const visto = await json(await call(`/notifications/${primeira.id}/seen`, { method: "POST" }));
   check("marcar como vista funciona", visto.body.ok === true);
+
+  console.log("\n— metricas —");
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+
+  const mMe = await json(await call(`/metrics/me?from=${hoje}&to=${hoje}`));
+  check("GET /metrics/me responde", mMe.status === 200, mMe.body);
+  check("conta os atendimentos criados no teste",
+    mMe.body.today.tickets >= 5 && mMe.body.today.total >= mMe.body.today.tickets, mMe.body.today);
+  check("separa abertura de interacao",
+    mMe.body.today.total === mMe.body.today.tickets + mMe.body.today.interactions, mMe.body.today);
+  check("traz dias trabalhados, nao dias do periodo", mMe.body.range.daysWorked >= 1, mMe.body.range);
+
+  const mNeg = await json(await call(`/metrics/dashboard?from=${hoje}&to=${hoje}`));
+  check("agente comum NAO ve o painel da gestora",
+    mNeg.status === 403 && mNeg.body.error.code === "MISSING_CAPABILITY", mNeg.body);
+
+  const mDash = await json(await call(`/metrics/dashboard?from=${hoje}&to=${hoje}`, { as: SUPER }));
+  check("quem tem a capacidade ve", mDash.status === 200, mDash.body);
+  check("total = aberturas + interacoes",
+    mDash.body.totalCount === mDash.body.ticketCount + mDash.body.interactionCount, mDash.body);
+  check("agrupa por agente, produto, dia, plataforma e canal",
+    ["byAgent","byProduct","byDay","byPlatform","byChannel"].every(k => Array.isArray(mDash.body[k])),
+    Object.keys(mDash.body));
+  check("por agente traz o id junto do nome",
+    mDash.body.byAgent.length > 0 && typeof mDash.body.byAgent[0].agentId === "string",
+    mDash.body.byAgent[0]);
+  check("nao preenchido aparece com rotulo, nao como nulo",
+    mDash.body.byPlatform.every((p: any) => typeof p.name === "string" && p.name.length > 0),
+    mDash.body.byPlatform);
+
+  const mFiltro = await json(await call(`/metrics/dashboard?from=${hoje}&to=${hoje}&agentId=${AGENT}`, { as: SUPER }));
+  check("filtrar por agente reduz o total",
+    mFiltro.body.totalCount <= mDash.body.totalCount, { filtrado: mFiltro.body.totalCount, todos: mDash.body.totalCount });
+  check("filtrado por um agente, so ele aparece no agrupamento",
+    mFiltro.body.byAgent.every((a: any) => a.agentId === AGENT), mFiltro.body.byAgent);
 
   console.log("\n— verificação de token (G3.1) —");
   const forjado = "eyJhbGciOiJFUzI1NiJ9." +
