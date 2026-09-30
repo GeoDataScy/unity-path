@@ -7,6 +7,7 @@ import {
   createTransferBody,
   listRefundsQuery,
   listTicketsQuery,
+  metricsRangeQuery,
   lookupTicketQuery,
   respondTakeoverBody,
   respondTransferBody,
@@ -16,8 +17,9 @@ import { Hono } from "hono";
 import { sql, withUser } from "./db.js";
 import { ApiError } from "./lib/errors.js";
 import { decodeCursor } from "./lib/cursor.js";
-import { requireAuth } from "./middleware/auth.js";
+import { requireAuth, requireCapability } from "./middleware/auth.js";
 import * as repo from "./modules/tickets/repository.js";
+import * as metrics from "./modules/metrics/service.js";
 import * as refunds from "./modules/refunds/service.js";
 import * as tickets from "./modules/tickets/service.js";
 import * as transfers from "./modules/transfers/service.js";
@@ -91,6 +93,7 @@ app.use("/takeovers", requireAuth());
 app.use("/takeovers/*", requireAuth());
 app.use("/notifications", requireAuth());
 app.use("/notifications/*", requireAuth());
+app.use("/metrics/*", requireAuth());
 
 /**
  * GET /me — substitui `me_status`, as três leituras de perfil por login
@@ -300,6 +303,35 @@ app.post("/notifications/:id/seen", async (c) => {
   const ok = await withUser(caller.id, (tx) =>
     transfers.markNotificationSeen(tx, caller, Number(c.req.param("id"))));
   return c.json({ ok });
+});
+
+
+// ---------------------------------------------------------------------
+// Métricas — lidas da tabela de fatos, uma varredura por requisição
+// ---------------------------------------------------------------------
+
+/**
+ * Painel da gestora. Substitui `dashboard_metrics`, que chama
+ * `_interaction_events` SEIS vezes numa requisição, cada vez varrendo
+ * duas tabelas com predicado não indexável.
+ */
+app.get("/metrics/dashboard", requireCapability("can_view_all_tickets"), async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(metricsRangeQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => metrics.dashboardMetrics(tx, q)));
+});
+
+/**
+ * Métricas do próprio agente. Substitui três RPCs que o front chamava em
+ * laço — só uma delas somou 272.590 chamadas em 156 dias.
+ */
+app.get("/metrics/me", async (c) => {
+  const caller = c.get("caller");
+  const url = new URL(c.req.url);
+  const hoje = metrics.hojeSP();
+  const from = url.searchParams.get("from") ?? hoje;
+  const to = url.searchParams.get("to") ?? hoje;
+  return c.json(await withUser(caller.id, (tx) => metrics.myMetrics(tx, caller, from, to)));
 });
 
 /** Catálogos: uma fonte só, servindo as duas telas. */
