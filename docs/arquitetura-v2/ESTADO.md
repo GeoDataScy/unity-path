@@ -134,7 +134,30 @@ Cada passo depende do anterior. Não pule.
 Feito nos PRs #94, #95, #97 e #99. Conferido em produção — ver a tabela de
 comportamento na seção 2.
 
-### Passo 2 · Aplicar as migrations 0004 e 0005 em produção `PROXIMO`
+### Passo 2 · Aplicar as migrations 0004 e 0005 em produção `CONCLUIDO 30/09`
+
+Feito. Estado no banco: 104.567 atendimentos, 61.144 interações, 5.903
+reembolsos, 6.246 transferências, 2.649 tomadas, 61 rejeitos. Reconciliação
+12 de 13 — a que falha são 3 atendimentos **editados** no legado depois de
+migrarem, e `0005_sync_edicoes.sql` resolve.
+
+#### Enquanto os dois sistemas convivem
+
+A travessia é **reexecutável** e deve ser rodada periodicamente, porque o
+time continua trabalhando no sistema antigo. Medido: cerca de **750
+atendimentos por dia** de defasagem.
+
+A ordem completa, que pega tanto registro novo quanto editado:
+
+```bash
+TOK=$(security find-generic-password -s "Supabase CLI" -w | sed 's/^go-keyring-base64://' | base64 -d); for f in packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0005_sync_edicoes.sql packages/db/backfill/reconciliacao-api.sql; do echo "== $f"; python3 -c "import json,sys;print(json.dumps({'query':open(sys.argv[1]).read()}))" "$f" | curl -s -X POST "https://api.supabase.com/v1/projects/kjkyyqxqrqsdozjyyuon/database/query" -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" --data-binary @- | head -c 1500; echo; done
+```
+
+> **`0005_sync_edicoes.sql` deixa de ser rodado no dia em que a API virar a
+> dona da escrita.** A partir daí o legado não é mais a verdade, e
+> sincronizar de volta apagaria o que o time fez no sistema novo.
+
+### Passo 2-B · Antigo passo 2, agora histórico
 
 Aditivo e reversível: cria tabelas novas no schema `core` e não toca nada do
 legado nem do que já migrou.
