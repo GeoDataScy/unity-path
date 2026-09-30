@@ -13,7 +13,7 @@ import {
   type MeResponse,
 } from "@xmx/contract";
 import { Hono } from "hono";
-import { withUser } from "./db.js";
+import { sql, withUser } from "./db.js";
 import { ApiError } from "./lib/errors.js";
 import { decodeCursor } from "./lib/cursor.js";
 import { requireAuth } from "./middleware/auth.js";
@@ -52,6 +52,32 @@ const parse = <T>(schema: { safeParse: (v: unknown) => any }, value: unknown): T
 };
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+/**
+ * Prontidão: a função consegue falar com o banco?
+ *
+ * Existe porque não havia como verificar isso sem um token de usuário, e
+ * token de usuário é credencial — nem eu nem um agente de operação devem
+ * usar. Sem esta rota, a única forma de descobrir que a conexão está
+ * quebrada era um agente real tentar trabalhar e falhar.
+ *
+ * Não expõe nada: nem string de conexão, nem host, nem mensagem de erro
+ * do driver. Só o código curto, que basta para saber o que corrigir.
+ */
+app.get("/health/db", async (c) => {
+  const inicio = Date.now();
+  try {
+    await sql`SELECT 1`;
+    return c.json({ ok: true, db: "up", ms: Date.now() - inicio });
+  } catch (e: any) {
+    // `code` do Postgres (28P01 senha errada, 3D000 banco inexistente) ou
+    // do sistema (ENOTFOUND host errado, ETIMEDOUT rede). A mensagem
+    // completa pode trazer host e usuário, então fica fora.
+    const code = e?.code ?? e?.errno ?? "UNKNOWN";
+    console.error("[health/db] falhou:", code);
+    return c.json({ ok: false, db: "down", code, ms: Date.now() - inicio }, 503);
+  }
+});
 
 app.use("/me", requireAuth());
 app.use("/tickets", requireAuth());
