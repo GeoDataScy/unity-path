@@ -8,9 +8,9 @@
  * precisa de um tipo, ele vive aqui. É isso que torna a separação real e
  * não decorativa.
  */
-export * from "./common";
-export * from "./errors";
-export * from "./refunds";
-export * from "./session";
-export * from "./transfers";
-export * from "./tickets";
+export * from "./common.js";
+export * from "./errors.js";
+export * from "./refunds.js";
+export * from "./session.js";
+export * from "./transfers.js";
+export * from "./tickets.js";

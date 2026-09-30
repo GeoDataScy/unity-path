@@ -45,3 +45,4 @@ supabase/.temp/
 # monorepo v2
 apps/api/node_modules
 packages/*/node_modules
+packages/contract/dist

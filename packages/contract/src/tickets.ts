@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cursorPage, cursorParams, isoDate, isoInstant, uuid } from "./common";
+import { cursorPage, cursorParams, isoDate, isoInstant, uuid } from "./common.js";
 
 /**
  * Atendimentos (tickets) — o núcleo do sistema.

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isoInstant, uuid } from "./common";
+import { isoInstant, uuid } from "./common.js";
 
 /**
  * Transferências, tomadas de ticket e notificações.
