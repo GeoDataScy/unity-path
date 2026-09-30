@@ -1,6 +1,6 @@
 import type { TicketListItem } from "@xmx/contract";
-import type { Tx } from "../../db.ts";
-import { encodeCursor, type TicketCursor } from "../../lib/cursor.ts";
+import type { Tx } from "../../db.js";
+import { encodeCursor, type TicketCursor } from "../../lib/cursor.js";
 
 /**
  * Acesso a dados de atendimentos.

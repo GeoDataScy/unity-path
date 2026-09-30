@@ -13,14 +13,14 @@ import {
   type MeResponse,
 } from "@xmx/contract";
 import { Hono } from "hono";
-import { withUser } from "./db.ts";
-import { ApiError } from "./lib/errors.ts";
-import { decodeCursor } from "./lib/cursor.ts";
-import { requireAuth } from "./middleware/auth.ts";
-import * as repo from "./modules/tickets/repository.ts";
-import * as refunds from "./modules/refunds/service.ts";
-import * as tickets from "./modules/tickets/service.ts";
-import * as transfers from "./modules/transfers/service.ts";
+import { withUser } from "./db.js";
+import { ApiError } from "./lib/errors.js";
+import { decodeCursor } from "./lib/cursor.js";
+import { requireAuth } from "./middleware/auth.js";
+import * as repo from "./modules/tickets/repository.js";
+import * as refunds from "./modules/refunds/service.js";
+import * as tickets from "./modules/tickets/service.js";
+import * as transfers from "./modules/transfers/service.js";
 
 export const app = new Hono().basePath("/api/v1");
 
