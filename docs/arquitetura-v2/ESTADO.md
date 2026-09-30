@@ -157,11 +157,19 @@ linhas no legado = linhas em core + linhas em migration_rejects
 
 ### Passo 3 · Variável de ambiente na Vercel `BLOQUEADO NO DONO`
 
+> Tarefa pronta para delegar, com a navegação tela a tela:
+> **`TAREFA-vercel-variaveis.md`**.
+>
+> **Existem DOIS projetos na Vercel.** As variáveis vão em **`xmxapp`**
+> (`https://xmxapp.vercel.app`, o que o time usa), e **não** em `unity-path`.
+> O `xmxapp` já tem três variáveis `VITE_SUPABASE_*` de ~200 dias atrás; o
+> `unity-path` não tem nenhuma. Tela vazia = projeto errado.
+
 Segredo do dono do projeto. Em Settings → Environment Variables, para
 Production:
 
 ```
-DATABASE_URL=postgresql://postgres.kjkyyqxqrqsdozjyyuon:<SENHA>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.kjkyyqxqrqsdozjyyuon:<SENHA>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
 SUPABASE_URL=https://kjkyyqxqrqsdozjyyuon.supabase.co
 ```
 
