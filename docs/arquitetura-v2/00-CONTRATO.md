@@ -467,6 +467,7 @@ o resultado volta para este arquivo.
 
 | Arquivo | Trilha | Conteúdo |
 |---|---|---|
+| `ESTADO.md` | comum | **começe por aqui**: onde a reconstrução está, o que falta, e o próximo passo |
 | `00-CONTRATO.md` | comum | este documento |
 | `01-GARANTIAS.md` | comum | as 12 classes de erro e a garantia mecânica que impede cada uma |
 | `90-BACKLOG.md` | comum | o que foi decidido resolver depois, com número medido |
