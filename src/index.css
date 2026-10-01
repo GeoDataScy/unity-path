@@ -228,6 +228,70 @@
     --chart-mute-2: 240 3.8% 46.1%;   /* #71717a */
     --chart-mute-3: 240 5.3% 26.1%;   /* #3f3f46 */
     --chart-grid: 240 5.1% 11.6%;     /* #1c1c1f */
+
+    /* Os apelidos são repetidos aqui para que `.dark` funcione também num
+       trecho da página (o palco escuro do Cérebro da Lya), e não só na raiz:
+       variável que aponta para outra é resolvida no elemento que a declara. */
+    --background: var(--canvas);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--raised);
+    --popover-foreground: var(--ink);
+    --secondary: var(--subtle);
+    --secondary-foreground: var(--ink);
+    --muted: var(--subtle);
+    --muted-foreground: var(--ink-secondary);
+    --accent: var(--subtle);
+    --accent-foreground: var(--ink);
+    --destructive: var(--coral);
+    --destructive-foreground: var(--on-signal);
+    --border: var(--line);
+    --input: var(--line-control);
+    --success: var(--signal);
+    --success-foreground: var(--on-signal);
+    --warning: var(--amber);
+    --info: var(--ice);
+    --info-foreground: var(--on-signal);
+    --status-open: var(--amber);
+    --status-success: var(--signal);
+    --status-success-foreground: var(--on-signal);
+    --status-in-progress: var(--aqua);
+    --status-in-progress-foreground: var(--on-signal);
+    --status-done: var(--signal);
+    --status-done-foreground: var(--on-signal);
+    --status-new: var(--ink);
+    --status-new-foreground: var(--ink-inverse);
+    --chart-1: var(--signal);
+    --chart-2: var(--chart-mute-2);
+    --chart-3: var(--ice);
+    --chart-4: var(--chart-mute-1);
+    --chart-5: var(--aqua);
+    --chart-6: var(--coral);
+    --chart-7: var(--amber);
+    --chart-8: var(--chart-mute-3);
+    --chart-ticket-open: var(--aqua);
+    --chart-ticket-done: var(--signal);
+    --chart-success: var(--signal);
+    --chart-warning: var(--amber);
+    --chart-danger: var(--coral);
+    --chart-info: var(--ice);
+    --chart-neutral: var(--chart-mute-2);
+    --chart-axis: var(--ink-tertiary);
+    --notepad-paper: var(--surface);
+    --notepad-rule: var(--line);
+    --notepad-margin: var(--coral);
+    --sidebar: var(--canvas);
+    --sidebar-foreground: var(--ink-secondary);
+    --sidebar-accent: var(--subtle);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--line);
+    --dashboard-sidebar: var(--canvas);
+    --dashboard-sidebar-foreground: var(--ink);
+    --dashboard-surface: var(--canvas);
+    --login-bg: var(--canvas);
+    --login-input-bg: var(--surface);
+    --login-input-border: var(--line-control);
   }
 }
 

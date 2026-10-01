@@ -50,12 +50,12 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
         aria-label={open ? "Fechar a Lya" : "Perguntar à Lya"}
         onClick={() => setOpen((v) => !v)}
         // Disco menor e marca maior de propósito: o que identifica a Lya é o
-        // símbolo, não o roxo em volta — o roxo é só o assento dele.
+        // símbolo. hubi: a bolha é `bg-inverse` com o núcleo em `signal`.
         // `lya-bolha` (respiro) só quando fechada: aberta, o botão vira um X e
         // nada ali precisa chamar atenção.
         className={cn(
-          "fixed bottom-5 right-5 z-[60] grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary to-violet-700 text-primary-foreground transition-transform hover:scale-105 active:scale-95",
-          open ? "shadow-lg shadow-primary/30" : "lya-bolha",
+          "fixed bottom-5 right-5 z-[60] grid h-12 w-12 place-items-center rounded-full bg-inverse text-ink-inverse transition-transform hover:scale-105 active:scale-95",
+          open ? "shadow-md" : "lya-bolha",
         )}
       >
         {/* A onda sai de trás da bolha e some. Só em repouso: pensando e
@@ -64,24 +64,24 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
         {!open && conv.estado === "repouso" && <span aria-hidden="true" className="lya-bolha-onda" />}
         {/* Fechado, o botão é a própria Lya: mostra se ela está pensando mesmo
             com o painel recolhido. */}
-        {open ? <X className="h-6 w-6" /> : <LyaMark size={34} tone="neon" estado={conv.estado} label={null} />}
+        {open ? <X className="h-6 w-6" /> : <LyaMark size={34} tone="branco" estado={conv.estado} label={null} />}
       </button>
 
       {open && (
         <div
-          className="fixed bottom-24 right-5 z-[60] flex w-[min(420px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+          className="fixed bottom-24 right-5 z-[60] flex w-[min(420px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-raised shadow-lg"
           style={{ height: "min(640px, calc(100vh - 8rem))" }}
         >
-          <header className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary to-violet-700 px-4 py-3 text-primary-foreground">
+          <header className="flex items-center gap-3 border-b border-border bg-inverse px-4 py-3 text-ink-inverse">
             <LyaMark size={36} tone="branco" estado={conv.estado} label={null} />
             <div className="min-w-0 flex-1 leading-tight">
               <p className="text-sm font-medium">Lya</p>
-              <p className="truncate text-xs text-primary-foreground/75">Pergunte sobre os dados do suporte</p>
+              <p className="truncate text-xs text-ink-inverse/70">Pergunte sobre os dados do suporte</p>
             </div>
             <Link
               to={chatId ? `/dashboard/lya?chat=${chatId}` : "/dashboard/lya"}
               title="Abrir em tela cheia"
-              className="rounded-md p-1.5 hover:bg-white/15"
+              className="rounded-md p-1.5 hover:bg-ink-inverse/15"
             >
               <Maximize2 className="h-4 w-4" />
             </Link>
@@ -111,7 +111,7 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
 
           <div className="border-t border-border px-3 pb-2 pt-3">
             {conv.aviso && (
-              <p className="mb-2 rounded-lg border border-amber-500/50 px-2 py-1 text-[11px] text-foreground">{conv.aviso}</p>
+              <p className="mb-2 rounded-lg border border-warning/40 px-2 py-1 text-[11px] text-foreground">{conv.aviso}</p>
             )}
             <LyaComposer onSend={conv.send} loading={conv.loading} compact autoFocus={open} />
             <p className="mt-1.5 text-center text-[10px] text-muted-foreground">Enter envia · Shift+Enter quebra linha</p>

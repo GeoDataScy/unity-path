@@ -45,18 +45,18 @@ const easeOutBack = (t: number) => {
 
 // Cores dos "groups" (Obsidian-like), legíveis sobre o fundo escuro.
 const COR_TIPO: Record<LyaMemoryType, string> = {
-  feedback: "#fbbf24", // âmbar — preferências
-  user: "#60a5fa", // azul — sobre a Lya
-  project: "#a78bfa", // roxo — projetos
-  reference: "#34d399", // verde — referências
-  nota: "#cbd5e1", // cinza claro — notas
+  feedback: "#f2c46d", // amber (hubi, escuro) — preferências
+  user: "#9db8ff", // ice — sobre a Lya
+  project: "#7ce3ea", // aqua — projetos
+  reference: "#c6f36b", // signal — referências
+  nota: "#d4d4d8", // chart-mute-1 — notas
 };
-const HALO = "#a78bfa";
+const HALO = "#c6f36b"; // signal: o único ponto de luz
 
 // Arquivo e sistema são NEUTROS de propósito: quem separa as camadas é a forma
 // (ver o comentário do topo), então uma cor a mais só competiria com os tipos.
-const COR_ARQUIVO = "#e2e8f0";
-const COR_SISTEMA = "#94a3b8";
+const COR_ARQUIVO = "#f4f4f5"; // ink (escuro)
+const COR_SISTEMA = "#8a8a93"; // ink-tertiary (escuro)
 const CAMADAS: { value: GraphCamada; label: string; cor: string }[] = [
   { value: "memoria", label: "Memórias", cor: COR_TIPO.project },
   { value: "arquivo", label: "Arquivos", cor: COR_ARQUIVO },
@@ -450,12 +450,12 @@ export function LyaBrainGraph({
         // 12 px de TELA sempre: em unidades do canvas é 12/scale (sem piso —
         // o piso fazia o rótulo crescer junto com o zoom e cobrir o grafo).
         const fonte = 12 / scale;
-        ctx.font = `${focoId === n.id ? 600 : 400} ${fonte}px Inter, system-ui, sans-serif`;
+        ctx.font = `${focoId === n.id ? 500 : 400} ${fonte}px Geist, system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.shadowColor = "rgba(0,0,0,0.9)";
         ctx.shadowBlur = 4;
-        ctx.fillStyle = focoId === n.id ? "#ffffff" : "#c7d2fe";
+        ctx.fillStyle = focoId === n.id ? "#ffffff" : "#a1a1aa";
         ctx.globalAlpha =
           ajustes.rotulos === "auto" && scale > 1.3 && focoId == null && !buscados ? Math.min(1, (scale - 1.3) / 1.2 + 0.4) : 1;
         ctx.fillText(n.label.length > 34 ? n.label.slice(0, 33) + "…" : n.label, x, y + r + 4 / scale);
@@ -517,28 +517,28 @@ export function LyaBrainGraph({
 
   return (
     <div
-      className="relative h-[calc(100dvh-13.5rem)] min-h-[520px] w-full overflow-hidden rounded-2xl ring-1 ring-white/10"
-      style={{ background: "radial-gradient(ellipse at 50% 30%, #161a33 0%, #0b0d1f 55%, #05060f 100%)" }}
+      className="dark relative h-[calc(100dvh-13.5rem)] min-h-[520px] w-full overflow-hidden rounded-lg text-ink ring-1 ring-line"
+      style={{ background: "hsl(var(--canvas))" }}
     >
       {/* legenda / status */}
-      <div className="absolute left-4 top-4 z-10 flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-slate-300 shadow-2xl backdrop-blur-md">
-        <span className="flex items-center gap-2 text-sm font-medium tracking-tight text-slate-100">
+      <div className="absolute left-4 top-4 z-10 flex flex-col gap-1.5 rounded-lg border border-line bg-surface/80 px-4 py-3 text-xs text-ink-tertiary shadow-md backdrop-blur-md">
+        <span className="flex items-center gap-2 text-sm font-medium tracking-tight text-ink">
           <Brain className="h-4 w-4" style={{ color: HALO }} />
           Cérebro da Lya
         </span>
-        <span className="flex items-center gap-2 text-[11px] text-slate-400">
+        <span className="flex items-center gap-2 text-[11px] text-ink-tertiary">
           {carregando && graph.nodes.length === 0 ? (
             "carregando…"
           ) : (
             <>
               {visivel.nodes.length} nós · {visivel.links.length} conexões
-              {ocultos > 0 && <span className="text-slate-500"> · {ocultos} ocultos</span>}
+              {ocultos > 0 && <span className="text-ink-tertiary"> · {ocultos} ocultos</span>}
             </>
           )}
-          <span className="flex items-center gap-1 text-emerald-400/90">
+          <span className="flex items-center gap-1 text-success">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
             </span>
             ao vivo
           </span>
@@ -554,7 +554,7 @@ export function LyaBrainGraph({
                 title={on ? `Ocultar ${cm.label}` : `Mostrar ${cm.label}`}
                 className={cn(
                   "flex items-center gap-1.5 text-[11px] font-medium transition-opacity",
-                  on ? "text-slate-200" : "text-slate-500 opacity-50 line-through",
+                  on ? "text-ink" : "text-ink-tertiary opacity-50 line-through",
                 )}
               >
                 {/* a marca repete a FORMA do nó, não só a cor */}
@@ -580,7 +580,7 @@ export function LyaBrainGraph({
                 type="button"
                 onClick={() => setAjuste("tipos", { ...ajustes.tipos, [tp.value]: !on })}
                 title={on ? `Ocultar ${tp.label}` : `Mostrar ${tp.label}`}
-                className={cn("flex items-center gap-1.5 text-[11px] transition-opacity", on ? "text-slate-300" : "text-slate-500 opacity-50 line-through")}
+                className={cn("flex items-center gap-1.5 text-[11px] transition-opacity", on ? "text-ink-tertiary" : "text-ink-tertiary opacity-50 line-through")}
               >
                 <span className="inline-block h-2 w-2 rounded-full" style={{ background: COR_TIPO[tp.value], boxShadow: on ? `0 0 6px ${COR_TIPO[tp.value]}` : "none" }} />
                 {tp.label}
@@ -592,7 +592,7 @@ export function LyaBrainGraph({
           <button
             type="button"
             onClick={onRemoverExemplos}
-            className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 hover:bg-white/10"
+            className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-line px-2 py-1 text-[11px] text-ink-tertiary hover:bg-subtle"
             title="Apaga só as memórias de exemplo, sem tocar no que a gestora ensinou"
           >
             <Eraser className="h-3 w-3" /> Remover exemplos
@@ -602,16 +602,16 @@ export function LyaBrainGraph({
 
       {/* busca */}
       <div className="absolute left-1/2 top-4 z-10 hidden -translate-x-1/2 md:block">
-        <label className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-slate-200 shadow-2xl backdrop-blur-md focus-within:border-white/30">
-          <Search className="h-3.5 w-3.5 text-slate-400" />
+        <label className="flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs text-ink shadow-md backdrop-blur-md focus-within:border-line-control">
+          <Search className="h-3.5 w-3.5 text-ink-tertiary" />
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar no cérebro…"
-            className="w-44 bg-transparent outline-none placeholder:text-slate-500"
+            className="w-44 bg-transparent outline-none placeholder:text-ink-tertiary"
           />
           {busca && (
-            <button type="button" onClick={() => setBusca("")} className="text-slate-400 hover:text-white" aria-label="Limpar busca">
+            <button type="button" onClick={() => setBusca("")} className="text-ink-tertiary hover:text-ink" aria-label="Limpar busca">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -621,7 +621,7 @@ export function LyaBrainGraph({
       {/* treinando */}
       {treinando && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-          <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/40 px-5 py-2.5 text-sm text-slate-100 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-3 rounded-full border border-line-strong bg-canvas/70 px-5 py-2.5 text-sm text-ink shadow-md backdrop-blur-xl">
             <span className="relative flex h-3 w-3">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style={{ background: HALO }} />
               <span className="relative inline-flex h-3 w-3 rounded-full" style={{ background: HALO }} />
@@ -634,9 +634,9 @@ export function LyaBrainGraph({
       {/* toast: nasceu um nó (o rótulo diz de que camada, porque agora são três) */}
       {novoNo && !treinando && (
         <div className="pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2">
-          <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs text-slate-100 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-2 rounded-full border border-line-strong bg-raised/90 px-4 py-2 text-xs text-ink shadow-md backdrop-blur-xl">
             <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: HALO }} />
-            <span className="text-slate-400">{NASCIMENTO_LABEL[novoNo.camada]}</span>
+            <span className="text-ink-tertiary">{NASCIMENTO_LABEL[novoNo.camada]}</span>
             <span className="max-w-[280px] truncate font-medium">{novoNo.label}</span>
           </div>
         </div>
@@ -646,23 +646,23 @@ export function LyaBrainGraph({
       <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
         <div className="flex flex-col items-start gap-2">
           {painelAjustes && (
-            <div className="w-64 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-xs text-slate-200 shadow-2xl backdrop-blur-xl">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Forças</p>
+            <div className="w-64 rounded-lg border border-line bg-surface/80 p-3.5 text-xs text-ink shadow-md backdrop-blur-xl">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Forças</p>
               <Controle label="Repulsão" valor={ajustes.repulsao} min={30} max={500} step={10} onChange={(v) => setAjuste("repulsao", v)} />
               <Controle label="Distância das ligações" valor={ajustes.distancia} min={15} max={200} step={5} onChange={(v) => setAjuste("distancia", v)} />
               <Controle label="Força central" valor={ajustes.centro} min={0} max={0.5} step={0.01} onChange={(v) => setAjuste("centro", v)} fmt={(v) => v.toFixed(2)} />
-              <p className="mb-2 mt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Exibição</p>
+              <p className="mb-2 mt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Exibição</p>
               <Controle label="Tamanho dos nós" valor={ajustes.tamanho} min={0.5} max={2.5} step={0.1} onChange={(v) => setAjuste("tamanho", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <Controle label="Espessura das linhas" valor={ajustes.espessura} min={0.3} max={3} step={0.1} onChange={(v) => setAjuste("espessura", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <div className="mt-2 flex items-center justify-between">
                 <span>Rótulos</span>
-                <div className="inline-flex rounded-md border border-white/10 p-0.5">
+                <div className="inline-flex rounded-md border border-line p-0.5">
                   {(["auto", "sempre", "nunca"] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setAjuste("rotulos", r)}
-                      className={cn("rounded px-2 py-0.5 text-[11px] capitalize", ajustes.rotulos === r ? "bg-white/15 text-white" : "text-slate-400 hover:text-slate-200")}
+                      className={cn("rounded px-2 py-0.5 text-[11px] capitalize", ajustes.rotulos === r ? "bg-line-strong text-ink" : "text-ink-tertiary hover:text-ink")}
                     >
                       {r}
                     </button>
@@ -675,12 +675,12 @@ export function LyaBrainGraph({
               </label>
               <label className="mt-1 flex items-center justify-between">
                 <span>Mostrar órfãos</span>
-                <Checkbox checked={ajustes.orfaos} onCheckedChange={(v) => setAjuste("orfaos", v === true)} className="border-white/40" />
+                <Checkbox checked={ajustes.orfaos} onCheckedChange={(v) => setAjuste("orfaos", v === true)} className="border-line-control" />
               </label>
               <button
                 type="button"
                 onClick={() => setAjustes(AJUSTES_PADRAO)}
-                className="mt-3 w-full rounded-md border border-white/10 py-1 text-[11px] text-slate-300 hover:bg-white/10"
+                className="mt-3 w-full rounded-md border border-line py-1 text-[11px] text-ink-tertiary hover:bg-subtle"
               >
                 Restaurar padrão
               </button>
@@ -696,7 +696,7 @@ export function LyaBrainGraph({
             <BotaoFlutuante onClick={reiniciarLayout} title="Soltar os nós fixados e reorganizar">
               <RotateCcw className="h-3.5 w-3.5" />
             </BotaoFlutuante>
-            <span className="ml-2 hidden text-[11px] text-slate-500 lg:inline">
+            <span className="ml-2 hidden text-[11px] text-ink-tertiary lg:inline">
               arraste os nós · scroll para zoom · clique para abrir
             </span>
           </div>
@@ -706,14 +706,14 @@ export function LyaBrainGraph({
       <button
         type="button"
         onClick={onEnsinar}
-        className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 py-2 text-xs font-medium text-slate-100 shadow-2xl backdrop-blur-xl transition-colors hover:bg-white/[0.14]"
+        className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-line-strong bg-raised/90 px-4 py-2 text-xs font-medium text-ink shadow-md backdrop-blur-xl transition-colors hover:bg-subtle"
       >
         <Sparkles className="h-3.5 w-3.5" style={{ color: HALO }} />
         Ensinar algo novo
       </button>
 
       {/* painel lateral: memória selecionada ou últimos treinos */}
-      <div className="absolute right-4 top-4 z-10 w-80 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-slate-200 shadow-2xl backdrop-blur-xl">
+      <div className="absolute right-4 top-4 z-10 w-80 rounded-lg border border-line bg-surface/80 p-4 text-ink shadow-md backdrop-blur-xl">
         {selecionada ? (
           <>
             <div className="mb-2 flex items-center justify-between">
@@ -724,15 +724,15 @@ export function LyaBrainGraph({
                 >
                   {TIPO_MEMORIA_MAP[selecionada.type]?.label ?? selecionada.type}
                 </span>
-                {selecionada.seed && <span className="text-[10px] uppercase tracking-[0.06em] text-slate-500">exemplo</span>}
+                {selecionada.seed && <span className="text-[10px] uppercase tracking-[0.06em] text-ink-tertiary">exemplo</span>}
               </span>
-              <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
+              <button type="button" onClick={() => setSel(null)} className="text-ink-tertiary hover:text-ink" aria-label="Fechar">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <h3 className="text-sm font-medium leading-snug">{selecionada.description || selecionada.name}</h3>
             {selecionada.body && (
-              <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
+              <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-ink-tertiary">
                 {selecionada.body.split(/(\[\[[^\]]+\]\])/g).map((parte, i) => {
                   const m = /^\[\[([^\]]+)\]\]$/.exec(parte);
                   if (!m) return <span key={i}>{parte}</span>;
@@ -742,7 +742,7 @@ export function LyaBrainGraph({
                       key={i}
                       type="button"
                       onClick={() => alvo && setSel(String(alvo.id))}
-                      className="text-violet-300 underline decoration-violet-500/50 underline-offset-2 hover:text-white"
+                      className="text-aqua underline decoration-aqua/50 underline-offset-2 hover:text-ink"
                     >
                       {m[1]}
                     </button>
@@ -757,21 +757,21 @@ export function LyaBrainGraph({
                     key={tg}
                     type="button"
                     onClick={() => setBusca(tg)}
-                    className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                    className="rounded-full bg-subtle px-2 py-0.5 text-[11px] text-ink-tertiary hover:bg-subtle hover:text-ink"
                   >
                     #{tg}
                   </button>
                 ))}
               </div>
             )}
-            <p className="mt-3 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+            <p className="mt-3 border-t border-line pt-2 text-[11px] text-ink-tertiary">
               {Math.max(0, vizinhos.size - 1)} conexõe(s) · atualizada {desde(selecionada.updated_at)}
             </p>
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={() => onEditar(selecionada)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1 text-[12px] hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-2.5 py-1 text-[12px] hover:bg-subtle"
               >
                 <Pencil className="h-3.5 w-3.5" /> Editar
               </button>
@@ -781,7 +781,7 @@ export function LyaBrainGraph({
                   setSel(null);
                   onApagar(selecionada.name);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1 text-[12px] text-red-300 hover:bg-red-500/10"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-2.5 py-1 text-[12px] text-destructive hover:bg-coral-soft"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Apagar
               </button>
@@ -798,33 +798,33 @@ export function LyaBrainGraph({
                   {arquivoSel.tipo === "csv" ? "Planilha" : "Documento"}
                 </span>
                 {arquivoSel.status !== "pronto" && (
-                  <span className="text-[10px] uppercase tracking-[0.06em] text-slate-500">
+                  <span className="text-[10px] uppercase tracking-[0.06em] text-ink-tertiary">
                     {arquivoSel.status === "processando" ? "lendo…" : "com erro"}
                   </span>
                 )}
               </span>
-              <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
+              <button type="button" onClick={() => setSel(null)} className="text-ink-tertiary hover:text-ink" aria-label="Fechar">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <h3 className="text-sm font-medium leading-snug">{arquivoSel.nome}</h3>
-            <p className="mt-0.5 truncate text-[11px] text-slate-500" title={arquivoSel.arquivo}>
+            <p className="mt-0.5 truncate text-[11px] text-ink-tertiary" title={arquivoSel.arquivo}>
               {arquivoSel.arquivo}
             </p>
             {arquivoSel.resumo && (
-              <p className="mt-2 max-h-36 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
+              <p className="mt-2 max-h-36 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-ink-tertiary">
                 {arquivoSel.resumo}
               </p>
             )}
             {arquivoSel.colunas.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1">
                 {arquivoSel.colunas.slice(0, 12).map((c) => (
-                  <span key={c.nome} className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10.5px] text-slate-400" title={`${c.tipo} · ${numero(c.preenchidas)} preenchidas`}>
+                  <span key={c.nome} className="rounded-md bg-subtle px-1.5 py-0.5 text-[10.5px] text-ink-tertiary" title={`${c.tipo} · ${numero(c.preenchidas)} preenchidas`}>
                     {c.nome}
                   </span>
                 ))}
                 {arquivoSel.colunas.length > 12 && (
-                  <span className="px-1 py-0.5 text-[10.5px] text-slate-500">+{arquivoSel.colunas.length - 12}</span>
+                  <span className="px-1 py-0.5 text-[10.5px] text-ink-tertiary">+{arquivoSel.colunas.length - 12}</span>
                 )}
               </div>
             )}
@@ -835,19 +835,19 @@ export function LyaBrainGraph({
                     key={tg}
                     type="button"
                     onClick={() => setBusca(tg)}
-                    className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                    className="rounded-full bg-subtle px-2 py-0.5 text-[11px] text-ink-tertiary hover:bg-subtle hover:text-ink"
                   >
                     #{tg}
                   </button>
                 ))}
               </div>
             )}
-            <p className="mt-3 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+            <p className="mt-3 border-t border-line pt-2 text-[11px] text-ink-tertiary">
               {numero(arquivoSel.total_linhas)} linha(s) · {arquivoSel.colunas.length} coluna(s) · {desde(arquivoSel.updated_at)}
             </p>
             <Link
               to="/dashboard/lya/arquivos"
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1 text-[12px] hover:bg-white/10"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-2.5 py-1 text-[12px] hover:bg-subtle"
             >
               <ExternalLink className="h-3.5 w-3.5" /> Abrir no acervo
             </Link>
@@ -861,29 +861,29 @@ export function LyaBrainGraph({
               >
                 {SISTEMA_CAMADA_LABEL[sistemaSel.camada]}
               </span>
-              <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
+              <button type="button" onClick={() => setSel(null)} className="text-ink-tertiary hover:text-ink" aria-label="Fechar">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <h3 className="text-sm font-medium leading-snug">{sistemaSel.label}</h3>
             {sistemaSel.detalhe && (
-              <p className="mt-2 text-[12px] leading-relaxed text-slate-300">{sistemaSel.detalhe}</p>
+              <p className="mt-2 text-[12px] leading-relaxed text-ink-tertiary">{sistemaSel.detalhe}</p>
             )}
             {sistemaSel.total != null && (
-              <p className="mt-2.5 text-[12px] text-slate-200">
+              <p className="mt-2.5 text-[12px] text-ink">
                 <span className="text-lg font-medium">{numero(sistemaSel.total)}</span>{" "}
-                <span className="text-slate-400">registro(s) agora</span>
+                <span className="text-ink-tertiary">registro(s) agora</span>
               </p>
             )}
-            <p className="mt-3 border-t border-white/10 pt-2 text-[11px] text-slate-500">
+            <p className="mt-3 border-t border-line pt-2 text-[11px] text-ink-tertiary">
               {Math.max(0, vizinhos.size - 1)} conexõe(s) · a Lya consulta isto ao responder
             </p>
           </>
         ) : (
           <>
-            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Últimos treinos</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Últimos treinos</p>
             {recentes.length === 0 ? (
-              <p className="mt-2 text-[12px] text-slate-400">A Lya ainda não tem memórias. Ensine a primeira.</p>
+              <p className="mt-2 text-[12px] text-ink-tertiary">A Lya ainda não tem memórias. Ensine a primeira.</p>
             ) : (
               <ul className="mt-2 space-y-1.5">
                 {recentes.map((m) => (
@@ -893,12 +893,12 @@ export function LyaBrainGraph({
                       onClick={() => setSel(m.name)}
                       onMouseEnter={() => setHover(m.name)}
                       onMouseLeave={() => setHover(null)}
-                      className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white/5"
+                      className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-subtle"
                     >
                       <span className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: COR_TIPO[m.type], boxShadow: `0 0 6px ${COR_TIPO[m.type]}` }} />
                       <span className="min-w-0">
-                        <span className="block truncate text-[12.5px] text-slate-100">{m.description || m.name}</span>
-                        <span className="block text-[10.5px] text-slate-500">
+                        <span className="block truncate text-[12.5px] text-ink">{m.description || m.name}</span>
+                        <span className="block text-[10.5px] text-ink-tertiary">
                           {TIPO_MEMORIA_MAP[m.type]?.label ?? m.type} · {desde(m.updated_at)}
                         </span>
                       </span>
@@ -940,13 +940,13 @@ export function LyaBrainGraph({
               ctx.fill();
             }}
             linkColor={(l: LinkRuntime) =>
-              linkNascendo(l) ? "rgba(233,241,255,0.85)" : linkEmFoco(l) ? "rgba(199,210,254,0.9)" : "rgba(167,139,250,0.14)"
+              linkNascendo(l) ? "rgba(198,243,107,0.85)" : linkEmFoco(l) ? "rgba(244,244,245,0.9)" : "rgba(161,161,170,0.16)"
             }
             linkWidth={(l: LinkRuntime) => (linkNascendo(l) ? 1.6 : linkEmFoco(l) ? 1.4 : 0.6) * ajustes.espessura}
             linkCurvature={0}
             linkDirectionalParticles={(l: LinkRuntime) => (linkNascendo(l) ? 5 : linkEmFoco(l) ? 3 : 0)}
             linkDirectionalParticleWidth={(l: LinkRuntime) => (linkNascendo(l) ? 2.6 : 1.8)}
-            linkDirectionalParticleColor={(l: LinkRuntime) => (linkNascendo(l) ? "#eaf1ff" : HALO)}
+            linkDirectionalParticleColor={(l: LinkRuntime) => (linkNascendo(l) ? "#f4f4f5" : HALO)}
             linkDirectionalParticleSpeed={(l: LinkRuntime) => (linkNascendo(l) ? 0.012 : 0.006)}
             onNodeHover={(node: NodeRuntime | null) => setHover(node ? String(node.id) : null)}
             onNodeClick={(node: NodeRuntime) => setSel(String(node.id))}
@@ -980,7 +980,7 @@ function Controle({
     <div className="mb-2">
       <div className="mb-1 flex items-center justify-between">
         <span>{label}</span>
-        <span className="font-mono text-[10.5px] text-slate-400">{fmt(valor)}</span>
+        <span className="font-mono text-[10.5px] text-ink-tertiary">{fmt(valor)}</span>
       </div>
       <Slider value={[valor]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5" />
     </div>
@@ -994,8 +994,8 @@ function BotaoFlutuante({ on, onClick, title, children }: { on?: boolean; onClic
       onClick={onClick}
       title={title}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-medium shadow-2xl backdrop-blur-xl transition-colors",
-        on ? "border-white/30 bg-white/[0.16] text-white" : "border-white/10 bg-white/[0.06] text-slate-200 hover:bg-white/[0.12]",
+        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-medium shadow-md backdrop-blur-xl transition-colors",
+        on ? "border-line-control bg-line-strong text-ink" : "border-line bg-surface/80 text-ink-secondary hover:bg-subtle",
       )}
     >
       {children}

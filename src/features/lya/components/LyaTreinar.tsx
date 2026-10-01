@@ -70,7 +70,7 @@ export function LyaGuia() {
               <ul className="space-y-1.5 text-[12.5px] text-muted-foreground">
                 {["Um assunto por memória, curto e claro.", "Ao corrigir, escreva a regra: “sempre separar X de Y”.", "Diga de onde vem a informação quando houver."].map((t, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" /> {t}
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" /> {t}
                   </li>
                 ))}
                 {["Não misture vários assuntos na mesma memória.", "Não use a memória para “colar” um número: os números vêm do painel e do banco."].map((t, i) => (
