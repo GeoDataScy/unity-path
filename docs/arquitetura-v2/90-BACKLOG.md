@@ -151,7 +151,7 @@ não, porque ali a regra antiga é que está errada.
 **Decisão do dono:** manter uma definição só (como está), ou reproduzir a antiga para o
 número não mudar na virada.
 
-### B26 · Nada na v2 marca `is_same_day_repeat` `RESOLVIDO NO CÓDIGO 01/10 — 0009`
+### B26 · Nada na v2 marca `is_same_day_repeat` `RESOLVIDO EM PRODUÇÃO 01/10 — 0009`
 
 A decisão D1 removeu o bloqueio das 18h apoiada na marcação: "é o que evita contar a
 conversa duas vezes". Conferido: `core.interactions.is_same_day_repeat` tem `DEFAULT
@@ -166,7 +166,8 @@ tela do agente virar.
 **Feito:** `0009_marca_repeticao.sql`. A regra é a função `core.same_day_repeat`; o
 gatilho a chama com `now()`, deixa intocada a linha com `legacy_id` e ignora o valor que
 o chamador mandar. Validada contra as 62.037 interações do legado antes de escrita:
-concordância total. 19 garantias, conferidas contra mutação.
+concordância total. 19 garantias, conferidas contra mutação. Aplicada em produção em 01/10; o
+árbitro repetido com a função real deu 62.046 de 62.046.
 
 ### B27 · "Concluído" sempre passa, e conta na meta `DECISÃO DO DONO — 01/10`
 
