@@ -125,6 +125,32 @@ migrados. Remover do legado é opcional.
 Não será migrada, mas também não será removida: serve de conferência independente na
 reconciliação. A trilha de dados confirmou que a trigger está viva e atualizando.
 
+### B25 · `concluído` tinha duas definições no legado `MEDIDO 01/10 — DONO DECIDE`
+
+Medido em agosto/2026: das 9.399 aberturas, a contagem de concluídos difere em **15
+tickets** entre a regra do legado e a da arquitetura nova. Classificados:
+
+| Causa | Tickets | O que é |
+|---|---|---|
+| Deriva | 8 | o legado já tem interação que o `core` ainda não recebeu; somem no corte |
+| Ordem canônica | 5 | o legado ordena por `follow_up_number`, que tem 5.545 pares duplicados; o novo ordena por `(recorded_at, seq)` — decisão M9 |
+| Incoerência do próprio legado | 2 | `services.status` diz `concluido` e o último follow-up diz `em_andamento` |
+
+Os 2 últimos são o caso interessante: **hoje a tela do agente e o modal da gestora
+discordam entre si** nesses tickets. O agente deriva do follow-up e vê "em andamento"; o
+modal usa `s.status OR último follow-up` e conta como concluído.
+
+A arquitetura nova tem **uma** definição, `derived_status`, mantida por gatilho. O efeito
+na gestora é 3 concluídos a menos em 1.888 no mês (0,16%).
+
+Reproduzir a regra antiga exatamente é possível e barato — trocar por
+`derived_status = 'concluido' OR legacy_status = 'concluido'`, que só vale para linha com
+`legacy_id` e é inócuo para dado novo. Isso resolveria 2 dos 15; os 5 da ordem canônica
+não, porque ali a regra antiga é que está errada.
+
+**Decisão do dono:** manter uma definição só (como está), ou reproduzir a antiga para o
+número não mudar na virada.
+
 ---
 
 ## Fora do escopo da reconstrução
