@@ -460,7 +460,7 @@ Estão em `00-CONTRATO.md` §8-A, com o raciocínio completo. Resumo:
 | D5 | `platform` e `channel`: "Nenhum" e vazio permanecem **distintos** |
 | D6 | E-mails preservados como digitados; normalização só em coluna gerada |
 | D7 | Paginação numerada mantida nas listas frias; cursor só em "Meus Atendimentos" |
-| D8 | **Removidos da área do agente por decisão do dono, 01/10/2026:** o pop-up periódico de check-in (e as 8 contagens que ele disparava), a seção "Rotinas do dia a dia" do guia (cards "Check-in do agente" e "Padrão de horários") e o percentual de progresso do guia. "Treinamento" passa a se chamar **"Guia da plataforma"**. A v2 não reconstrói nenhum dos três. O painel "Padrão de horários" **da gestora** continua |
+| D8 | **Removidos da área do agente por decisão do dono, 01/10/2026:** o pop-up periódico de check-in (e as 8 contagens que ele disparava), a seção "Rotinas do dia a dia" do guia (cards "Check-in do agente" e "Padrão de horários") e o percentual de progresso do guia. "Treinamento" passa a se chamar **"Guia da plataforma"**. Em 02/10, segunda rodada: o guia mostra **só vídeo com link** (os cards "Em breve" saem; cada linha reaparece sozinha quando ganhar o vídeo) e saem o selo "Visto" e a barrinha de onde o vídeo parou — o player continua retomando de onde parou. A v2 não reconstrói nada disso. O painel "Padrão de horários" **da gestora** continua |
 
 ### O princípio que resolve a preservação de dados
 

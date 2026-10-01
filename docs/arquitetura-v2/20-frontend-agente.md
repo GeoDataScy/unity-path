@@ -1295,6 +1295,10 @@ filtros de estrutura e nicho."
 > **Alterado — decisão D8 (01/10/2026).** Passa a se chamar **"Guia da plataforma"**, sem o
 > bloco de progresso do `TrainingHero`; a seção `rotinas` saiu (as 2 linhas seguem no banco, filtradas
 > na leitura); e o check-in da seção 10.2 foi removido. A v2 não reconstrói nenhum dos três.
+>
+> **02/10/2026:** o guia passa a mostrar só vídeo com link — sem cards "Em breve" — e sem o selo
+> "Visto" e a barrinha de progresso do card. `watchedSeconds`/`completed` continuam, só para o player
+> retomar de onde o agente parou.
 
 **Arquivo:** `src/pages/agent/ComeceAqui.tsx` · **Fonte:** `useTrainingVideosQuery(userId)`.
 
