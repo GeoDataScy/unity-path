@@ -134,12 +134,12 @@ export function NotificationsBell({ enabled }: Props) {
         <Button
           variant="secondary"
           size="icon"
-          className="relative bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+          className="relative text-ink-secondary hover:bg-subtle hover:text-ink"
           aria-label="Notificações"
         >
           <Bell className="h-4 w-4" />
           {totalCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 font-mono text-[10px] font-medium text-destructive-foreground">
               {totalCount > 9 ? "9+" : totalCount}
             </span>
           )}

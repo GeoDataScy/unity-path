@@ -120,7 +120,7 @@ export function ManagerApprovalsBell({ enabled }: Props) {
           >
             <BellRing className="h-4 w-4" />
             {totalCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 font-mono text-[10px] font-medium text-destructive-foreground">
                 {totalCount > 9 ? "9+" : totalCount}
               </span>
             )}

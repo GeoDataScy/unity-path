@@ -122,11 +122,11 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
   return (
     <DialogPrimitive.Root open={open} onOpenChange={handleOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/85 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Overlay className="dark fixed inset-0 z-50 bg-canvas/90 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 w-[96vw] max-w-5xl -translate-x-1/2 -translate-y-1/2",
-            "overflow-hidden rounded-2xl border border-white/10 bg-slate-950 text-white shadow-2xl",
+            "dark overflow-hidden rounded-xl border border-line bg-surface text-ink shadow-lg",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           )}
         >
@@ -137,22 +137,22 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
 
           <DialogPrimitive.Close
             aria-label="Fechar"
-            className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white/90 transition hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-canvas/70 text-ink/90 transition hover:bg-canvas focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <X className="h-4 w-4" />
           </DialogPrimitive.Close>
 
-          <div className="aspect-video w-full bg-black">
+          <div className="aspect-video w-full bg-canvas">
             {resolving && !resolvedUrl && (
               <div className="flex h-full w-full items-center justify-center">
-                <Skeleton className="h-full w-full bg-white/5" />
+                <Skeleton className="h-full w-full bg-subtle" />
               </div>
             )}
             {!resolving && !resolvedUrl && video && (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-white/70">
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-ink-secondary">
                 {/* Só se chega aqui quando o link existe e falhou ao carregar: o guia
                     não mostra mais vídeo sem link. */}
-                <p className="text-base font-medium text-white">Não foi possível carregar o vídeo</p>
+                <p className="text-base font-medium text-ink">Não foi possível carregar o vídeo</p>
                 <p className="text-sm">Tente novamente em alguns instantes.</p>
               </div>
             )}
@@ -167,26 +167,26 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleEnded}
                 onPause={handlePauseOrClose}
-                className="h-full w-full bg-black"
+                className="h-full w-full bg-canvas"
               />
             )}
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/10 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+          <div className="flex flex-col gap-4 border-t border-line p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="truncate text-lg font-medium text-white">{video?.title}</h2>
+                <h2 className="truncate text-lg font-medium tracking-[-0.015em] text-ink">{video?.title}</h2>
               </div>
               {video?.description && (
-                <p className="mt-1 line-clamp-3 text-sm text-white/70">{video.description}</p>
+                <p className="mt-1 line-clamp-3 text-sm text-ink-secondary">{video.description}</p>
               )}
             </div>
 
             {nextVideo && (
-              <div className="flex shrink-0 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+              <div className="flex shrink-0 items-center gap-3 rounded-lg border border-line bg-subtle px-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.06em] text-white/55">A seguir</p>
-                  <p className="line-clamp-1 max-w-[200px] text-sm font-medium text-white">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">A seguir</p>
+                  <p className="line-clamp-1 max-w-[200px] text-sm font-medium text-ink">
                     {nextVideo.title}
                   </p>
                 </div>
@@ -194,7 +194,7 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="bg-white text-slate-900 hover:bg-white/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary-hover"
                   onClick={() => onPlayNext(nextVideo)}
                   disabled={!nextVideo.videoUrl}
                 >

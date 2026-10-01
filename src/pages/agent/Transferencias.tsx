@@ -39,9 +39,9 @@ function formatDateTime(value: string | null): string {
 
 function statusBadge(status: TransferHistoryItem["transfer_status"]) {
   const map: Record<TransferHistoryItem["transfer_status"], { label: string; cls: string }> = {
-    pending: { label: "Pendente", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
-    accepted: { label: "Aceito", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
-    declined: { label: "Recusado", cls: "bg-red-500/15 text-red-700 dark:text-red-400" },
+    pending: { label: "Pendente", cls: "bg-warning-soft text-warning" },
+    accepted: { label: "Aceito", cls: "bg-signal-soft text-success" },
+    declined: { label: "Recusado", cls: "bg-coral-soft text-destructive" },
     cancelled: { label: "Cancelado", cls: "bg-muted text-muted-foreground" },
   };
   const cfg = map[status];
@@ -198,7 +198,7 @@ export default function Transferencias() {
                           <TableCell className="text-sm">{t.other_agent_name ?? "—"}</TableCell>
                           <TableCell>
                             {fromManager ? (
-                              <Badge variant="outline" className="gap-1 bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                              <Badge variant="outline" className="gap-1 bg-ice-soft text-info">
                                 <Shield className="h-3 w-3" />
                                 Gestor
                               </Badge>

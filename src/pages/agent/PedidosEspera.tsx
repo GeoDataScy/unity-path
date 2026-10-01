@@ -363,7 +363,7 @@ export default function PedidosEspera() {
                         <Badge
                           key={r.key}
                           variant="outline"
-                          className="border-amber-500/40 font-medium text-amber-600 dark:text-amber-400"
+                          className="border-warning/40 font-medium text-warning"
                         >
                           {r.label}
                         </Badge>

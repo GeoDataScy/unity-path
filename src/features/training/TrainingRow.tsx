@@ -49,8 +49,8 @@ export function TrainingRow({ title, subtitle, videos, onPlay }: Props) {
   return (
     <section className="group/row relative">
       <div className="mb-3 flex items-baseline gap-3 px-1">
-        <h2 className="text-lg font-medium text-slate-900">{title}</h2>
-        {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+        <h2 className="text-lg font-medium text-ink">{title}</h2>
+        {subtitle && <p className="text-xs text-ink-tertiary">{subtitle}</p>}
       </div>
 
       <div className="relative">
@@ -59,7 +59,7 @@ export function TrainingRow({ title, subtitle, videos, onPlay }: Props) {
             type="button"
             onClick={() => scrollBy("prev")}
             aria-label="Anterior"
-            className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg ring-1 ring-slate-200 opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-slate-50 md:flex"
+            className="absolute -left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-raised text-ink-secondary shadow-md ring-1 ring-line opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-subtle md:flex"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -69,7 +69,7 @@ export function TrainingRow({ title, subtitle, videos, onPlay }: Props) {
             type="button"
             onClick={() => scrollBy("next")}
             aria-label="Próximo"
-            className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg ring-1 ring-slate-200 opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-slate-50 md:flex"
+            className="absolute -right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-raised text-ink-secondary shadow-md ring-1 ring-line opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-subtle md:flex"
           >
             <ChevronRight className="h-5 w-5" />
           </button>

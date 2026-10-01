@@ -86,8 +86,8 @@ export function PendingRefundsAlert({ enabled }: Props) {
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-500/15 p-2.5">
-              <AlertCircle className="h-6 w-6 text-amber-600" />
+            <div className="rounded-full bg-warning-soft p-2.5">
+              <AlertCircle className="h-6 w-6 text-warning" />
             </div>
             <div className="flex-1">
               <DialogTitle className="text-xl">Reembolsos pendentes há mais de 24h</DialogTitle>

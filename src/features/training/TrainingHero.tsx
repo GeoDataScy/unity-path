@@ -1,4 +1,4 @@
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 
 type Props = {
   agentName?: string | null;
@@ -9,7 +9,7 @@ export function TrainingHero({ agentName }: Props) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-slate-900 text-white shadow-lg"
+      className="dark relative overflow-hidden rounded-lg bg-surface text-ink ring-1 ring-line"
       style={{ minHeight: 280 }}
     >
       {/* Cover image placeholder — substitua adicionando uma <img> aqui depois */}
@@ -18,7 +18,7 @@ export function TrainingHero({ agentName }: Props) {
         aria-hidden
         style={{
           backgroundImage:
-            "radial-gradient(80% 60% at 0% 0%, rgba(99,102,241,0.55), transparent 60%), radial-gradient(70% 60% at 100% 100%, rgba(236,72,153,0.40), transparent 60%), linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)",
+            "radial-gradient(60% 70% at 100% 100%, hsl(var(--signal) / 0.14), transparent 60%)",
         }}
       />
       {/* Subtle grid texture */}
@@ -31,22 +31,20 @@ export function TrainingHero({ agentName }: Props) {
           backgroundSize: "40px 40px",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent" aria-hidden />
+      <div className="absolute inset-0 bg-gradient-to-t from-canvas/60 via-transparent" aria-hidden />
 
       <div className="relative flex flex-col gap-6 p-6 sm:p-10">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 backdrop-blur ring-1 ring-white/15">
-            <img src={logo} alt="XMX" className="h-7 w-auto" />
-          </div>
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">
-            Guia da plataforma • XMX Suporte
+          <Logo variant="mark" height={44} />
+          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
+            Guia da plataforma • hubi
           </span>
         </div>
 
         <div className="max-w-2xl space-y-3">
-          <p className="text-sm text-white/70">{greeting}</p>
-          <h1 className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums leading-tight sm:text-4xl">Comece por aqui</h1>
-          <p className="text-sm text-white/80 sm:text-base">
+          <p className="text-sm text-ink-tertiary">{greeting}</p>
+          <h1 className="text-[32px] font-medium leading-9 tracking-[-0.03em] sm:text-[48px] sm:leading-[52px] sm:tracking-[-0.035em]">Comece por aqui</h1>
+          <p className="text-sm text-ink-secondary sm:text-base">
             Vídeos curtos para você dominar a plataforma — atendimento, reembolsos e métricas. Assista no
             seu ritmo: cada card abre direto no player.
           </p>

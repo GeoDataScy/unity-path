@@ -155,8 +155,8 @@ function getHeadline(m: AgentMyMetrics): Headline {
 }
 
 const TONE_CARD: Record<Tone, string> = {
-  leader: "border-amber-400/70 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-950/25",
-  ahead:  "border-emerald-400/70 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-950/25",
+  leader: "border-warning/40 bg-warning-soft",
+  ahead:  "border-success/40 bg-signal-soft",
   onpar:  "border-border bg-card",
   action: "border-primary/50 bg-primary/5",
   empty:  "border-border bg-muted/40",
@@ -171,8 +171,8 @@ const TONE_ICON: Record<Tone, React.ElementType> = {
 };
 
 const TONE_ICON_COLOR: Record<Tone, string> = {
-  leader: "text-amber-500",
-  ahead:  "text-emerald-600 dark:text-emerald-400",
+  leader: "text-warning",
+  ahead:  "text-success",
   onpar:  "text-muted-foreground",
   action: "text-primary",
   empty:  "text-muted-foreground",
@@ -344,7 +344,7 @@ export default function MinhasMetricas() {
 
   const trend = useMemo(() => {
     const pct = Number(m?.trend_pct ?? 0);
-    if (pct >= 10)  return { Icon: TrendingUp,   cls: "text-emerald-600 dark:text-emerald-400" };
+    if (pct >= 10)  return { Icon: TrendingUp,   cls: "text-success" };
     if (pct <= -10) return { Icon: TrendingDown, cls: "text-destructive" };
     return { Icon: Minus, cls: "text-foreground" };
   }, [m]);
@@ -428,7 +428,7 @@ export default function MinhasMetricas() {
                   label="Você"
                   value={myRate}
                   max={rateMax}
-                  colorClass={myRate >= medianRate ? "bg-emerald-500" : "bg-primary"}
+                  colorClass={myRate >= medianRate ? "bg-success" : "bg-primary"}
                   strong
                 />
                 <RateBar

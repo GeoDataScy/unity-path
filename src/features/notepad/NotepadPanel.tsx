@@ -186,7 +186,7 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
       aria-label="Bloco de notas"
       className={cn(
         "fixed right-0 top-0 z-40 flex h-full flex-col bg-notepad-paper",
-        "border-l border-notepad-rule shadow-[-10px_0_40px_-16px_rgba(15,23,42,0.45)]",
+        "border-l border-notepad-rule shadow-lg",
         "transition-transform duration-300 ease-out will-change-transform",
         "w-full sm:w-[400px]",
         wide && "sm:w-[620px]",
@@ -194,12 +194,12 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
       )}
     >
       {/* ── Capa ─────────────────────────────────────────────────────────── */}
-      <header className="bg-dashboard-sidebar px-3 py-2.5 text-dashboard-sidebar-foreground">
+      <header className="bg-inverse px-3 py-2.5 text-ink-inverse">
         <div className="flex items-center gap-2">
           <NotebookPen aria-hidden className="h-4 w-4 shrink-0 opacity-80" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium leading-tight">Meu caderno</p>
-            <p className="truncate text-[10px] leading-tight text-white/55">
+            <p className="truncate text-[10px] leading-tight text-ink-inverse/60">
               {firstName ? `${firstName} · só você vê` : "anotações só suas"}
             </p>
           </div>
@@ -236,7 +236,7 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
           <div className="relative mt-2">
             <Search
               aria-hidden
-              className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50"
+              className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-inverse/55"
             />
             <input
               ref={searchRef}
@@ -245,8 +245,8 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
               placeholder="Buscar em todas as datas…"
               aria-label="Buscar no caderno"
               className={cn(
-                "h-8 w-full rounded-md border border-white/15 bg-white/10 pl-7 pr-7 text-xs",
-                "text-white placeholder:text-white/45 focus:border-white/30 focus:outline-none",
+                "h-8 w-full rounded-md border border-ink-inverse/20 bg-ink-inverse/10 pl-7 pr-7 text-xs",
+                "text-ink-inverse placeholder:text-ink-inverse/50 focus:border-ink-inverse/40 focus:outline-none",
               )}
             />
             {term !== "" && (
@@ -254,7 +254,7 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
                 type="button"
                 aria-label="Limpar busca"
                 onClick={() => setTerm("")}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-white/60 hover:text-white"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-ink-inverse/60 hover:text-ink-inverse"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -268,7 +268,7 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
         {Array.from({ length: 9 }).map((_, i) => (
           <span
             key={i}
-            className="h-1.5 w-4 rounded-full bg-foreground/10 ring-1 ring-inset ring-black/5"
+            className="h-1.5 w-4 rounded-full bg-foreground/10 ring-1 ring-inset ring-line"
           />
         ))}
       </div>
@@ -653,9 +653,9 @@ function CoverAction({
       title={label}
       className={cn(
         "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
-        "text-white/70 hover:bg-white/10 hover:text-white",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-        active && "bg-white/15 text-white",
+        "text-ink-inverse/70 hover:bg-ink-inverse/10 hover:text-ink-inverse",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-inverse/40",
+        active && "bg-ink-inverse/15 text-ink-inverse",
         className,
       )}
     >

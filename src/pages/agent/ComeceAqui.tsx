@@ -58,16 +58,16 @@ export default function ComeceAqui() {
           </div>
         </div>
       ) : isError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
+        <div className="rounded-xl border border-destructive/40 bg-coral-soft p-6 text-center text-destructive">
           Não foi possível carregar o guia. Atualize a página em alguns instantes.
         </div>
       ) : !data || data.videos.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <div className="rounded-lg border border-line bg-surface p-10 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-subtle text-ink-tertiary">
             <GraduationCap className="h-6 w-6" />
           </div>
-          <p className="font-medium text-slate-800">Nenhum vídeo publicado ainda</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="font-medium text-ink">Nenhum vídeo publicado ainda</p>
+          <p className="mt-1 text-sm text-ink-tertiary">
             Os vídeos do guia aparecerão aqui assim que forem disponibilizados.
           </p>
         </div>
