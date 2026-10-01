@@ -187,6 +187,19 @@ async function main() {
     i2.body.ticket.derivedStatus === "concluido" && i2.body.interaction.seq === 2, i2.body.ticket);
   check("sem bloqueio das 18h — a decisão D1 removeu", i2.status === 201);
 
+  // Mas a marca existe (B26). É o caso que a gestora relatou: concluir no
+  // mesmo dia, logo depois da primeira interação. Não bloqueia; marca, para
+  // a métrica não contar a conversa duas vezes. O esperado depende da hora,
+  // então o teste calcula com o mesmo relógio; os dois lados das 18h são
+  // provados com instantes fixos em packages/db/tests/0009.
+  const horaSP = Number(new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false,
+  }).format(new Date()));
+  check("primeira interação do ticket não é marcada",
+    i1.body.interaction.isSameDayRepeat === false, i1.body.interaction);
+  check(`concluir no mesmo dia é marcado antes das 18h de SP (agora: ${horaSP}h)`,
+    i2.body.interaction.isSameDayRepeat === (horaSP < 18), i2.body.interaction);
+
   const alheio = await json(await call(`/tickets/${t1}/interactions`, {
     as: OUTRO,
     method: "POST",
