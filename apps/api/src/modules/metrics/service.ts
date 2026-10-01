@@ -258,10 +258,11 @@ export async function audit(tx: Tx, q: PagedQuery): Promise<AuditResponse> {
  * ontem no volume e na madrugada aqui. O legado faz assim, e é o que a
  * gestora espera ver.
  *
- * O filtro `agent_id = creator_id` é fidelidade medida, não suposição: o
- * legado exige `s.user_id = f.user_id`, ou seja, só a interação feita pelo
- * próprio dono entra no padrão de horário. Com `current_owner_id` em vez de
- * criador, agosto dava 955 linhas a mais.
+ * O filtro `by_ticket_creator` é fidelidade medida, não suposição: o legado
+ * exige `s.user_id = f.user_id`, ou seja, só a interação feita pelo próprio
+ * CRIADOR entra no padrão de horário. Com `current_owner_id` em vez de
+ * criador, agosto dava 955 linhas a mais; com criador, zero divergência nas
+ * 24 horas. A condição é coluna, e não join, por medição — ver 0008.
  */
 export async function hourlyPattern(
   tx: Tx,
@@ -271,14 +272,16 @@ export async function hourlyPattern(
     `
     WITH bordas AS (${BORDAS}
     ), atividade AS (
+      -- Sem join: a condição do criador é coluna (0008). Com o join aqui,
+      -- a consulta custava 105 ms contra os 110 ms do legado — o índice
+      -- resolvia e o join devolvia o problema. Sem ele, 29 ms.
       SELECT (f.occurred_at AT TIME ZONE 'America/Sao_Paulo') AS ts_sp,
              f.agent_id, f.ticket_id
         FROM core.interaction_facts f
         CROSS JOIN bordas b
-        JOIN core.tickets t ON t.id = f.ticket_id
        WHERE f.occurred_at >= b.ini AND f.occurred_at < b.fim
          AND ($3::uuid IS NULL OR f.agent_id = $3::uuid)
-         AND f.agent_id = t.creator_id
+         AND f.by_ticket_creator
     ), celulas AS (
       SELECT extract(dow  FROM ts_sp)::int AS dow,
              extract(hour FROM ts_sp)::int AS hour,

@@ -139,3 +139,73 @@ BEGIN
 END $$;
 
 SELECT '=== RELOGIO: TODAS AS GARANTIAS PASSARAM ===' AS resultado;
+
+-- =====================================================================
+-- A condição do criador, materializada (0008)
+--
+-- O legado só conta no padrão de horário a interação feita pelo próprio
+-- criador do ticket. Aqui isso é coluna, e não join: com join a consulta
+-- custava 105 ms em produção contra 110 ms do legado — o índice resolvia
+-- e o join devolvia o problema inteiro.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid; v_b uuid; v_p uuid; v_t uuid; v_i1 uuid; v_i2 uuid; v_flag boolean;
+BEGIN
+  INSERT INTO core.users (id, email, full_name, role, legacy_id)
+  SELECT u, 'criador@xmx.test', 'Criador', 'agent', u::text
+    FROM (SELECT gen_random_uuid() AS u) g RETURNING id INTO v_a;
+  INSERT INTO core.users (id, email, full_name, role, legacy_id)
+  SELECT u, 'outro@xmx.test', 'Outro', 'agent', u::text
+    FROM (SELECT gen_random_uuid() AS u) g RETURNING id INTO v_b;
+  INSERT INTO core.products (name) VALUES ('Produto Criador') RETURNING id INTO v_p;
+
+  INSERT INTO core.tickets
+    (client_email, business_day, product_id, creator_id, current_owner_id)
+  VALUES ('c@x.test', current_date, v_p, v_a, v_a) RETURNING id INTO v_t;
+
+  SELECT by_ticket_creator INTO v_flag
+    FROM core.interaction_facts WHERE ticket_id = v_t AND kind = 'ticket';
+  PERFORM pg_temp.expect('a abertura e sempre do criador', v_flag);
+
+  INSERT INTO core.interactions (ticket_id, seq, status, author_id)
+  VALUES (v_t, 2, 'em_andamento', v_a) RETURNING id INTO v_i1;
+  SELECT by_ticket_creator INTO v_flag
+    FROM core.interaction_facts WHERE interaction_id = v_i1;
+  PERFORM pg_temp.expect('interacao do proprio criador entra no padrao', v_flag);
+
+  -- Um agente interage no ticket de outro. Conta para a produtividade dele
+  -- (o fato existe, com agent_id dele), mas NÃO entra no padrão de horário.
+  INSERT INTO core.interactions (ticket_id, seq, status, author_id)
+  VALUES (v_t, 3, 'em_andamento', v_b) RETURNING id INTO v_i2;
+  SELECT by_ticket_creator INTO v_flag
+    FROM core.interaction_facts WHERE interaction_id = v_i2;
+  PERFORM pg_temp.expect('interacao de outro agente fica fora do padrao', NOT v_flag);
+  PERFORM pg_temp.expect(
+    'mas o fato existe, creditado a quem fez',
+    EXISTS (SELECT 1 FROM core.interaction_facts
+             WHERE interaction_id = v_i2 AND agent_id = v_b));
+
+  -- Trocar o criador refaz a marcação das interações: a garantia não pode
+  -- depender de ninguém mexer.
+  UPDATE core.tickets SET creator_id = v_b WHERE id = v_t;
+  SELECT by_ticket_creator INTO v_flag
+    FROM core.interaction_facts WHERE interaction_id = v_i2;
+  PERFORM pg_temp.expect('trocar o criador refaz a marcacao', v_flag);
+  SELECT by_ticket_creator INTO v_flag
+    FROM core.interaction_facts WHERE interaction_id = v_i1;
+  PERFORM pg_temp.expect('e desmarca quem deixou de ser o criador', NOT v_flag);
+END $$;
+
+-- O índice parcial existe, com o recorte exato da pergunta.
+DO $$
+DECLARE v_tem boolean;
+BEGIN
+  SELECT EXISTS (SELECT 1 FROM pg_indexes
+                  WHERE schemaname = 'core' AND tablename = 'interaction_facts'
+                    AND indexdef LIKE '%occurred_at%'
+                    AND indexdef LIKE '%by_ticket_creator%') INTO v_tem;
+  PERFORM pg_temp.expect('o padrao de horario tem indice parcial proprio', v_tem);
+END $$;
+
+SELECT '=== CRIADOR: TODAS AS GARANTIAS PASSARAM ===' AS resultado;
