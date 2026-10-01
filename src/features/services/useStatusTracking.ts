@@ -2,7 +2,6 @@ import { useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { emitAgentInteraction } from "@/features/agent/check-in/agent-events";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -210,9 +209,6 @@ export function useStatusTracking() {
         old ? [...old, optimisticRow] : [optimisticRow],
       );
       return { previous };
-    },
-    onSuccess: () => {
-      emitAgentInteraction();
     },
     onError: (error: unknown, _params, context) => {
       // Desfaz a atualização otimista e mostra a causa real (rede, sessão, RLS…).

@@ -1,14 +1,11 @@
 import logo from "@/assets/logo-xmx.png";
 
 type Props = {
-  totalVideos: number;
-  watchedCount: number;
   agentName?: string | null;
 };
 
-export function TrainingHero({ totalVideos, watchedCount, agentName }: Props) {
+export function TrainingHero({ agentName }: Props) {
   const greeting = agentName ? `Olá, ${agentName.split(" ")[0]}!` : "Olá!";
-  const pct = totalVideos > 0 ? Math.round((watchedCount / totalVideos) * 100) : 0;
 
   return (
     <div
@@ -42,7 +39,7 @@ export function TrainingHero({ totalVideos, watchedCount, agentName }: Props) {
             <img src={logo} alt="XMX" className="h-7 w-auto" />
           </div>
           <span className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">
-            Treinamento • XMX Suporte
+            Guia da plataforma • XMX Suporte
           </span>
         </div>
 
@@ -55,23 +52,6 @@ export function TrainingHero({ totalVideos, watchedCount, agentName }: Props) {
           </p>
         </div>
 
-        {totalVideos > 0 && (
-          <div className="flex w-full max-w-md flex-col gap-2">
-            <div className="flex items-center justify-between text-xs text-white/80">
-              <span>Seu progresso</span>
-              <span className="font-semibold text-white">
-                {watchedCount} de {totalVideos} ({pct}%)
-              </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all"
-                style={{ width: `${pct}%` }}
-                aria-hidden
-              />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

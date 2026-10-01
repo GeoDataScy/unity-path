@@ -2,15 +2,13 @@ export type TrainingSection =
   | "welcome"
   | "atendimentos"
   | "reembolsos"
-  | "metricas"
-  | "rotinas";
+  | "metricas";
 
 export const TRAINING_SECTION_ORDER: TrainingSection[] = [
   "welcome",
   "atendimentos",
   "reembolsos",
   "metricas",
-  "rotinas",
 ];
 
 export const TRAINING_SECTION_LABEL: Record<TrainingSection, string> = {
@@ -18,7 +16,6 @@ export const TRAINING_SECTION_LABEL: Record<TrainingSection, string> = {
   atendimentos: "Atendimentos",
   reembolsos: "Reembolsos",
   metricas: "Minhas métricas",
-  rotinas: "Rotinas do dia a dia",
 };
 
 export type TrainingVideo = {

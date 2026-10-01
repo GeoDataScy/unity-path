@@ -585,6 +585,9 @@ Os aliases legados (`total_interactions`, `team_average`, `gap_to_avg_pct`, `is_
 
 ### `GET /metrics/me/check-in`
 
+> **REMOVIDA — decisão D8 (01/10/2026).** O check-in saiu da área do agente no
+> sistema atual; esta rota não é construída. Mantida aqui só como registro do que existia.
+
 Quem: qualquer autenticado, sobre si. Substitui: as **8** consultas paralelas de `useCheckInSnapshot.ts:44-110` (R-MET-18).
 
 Resposta: `{ recent: { services, followUps, refundsCreated, refundsCompleted }, today: { ... }, recentWindowHours: 2, businessDay }`.

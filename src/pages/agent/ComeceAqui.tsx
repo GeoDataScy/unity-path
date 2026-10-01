@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { GraduationCap } from "lucide-react";
 
@@ -19,7 +19,6 @@ const SECTION_SUBTITLES: Record<(typeof TRAINING_SECTION_ORDER)[number], string>
   atendimentos: "Tudo sobre o registro de atendimentos",
   reembolsos: "Como tratar reembolsos do começo ao fim",
   metricas: "Entenda o seu desempenho",
-  rotinas: "Pequenas rotinas que fazem diferença",
 };
 
 export default function ComeceAqui() {
@@ -27,12 +26,6 @@ export default function ComeceAqui() {
   const { data, isLoading, isError } = useTrainingVideosQuery(userId);
 
   const [activeVideo, setActiveVideo] = useState<TrainingVideoWithProgress | null>(null);
-
-  const totalVideos = data?.videos.length ?? 0;
-  const watchedCount = useMemo(
-    () => (data?.videos ?? []).filter((v) => v.completed).length,
-    [data?.videos],
-  );
 
   const flatList = data?.videos ?? [];
 
@@ -66,7 +59,7 @@ export default function ComeceAqui() {
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
-          Não foi possível carregar os treinamentos. Atualize a página em alguns instantes.
+          Não foi possível carregar o guia. Atualize a página em alguns instantes.
         </div>
       ) : !data || data.videos.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
@@ -75,12 +68,12 @@ export default function ComeceAqui() {
           </div>
           <p className="font-medium text-slate-800">Nenhum vídeo publicado ainda</p>
           <p className="mt-1 text-sm text-slate-500">
-            Os treinamentos aparecerão aqui assim que forem disponibilizados.
+            Os vídeos do guia aparecerão aqui assim que forem disponibilizados.
           </p>
         </div>
       ) : (
         <>
-          <TrainingHero totalVideos={totalVideos} watchedCount={watchedCount} agentName={fullName} />
+          <TrainingHero agentName={fullName} />
 
           <div className="space-y-10">
             {TRAINING_SECTION_ORDER.map((section) => {

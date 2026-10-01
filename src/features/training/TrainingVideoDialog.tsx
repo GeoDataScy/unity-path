@@ -132,7 +132,7 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
         >
           <DialogPrimitive.Title className="sr-only">{video?.title ?? "Vídeo"}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            {video?.description ?? "Reprodutor de vídeo de treinamento"}
+            {video?.description ?? "Reprodutor de vídeo do guia"}
           </DialogPrimitive.Description>
 
           <DialogPrimitive.Close

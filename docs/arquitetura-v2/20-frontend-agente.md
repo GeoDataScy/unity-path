@@ -1292,6 +1292,10 @@ filtros de estrutura e nicho."
 
 ## 10. `/workspace/comece-aqui` — treinamento
 
+> **Alterado — decisão D8 (01/10/2026).** Passa a se chamar **"Guia da plataforma"**, sem o
+> bloco de progresso do `TrainingHero`; a seção `rotinas` saiu (as 2 linhas seguem no banco, filtradas
+> na leitura); e o check-in da seção 10.2 foi removido. A v2 não reconstrói nenhum dos três.
+
 **Arquivo:** `src/pages/agent/ComeceAqui.tsx` · **Fonte:** `useTrainingVideosQuery(userId)`.
 
 Layout no estilo "prateleiras" (`TrainingHero` + uma `TrainingRow` por seção).
