@@ -151,6 +151,40 @@ não, porque ali a regra antiga é que está errada.
 **Decisão do dono:** manter uma definição só (como está), ou reproduzir a antiga para o
 número não mudar na virada.
 
+### B26 · Nada na v2 marca `is_same_day_repeat` `BLOQUEIO DO CORTE — 01/10`
+
+A decisão D1 removeu o bloqueio das 18h apoiada na marcação: "é o que evita contar a
+conversa duas vezes". Conferido: `core.interactions.is_same_day_repeat` tem `DEFAULT
+false`, nenhum gatilho de `core` a calcula e a API só a devolve. As 1.720 marcações que o
+`core` tem vieram copiadas do legado na travessia.
+
+**O que fazer:** gatilho `BEFORE INSERT` em `core.interactions` replicando
+`public._tg_follow_up_mark_same_day_repeat` (sem rastreio → `false`; senão `now() <
+18:00 SP do dia da última interação`), com garantia na suíte. Entra **antes** de qualquer
+tela do agente virar.
+
+### B27 · "Concluído" sempre passa, e conta na meta `DECISÃO DO DONO — 01/10`
+
+Em produção hoje, o diálogo de acompanhamento desabilita a segunda interação do dia
+**exceto** quando o status é "Concluído" (`StatusTrackingDialog.tsx:94`, deliberado). Em
+45 dias: 439 repetições do mesmo dia antes das 18h sem rastreio, **435 são "Concluído"**,
+8 agentes, uma responde por 70%. Estável há 7 semanas — não é regressão.
+
+A marcação `is_same_day_repeat` existe, mas só a seção "Interações repetidas no mesmo
+dia" (`/dashboard/alertas`) a lê. **A meta diária e todos os painéis contam o
+"Concluído" do mesmo dia como segunda interação.** Em 30/09: 201 na meta com 6
+repetidos; 152 com 9.
+
+Três caminhos, e a escolha é de produto, não de código:
+
+| | O que muda | Efeito |
+|---|---|---|
+| A. Deixar como está | nada | a gestora segue vendo os repetidos em Alertas; a meta segue contando |
+| B. Descontar da meta | `_interaction_events` (e o CTE da v2) ignoram `is_same_day_repeat` | o número da meta cai para quem conclui no mesmo dia; o histórico recua junto, salvo recorte por data |
+| C. Fechar a exceção | "Concluído" também respeita as 18h, salvo rastreio | o agente não consegue concluir à tarde o que abriu de manhã — foi por isso que a exceção existe |
+
+Na v2 (D1) não há bloqueio nenhum, então B é o único que preserva a intenção declarada.
+
 ---
 
 ## Fora do escopo da reconstrução
