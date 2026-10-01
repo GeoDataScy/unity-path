@@ -218,15 +218,15 @@ export default function DashboardInteracoes() {
           icon={<FolderOpen className="h-4 w-4 text-ink-tertiary" />}
           label="Tickets Novos"
           value={kpi?.new_tickets_count}
-          accent="text-ink-secondary"
+          accent="text-ink"
           isLoading={isLoading}
           subtitle={kpi && kpi.total_services > 0 ? pct(kpi.new_tickets_count, kpi.total_services) : undefined}
         />
         <KpiCard
-          icon={<Loader2 className="h-4 w-4 text-warning" />}
+          icon={<Loader2 className="h-4 w-4 text-aqua" />}
           label="Interações"
           value={kpi?.interactions_count}
-          accent="text-warning"
+          accent="text-aqua"
           isLoading={isLoading}
         />
         {/* Concluídos são tickets ABERTOS no período que já estão concluídos —
@@ -572,7 +572,7 @@ export default function DashboardInteracoes() {
       </Card>
 
       {error && (
-        <p className="text-xs text-destructive-foreground/90 bg-destructive/60 rounded-md px-3 py-2">
+        <p className="text-xs text-ink bg-coral-soft border border-destructive/40 rounded-md px-3 py-2">
           {(error as any)?.message || "Erro ao carregar dados."}
         </p>
       )}
@@ -644,7 +644,7 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
         </span>
       </TableCell>
       <TableCell className="text-center">
-        <span className={agent.interactions_count > 0 ? "text-warning font-medium" : "text-muted-foreground"}>
+        <span className={agent.interactions_count > 0 ? "text-aqua font-medium" : "text-muted-foreground"}>
           {agent.interactions_count}
         </span>
       </TableCell>
