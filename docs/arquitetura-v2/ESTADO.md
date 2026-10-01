@@ -10,8 +10,8 @@
 > a resposta foi conferida. Quatro correções seguidas na mesma função (#94,
 > #95, #97, #99) existem porque essa regra foi ignorada.
 
-**Última verificação:** 01/10/2026, conferida contra `origin/main`, contra o
-banco de produção e contra `https://xmxapp.vercel.app`.
+**Última verificação:** 01/10/2026 (segunda rodada), conferida contra
+`origin/main`, contra o banco de produção e contra `https://xmxapp.vercel.app`.
 
 > **A API está no ar, lendo o banco, com as métricas apoiadas em tabela de
 > fatos.** `/api/v1/health/db` → `{"ok":true,"db":"up","ms":721}`.
@@ -41,6 +41,8 @@ intocado. A API tem **28 rotas**, autentica, lê o banco, e as métricas novas
 | Conexão com o banco (#102) | 30/09 | `/health/db` → `{"ok":true,"db":"up"}` |
 | **Tabela de fatos (0006) + travessia** | 01/10 | 165.711 fatos = 104.567 aberturas + 61.144 interações, idêntico às duas tabelas de origem |
 | **Rotas de métricas (#104, #105)** | 01/10 | conferem com o legado linha por linha — ver o árbitro abaixo |
+| **Eixo do relógio nos fatos (0007)** | 01/10 | 165.711 instantes preenchidos, nenhum nulo, nenhum fora da origem; 9.074 aberturas em que os dois eixos divergem |
+| **Filtro do criador materializado (0008)** | 01/10 | 158.597 de 165.711 marcadas (= 165.711 − 7.114 interações de outro agente), zero marcações erradas |
 
 ### Comportamento da API em produção
 
@@ -98,6 +100,49 @@ carregamento de painel custa hoje ~910 ms de processamento e ~2,1 GiB de
 páginas percorridas. A rota nova faz **um** percurso, num CTE, para os cinco
 agrupamentos (garantia G11.2).
 
+### O padrão por horário, e a lição de medir depois de aplicar
+
+`dashboard_hourly_pattern` é a mais cara das RPCs: varre as duas tabelas
+**sete** vezes. Mesma pergunta — contagem por dia da semana e hora, agosto:
+
+| | Tempo | Páginas |
+|---|---|---|
+| Legado | 110,6 ms | 45.378 |
+| Só com `0007` | 105,6 ms | 11.777 |
+| Com `0008` | **26,8 ms** | **51** |
+
+A linha do meio é a que ensina. Depois de aplicar `0007`, a varredura do índice
+custava 1,6 ms — e o `join` com os 104.567 tickets custava 66 ms. **O índice
+resolvia e o join devolvia o problema inteiro.** Se a conferência tivesse
+parado no `[]` da migration, teria entrado em produção uma rota que não é mais
+rápida que a de hoje.
+
+O join existia por uma condição: no padrão de horário o legado só conta a
+interação feita pelo próprio criador do ticket. Ela não é descartável — corta
+7.114 das 61.144 interações, 11,6%. Virou coluna (`by_ticket_creator`) com
+índice parcial, e o join saiu.
+
+**Regra que sai disto:** migration aplicada não é ganho medido. Depois de
+aplicar, rode `EXPLAIN ANALYZE` da consulta real contra produção e compare com
+o legado. Duas vezes neste projeto o custo estava num lugar diferente de onde
+eu supunha.
+
+### A tabela de fatos tem dois eixos de tempo, de propósito
+
+| Coluna | O que é | Serve a |
+|---|---|---|
+| `day` | a data que o agente **declarou** | volume, metas, ritmo |
+| `occurred_at` | o **instante real** do registro | hora do dia, turno, pico |
+
+Medido: em **9.074 aberturas** os dois eixos caem em dias diferentes. Quem
+registra à meia-noite o atendimento de ontem aparece no dia de ontem no volume
+e na madrugada no mapa de horário. O legado faz exatamente isso, usando
+`service_date` num lugar e `created_at` no outro. Com um eixo só, um dos dois
+painéis passa a mentir e ninguém percebe olhando.
+
+Na interação os dois coincidem, porque ambos saem de `recorded_at` — conferido:
+0 divergências em 61.144.
+
 ### Números da travessia, medidos em produção
 
 | Medida | Resultado |
@@ -120,10 +165,27 @@ Nenhuma linha original foi tocada.
 
 ### 3.1 Migrations `RESOLVIDO 01/10`
 
-Nada pendente. As migrations 0001, 0002, 0004, 0005 e 0006 estão aplicadas, e
-as travessias 0003, 0004 e 0006 rodaram. 18 tabelas em `core`.
+Nada pendente. As migrations 0001, 0002, 0004, 0005, 0006, **0007 e 0008** estão
+aplicadas, e as travessias 0003, 0004 e 0006 rodaram. 18 tabelas em `core`.
 
-### 3.2 Um PR aberto: sincronizador de edições (#101) `ABERTO`
+> `0008` recusa a segunda execução com `column already exists`, porque não usa
+> `IF NOT EXISTS`. Isso é proteção, não defeito: a mensagem diz que já entrou.
+> Antes de concluir qualquer coisa a partir dela, confira o estado — foi o que
+> fiz, e os oito indicadores estavam corretos.
+
+### 3.2 Três PRs abertos `AGUARDAM MERGE`
+
+| PR | O que traz |
+|---|---|
+| #101 | sincronizador de edições (abaixo) |
+| #106 | este documento |
+| #107 | as quatro telas da gestora, `0007` e `0008` — **o SQL já está em produção; falta o código da API** |
+
+> **Atenção à ordem:** `0007` e `0008` já estão aplicadas no banco, mas as
+> rotas que as usam só sobem quando #107 mergear. Até lá a API em produção tem
+> 28 rotas, não 32.
+
+#### #101 · sincronizador de edições
 
 `packages/db/backfill/0005_sync_edicoes.sql` existe só nesse PR. A travessia
 copia registros **novos**; ela ignora **edições** de registros que já tinham
@@ -206,8 +268,8 @@ entre dois schemas com gatilhos diferentes.
 O que falta em código para o caminho A:
 
 - **Tela do agente:** `PATCH /tickets/:id`, `DELETE /tickets/:id` e a exportação.
-- **Painel da gestora:** as rotas de auditoria, padrão por horário, detalhe de
-  canal e detalhe de interações (hoje são 4 RPCs).
+- **Painel da gestora:** ~~as rotas de auditoria, padrão por horário, detalhe de
+  canal e detalhe de interações~~ — **prontas em #107.** Nada falta aqui.
 - **Roteiro do corte:** congelar escrita, rodar `0005_sync_edicoes.sql` e a
   travessia uma última vez, reconciliar, apontar as telas, liberar. Com
   reversão: enquanto o legado continuar intacto, voltar é mudar o apontamento.
@@ -235,9 +297,11 @@ integracoes (zendesk, lya)
 | `refunds` | 6 rotas | em produção |
 | `transfers` / `takeovers` | 8 rotas | em produção |
 | `notifications` | 2 rotas | em produção |
-| `metrics` | `GET /metrics/dashboard`, `GET /metrics/me` | em produção, sobre a tabela de fatos |
+| `metrics` | `/metrics/dashboard`, `/metrics/me` | em produção, sobre a tabela de fatos |
+| `metrics` (gestora) | `/metrics/audit`, `/metrics/hourly`, `/metrics/channels`, `/metrics/agents` | **em #107**, banco já pronto |
 
-Total: **28 rotas** de 80 especificadas. Dos 14 módulos, **6 existem**.
+Total: **32 rotas** de 80 especificadas (28 publicadas, 4 em #107). Dos 14
+módulos, **6 existem**, e `metricas` está completo.
 
 ### Como rodar as suítes
 
@@ -245,20 +309,20 @@ Total: **28 rotas** de 80 especificadas. Dos 14 módulos, **6 existem**.
 ./packages/db/run-tests.sh
 ```
 
-Esperado, com o denominador: **41 garantias em 3 arquivos, zero falhas.**
+Esperado, com o denominador: **59 garantias em 4 arquivos, zero falhas.**
 
 ```bash
 dropdb --if-exists xmx_api_test; createdb xmx_api_test
-for f in packages/db/migrations/000{1,2,4,5,6}_*.sql; do psql -q -d xmx_api_test -v ON_ERROR_STOP=1 -f "$f"; done
+for f in packages/db/migrations/000[1-8]*.sql; do psql -q -d xmx_api_test -v ON_ERROR_STOP=1 -f "$f"; done
 cd apps/api && PGDATABASE=xmx_api_test DATABASE_URL=postgres://localhost/xmx_api_test ALLOW_DEV_TOKENS=1 SUPABASE_URL=https://kjkyyqxqrqsdozjyyuon.supabase.co ../../node_modules/.bin/tsx src/test/run.ts
 ```
 
-Esperado: **65 verificações, zero falhas.** Precisa de Postgres local.
+Esperado: **88 verificações, zero falhas.** Precisa de Postgres local.
 
 Ensaio da travessia, com os casos difíceis medidos em produção:
 
 ```bash
-createdb xmx_bf && for f in packages/db/migrations/000{1,2,4,5,6}_*.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0006_backfill_fatos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
+createdb xmx_bf && for f in packages/db/migrations/000[1-8]*.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0006_backfill_fatos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
 ```
 
 > `reconciliacao.sql` usa `\set`, que é comando do `psql` e a Management API
@@ -352,6 +416,12 @@ Todas foram pegas, mas custaram tempo.
 | Reinstalei dependências entre dois builds e culpei meu código | **isolar a variável**: mesmo ambiente, só a mudança em teste |
 | Cadeia com `&&` onde um passo falha deixa a variável seguinte vazia, e comparar com vazio devolve "diferente" | conferir o código de saída de **cada** passo |
 
+Uma sexta, de 01/10: **migration aplicada não é ganho medido.** A `0007`
+aplicou sem erro e a consulta continuou custando 105 ms contra 110 ms do
+legado — o índice resolvia e um `join` devolvia o problema inteiro. O que
+corrigiu: rodar `EXPLAIN ANALYZE` da consulta real contra produção **depois** de
+aplicar, e comparar com o legado em tempo e em páginas.
+
 A regra do árbitro independente é a que mais rendeu: a conferência das
 métricas da seção 2 existe porque a pergunta certa não é "a tabela nova está
 consistente consigo mesma?", é "ela diz o mesmo que a função que a gestora
@@ -372,10 +442,10 @@ usa hoje?".
 | `docs/arquitetura-v2/91-MEDICOES.md` | medições que fecharam itens abertos |
 | `docs/arquitetura-v2/TAREFA-vercel-variaveis.md` | tarefa fechada, já concluída, serve de modelo |
 | `packages/contract/` | a fronteira entre web e api |
-| `packages/db/migrations/` | schema (0001, 0002, 0004, 0005, 0006) |
+| `packages/db/migrations/` | schema (0001, 0002, 0004, 0005, 0006, 0007, 0008) |
 | `packages/db/backfill/` | a travessia (0003, 0004, 0006) e as reconciliações |
-| `packages/db/tests/` | as 41 garantias de schema |
-| `apps/api/` | a API (Hono + postgres.js); `src/test/run.ts` tem as 65 verificações |
+| `packages/db/tests/` | as 59 garantias de schema |
+| `apps/api/` | a API (Hono + postgres.js); `src/test/run.ts` tem as 88 verificações |
 | `api/index.ts` | ponto de entrada como Função da Vercel |
 
 ---
@@ -402,4 +472,9 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 01/10 | **Métricas novas conferidas contra o legado** | ago e set/2026 idênticos; histórico 102.663=102.663 aberturas e 59.654→59.653 interações, a única diferença sendo o rejeito órfão de 05/05/2026 |
 | 01/10 | Ganho medido em produção | 151,6 ms / 46.034 páginas → 4,3 ms / 25 páginas, e o legado chama isso 6× por painel |
 | 01/10 | Deriva medida | 688 atendimentos e 652 interações, todos registros novos; nenhum par perdido |
+| 01/10 | Quatro telas da gestora, módulo de métricas completo (#107) | 32 rotas, 88 verificações de API, 59 garantias de schema |
+| 01/10 | Eixo do relógio em produção (`0007`) | 165.711 instantes, nenhum nulo, nenhum fora da origem; distribuição por hora idêntica ao legado nas 24 horas de agosto |
+| 01/10 | Filtro do criador materializado (`0008`) | 158.597 marcadas = 165.711 − 7.114; padrão por horário de 110,6 ms / 45.378 páginas para **26,8 ms / 51 páginas** |
+| 01/10 | Erro de mapeamento pego pelo árbitro | filtro escrito com `current_owner_id` dava 955 linhas a mais em agosto; o legado usa o **criador** |
+| 01/10 | Quebra de paridade pega lendo os guardas | `/metrics/dashboard` exigia `can_view_all_tickets`, que 0 de 49 usuários têm — recusaria a gestora |
 | — | **Decisão do corte** | **próximo — aguarda o dono. Passo 4, caminho A recomendado** |
