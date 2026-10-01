@@ -8,7 +8,7 @@ import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentsQuery } from "@/features/dashboard/useAgentsQuery";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -317,19 +317,19 @@ export default function ManagerLayout() {
           o Logout simplesmente saía por baixo da janela. */}
       <aside
         className={cn(
-          "sticky top-0 flex h-screen shrink-0 flex-col bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
-          collapsed ? "w-16" : "w-[260px]",
+          "sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
+          collapsed ? "w-16" : "w-[248px]",
         )}
       >
         <div className={cn("flex shrink-0 items-center", collapsed ? "flex-col gap-2 p-2" : "justify-between gap-1 p-4")}>
           <div className={cn("flex min-w-0 items-center gap-2", collapsed && "justify-center")}>
-            <img src={logo} alt="Logo da empresa" className="h-7 w-auto shrink-0" loading="lazy" />
+            {collapsed ? <Logo variant="mark" height={28} /> : <Logo height={20} />}
             {!collapsed && (
               <div className="leading-tight truncate">
-                <div className="text-[13px] font-semibold">
+                <div className="text-[13px] font-medium text-ink">
                   {isManager ? "Painel da Gestora" : "Data Analytics"}
                 </div>
-                <div className="text-xs opacity-80">{isManager ? "Analytics" : "Suporte"}</div>
+                <div className="text-xs text-ink-tertiary">{isManager ? "Analytics" : "Suporte"}</div>
               </div>
             )}
           </div>
@@ -339,7 +339,7 @@ export default function ManagerLayout() {
                 type="button"
                 onClick={() => setCollapsed((v) => !v)}
                 aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
               >
                 {collapsed ? <PanelLeftOpen className={SIDEBAR_ICON} /> : <PanelLeftClose className={SIDEBAR_ICON} />}
               </button>
@@ -393,12 +393,9 @@ export default function ManagerLayout() {
               end
               // A marca da Lya no lugar do ícone genérico. Abaixo de 24px ela
               // congela sozinha: movimento minúsculo na sidebar é ruído.
-              icon={<LyaMark size={18} tone="branco" label={null} />}
+              icon={<LyaMark size={18} label={null} />}
               label="Lya"
               collapsed={collapsed}
-              // Contorno neon: é o único item da sidebar que abre uma
-              // conversa, e some entre onze irmãos de mesmo peso.
-              className="lya-nav"
             />
             {isManager && (
               <>
@@ -446,15 +443,15 @@ export default function ManagerLayout() {
           {!collapsed && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Período</div>
+                <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Período</div>
                 <DateRangePicker value={range} onChange={setRange} className="px-3" />
-                <div className="text-[11px] opacity-75">Default: mês atual até hoje</div>
+                <div className="text-[11px] text-ink-tertiary">Default: mês atual até hoje</div>
               </div>
 
               <div className="space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wide opacity-80">Agente</div>
+                <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Agente</div>
                 <Select value={agentId} onValueChange={setAgentId}>
-                  <SelectTrigger className="w-full bg-white/10 border-white/15 text-dashboard-sidebar-foreground">
+                  <SelectTrigger className="w-full text-ink">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent className="z-50">
@@ -475,7 +472,7 @@ export default function ManagerLayout() {
             menu caber na tela. A borda separa do conteúdo que rola por baixo. */}
         <div
           className={cn(
-            "shrink-0 border-t border-white/10",
+            "shrink-0 border-t border-sidebar-border",
             collapsed ? "space-y-1 p-2" : "space-y-2 p-4",
           )}
         >
@@ -489,7 +486,7 @@ export default function ManagerLayout() {
                         onClick={handleExportReport}
                         disabled={exporting}
                         aria-label={exporting ? "Extraindo relatório" : "Extrair relatório"}
-                        className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15 disabled:opacity-60"
+                        className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-ink-secondary transition-colors hover:bg-subtle hover:text-ink disabled:opacity-60"
                       >
                         <FileSpreadsheet className={cn(SIDEBAR_ICON, exporting && "animate-pulse")} />
                       </button>
@@ -506,7 +503,7 @@ export default function ManagerLayout() {
                       type="button"
                       onClick={handleLogout}
                       aria-label="Sair"
-                      className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15"
+                      className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
                     >
                       <LogOut className={SIDEBAR_ICON} />
                     </button>
@@ -520,8 +517,8 @@ export default function ManagerLayout() {
                   <Button
                     onClick={handleExportReport}
                     disabled={exporting}
-                    variant="secondary"
-                    className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                    variant="outline"
+                    className="w-full"
                   >
                     <FileSpreadsheet className={cn(SIDEBAR_ICON, exporting && "animate-pulse")} />
                     {exporting ? "Extraindo..." : "Extrair Relatório"}
@@ -530,13 +527,13 @@ export default function ManagerLayout() {
 
                 <Button
                   onClick={handleLogout}
-                  variant="secondary"
-                  className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                  variant="outline"
+                  className="w-full"
                 >
                   Logout
                 </Button>
 
-                <div className="text-[11px] opacity-70 px-1">
+                <div className="text-[11px] text-ink-tertiary px-1">
                   {isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
                 </div>
               </>

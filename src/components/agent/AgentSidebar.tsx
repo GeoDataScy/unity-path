@@ -59,11 +59,11 @@ export function AgentSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-white/10 [&_[data-sidebar=sidebar]]:bg-dashboard-sidebar [&_[data-sidebar=sidebar]]:text-dashboard-sidebar-foreground"
+      className="border-r border-sidebar-border [&_[data-sidebar=sidebar]]:bg-sidebar [&_[data-sidebar=sidebar]]:text-sidebar-foreground"
     >
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">Painel</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Painel</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {

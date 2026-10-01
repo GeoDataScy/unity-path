@@ -3,7 +3,7 @@ import { NavLink, useMatch } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-// Item de navegação das barras laterais escuras (gestora, copy e produtos).
+// Item de navegação das barras laterais (gestora, copy e produtos).
 // Estava duplicado nos três layouts, com o mesmo bug em cada cópia.
 
 /**
@@ -45,9 +45,13 @@ export function SidebarNavItem({ to, end, icon, label, collapsed, badge, matchAl
       to={to}
       end={end}
       className={cn(
-        "flex h-9 items-center rounded-lg text-sm transition-colors hover:bg-white/10",
+        // hubi: rótulo em sidebar-ink; ativo = fundo sidebar-active, tinta
+        // `ink` peso 500 e um fio de 2px em `ink` na borda esquerda.
+        "relative flex h-[34px] items-center rounded-md text-sm text-sidebar-foreground transition-colors duration-150 hover:bg-subtle hover:text-ink",
         collapsed ? "mx-auto w-9 justify-center" : "gap-2.5 px-3",
-        isActive && "bg-white/15 font-medium",
+        isActive &&
+          "bg-sidebar-accent font-medium text-sidebar-accent-foreground before:absolute before:bottom-[9px] before:top-[9px] before:w-0.5 before:rounded-full before:bg-ink",
+        isActive && (collapsed ? "before:-left-[14px]" : "before:-left-3"),
         className,
       )}
     >

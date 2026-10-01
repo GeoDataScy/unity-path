@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
@@ -212,17 +212,17 @@ export default function CopyLayout() {
     <div className="min-h-screen flex">
       <aside
         className={cn(
-          "sticky top-0 flex h-screen shrink-0 flex-col bg-dashboard-sidebar text-dashboard-sidebar-foreground border-r border-white/10 transition-[width] duration-200 ease-out",
-          collapsed ? "w-16" : "w-[260px]",
+          "sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
+          collapsed ? "w-16" : "w-[248px]",
         )}
       >
         <div className={cn("flex shrink-0 items-center", collapsed ? "flex-col gap-2 p-2" : "justify-between gap-1 p-4")}>
           <div className={cn("flex min-w-0 items-center gap-2", collapsed && "justify-center")}>
-            <img src={logo} alt="Logo da empresa" className="h-7 w-auto shrink-0" loading="lazy" />
+            {collapsed ? <Logo variant="mark" height={28} /> : <Logo height={20} />}
               {!collapsed && (
                 <div className="leading-tight truncate">
-                  <div className="text-[13px] font-semibold">Painel do Copy</div>
-                  <div className="text-xs opacity-80">Conteúdo</div>
+                  <div className="text-[13px] font-medium text-ink">Painel do Copy</div>
+                  <div className="text-xs text-ink-tertiary">Conteúdo</div>
                 </div>
               )}
             </div>
@@ -232,7 +232,7 @@ export default function CopyLayout() {
                   type="button"
                   onClick={() => setCollapsed((v) => !v)}
                   aria-label={collapsed ? "Expandir menu lateral" : "Encolher menu lateral"}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
                 >
                   {collapsed ? <PanelLeftOpen className={SIDEBAR_ICON} /> : <PanelLeftClose className={SIDEBAR_ICON} />}
                 </button>
@@ -254,7 +254,7 @@ export default function CopyLayout() {
 
           {!collapsed && (
             <div className="space-y-1.5">
-              <p className="px-1 text-[11px] uppercase tracking-wide opacity-70">Período</p>
+              <p className="px-1 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Período</p>
               <DateRangePicker value={range} onChange={setRange} className="px-3" />
             </div>
           )}
@@ -278,7 +278,7 @@ export default function CopyLayout() {
         </div>
 
         {/* Rodapé preso: o Sair não depende de o menu caber na tela. */}
-        <div className={cn("shrink-0 border-t border-white/10", collapsed ? "space-y-1 p-2" : "space-y-2 p-4")}>
+        <div className={cn("shrink-0 border-t border-sidebar-border", collapsed ? "space-y-1 p-2" : "space-y-2 p-4")}>
             {collapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -286,7 +286,7 @@ export default function CopyLayout() {
                     type="button"
                     onClick={handleLogout}
                     aria-label="Sair"
-                    className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-dashboard-sidebar-foreground transition-colors hover:bg-white/15"
+                    className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
                   >
                     <LogOut className={SIDEBAR_ICON} />
                   </button>
@@ -297,14 +297,14 @@ export default function CopyLayout() {
               <>
                 <Button
                   onClick={handleLogout}
-                  variant="secondary"
-                  className="w-full bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                  variant="outline"
+                  className="w-full"
                 >
                   <LogOut className={SIDEBAR_ICON} />
                   Sair
                 </Button>
 
-                {fullName && <div className="text-[11px] opacity-70 px-1 truncate">Logado como {fullName}</div>}
+                {fullName && <div className="text-[11px] text-ink-tertiary px-1 truncate">Logado como {fullName}</div>}
               </>
           )}
         </div>

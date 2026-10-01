@@ -27,7 +27,7 @@ export function DateRangePicker({ value, onChange, className }: Props) {
         <Button
           variant="secondary"
           className={cn(
-            "w-full justify-start gap-2 bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15",
+            "w-full justify-start gap-2 border border-input bg-surface font-normal text-ink shadow-xs hover:bg-subtle",
             !value?.from && "opacity-80",
             className,
           )}
