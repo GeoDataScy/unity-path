@@ -31,6 +31,19 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        // Semânticos de estado (hubi): sucesso = signal, alerta = amber.
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -99,6 +112,52 @@ export default {
           neutral: "hsl(var(--chart-neutral))",
           grid: "hsl(var(--chart-grid))",
           axis: "hsl(var(--chart-axis))",
+          "mute-1": "hsl(var(--chart-mute-1))",
+          "mute-2": "hsl(var(--chart-mute-2))",
+          "mute-3": "hsl(var(--chart-mute-3))",
+        },
+
+        // Papéis hubi (design system). Os "-soft" são o tom a 10% (claro) /
+        // 12% (escuro), via --soft-alpha.
+        canvas: "hsl(var(--canvas))",
+        surface: "hsl(var(--surface))",
+        raised: "hsl(var(--raised))",
+        subtle: "hsl(var(--subtle))",
+        inverse: "hsl(var(--inverse))",
+        scrim: "hsl(var(--scrim))",
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          secondary: "hsl(var(--ink-secondary))",
+          tertiary: "hsl(var(--ink-tertiary))",
+          disabled: "hsl(var(--ink-disabled))",
+          inverse: "hsl(var(--ink-inverse))",
+        },
+        line: {
+          DEFAULT: "hsl(var(--line))",
+          strong: "hsl(var(--line-strong))",
+          control: "hsl(var(--line-control))",
+        },
+        "primary-hover": "hsl(var(--primary-hover))",
+        signal: {
+          DEFAULT: "hsl(var(--signal))",
+          soft: "hsl(var(--signal) / var(--soft-alpha))",
+          foreground: "hsl(var(--on-signal))",
+        },
+        aqua: {
+          DEFAULT: "hsl(var(--aqua))",
+          soft: "hsl(var(--aqua) / var(--soft-alpha))",
+        },
+        ice: {
+          DEFAULT: "hsl(var(--ice))",
+          soft: "hsl(var(--ice) / var(--soft-alpha))",
+        },
+        coral: {
+          DEFAULT: "hsl(var(--coral))",
+          soft: "hsl(var(--coral) / var(--soft-alpha))",
+        },
+        amber: {
+          DEFAULT: "hsl(var(--amber))",
+          soft: "hsl(var(--amber) / var(--soft-alpha))",
         },
 
         // Bloco de notas do agente (papel pautado)
@@ -116,10 +175,27 @@ export default {
         "sidebar-border": "hsl(var(--sidebar-border))",
         "sidebar-ring": "hsl(var(--sidebar-ring))",
       },
+      // Raios hubi: lg = cards/popovers (10px), md = botões/inputs (6px),
+      // sm = checkbox/chip (4px), xl = dialogs/sheets (14px).
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        xl: "var(--radius-lg)",
+        lg: "var(--radius-md)",
+        md: "var(--radius-sm)",
+        sm: "var(--radius-xs)",
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-lg)",
+        "2xl": "var(--shadow-lg)",
+        glow: "var(--glow-signal)",
+      },
+      fontFamily: {
+        sans: ["Geist", "ui-sans-serif", "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
+        mono: ['"Geist Mono"', "ui-monospace", '"SF Mono"', "Menlo", "monospace"],
       },
       keyframes: {
         "accordion-down": {

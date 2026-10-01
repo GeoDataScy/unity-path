@@ -2,204 +2,215 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ===== hubi · identidade visual ===========================================
+   Fonte: design system "hubi" (tokens.json). Preto, branco e UM ponto de luz
+   (`signal`); cor só aparece quando carrega significado.
+
+   As cores continuam como tripla HSL sem `hsl()` — o Tailwind e o código
+   consomem `hsl(var(--x))`. Cada tripla é a conversão EXATA do hex do design
+   system (ida e volta conferida). Os nomes antigos do shadcn/app seguem
+   existindo e apontam para os papéis hubi (tabela "Mapa para o código atual"
+   do README); os nomes hubi (`--canvas`, `--ink`, `--signal`...) são novos.
+   ======================================================================== */
+
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./assets/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 220 13% 13%;
+    /* ── papéis hubi ── */
+    --canvas: 0 0% 98%;               /* #fafafa  bg-canvas */
+    --surface: 0 0% 100%;             /* #ffffff  bg-surface */
+    --raised: 0 0% 100%;              /* #ffffff  bg-raised */
+    --subtle: 240 4.8% 95.9%;         /* #f4f4f5  bg-subtle */
+    --inverse: 0 0% 3.9%;             /* #0a0a0a  bg-inverse */
+    --scrim: 0 0% 3.9% / 0.32;        /* rgba(10,10,10,.32) */
+    --ink: 0 0% 3.9%;                 /* #0a0a0a */
+    --ink-secondary: 240 5.2% 33.9%;  /* #52525b */
+    --ink-tertiary: 240 3.6% 43.5%;   /* #6b6b73 */
+    --ink-disabled: 240 5% 64.9%;     /* #a1a1aa */
+    --ink-inverse: 0 0% 98%;          /* #fafafa */
+    --line: 240 4.3% 91%;             /* #e7e7e9 */
+    --line-strong: 240 4.9% 83.9%;    /* #d4d4d8 */
+    --line-control: 240 4% 55.9%;     /* #8a8a93 */
+    --primary-hover: 240 3.7% 15.9%;  /* #27272a */
+    --signal: 82.7 100% 24.9%;        /* #4f7f00 */
+    --on-signal: 0 0% 100%;           /* #ffffff */
+    --aqua: 184.8 100% 27.1%;         /* #007f8a */
+    --ice: 225.8 70.2% 55.3%;         /* #3d63dd */
+    --coral: 4.7 61.4% 48.8%;         /* #c93c30 */
+    --amber: 38.2 100% 32.9%;         /* #a86b00 */
+    /* Os "-soft" do design system são o próprio tom a 10% (claro) / 12%
+       (escuro). Aqui viram a opacidade padrão dos utilitários `*-soft`. */
+    --soft-alpha: 0.1;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    /* Semânticos de estado. Texto sobre amber é SEMPRE escuro: branco dá
+       4,40:1 no claro (abaixo de AA); #0a0a0a dá 4,50:1. */
+    --success: var(--signal);
+    --success-foreground: var(--on-signal);
+    --warning: var(--amber);
+    --warning-foreground: 0 0% 3.9%;
+    --info: var(--ice);
+    --info-foreground: var(--on-signal);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    /* ── shadcn (nomes antigos → papéis hubi) ── */
+    --background: var(--canvas);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--raised);
+    --popover-foreground: var(--ink);
+    --primary: 0 0% 3.9%;             /* #0a0a0a — preto no claro, branco no escuro */
+    --primary-foreground: 0 0% 98%;   /* on-primary #fafafa */
+    --secondary: var(--subtle);
+    --secondary-foreground: var(--ink);
+    --muted: var(--subtle);
+    --muted-foreground: var(--ink-secondary);
+    --accent: var(--subtle);
+    --accent-foreground: var(--ink);
+    --destructive: var(--coral);
+    --destructive-foreground: var(--on-signal);
+    --border: var(--line);
+    --input: var(--line-control);
+    --ring: 0 0% 3.9%;                /* #0a0a0a */
 
-    --primary: 263 70% 62%;
-    --primary-foreground: 0 0% 100%;
+    /* Raios hubi. `--radius` é o do card (radius-md); o Tailwind deriva
+       lg/md/sm destes (tailwind.config.ts). */
+    --radius: 10px;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
 
-    --secondary: 220 13% 95%;
-    --secondary-foreground: 220 13% 13%;
+    /* Elevação: quase tudo é borda. Sombras curtas no claro. */
+    --shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.04);
+    --shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.04), 0 2px 8px rgba(10, 10, 10, 0.04);
+    --shadow-md: 0 4px 12px rgba(10, 10, 10, 0.06), 0 12px 32px rgba(10, 10, 10, 0.08);
+    --shadow-lg: 0 24px 64px rgba(10, 10, 10, 0.14);
+    --glow-signal: none;
 
-    --muted: 220 13% 95%;
-    --muted-foreground: 220 9% 46%;
+    /* Login: mesma tela do app (canvas), sem o preto chapado antigo. */
+    --login-bg: var(--canvas);
+    --login-input-bg: var(--surface);
+    --login-input-border: var(--line-control);
 
-    --accent: 263 70% 62%;
-    --accent-foreground: 0 0% 100%;
+    /* Layout: a sidebar é do mesmo tom do canvas, separada por `line` —
+       não existe mais a barra escura. */
+    --dashboard-sidebar: var(--canvas);
+    --dashboard-sidebar-foreground: var(--ink);
+    --dashboard-surface: var(--canvas);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 263 70% 62%;
-
-    --radius: 0.75rem;
-
-    /* App-specific tokens */
-    --login-bg: 0 0% 0%;
-    --login-input-bg: 260 30% 12%;
-    --login-input-border: 260 20% 20%;
-
-    /* Dashboard layout tokens */
-    /* Roxo bem escuro (match com o fundo do logo) */
-    --dashboard-sidebar: 226 35% 10%;
-    --dashboard-sidebar-foreground: 0 0% 100%;
-    --dashboard-surface: 210 40% 98%; /* ~slate-50 */
-
-    /* Sidebar (shadcn) tokens — keep consistent with dashboard */
-    --sidebar: var(--dashboard-sidebar);
-    --sidebar-foreground: var(--dashboard-sidebar-foreground);
-    --sidebar-accent: 0 0% 100%;
-    --sidebar-accent-foreground: var(--dashboard-sidebar);
-    --sidebar-border: 0 0% 100%;
+    --sidebar: var(--canvas);
+    --sidebar-foreground: var(--ink-secondary);
+    --sidebar-accent: var(--subtle);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--line);
     --sidebar-ring: var(--ring);
 
-    /* Status tokens */
-    /* Amarelo pastel escuro + texto branco (para “Em aberto”) */
-    --status-open: 44 86% 45%;
-    --status-open-foreground: 0 0% 100%;
+    /* Status (ponto + palavra no design system; aqui também viram fundo
+       sólido nas pílulas que já existem). */
+    --status-open: var(--amber);
+    --status-open-foreground: 0 0% 3.9%;
+    --status-success: var(--signal);
+    --status-success-foreground: var(--on-signal);
+    --status-in-progress: var(--aqua);
+    --status-in-progress-foreground: var(--on-signal);
+    --status-done: var(--signal);
+    --status-done-foreground: var(--on-signal);
+    --status-new: var(--ink);
+    --status-new-foreground: var(--ink-inverse);
 
-    /* Verde corporativo (sucesso/meta batida) */
-    --status-success: 152 60% 40%;
-    --status-success-foreground: 0 0% 100%;
+    /* Gráficos. A ordem de --chart-1..8 foi escolhida para maximizar a
+       distância entre as PRIMEIRAS cores em protanopia, deuteranopia e
+       tritanopia (CIEDE2000, pior tema): até 4 séries ficam ≥ 13,8. Com 6+
+       a própria paleta hubi deixa pares próximos (coral × amber × signal).
+       O cinza mais claro vai por último: tem 1,5:1 sobre a superfície. */
+    --chart-mute-1: 240 3.7% 15.9%;   /* #27272a */
+    --chart-mute-2: 240 5% 64.9%;     /* #a1a1aa */
+    --chart-mute-3: 240 4.9% 83.9%;   /* #d4d4d8 */
+    --chart-1: var(--signal);
+    --chart-2: var(--chart-mute-2);
+    --chart-3: var(--ice);
+    --chart-4: var(--chart-mute-1);
+    --chart-5: var(--aqua);
+    --chart-6: var(--coral);
+    --chart-7: var(--amber);
+    --chart-8: var(--chart-mute-3);
 
-    /* Roxo "Em Andamento" */
-    --status-in-progress: 263 70% 62%;
-    --status-in-progress-foreground: 0 0% 100%;
+    /* Visão Geral Atendimentos: aberto = aqua, concluído = signal (README). */
+    --chart-ticket-open: var(--aqua);
+    --chart-ticket-done: var(--signal);
 
-    /* Azul "Concluído" (atendimento finalizado) */
-    --status-done: 210 70% 50%;
-    --status-done-foreground: 0 0% 100%;
+    --chart-success: var(--signal);
+    --chart-warning: var(--amber);
+    --chart-danger: var(--coral);
+    --chart-info: var(--ice);
+    --chart-neutral: var(--chart-mute-2);
 
-    /* Azul escuro premium "Novo" (ticket novo do agente) */
-    --status-new: 220 60% 25%;
-    --status-new-foreground: 220 15% 85%;
+    --chart-grid: 240 6.7% 94.1%;     /* #efeff1 */
+    --chart-axis: var(--ink-tertiary);
 
-    /* Chart palette — usada em Recharts (BarChart, PieChart, LineChart) */
-    --chart-1: 263 70% 62%; /* roxo (primary) */
-    --chart-2: 221 83% 55%; /* azul */
-    --chart-3: 142 71% 45%; /* verde */
-    --chart-4: 38 92% 50%;  /* âmbar */
-    --chart-5: 0 72% 55%;   /* vermelho */
-    --chart-6: 173 80% 40%; /* turquesa */
-    --chart-7: 330 80% 60%; /* rosa */
-    --chart-8: 25 85% 55%;  /* laranja */
+    /* Caderno do agente: o papel pautado aposentou — superfície, pauta em
+       `line` e a margem em coral, discreta. */
+    --notepad-paper: var(--surface);
+    --notepad-rule: var(--line);
+    --notepad-margin: var(--coral);
 
-    /* Tokens semânticos para charts (status, tendências) */
-    /* Visão Geral Atendimentos: roxo da marca = tickets abertos, verde
-       corporativo = concluídos. Par conferido em daltonismo (ΔE 22,9 deutan)
-       nos dois temas — por isso o verde do modo escuro é escurecido em vez de
-       seguir o --chart-success, que estoura a faixa de luminosidade. */
-    --chart-ticket-open: 263 70% 62%;
-    --chart-ticket-done: 152 60% 40%;
-
-    --chart-success: 142 71% 45%;
-    --chart-warning: 38 92% 50%;
-    --chart-danger: 0 72% 55%;
-    --chart-info: 221 83% 55%;
-    --chart-neutral: 220 9% 46%;
-
-    /* Grid e eixos dos charts */
-    --chart-grid: 220 13% 91%;
-    --chart-axis: 220 9% 46%;
-
-    /* Bloco de notas do agente — papel pautado.
-       `paper` é um branco levemente quente (papel, não tela); `rule` é a pauta e
-       precisa ficar visível SOB o texto sem competir com ele; `margin` é a linha
-       vermelha da margem do caderno. */
-    --notepad-paper: 44 40% 98%;
-    --notepad-rule: 214 30% 88%;
-    --notepad-margin: 0 65% 62%;
+    --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
 
   .dark {
-    --background: 220 13% 13%;
-    --foreground: 0 0% 98%;
+    --canvas: 240 5.3% 3.7%;          /* #09090a */
+    --surface: 240 5.6% 7.1%;         /* #111113 */
+    --raised: 240 5.9% 10%;           /* #18181b */
+    --subtle: 240 5.5% 10.8%;         /* #1a1a1d */
+    --inverse: 240 4.8% 95.9%;        /* #f4f4f5 */
+    --scrim: 0 0% 0% / 0.64;
+    --ink: 240 4.8% 95.9%;            /* #f4f4f5 */
+    --ink-secondary: 240 5% 64.9%;    /* #a1a1aa */
+    --ink-tertiary: 240 4% 55.9%;     /* #8a8a93 */
+    --ink-disabled: 240 5.2% 33.9%;   /* #52525b */
+    --ink-inverse: 0 0% 3.9%;         /* #0a0a0a */
+    --line: 240 4.1% 14.3%;           /* #232326 */
+    --line-strong: 240 5.5% 21.6%;    /* #34343a */
+    --line-control: 240 3.9% 40.4%;   /* #63636b */
+    --primary-hover: 240 4.9% 83.9%;  /* #d4d4d8 */
+    --signal: 79.9 85% 68.6%;         /* #c6f36b */
+    --on-signal: 0 0% 3.9%;           /* #0a0a0a */
+    --aqua: 183.8 72.4% 70.2%;        /* #7ce3ea */
+    --ice: 223.5 100% 80.8%;          /* #9db8ff */
+    --coral: 7.3 100% 74.1%;          /* #ff8b7b */
+    --amber: 39.2 83.6% 68.8%;        /* #f2c46d */
+    --soft-alpha: 0.12;
 
-    --card: 220 13% 16%;
-    --card-foreground: 0 0% 98%;
+    --primary: 240 4.8% 95.9%;        /* #f4f4f5 */
+    --primary-foreground: 0 0% 3.9%;  /* #0a0a0a */
+    --ring: 240 4.8% 95.9%;           /* #f4f4f5 */
 
-    --popover: 220 13% 16%;
-    --popover-foreground: 0 0% 98%;
+    /* No escuro a sombra vira um realce interno de 1px. */
+    --shadow-xs: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 16px 40px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 32px 80px rgba(0, 0, 0, 0.72);
+    --glow-signal: 0 0 0 1px rgba(198, 243, 107, 0.18), 0 0 18px rgba(198, 243, 107, 0.22);
 
-    --primary: 263 70% 62%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 13% 20%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 220 13% 20%;
-    --muted-foreground: 220 9% 65%;
-
-    --accent: 263 70% 62%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 13% 20%;
-    --input: 220 13% 20%;
-    --ring: 263 70% 62%;
-
-    /* Dashboard tokens — adaptados para dark */
-    --dashboard-sidebar: 225 26% 10%;
-    --dashboard-sidebar-foreground: 0 0% 100%;
-    --dashboard-surface: 220 13% 11%;
-
-    /* Sidebar (shadcn) tokens — keep consistent with dashboard */
-    --sidebar: var(--dashboard-sidebar);
-    --sidebar-foreground: var(--dashboard-sidebar-foreground);
-    --sidebar-accent: 0 0% 100%;
-    --sidebar-accent-foreground: var(--dashboard-sidebar);
-    --sidebar-border: 220 13% 22%;
-    --sidebar-ring: var(--ring);
-
-    /* Status tokens — mais saturados/luminosos no dark para preservar contraste */
-    --status-open: 44 90% 55%;
-    --status-open-foreground: 220 13% 13%;
-
-    --status-success: 152 65% 50%;
-    --status-success-foreground: 0 0% 100%;
-
-    --status-in-progress: 263 75% 70%;
-    --status-in-progress-foreground: 220 13% 13%;
-
-    --status-done: 210 75% 60%;
-    --status-done-foreground: 0 0% 100%;
-
-    --status-new: 220 55% 70%;
-    --status-new-foreground: 220 13% 13%;
-
-    /* Chart palette no dark — tonalidades um pouco mais claras/saturadas */
-    --chart-1: 263 80% 72%;
-    --chart-2: 221 90% 68%;
-    --chart-3: 142 75% 55%;
-    --chart-4: 38 95% 60%;
-    --chart-5: 0 80% 68%;
-    --chart-6: 173 80% 52%;
-    --chart-7: 330 85% 72%;
-    --chart-8: 25 90% 65%;
-
-    --chart-ticket-open: 263 75% 66%;
-    --chart-ticket-done: 152 60% 42%;
-
-    --chart-success: 142 75% 55%;
-    --chart-warning: 38 95% 60%;
-    --chart-danger: 0 80% 68%;
-    --chart-info: 221 90% 68%;
-    --chart-neutral: 220 9% 65%;
-
-    --chart-grid: 220 13% 22%;
-    --chart-axis: 220 9% 65%;
-
-    /* Caderno no dark: papel escuro (um degrau acima do fundo do app, para o
-       painel se destacar), pauta discreta e margem dessaturada. */
-    --notepad-paper: 222 14% 15%;
-    --notepad-rule: 218 12% 27%;
-    --notepad-margin: 0 45% 48%;
+    --chart-mute-1: 240 4.9% 83.9%;   /* #d4d4d8 */
+    --chart-mute-2: 240 3.8% 46.1%;   /* #71717a */
+    --chart-mute-3: 240 5.3% 26.1%;   /* #3f3f46 */
+    --chart-grid: 240 5.1% 11.6%;     /* #1c1c1f */
   }
 }
 
@@ -208,8 +219,24 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: var(--font-sans);
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Movimento hubi: curto e com intenção (120–240ms). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
   }
 }
 
@@ -225,15 +252,16 @@ All colors MUST be HSL.
 }
 
 /* ── Rolagem da sidebar ──
-   A barra lateral escura precisa de um scrollbar discreto: o nativo do macOS
-   some, mas no Windows/Linux ele aparece claro e corta o desenho da barra.
-   Some por completo quando não está rolando o mouse por cima. */
+   Scrollbar discreto: o nativo do macOS some, mas no Windows/Linux ele
+   aparece e corta o desenho da barra. Some por completo quando não está
+   rolando o mouse por cima. A cor é a tinta terciária, que serve aos dois
+   temas agora que a sidebar é do tom do canvas. */
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
 .sidebar-scroll:hover {
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-color: hsl(var(--ink-tertiary) / 0.35) transparent;
 }
 .sidebar-scroll::-webkit-scrollbar {
   width: 6px;
@@ -246,27 +274,28 @@ All colors MUST be HSL.
   border-radius: 999px;
 }
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.22);
+  background-color: hsl(var(--ink-tertiary) / 0.35);
 }
 
-/* ===== Lya · avatar animado (símbolo "Juba") =========================
-   Três arcos concêntricos + ponto rosa. Lê como juba de leão e como onda
-   de sinal. Estados: repouso | pensando | respondendo | resolvido.
-   Uso: <LyaMark estado="pensando" size={40} /> (src/features/lya/components).
+/* ===== Lya · avatar animado (símbolo "Juba", versão hubi) =============
+   Três arcos concêntricos abertos em ink-tertiary, ink-secondary e ink, com
+   o núcleo em `signal` — o mesmo ponto de luz do "i" de hubi e do fim de
+   cada linha nos gráficos. Estados: repouso | pensando | respondendo |
+   resolvido. Uso: <LyaMark estado="pensando" size={40} />.
 
    Regra que não pode ser violada: "pensando" é um PÊNDULO com desaceleração
    nas pontas, nunca rotação linear — giro linear é a assinatura de "máquina
    carregando" e mata a percepção de que existe alguém do outro lado.
 
-   Tudo é escopado em `.lya` e não vaza. Os únicos hexadecimais da marca
-   moram aqui; trocar os quatro tokens muda o símbolo inteiro.
+   A antiga paleta da Lya (roxos, rosa, ciano neon) foi aposentada pelo
+   design system: as cores agora vêm dos tokens e seguem o tema sozinhas.
    ==================================================================== */
 
 .lya {
-  --lya-roxo-esc: #4c1d95;
-  --lya-roxo: #6d28d9;
-  --lya-lilas: #a78bfa;
-  --lya-rosa: #f0709f;
+  --lya-a1: hsl(var(--ink-tertiary));
+  --lya-a2: hsl(var(--ink-secondary));
+  --lya-a3: hsl(var(--ink));
+  --lya-dot: hsl(var(--signal));
 
   display: inline-block;
   width: 40px; /* o tamanho vem daqui, nunca de width/height no SVG */
@@ -274,124 +303,48 @@ All colors MUST be HSL.
   line-height: 0;
 }
 
-/* Dark: a escada de roxos sobe um degrau para não sumir no fundo escuro.
-   A leitura (três níveis + ponto quente) é a mesma. */
-.dark .lya {
-  --lya-roxo-esc: #7c3aed;
-  --lya-roxo: #a78bfa;
-  --lya-lilas: #c4b5fd;
-  --lya-rosa: #f489b0;
-}
-
-/* Monocromática em branco — para superfícies roxas, onde o arco externo
-   lilás perde contraste (cabeçalho do balão, botão flutuante, sidebar). */
-.lya[data-lya-tone="branco"] {
-  --lya-roxo-esc: #ffffff;
-  --lya-roxo: #ffffff;
-  --lya-lilas: #ffffff;
-  --lya-rosa: #ffffff;
-}
-
-/* Neon — só a bolha flutuante. Branco puro sobre roxo é correto mas apaga: a
-   bolha precisa puxar o olho de quem está trabalhando em outra tela. O ciano
-   é o que mais separa do violeta sem sair do registro "clean"; a saturação
-   sobe do arco externo (quase branco) para o ponto central, então o olho cai
-   no miolo em vez de se espalhar.
-
-   Exceção consciente à regra "o símbolo nunca recebe sombra": neon sem halo
-   lê como ciano claro, não como neon. O brilho é curto (3px) e vive SÓ neste
-   tom — sidebar, cabeçalho e avatares seguem com a marca limpa. */
+/* Sobre `bg-inverse` (bolha, botão primário): arcos na tinta invertida, o
+   núcleo continua `signal`. */
+.lya[data-lya-tone="branco"],
 .lya[data-lya-tone="neon"] {
-  --lya-roxo-esc: #b9fbff;
-  --lya-roxo: #d6fdff;
-  --lya-lilas: #ecfeff;
-  --lya-rosa: #7df5ff;
-}
-.lya[data-lya-tone="neon"] svg {
-  filter: drop-shadow(0 0 3px rgb(125 245 255 / 0.55));
+  --lya-a1: hsl(var(--ink-inverse));
+  --lya-a2: hsl(var(--ink-inverse));
+  --lya-a3: hsl(var(--ink-inverse));
 }
 
 /* ---------- a bolha flutuante ----------
-   O movimento mora AQUI, não no repouso da marca: acelerar o repouso deixaria
-   a sidebar e os avatares das mensagens inquietos, e repouso é justamente o
-   estado que deve passar despercebido. A aura é uma onda lenta (4,2s) que sai
-   da bolha e some — mesmo vocabulário do halo de "resolvido", nunca um giro
-   linear, que é assinatura de "máquina carregando". */
+   `bg-inverse` com uma onda lenta em `signal` (4,2s) que sai da bolha e
+   some — mesmo vocabulário do halo de "resolvido", nunca um giro linear.
+   No escuro ela ganha o `glow-signal`, o único brilho permitido. */
 @keyframes lya-bolha-onda {
   0% {
-    transform: scale(0.88);
+    transform: scale(0.9);
     opacity: 0;
   }
   22% {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   100% {
-    transform: scale(1.5);
+    transform: scale(1.45);
     opacity: 0;
-  }
-}
-@keyframes lya-bolha-respiro {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 20px -6px rgb(109 40 217 / 0.5),
-      0 0 14px -2px rgb(125 245 255 / 0.25);
-  }
-  50% {
-    box-shadow:
-      0 10px 26px -6px rgb(109 40 217 / 0.6),
-      0 0 22px 0 rgb(125 245 255 / 0.45);
   }
 }
 
 .lya-bolha {
-  animation: lya-bolha-respiro 4.2s ease-in-out infinite;
+  box-shadow: var(--shadow-md), var(--glow-signal);
 }
 .lya-bolha-onda {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  border: 1.5px solid rgb(125 245 255 / 0.9);
+  border: 1px solid hsl(var(--signal));
   pointer-events: none;
   animation: lya-bolha-onda 4.2s cubic-bezier(0.25, 0.8, 0.35, 1) infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lya-bolha,
   .lya-bolha-onda {
     animation: none !important;
-  }
-  .lya-bolha-onda {
     opacity: 0;
-  }
-}
-
-/* ---------- o item da Lya na sidebar ----------
-   Mesmo ciano da bolha, mas num volume muito menor: aqui ela divide espaço
-   com onze irmãos e um contorno forte viraria disputa, não destaque. É um
-   fio de 1px por dentro mais um brilho de fora, respirando no mesmo compasso
-   de 4,2s — a bolha e a sidebar pulsam juntas, não em contratempo. */
-@keyframes lya-nav-respiro {
-  0%,
-  100% {
-    box-shadow:
-      inset 0 0 0 1px rgb(125 245 255 / 0.18),
-      0 0 8px -4px rgb(125 245 255 / 0.22);
-  }
-  50% {
-    box-shadow:
-      inset 0 0 0 1px rgb(125 245 255 / 0.34),
-      0 0 13px -3px rgb(125 245 255 / 0.4);
-  }
-}
-.lya-nav {
-  animation: lya-nav-respiro 4.2s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lya-nav {
-    animation: none !important;
-    box-shadow:
-      inset 0 0 0 1px rgb(125 245 255 / 0.26),
-      0 0 10px -4px rgb(125 245 255 / 0.3);
   }
 }
 
@@ -413,21 +366,22 @@ All colors MUST be HSL.
   stroke-linecap: round;
 }
 .lya .lya-arc1 {
-  stroke: var(--lya-lilas);
+  stroke: var(--lya-a1);
+  opacity: 0.7;
 }
 .lya .lya-arc2 {
-  stroke: var(--lya-roxo);
+  stroke: var(--lya-a2);
 }
 .lya .lya-arc3 {
-  stroke: var(--lya-roxo-esc);
+  stroke: var(--lya-a3);
 }
 .lya .lya-dot {
-  fill: var(--lya-rosa);
+  fill: var(--lya-dot);
   stroke: none;
 }
 .lya .lya-halo {
-  stroke: var(--lya-rosa);
-  stroke-width: 3;
+  stroke: var(--lya-dot);
+  stroke-width: 2;
   opacity: 0;
 }
 
@@ -559,81 +513,50 @@ All colors MUST be HSL.
 /* ---------------------------------------------------------------------------
    Painel de reembolsos externos (/dashboard/reembolsos/comparativo)
    ---------------------------------------------------------------------------
-   Tokens do layout de referência enviado pelo gestor. Ficam escopados em
-   .refunds-visual para não vazarem no resto do app, que tem a própria paleta
-   em HSL. Aqui são hex porque são os valores exatos do original.
+   Os nomes --rf-* ficam (o painel inteiro os consome), mas agora apontam
+   para os tokens hubi — a paleta própria do painel foi aposentada.
 
-   As quatro primeiras cores de produto são as dele, ligadas ao nome (geleia,
-   mel, castanho, azul). As de reserva entram para produtos que ele não tinha —
-   a Cartpanda sozinha traz sete. Foram escolhidas longe umas das outras em
-   matiz E em luminosidade, porque só matiz não separa em daltonismo.
+   Cores de produto: a mesma ordem de --chart-1..8 (escolhida para separar
+   as primeiras em daltonismo). Seguem ligadas à POSIÇÃO do produto, como
+   antes; só deixaram de ser "geleia/mel/castanho/azul".
 */
 .refunds-visual {
-  --rf-bg: #eef1f4;
-  --rf-panel: #ffffff;
-  --rf-panel-2: #f6f8fa;
-  --rf-ink: #141922;
-  --rf-ink-soft: #5a6472;
-  --rf-ink-faint: #8b95a3;
-  --rf-line: #dce1e8;
-  --rf-line-strong: #c3cad4;
-  --rf-focus: #2b6cff;
+  --rf-bg: hsl(var(--canvas));
+  --rf-panel: hsl(var(--surface));
+  --rf-panel-2: hsl(var(--subtle));
+  --rf-ink: hsl(var(--ink));
+  --rf-ink-soft: hsl(var(--ink-secondary));
+  --rf-ink-faint: hsl(var(--ink-tertiary));
+  --rf-line: hsl(var(--line));
+  --rf-line-strong: hsl(var(--line-strong));
+  --rf-focus: hsl(var(--ring));
 
-  --rf-p1: #c33d78; /* Jellyrock — geleia */
-  --rf-p2: #e3a11c; /* Honeyfil — mel */
-  --rf-p3: #9a6a3f; /* Horsefil — castanho */
-  --rf-p4: #3e6db5; /* Blue Horse — azul */
-  --rf-p5: #2f8f6f;
-  --rf-p6: #7a5cc4;
-  --rf-p7: #b4543a;
-  --rf-p8: #4a7f9e;
+  --rf-p1: hsl(var(--chart-1));
+  --rf-p2: hsl(var(--chart-2));
+  --rf-p3: hsl(var(--chart-3));
+  --rf-p4: hsl(var(--chart-4));
+  --rf-p5: hsl(var(--chart-5));
+  --rf-p6: hsl(var(--chart-6));
+  --rf-p7: hsl(var(--chart-7));
+  --rf-p8: hsl(var(--chart-8));
 
-  --rf-ma: #1e2733;
-  --rf-parcial: #1f9e8f;
-  --rf-total: #48566a;
-  --rf-outros: #c0c8d2;
-  --rf-equipe: #6d54d8;
-  --rf-plat: #cbd2db;
-  --rf-trend: #d9455f;
-  --rf-up: #1f9e5f;
-  --rf-shadow: 0 1px 2px rgba(20, 25, 34, 0.05), 0 8px 24px rgba(20, 25, 34, 0.06);
-}
-
-.dark .refunds-visual {
-  --rf-bg: #0e1218;
-  --rf-panel: #161c25;
-  --rf-panel-2: #1c232e;
-  --rf-ink: #eef2f7;
-  --rf-ink-soft: #9aa5b3;
-  --rf-ink-faint: #6b7684;
-  --rf-line: #28313d;
-  --rf-line-strong: #3a4552;
-  --rf-focus: #5b8bff;
-
-  --rf-p1: #e0619a;
-  --rf-p2: #f0b845;
-  --rf-p3: #c08a58;
-  --rf-p4: #6b95d8;
-  --rf-p5: #4cbf99;
-  --rf-p6: #a992e8;
-  --rf-p7: #e08065;
-  --rf-p8: #79aecd;
-
-  --rf-ma: #eaf0f7;
-  --rf-parcial: #35c2ad;
-  --rf-total: #8a97a8;
-  --rf-outros: #3f4a58;
-  --rf-equipe: #9b8bf0;
-  --rf-plat: #3a4552;
-  --rf-trend: #ff6b81;
-  --rf-up: #3fca7f;
-  --rf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+  /* Média / tendência = a série protagonista; parcial × total = aqua ×
+     cinza; "outros" e plataforma = o cinza de fundo; equipe = signal. */
+  --rf-ma: hsl(var(--ink));
+  --rf-parcial: hsl(var(--aqua));
+  --rf-total: hsl(var(--chart-mute-2));
+  --rf-outros: hsl(var(--chart-mute-3));
+  --rf-equipe: hsl(var(--signal));
+  --rf-plat: hsl(var(--chart-mute-3));
+  --rf-trend: hsl(var(--coral));
+  --rf-up: hsl(var(--signal));
+  --rf-shadow: var(--shadow-sm);
 }
 
 .refunds-visual .rf-display {
-  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: -0.02em;
 }
 .refunds-visual .rf-body {
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
