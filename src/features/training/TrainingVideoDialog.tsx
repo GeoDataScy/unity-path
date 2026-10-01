@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { ArrowRight, CheckCircle2, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,8 +150,10 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
             )}
             {!resolving && !resolvedUrl && video && (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-white/70">
-                <p className="text-base font-medium text-white">Vídeo em breve</p>
-                <p className="text-sm">Estamos finalizando este conteúdo. Volte em breve!</p>
+                {/* Só se chega aqui quando o link existe e falhou ao carregar: o guia
+                    não mostra mais vídeo sem link. */}
+                <p className="text-base font-medium text-white">Não foi possível carregar o vídeo</p>
+                <p className="text-sm">Tente novamente em alguns instantes.</p>
               </div>
             )}
             {resolvedUrl && (
@@ -174,12 +176,6 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="truncate text-lg font-semibold text-white">{video?.title}</h2>
-                {video?.completed && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-400/30">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Visto
-                  </span>
-                )}
               </div>
               {video?.description && (
                 <p className="mt-1 line-clamp-3 text-sm text-white/70">{video.description}</p>

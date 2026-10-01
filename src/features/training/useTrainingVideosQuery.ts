@@ -67,23 +67,22 @@ export function useTrainingVideosQuery(userId: string | null) {
         });
       }
 
-      // Só as seções que o guia mostra. "rotinas" (Check-in do agente e Padrão
-      // de horários) saiu em 01/10/2026 por decisão do dono; as linhas continuam
-      // no banco, só não aparecem — nem nos cards, nem na lista de próximos.
-      const visiveis = (videosRes.data ?? []).filter((row) =>
-        TRAINING_SECTION_ORDER.includes(row.section as TrainingSection),
+      // O guia mostra só o que existe, por decisão do dono:
+      //  - só as seções do guia. "rotinas" (Check-in do agente e Padrão de
+      //    horários) saiu em 01/10/2026;
+      //  - só vídeo com link. Os cards "Em breve" saíram em 02/10/2026. As
+      //    linhas continuam no banco, e cada uma aparece sozinha no dia em que
+      //    ganhar o link do vídeo.
+      const visiveis = (videosRes.data ?? []).filter(
+        (row) =>
+          TRAINING_SECTION_ORDER.includes(row.section as TrainingSection) &&
+          Boolean(row.video_url?.trim()),
       );
 
       const videos: TrainingVideoWithProgress[] = visiveis.map((row) => {
         const view = viewsByVideoId.get(row.id);
         const watched = view?.watchedSeconds ?? 0;
-        const total = row.duration_seconds ?? 0;
         const completed = view?.completed ?? false;
-        const pct = completed
-          ? 100
-          : total > 0
-            ? Math.min(100, Math.round((watched / total) * 100))
-            : 0;
 
         return {
           id: row.id,
@@ -96,7 +95,6 @@ export function useTrainingVideosQuery(userId: string | null) {
           displayOrder: row.display_order,
           watchedSeconds: watched,
           completed,
-          progressPct: pct,
         };
       });
 
