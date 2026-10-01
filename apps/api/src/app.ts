@@ -8,6 +8,7 @@ import {
   listRefundsQuery,
   listTicketsQuery,
   metricsRangeQuery,
+  pagedQuery,
   lookupTicketQuery,
   respondTakeoverBody,
   respondTransferBody,
@@ -314,8 +315,15 @@ app.post("/notifications/:id/seen", async (c) => {
  * Painel da gestora. Substitui `dashboard_metrics`, que chama
  * `_interaction_events` SEIS vezes numa requisição, cada vez varrendo
  * duas tabelas com predicado não indexável.
+ *
+ * A capacidade exigida é `can_view_support_analytics`, a mesma de
+ * `public.can_view_support_analytics()`, que guarda todas as RPCs de
+ * painel. Antes aqui estava `can_view_all_tickets`, que **nenhum usuário
+ * em produção tem** (conferido: 0 de 49) — a rota recusaria até a
+ * gestora. Quebra de paridade encontrada lendo os guardas das RPCs
+ * lado a lado, não rodando a rota.
  */
-app.get("/metrics/dashboard", requireCapability("can_view_all_tickets"), async (c) => {
+app.get("/metrics/dashboard", requireCapability("can_view_support_analytics"), async (c) => {
   const caller = c.get("caller");
   const q = parse<any>(metricsRangeQuery, Object.fromEntries(new URL(c.req.url).searchParams));
   return c.json(await withUser(caller.id, (tx) => metrics.dashboardMetrics(tx, q)));
@@ -332,6 +340,41 @@ app.get("/metrics/me", async (c) => {
   const from = url.searchParams.get("from") ?? hoje;
   const to = url.searchParams.get("to") ?? hoje;
   return c.json(await withUser(caller.id, (tx) => metrics.myMetrics(tx, caller, from, to)));
+});
+
+/**
+ * Auditoria. Substitui `dashboard_audit`. Paginação numerada, mantida nas
+ * listas frias pela decisão D7 — o custo nunca foi o `OFFSET`, foi o
+ * predicado não indexável que ele percorria.
+ */
+app.get("/metrics/audit", requireCapability("can_view_support_analytics"), async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(pagedQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => metrics.audit(tx, q)));
+});
+
+/**
+ * Padrão por horário. Substitui `dashboard_hourly_pattern`, que varre as
+ * duas tabelas do legado SETE vezes numa requisição.
+ */
+app.get("/metrics/hourly", requireCapability("can_view_support_analytics"), async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(metricsRangeQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => metrics.hourlyPattern(tx, q)));
+});
+
+/** Detalhe por canal. Substitui `dashboard_channel_detail`. */
+app.get("/metrics/channels", requireCapability("can_view_support_analytics"), async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(metricsRangeQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => metrics.channelDetail(tx, q)));
+});
+
+/** Detalhe por agente. Substitui `dashboard_follow_up_detail`. */
+app.get("/metrics/agents", requireCapability("can_view_support_analytics"), async (c) => {
+  const caller = c.get("caller");
+  const q = parse<any>(metricsRangeQuery, Object.fromEntries(new URL(c.req.url).searchParams));
+  return c.json(await withUser(caller.id, (tx) => metrics.agentDetail(tx, q)));
 });
 
 /** Catálogos: uma fonte só, servindo as duas telas. */

@@ -9,6 +9,7 @@
  * falharam. "Nenhuma falha" sem "sobre quantas" não prova nada.
  */
 import { execFileSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { app } from "../app.js";
 import { sql } from "../db.js";
 
@@ -16,6 +17,7 @@ const DB = process.env.PGDATABASE ?? "xmx_api_test";
 const AGENT = "11111111-1111-1111-1111-111111111111";
 const OUTRO = "22222222-2222-2222-2222-222222222222";
 const SUPER = "33333333-3333-3333-3333-333333333333";
+const OCIOSO = "00000000-0000-4000-8000-000000000009";
 
 let passed = 0;
 let failed = 0;
@@ -36,7 +38,12 @@ function resetDatabase() {
   execFileSync("dropdb", ["--if-exists", DB], { stdio: "pipe" });
   execFileSync("createdb", [DB], { stdio: "pipe" });
   const root = new URL("../../../../packages/db/migrations/", import.meta.url).pathname;
-  for (const f of ["0001_core.sql", "0002_catalogos.sql", "0004_reembolsos.sql", "0005_transferencias.sql", "0006_metricas.sql"]) {
+  // Lê a pasta em ordem em vez de listar nomes à mão: migration nova entrava
+  // na pasta e ficava fora da suíte, e o erro aparecia só na primeira rota
+  // que usasse a coluna.
+  const arquivos = readdirSync(root).filter((f) => f.endsWith(".sql")).sort();
+  if (arquivos.length === 0) throw new Error("nenhuma migration encontrada em " + root);
+  for (const f of arquivos) {
     psql(["-q", "-d", DB, "-v", "ON_ERROR_STOP=1", "-f", root + f]);
   }
 }
@@ -45,9 +52,13 @@ async function seed() {
   await sql`INSERT INTO core.users (id, email, full_name, role, legacy_id) VALUES
     (${AGENT}::uuid, 'ana@xmx.test',  'Ana',   'agent',   'u-ana'),
     (${OUTRO}::uuid, 'bia@xmx.test',  'Bia',   'agent',   'u-bia'),
-    (${SUPER}::uuid, 'sup@xmx.test',  'Super', 'agent',   'u-sup')`;
+    (${SUPER}::uuid, 'sup@xmx.test',  'Super', 'agent',   'u-sup'),
+    -- Agente SEM nenhum registro, de propósito: a tabela da gestora sempre
+    -- mostrou quem ficou zerado, e isso tem que continuar valendo.
+    (${OCIOSO}::uuid, 'ocio@xmx.test', 'Ocioso', 'agent',  'u-ocio')`;
   await sql`UPDATE core.users SET can_view_all_tickets = true, can_register_duplicate_emails = true,
-                                  can_approve_takeovers = true
+                                  can_approve_takeovers = true,
+                                  can_view_support_analytics = true
              WHERE id = ${SUPER}::uuid`;
   await sql`INSERT INTO core.products (name) VALUES ('Arialief'), ('Jellyrock')`;
 }
@@ -365,6 +376,85 @@ async function main() {
     mFiltro.body.totalCount <= mDash.body.totalCount, { filtrado: mFiltro.body.totalCount, todos: mDash.body.totalCount });
   check("filtrado por um agente, so ele aparece no agrupamento",
     mFiltro.body.byAgent.every((a: any) => a.agentId === AGENT), mFiltro.body.byAgent);
+
+  console.log("\n— as quatro telas da gestora —");
+
+  const aud = await json(await call(`/metrics/audit?from=${hoje}&to=${hoje}&pageSize=5`, { as: SUPER }));
+  check("auditoria responde paginada", aud.status === 200 && Array.isArray(aud.body.items), aud.body);
+  // O total da auditoria sai do MESMO recorte do painel. Se divergir, é o
+  // defeito que o legado já teve entre gráfico e modal.
+  check("total da auditoria = total do painel",
+    aud.body.totalCount === mDash.body.totalCount,
+    { auditoria: aud.body.totalCount, painel: mDash.body.totalCount });
+  check("pageSize limita a página, não o total",
+    aud.body.items.length <= 5 && aud.body.totalCount >= aud.body.items.length, {
+      pagina: aud.body.items.length, total: aud.body.totalCount });
+  check("cada linha traz agente, cliente e produto",
+    aud.body.items.every((r: any) => r.agentId && r.clientEmail && r.product), aud.body.items[0]);
+  check("abertura não tem numeração; interação tem",
+    aud.body.items.every((r: any) =>
+      r.kind === "ticket" ? r.seq === null : typeof r.seq === "number"),
+    aud.body.items.map((r: any) => [r.kind, r.seq]));
+  check("ordem é do relógio, do mais novo para o mais antigo",
+    aud.body.items.every((r: any, i: number) =>
+      i === 0 || aud.body.items[i - 1].occurredAt >= r.occurredAt),
+    aud.body.items.map((r: any) => r.occurredAt));
+
+  const aud2 = await json(await call(`/metrics/audit?from=${hoje}&to=${hoje}&pageSize=5&page=2`, { as: SUPER }));
+  check("a segunda página não repete a primeira",
+    aud2.status === 200 &&
+    !aud2.body.items.some((r: any) => aud.body.items.some((x: any) => x.id === r.id)),
+    { p1: aud.body.items.map((r: any) => r.id), p2: aud2.body.items.map((r: any) => r.id) });
+
+  const audNeg = await json(await call(`/metrics/audit?from=${hoje}&to=${hoje}`));
+  check("auditoria exige a capacidade", audNeg.status === 403, audNeg.body);
+
+  const hr = await json(await call(`/metrics/hourly?from=${hoje}&to=${hoje}`, { as: SUPER }));
+  check("padrão por horário responde", hr.status === 200, hr.body);
+  check("a grade tem as 168 células, sempre",
+    hr.body.byDowHour.length === 168, hr.body.byDowHour?.length);
+  check("a soma da grade é o total",
+    hr.body.byDowHour.reduce((s: number, c: any) => s + c.count, 0) === hr.body.total,
+    { grade: hr.body.byDowHour.reduce((s: number, c: any) => s + c.count, 0), total: hr.body.total });
+  check("as frações do dia somam 1 quando há volume",
+    hr.body.total === 0 ||
+    Math.abs(hr.body.shiftsShare.morning + hr.body.shiftsShare.afternoon +
+             hr.body.shiftsShare.evening + hr.body.shiftsShare.night - 1) < 0.01,
+    hr.body.shiftsShare);
+  check("a meta vem com o valor de hoje (100 ou 150)",
+    [100, 150].includes(hr.body.goalHit.threshold), hr.body.goalHit);
+  check("dias batidos nunca passam dos dias ativos",
+    hr.body.goalHit.daysHit <= hr.body.goalHit.totalActiveDays, hr.body.goalHit);
+
+  const ch = await json(await call(`/metrics/channels?from=${hoje}&to=${hoje}`, { as: SUPER }));
+  check("detalhe por canal responde", ch.status === 200 && Array.isArray(ch.body.byChannelAgent), ch.body);
+  check("total por linha = aberturas + interações",
+    ch.body.byChannelAgent.every((r: any) => r.total === r.newTickets + r.interactions),
+    ch.body.byChannelAgent);
+  check("concluídos nunca passam das aberturas",
+    ch.body.byChannelAgent.every((r: any) => r.doneCount <= r.newTickets),
+    ch.body.byChannelAgent);
+  check("a soma dos canais = total do painel",
+    ch.body.byChannelAgent.reduce((s: number, r: any) => s + r.total, 0) === mDash.body.totalCount,
+    { canais: ch.body.byChannelAgent.reduce((s: number, r: any) => s + r.total, 0),
+      painel: mDash.body.totalCount });
+
+  const ag = await json(await call(`/metrics/agents?from=${hoje}&to=${hoje}`, { as: SUPER }));
+  check("detalhe por agente responde", ag.status === 200 && Array.isArray(ag.body.byAgent), ag.body);
+  // Os cards saem da mesma lista da tabela. É isto que impede o card de
+  // dizer um número e a tabela embaixo dele dizer outro.
+  check("o KPI é a soma da tabela, não outra consulta",
+    ag.body.kpi.totalServices === ag.body.byAgent.reduce((s: number, a: any) => s + a.totalTickets, 0),
+    { kpi: ag.body.kpi.totalServices });
+  check("o KPI bate com o total do painel",
+    ag.body.kpi.totalServices === mDash.body.totalCount,
+    { agentes: ag.body.kpi.totalServices, painel: mDash.body.totalCount });
+  check("agente sem registro no período aparece zerado, não desaparece",
+    ag.body.byAgent.length >= 3 && ag.body.byAgent.some((a: any) => a.totalTickets === 0),
+    ag.body.byAgent.map((a: any) => [a.agentName, a.totalTickets]));
+  check("percentual de conclusão nunca passa de 100",
+    ag.body.byAgent.every((a: any) => a.completionRate >= 0 && a.completionRate <= 100),
+    ag.body.byAgent.map((a: any) => a.completionRate));
 
   console.log("\n— verificação de token (G3.1) —");
   const forjado = "eyJhbGciOiJFUzI1NiJ9." +
