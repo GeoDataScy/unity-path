@@ -7,24 +7,24 @@
 >
 > Regra que vale mais que qualquer outra neste projeto: **nada é "pronto"
 > porque passou no teste local.** Só é pronto quando responde em produção e
-> a resposta foi conferida. Três correções seguidas na mesma função (#94,
-> #95, #97) existem porque essa regra foi ignorada.
+> a resposta foi conferida. Quatro correções seguidas na mesma função (#94,
+> #95, #97, #99) existem porque essa regra foi ignorada.
 
-**Última verificação:** 30/09/2026, conferida contra `origin/main`, contra o
+**Última verificação:** 01/10/2026, conferida contra `origin/main`, contra o
 banco de produção e contra `https://xmxapp.vercel.app`.
 
-> **A API está no ar E LENDO O BANCO.** Desde 30/09/2026:
-> `/api/v1/health` → `{"ok":true}` e `/api/v1/health/db` → `{"ok":true,"db":"up","ms":116}`.
+> **A API está no ar, lendo o banco, com as métricas apoiadas em tabela de
+> fatos.** `/api/v1/health/db` → `{"ok":true,"db":"up","ms":721}`.
 
 ---
 
 ## 1. Resumo em três linhas
 
-Os dados já atravessaram: 103.057 atendimentos e 60.030 interações vivem no
-schema `core` em produção, ao lado do legado intocado, com reconciliação
-assinada. **A API está no ar, autentica e lê o banco**, com 26 rotas. A fundação está
-completa. O próximo trabalho é de produto, não de infraestrutura: ligar a tela
-de Atendimentos e construir os módulos restantes (seção 5, passos 4 e 5).
+A fundação está completa e medida: 104.567 atendimentos, 61.144 interações e
+165.711 fatos de métrica vivem no schema `core` em produção, ao lado do legado
+intocado. A API tem **28 rotas**, autentica, lê o banco, e as métricas novas
+**batem com as da gestora de hoje** linha por linha (seção 2). O que falta não
+é infraestrutura: é decidir o corte e construir os oito módulos restantes.
 
 ---
 
@@ -36,65 +36,115 @@ de Atendimentos e construir os módulos restantes (seção 5, passos 4 e 5).
 | Moeda dos reembolsos em dólar (PR #91) | 28/09 | varredura dos 160 chunks do bundle: `Valor (R$)` em nenhum, `currency:"BRL"` em nenhum |
 | Schema `core` (migrations 0001 e 0002) | 28/09 | 11 objetos presentes no catálogo |
 | Travessia dos dados (backfill 0003) | 28/09 | 13 de 13 verificações de reconciliação |
-| **API no ar e autenticando** (#99) | 30/09 | ver a tabela de comportamento abaixo |
-| **Migrations 0004 e 0005 + travessia** | 30/09 | 6 tabelas criadas; contas fechando nos 3 módulos |
-| **Conexão com o banco em produção** (#102) | 30/09 | `/health/db` → `{"ok":true,"db":"up","ms":116}` |
+| API no ar e autenticando (#99) | 30/09 | ver a tabela de comportamento abaixo |
+| Migrations 0004 e 0005 + travessia | 30/09 | 6 tabelas criadas; contas fechando nos 3 módulos |
+| Conexão com o banco (#102) | 30/09 | `/health/db` → `{"ok":true,"db":"up"}` |
+| **Tabela de fatos (0006) + travessia** | 01/10 | 165.711 fatos = 104.567 aberturas + 61.144 interações, idêntico às duas tabelas de origem |
+| **Rotas de métricas (#104, #105)** | 01/10 | conferem com o legado linha por linha — ver o árbitro abaixo |
 
-### Comportamento da API em produção, conferido em 30/09
+### Comportamento da API em produção
 
 | Requisição | Resposta |
 |---|---|
 | `GET /api/v1/health` | `{"ok":true}` |
-| `GET /api/v1/health/db` | `{"ok":true,"db":"up","ms":116}` — estável em 3 chamadas |
+| `GET /api/v1/health/db` | `{"ok":true,"db":"up","ms":721}` |
 | `GET /api/v1/me` sem token | `401 UNAUTHENTICATED` |
-| `GET /api/v1/tickets` sem token | `401` |
+| `GET /api/v1/metrics/dashboard` sem token | `401 UNAUTHENTICATED` — "token ausente" |
 | Token **forjado** | `401` — "assinatura inválida" |
 | Atalho de desenvolvimento | `401` — "recusado em produção" |
 | Rota inexistente | `404` |
 
-A verificação de assinatura funciona contra as chaves reais do Supabase, o
-atalho de desenvolvimento está barrado, **e a conexão com o banco está de pé**.
+Volume em `core`: 104.567 atendimentos, 61.144 interações, 5.903 reembolsos,
+6.246 transferências, 2.649 tomadas, 165.711 fatos, 18 tabelas, 61 rejeitos
+auditáveis.
 
-Volume servido: 104.567 atendimentos, 61.144 interações, 5.903 reembolsos,
-6.246 transferências, 2.649 tomadas de ticket.
+### O árbitro: as métricas novas contra o que a gestora vê hoje `01/10`
+
+Esta é a verificação que faltava, e é a que autoriza desligar os painéis
+antigos. `public._interaction_events` é a função que alimenta **todos** os
+painéis de hoje. Comparei a saída dela com `core.interaction_facts` em janelas
+fechadas — fechadas porque o legado continua recebendo registros e o `core`
+está parado desde a travessia.
+
+| Janela | Aberturas (legado → novo) | Interações (legado → novo) | Veredito |
+|---|---|---|---|
+| ago/2026 | 9.399 → 9.399 | 10.052 → 10.052 | **IGUAL** |
+| set/2026, dias 1 a 25 | 9.383 → 9.383 | 8.526 → 8.526 | **IGUAL** |
+| histórico inteiro | 102.663 → 102.663 | 59.654 → 59.653 | **−1, explicado** |
+
+A única linha de diferença em todo o histórico cai em **05/05/2026**, e é
+exatamente a interação órfã rejeitada na travessia: `source_table =
+service_follow_ups`, `reason_code = ORPHAN_TICKET`, `recorded_at =
+2026-05-05T16:51`. Ela não foi perdida — está em
+`core.migration_rejects.payload`, com a linha original intacta em `public`.
+
+**Ou seja:** sobre 162.317 linhas de histórico, o número novo é idêntico ao
+número antigo, com uma divergência de uma linha que é o rejeito documentado.
+
+### E o custo, que era o motivo de tudo isto
+
+Mesma pergunta — contagem por dia em agosto — medida com `EXPLAIN ANALYZE` em
+produção:
+
+| | Tempo | Páginas lidas |
+|---|---|---|
+| `_interaction_events` (legado) | 151,6 ms | 46.034 |
+| `core.interaction_facts` (novo) | **4,3 ms** | **25** |
+
+**35× mais rápido, 1.841× menos páginas.** E o número de cima é de **uma**
+chamada: `dashboard_metrics` e `agent_my_metrics` chamam essa função **6 vezes
+cada** — conferido contando as ocorrências na definição delas em produção. Um
+carregamento de painel custa hoje ~910 ms de processamento e ~2,1 GiB de
+páginas percorridas. A rota nova faz **um** percurso, num CTE, para os cinco
+agrupamentos (garantia G11.2).
 
 ### Números da travessia, medidos em produção
 
 | Medida | Resultado |
 |---|---|
-| Atendimentos | 103.059 no legado = 103.057 migrados + 2 rejeitados |
-| Interações | 60.031 no legado = 60.030 migradas + 1 rejeitada |
 | Produtos no catálogo | 75 |
 | Usuários | 47 |
 | Concluídos sem interação preservados | 1.220 (era o defeito C8) |
 | Numerações duplicadas resolvidas sem apagar linha | 5.545 pares |
 | Legado depois da travessia | contagem idêntica à de antes |
+| Rejeitos auditáveis | 61, todos com `reason_code` e `payload` |
 
-Os 3 rejeitos: dois atendimentos com data de **28/04/1997** e a interação
-órfã de um deles. As linhas originais continuam em `public`, intactas, e o
-conteúdo delas está em `core.migration_rejects.payload`.
+Os rejeitos por motivo: 40 `ORPHAN_TICKET` (transferências e tomadas cujo
+ticket não existe), 16 `UNKNOWN_*` (agente fora do catálogo), 3
+`DATE_OUT_OF_RANGE` (datas de 1997), 1 interação órfã, 1 reembolso sem agente.
+Nenhuma linha original foi tocada.
 
 ---
 
-## 3. Em `main`, mas **não** em produção
+## 3. O que está fora de produção
 
-### 3.1 Migrations 0004 e 0005 nunca aplicadas `PENDENTE`
+### 3.1 Migrations `RESOLVIDO 01/10`
 
-Conferido no catálogo de produção em 30/09. **Faltam seis tabelas:**
+Nada pendente. As migrations 0001, 0002, 0004, 0005 e 0006 estão aplicadas, e
+as travessias 0003, 0004 e 0006 rodaram. 18 tabelas em `core`.
 
-```
-core.refund_reason_categories   core.ticket_transfers
-core.refunds                    core.ticket_takeovers
-core.refund_events              core.notifications
-```
+### 3.2 Um PR aberto: sincronizador de edições (#101) `ABERTO`
 
-Consequência: os módulos de reembolso, transferência e notificação existem em
-código e **não têm onde gravar**. Aplicar é o passo 2 da seção 5.
+`packages/db/backfill/0005_sync_edicoes.sql` existe só nesse PR. A travessia
+copia registros **novos**; ela ignora **edições** de registros que já tinham
+atravessado. O script fecha esse buraco.
 
-### 3.2 Nada — a infraestrutura está completa `RESOLVIDO 30/09`
+> **Aviso que está no cabeçalho do próprio arquivo e precisa ser respeitado:**
+> **não rodar depois que a API virar a dona da escrita.** Rodar depois sobrescreve
+> com o legado aquilo que a API gravou.
 
-Função no ar, autenticando e lendo o banco. O que falta daqui para a frente é
-produto: ligar as telas e construir os módulos restantes.
+### 3.3 A deriva, que é o que define o corte `MEDIDO 01/10`
+
+O legado continua recebendo registros; o `core` está parado desde a travessia.
+
+| | Legado | `core` | Deriva |
+|---|---|---|---|
+| Atendimentos | 105.255 | 104.567 | **688** |
+| Interações | 61.796 | 61.144 | **652** |
+
+Todos os 688 são registros **novos** — nenhum ticket do `core` perdeu o par no
+legado. A deriva cresce em torno de 230 atendimentos por dia útil. Ela não é
+um defeito: é o preço de os dois sistemas coexistirem, e some no corte.
 
 ---
 
@@ -119,9 +169,7 @@ A quarta levou minutos, porque finalmente rodei o build da Vercel na máquina.
 **Rode isto antes de publicar qualquer mudança na função:**
 
 ```bash
-vercel pull --yes --environment production
-vercel build --prod --yes
-grep -iE "error TS" .vercel/output/../../../tmp/vbuild.log   # ou veja a saída do build
+vercel pull --yes --environment production && vercel build --prod --yes
 cd .vercel/output/functions/api/index.func && node -e "import('./api/index.js').then(m=>console.log('CARREGOU:',Object.keys(m))).catch(e=>console.log('FALHOU:',e.message))"
 ```
 
@@ -132,83 +180,47 @@ primeiro dia.
 
 ## 5. Próximos passos, em ordem
 
-Cada passo depende do anterior. Não pule.
+### Passos 1 a 3 · Infraestrutura `CONCLUIDO 30/09–01/10`
 
-### Passo 1 · Pôr a função no ar `CONCLUIDO 30/09`
+Função no ar (#94, #95, #97, #99), variáveis na Vercel, conexão com o banco
+(#102), migrations e travessias aplicadas, tabela de fatos populada, métricas
+conferidas contra o legado. Nada de infraestrutura está pendente.
 
-Feito nos PRs #94, #95, #97 e #99. Conferido em produção — ver a tabela de
-comportamento na seção 2.
+### Passo 4 · A decisão do corte `AGUARDA O DONO`
 
-### Passo 2 · Aplicar as migrations 0004 e 0005 em produção `PROXIMO`
+Este é o único passo que mexe no que o time usa, e por isso não avança sem
+decisão. O problema tem nome: **o sincronizador só corre numa direção**, do
+legado para o `core`. Ligar uma tela sozinha cria duas verdades.
 
-Aditivo e reversível: cria tabelas novas no schema `core` e não toca nada do
-legado nem do que já migrou.
+| Caminho | O que acontece | Risco |
+|---|---|---|
+| **A. Virar agente e gestora juntos** | o dado nasce na API e os painéis leem do `core`; uma verdade só | exige janela curta de congelamento para a última sincronização (minutos, fora do horário) |
+| **B. Virar só a tela do agente** | o agente grava no `core`; os painéis continuam no legado e **param de ver o que ele digita** | **alto** — a gestora enxergaria menos atendimento do que houve |
+| **C. Gravar nos dois** | sem janela de parada | **alto** — duas escritas sem transação comum; qualquer falha deixa os dois divergentes e sem árbitro |
 
-```bash
-TOK=$(security find-generic-password -s "Supabase CLI" -w | sed 's/^go-keyring-base64://' | base64 -d); for f in packages/db/migrations/0004_reembolsos.sql packages/db/migrations/0005_transferencias.sql packages/db/backfill/0004_backfill_reembolsos.sql; do echo "== $f"; python3 -c "import json,sys;print(json.dumps({'query':open(sys.argv[1]).read()}))" "$f" | curl -s -X POST "https://api.supabase.com/v1/projects/kjkyyqxqrqsdozjyyuon/database/query" -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" --data-binary @- | head -c 600; echo; done
-```
+**Recomendação: caminho A.** As métricas foram conferidas contra o legado, que
+era a condição que faltava para virar a gestora junto. O caminho C parece o
+mais seguro e é o mais perigoso: a escrita dupla não tem como ser atômica
+entre dois schemas com gatilhos diferentes.
 
-Rodar da raiz do repositório. Saída esperada: `[]` em cada um, que significa
-sucesso sem linhas retornadas.
+O que falta em código para o caminho A:
 
-> **Atenção:** `reconciliacao.sql` usa `\set`, que é comando do `psql` e a
-> Management API **recusa**. Pela API use `reconciliacao-api.sql`.
-
-Reconciliar depois, e o critério é aritmético:
-
-```
-linhas no legado = linhas em core + linhas em migration_rejects
-```
-
-### Passo 3 · Variável de ambiente na Vercel `CONCLUIDO 30/09`
-
-> Tarefa pronta para delegar, com a navegação tela a tela:
-> **`TAREFA-vercel-variaveis.md`**.
->
-> **Existem DOIS projetos na Vercel.** As variáveis vão em **`xmxapp`**
-> (`https://xmxapp.vercel.app`, o que o time usa), e **não** em `unity-path`.
-> O `xmxapp` já tem três variáveis `VITE_SUPABASE_*` de ~200 dias atrás; o
-> `unity-path` não tem nenhuma. Tela vazia = projeto errado.
-
-Segredo do dono do projeto. Em Settings → Environment Variables, para
-Production:
-
-```
-DATABASE_URL=postgresql://postgres.kjkyyqxqrqsdozjyyuon:<SENHA>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
-SUPABASE_URL=https://kjkyyqxqrqsdozjyyuon.supabase.co
-```
-
-A senha está em Supabase → Project Settings → Database. Use a string do
-**Transaction pooler**, porta 6543, que é a correta para função sem
-servidor. Depois de salvar é preciso um Redeploy para valer.
-
-Teste com um token real de agente:
-
-```bash
-curl -s -H "Authorization: Bearer <TOKEN>" "https://xmxapp.vercel.app/api/v1/tickets?limit=2"
-```
-
-### Passo 4 · Ligar a tela de Atendimentos do agente
-
-Só depois dos três anteriores. O que falta na API para essa tela:
-`PATCH /tickets/:id`, `DELETE /tickets/:id` e a exportação. O resto das
-rotas que ela usa já existe.
-
-É o passo que o time sente, porque acaba com o download de até 1,5 MB por
-agente só para pintar um badge de status.
+- **Tela do agente:** `PATCH /tickets/:id`, `DELETE /tickets/:id` e a exportação.
+- **Painel da gestora:** as rotas de auditoria, padrão por horário, detalhe de
+  canal e detalhe de interações (hoje são 4 RPCs).
+- **Roteiro do corte:** congelar escrita, rodar `0005_sync_edicoes.sql` e a
+  travessia uma última vez, reconciliar, apontar as telas, liberar. Com
+  reversão: enquanto o legado continuar intacto, voltar é mudar o apontamento.
 
 ### Passo 5 · Módulos restantes
 
-Nove de quatorze ainda não existem, na ordem de dor:
+Oito de quatorze ainda não existem, na ordem de dor:
 
 ```
-metricas  →  pedidos-em-espera  →  radar  →  caderno
-base-de-suporte  →  treinamento  →  usuarios
-copy-analytics  →  exportacoes  →  integracoes (zendesk, lya)
+pedidos-em-espera  →  radar  →  caderno  →  base-de-suporte
+treinamento  →  usuarios  →  copy-analytics  →  exportacoes
+integracoes (zendesk, lya)
 ```
-
-`metricas` é o mais urgente: é o que hoje derruba o banco, com a função
-central sendo chamada de 5 a 9 vezes por requisição de dashboard.
 
 ---
 
@@ -216,14 +228,16 @@ central sendo chamada de 5 a 9 vezes por requisição de dashboard.
 
 | Módulo | Rotas | Situação |
 |---|---|---|
-| `session` | `GET /me` | código pronto, sem tabela pendente |
-| `catalogs` | `GET /catalogs` | idem |
-| `tickets` | 7 rotas | idem |
-| `refunds` | 6 rotas | **tabelas faltam em produção** |
-| `transfers` / `takeovers` | 8 rotas | **tabelas faltam em produção** |
-| `notifications` | 2 rotas | **tabela falta em produção** |
+| `health` | `GET /health`, `GET /health/db` | em produção, sem token por desenho |
+| `session` | `GET /me` | em produção |
+| `catalogs` | `GET /catalogs` | em produção |
+| `tickets` | 6 rotas | em produção |
+| `refunds` | 6 rotas | em produção |
+| `transfers` / `takeovers` | 8 rotas | em produção |
+| `notifications` | 2 rotas | em produção |
+| `metrics` | `GET /metrics/dashboard`, `GET /metrics/me` | em produção, sobre a tabela de fatos |
 
-Total: **25 rotas** de 80 especificadas. Dos 14 módulos, **5 existem**.
+Total: **28 rotas** de 80 especificadas. Dos 14 módulos, **6 existem**.
 
 ### Como rodar as suítes
 
@@ -231,19 +245,24 @@ Total: **25 rotas** de 80 especificadas. Dos 14 módulos, **5 existem**.
 ./packages/db/run-tests.sh
 ```
 
-Esperado: 33 garantias em 2 arquivos, zero falhas.
+Esperado, com o denominador: **41 garantias em 3 arquivos, zero falhas.**
 
 ```bash
+dropdb --if-exists xmx_api_test; createdb xmx_api_test
+for f in packages/db/migrations/000{1,2,4,5,6}_*.sql; do psql -q -d xmx_api_test -v ON_ERROR_STOP=1 -f "$f"; done
 cd apps/api && PGDATABASE=xmx_api_test DATABASE_URL=postgres://localhost/xmx_api_test ALLOW_DEV_TOKENS=1 SUPABASE_URL=https://kjkyyqxqrqsdozjyyuon.supabase.co ../../node_modules/.bin/tsx src/test/run.ts
 ```
 
-Esperado: 50 verificações, zero falhas. Precisa de Postgres local.
+Esperado: **65 verificações, zero falhas.** Precisa de Postgres local.
 
 Ensaio da travessia, com os casos difíceis medidos em produção:
 
 ```bash
-createdb xmx_bf && for f in packages/db/migrations/0001_core.sql packages/db/migrations/0002_catalogos.sql packages/db/migrations/0004_reembolsos.sql packages/db/migrations/0005_transferencias.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
+createdb xmx_bf && for f in packages/db/migrations/000{1,2,4,5,6}_*.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0006_backfill_fatos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
 ```
+
+> `reconciliacao.sql` usa `\set`, que é comando do `psql` e a Management API
+> **recusa**. Pela API use `reconciliacao-api.sql`.
 
 ---
 
@@ -271,25 +290,35 @@ marcadas como selecionáveis servem para escrita nova, e o critério é a
 própria coluna `legacy_id` — sem sinalizador de sessão para alguém esquecer
 de desligar.
 
+### A ordem canônica é `(recorded_at, seq)`, nunca `(recorded_at, id)`
+
+Herdada de `my_follow_ups()`, a ordem antiga é um sorteio: `now()` em Postgres
+é da **transação**, então interações gravadas no mesmo pedido têm
+`recorded_at` idêntico e o desempate cai num uuid aleatório. No teste, um
+ticket concluído voltou a `em_andamento`. A travessia atribui `seq` na ordem
+legada, então o histórico exibido não muda.
+
 ---
 
 ## 8. Armadilhas desta máquina e deste repositório
 
 Custaram tempo real. Leia antes de trabalhar.
 
-**A árvore de trabalho está numa branch defasada.** O repositório principal
-está em `v2`, dezenas de commits atrás da produção, travado por 16 arquivos
-não commitados de outro agente, parados desde 21/09. **Confira a base antes
-de cada commit:**
+**A árvore de trabalho principal está numa branch defasada.** O repositório
+principal está em `v2`, dezenas de commits atrás da produção, travado por 16
+arquivos não commitados de outro agente, parados desde 21/09. **Confira a base
+antes de cada commit:**
 
 ```bash
 git merge-base --is-ancestor origin/main HEAD && echo "sobre main" || echo "DEFASADO — transplante antes"
 ```
 
-Três vezes commits caíram na base errada e precisaram de transplante.
+Três vezes commits caíram na base errada e precisaram de transplante. O
+worktree `~/dev-worktrees/unity-path-wt-v2base` serve para isto: ramificar
+sempre de `origin/main`.
 
 **Nunca mova o ponteiro de uma branch que está com checkout em outro
-worktree.** Existem 15 worktrees neste repo. Fazer isso deixa a árvore do
+worktree.** Existem 16 worktrees neste repo. Fazer isso deixa a árvore do
 principal inconsistente com o HEAD.
 
 **Há um stash deliberado de outra pessoa**, com mensagem
@@ -303,14 +332,17 @@ querer e voltei atrás. Não mexa.
 use `curl`.
 
 **Aplicar DDL em produção é bloqueado** para mim pelo classificador. O SQL
-fica pronto e o dono executa.
+fica pronto e o dono executa. `gh pr merge` também.
+
+**O host do pooler é `aws-1-sa-east-1`, não `aws-0`.** Documentos antigos
+deste projeto traziam `aws-0` e estavam errados.
 
 ---
 
 ## 9. Regras de verificação — aprendidas errando
 
-Quatro vezes uma medição pareceu conclusiva comparando coisas diferentes.
-Todas as quatro foram pegas, mas custaram tempo.
+Cinco vezes uma medição pareceu conclusiva comparando coisas diferentes.
+Todas foram pegas, mas custaram tempo.
 
 | Erro | O que corrigiu |
 |---|---|
@@ -318,10 +350,12 @@ Todas as quatro foram pegas, mas custaram tempo.
 | Comparei o bundle de produção com ele mesmo | dizer explicitamente **contra o que** se compara |
 | Teste de fuso que premiava qualquer deslocamento para trás | achar um **árbitro independente** (foi o gatilho que fixa a data) |
 | Reinstalei dependências entre dois builds e culpei meu código | **isolar a variável**: mesmo ambiente, só a mudança em teste |
+| Cadeia com `&&` onde um passo falha deixa a variável seguinte vazia, e comparar com vazio devolve "diferente" | conferir o código de saída de **cada** passo |
 
-Mais uma, de script: uma cadeia de comandos com `&&` onde um passo falha
-deixa as variáveis seguintes vazias, e a comparação com vazio devolve
-"diferente". Verifique o código de saída de cada passo.
+A regra do árbitro independente é a que mais rendeu: a conferência das
+métricas da seção 2 existe porque a pergunta certa não é "a tabela nova está
+consistente consigo mesma?", é "ela diz o mesmo que a função que a gestora
+usa hoje?".
 
 ---
 
@@ -336,9 +370,12 @@ deixa as variáveis seguintes vazias, e a comparação com vazio devolve
 | `docs/arquitetura-v2/30..32` | estado real do banco, perfil dos dados, plano de travessia |
 | `docs/arquitetura-v2/90-BACKLOG.md` | 24 itens adiados, com número medido |
 | `docs/arquitetura-v2/91-MEDICOES.md` | medições que fecharam itens abertos |
+| `docs/arquitetura-v2/TAREFA-vercel-variaveis.md` | tarefa fechada, já concluída, serve de modelo |
 | `packages/contract/` | a fronteira entre web e api |
-| `packages/db/migrations/` | schema; `backfill/` a travessia; `tests/` as garantias |
-| `apps/api/` | a API (Hono + postgres.js) |
+| `packages/db/migrations/` | schema (0001, 0002, 0004, 0005, 0006) |
+| `packages/db/backfill/` | a travessia (0003, 0004, 0006) e as reconciliações |
+| `packages/db/tests/` | as 41 garantias de schema |
+| `apps/api/` | a API (Hono + postgres.js); `src/test/run.ts` tem as 65 verificações |
 | `api/index.ts` | ponto de entrada como Função da Vercel |
 
 ---
@@ -354,12 +391,15 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 28/09 | Moeda em dólar em produção (#91) | 160 chunks varridos, zero com rótulo em real |
 | 28/09 | Schema `core` + catálogos em produção | 11 objetos no catálogo |
 | 28/09 | Travessia dos dados em produção | 13/13 na reconciliação, 3 rejeitos explicados |
-| 28/09 | API com 25 rotas, 50 verificações | suítes locais passando |
 | 28/09 | Roteamento e dependências da função (#94, #95) | função passou a ser invocada |
 | 30/09 | Contrato compilado (#97) | `vercel build` local prova que `packages/contract/dist` entra na função |
 | 30/09 | **API no ar e autenticando (#99)** | `/health` → `{"ok":true}`; token forjado → 401 "assinatura inválida"; atalho de dev → 401 |
 | 30/09 | Migrations 0004/0005 e travessia dos 3 módulos | contas fechando: refunds 5.905=5.903+2, transfers 6.274=6.246+28, takeovers 2.677=2.649+28 |
-| 30/09 | Sincronizador de edições (#101) | 13/13 na reconciliação com 4 edições simuladas |
 | 30/09 | Rota de prontidão do banco (#102) | 503 limpo com banco inalcançável, sem vazar conexão |
-| 30/09 | **Variáveis na Vercel e conexão de pé** | `/health/db` → `{"ok":true,"db":"up","ms":116}` |
-| — | Tela de Atendimentos ligada na API | **próximo** — passo 4 |
+| 30/09 | **Variáveis na Vercel e conexão de pé** | `/health/db` → `{"ok":true,"db":"up"}` |
+| 01/10 | Tabela de fatos criada e populada (#104) | 165.711 = 104.567 aberturas + 61.144 interações, idêntico às tabelas de origem |
+| 01/10 | Rotas de métricas no ar (#105) | 65 verificações na suíte; `/metrics/dashboard` sem token → 401 |
+| 01/10 | **Métricas novas conferidas contra o legado** | ago e set/2026 idênticos; histórico 102.663=102.663 aberturas e 59.654→59.653 interações, a única diferença sendo o rejeito órfão de 05/05/2026 |
+| 01/10 | Ganho medido em produção | 151,6 ms / 46.034 páginas → 4,3 ms / 25 páginas, e o legado chama isso 6× por painel |
+| 01/10 | Deriva medida | 688 atendimentos e 652 interações, todos registros novos; nenhum par perdido |
+| — | **Decisão do corte** | **próximo — aguarda o dono. Passo 4, caminho A recomendado** |
