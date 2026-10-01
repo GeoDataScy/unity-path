@@ -41,7 +41,7 @@ app.onError((err, c) => {
 });
 
 app.notFound((c) =>
-  c.json({ error: { code: "TICKET_NOT_FOUND", message: "rota não encontrada" } }, 404),
+  c.json({ error: { code: "ROUTE_NOT_FOUND", message: "rota não encontrada" } }, 404),
 );
 
 const parse = <T>(schema: { safeParse: (v: unknown) => any }, value: unknown): T => {

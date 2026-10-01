@@ -17,6 +17,9 @@ export const ERROR_CODES = [
   "FORBIDDEN",
   "MISSING_CAPABILITY",
   // 404
+  // Caminho que a API não serve. Distinto de TICKET_NOT_FOUND:
+  // um é erro de URL, o outro é recurso que não existe.
+  "ROUTE_NOT_FOUND",
   "TICKET_NOT_FOUND",
   "REFUND_NOT_FOUND",
   "USER_NOT_FOUND",
@@ -66,6 +69,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   ACCOUNT_BLOCKED: 403,
   FORBIDDEN: 403,
   MISSING_CAPABILITY: 403,
+  ROUTE_NOT_FOUND: 404,
   TICKET_NOT_FOUND: 404,
   REFUND_NOT_FOUND: 404,
   USER_NOT_FOUND: 404,
