@@ -69,7 +69,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className={hasAny ? "border-warning/40" : undefined}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">
               Contagens duplicadas no período
             </CardTitle>
           </CardHeader>
@@ -93,7 +93,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">
               Furaram a regra das 18h
             </CardTitle>
           </CardHeader>
@@ -113,7 +113,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Maior proporção</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Maior proporção</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (

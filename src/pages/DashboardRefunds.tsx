@@ -240,8 +240,8 @@ export default function DashboardRefunds() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" /> Total de reembolsos
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Total de reembolsos
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -251,8 +251,8 @@ export default function DashboardRefunds() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CircleDot className="h-4 w-4 text-primary" /> Em aberto
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <CircleDot className="h-4 w-4" /> Em aberto
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -262,8 +262,8 @@ export default function DashboardRefunds() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <PackageCheck className="h-4 w-4 text-primary" /> Concluídos
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <PackageCheck className="h-4 w-4" /> Concluídos
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -273,8 +273,8 @@ export default function DashboardRefunds() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" /> Taxa de conclusão
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Taxa de conclusão
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -301,7 +301,7 @@ export default function DashboardRefunds() {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

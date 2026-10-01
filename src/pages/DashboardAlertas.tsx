@@ -240,7 +240,7 @@ export default function DashboardAlertas() {
       <section className="grid gap-4 md:grid-cols-3">
         <Card className={data?.total_overdue ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total em atraso</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Total em atraso</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -255,7 +255,7 @@ export default function DashboardAlertas() {
 
         <Card className={data?.agents_affected ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Agentes com atraso</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Agentes com atraso</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -270,7 +270,7 @@ export default function DashboardAlertas() {
 
         <Card className={worstAgent ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Mais crítico</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Mais crítico</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (

@@ -287,7 +287,7 @@ export default function DashboardAcompanhamento() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
               Total de agentes
             </CardTitle>
           </CardHeader>
@@ -298,7 +298,7 @@ export default function DashboardAcompanhamento() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Sem ocorrências
             </CardTitle>
           </CardHeader>
@@ -309,7 +309,7 @@ export default function DashboardAcompanhamento() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600" /> Com advertências
             </CardTitle>
           </CardHeader>
@@ -320,7 +320,7 @@ export default function DashboardAcompanhamento() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
               <XCircle className="h-4 w-4 text-red-600" /> Risco de não renovação
             </CardTitle>
           </CardHeader>

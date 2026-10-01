@@ -584,6 +584,12 @@
   fill: hsl(var(--chart-axis));
   font-variant-numeric: tabular-nums;
 }
+/* Eixo de categorias (nomes de agente, produto, canal) em Geist: mono só
+   para número. */
+.recharts-xAxis .recharts-cartesian-axis-tick-value,
+.recharts-xAxis .recharts-cartesian-axis-tick text {
+  font-family: var(--font-sans);
+}
 .recharts-cartesian-axis-line {
   stroke: hsl(var(--line-strong));
 }

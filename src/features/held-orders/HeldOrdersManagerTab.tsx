@@ -325,7 +325,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
       {summary.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Por agente</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Por agente</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">

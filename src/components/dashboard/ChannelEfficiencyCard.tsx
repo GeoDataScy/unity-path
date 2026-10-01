@@ -10,10 +10,11 @@ import type {
   ChannelEfficiencyTotal,
 } from "@/features/dashboard/useDashboardRefundMetricsQuery";
 
-// Azul = parcial (a conversão que a operação persegue), laranja = integral.
-// Par validado para daltonismo nos dois temas; verde/vermelho não passa.
-const COLOR_PARTIAL = "hsl(var(--chart-2))";
-const COLOR_FULL = "hsl(var(--chart-8))";
+// Aqua = parcial (a conversão que a operação persegue), cinza = integral
+// (hubi). O par se separa por luminosidade, não só por matiz: seguro em
+// daltonismo nos dois temas.
+const COLOR_PARTIAL = "hsl(var(--aqua))";
+const COLOR_FULL = "hsl(var(--chart-mute-2))";
 const TOTAL_LABEL = "Todos os canais";
 const ROW_HEIGHT = 44;
 
