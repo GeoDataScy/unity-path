@@ -565,7 +565,7 @@
    Gráficos (Recharts) — linguagem hubi aplicada a todos de uma vez
    ---------------------------------------------------------------------------
    Gridlines só horizontais em `chart-grid`, sem eixo vertical desenhado,
-   rótulos em Geist Mono 11px na cor `chart-axis`, tooltip padrão invertido
+   rótulos em 11px tabulares na cor `chart-axis`, tooltip padrão invertido
    (`bg-inverse` + `ink-inverse`) e legenda em `ink-secondary`. Recharts põe
    cor e tamanho como atributo SVG (perde para CSS), mas o tooltip e a
    legenda vêm com `style` inline — por isso o `!important` só neles.
@@ -577,18 +577,15 @@
 .recharts-cartesian-grid-vertical line {
   stroke: transparent;
 }
+/* Geist (não Mono) com algarismos tabulares: o mesmo eixo carrega número
+   OU nome de categoria (agente, produto, motivo), e nome em Mono fica
+   ilegível. Os tabulares mantêm os números alinhados. */
 .recharts-cartesian-axis-tick-value,
 .recharts-cartesian-axis-tick text {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
   fill: hsl(var(--chart-axis));
   font-variant-numeric: tabular-nums;
-}
-/* Eixo de categorias (nomes de agente, produto, canal) em Geist: mono só
-   para número. */
-.recharts-xAxis .recharts-cartesian-axis-tick-value,
-.recharts-xAxis .recharts-cartesian-axis-tick text {
-  font-family: var(--font-sans);
 }
 .recharts-cartesian-axis-line {
   stroke: hsl(var(--line-strong));

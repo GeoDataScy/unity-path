@@ -10,11 +10,11 @@ import type {
   ChannelEfficiencyTotal,
 } from "@/features/dashboard/useDashboardRefundMetricsQuery";
 
-// Aqua = parcial (a conversão que a operação persegue), cinza = integral
+// Aqua = parcial (a conversão que a operação persegue), grafite = integral
 // (hubi). O par se separa por luminosidade, não só por matiz: seguro em
 // daltonismo nos dois temas.
 const COLOR_PARTIAL = "hsl(var(--aqua))";
-const COLOR_FULL = "hsl(var(--chart-mute-2))";
+const COLOR_FULL = "hsl(var(--chart-mute-1))";
 const TOTAL_LABEL = "Todos os canais";
 const ROW_HEIGHT = 44;
 
@@ -174,7 +174,7 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       <LabelList
                         dataKey="partial_rate"
                         position="center"
-                        style={{ fontSize: 11, fontWeight: 600, fill: "#fff" }}
+                        style={{ fontSize: 11, fontWeight: 500, fill: "hsl(var(--on-signal))" }}
                         formatter={(v: number) => (v >= 12 ? pct(v, 0) : "")}
                       />
                     </Bar>
@@ -191,7 +191,7 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       <LabelList
                         dataKey="full_rate"
                         position="center"
-                        style={{ fontSize: 11, fontWeight: 600, fill: "#fff" }}
+                        style={{ fontSize: 11, fontWeight: 500, fill: "hsl(var(--ink-inverse))" }}
                         formatter={(v: number) => (v >= 12 ? pct(v, 0) : "")}
                       />
                     </Bar>
