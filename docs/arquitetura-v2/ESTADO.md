@@ -161,6 +161,97 @@ Nenhuma linha original foi tocada.
 
 ---
 
+## 2-A. Os fluxos do agente em produção — conferidos em 01/10, 12:07 SP
+
+> Mapeado a pedido do dono, depois de a gestora relatar que "o sistema está
+> liberando o preenchimento do mesmo cliente mais de uma vez ao dia".
+> **Primeiro fato:** nenhuma tela do agente passa pela API nova. O que o
+> agente usa hoje é o sistema antigo, intocado. O que mudou, mudou lá — ou não
+> mudou, como se viu.
+
+### Os fluxos estão vivos
+
+| Fluxo (tabela) | Hoje até 12:07 | Mesmo dia, semana passada (dia inteiro) | Último registro |
+|---|---|---|---|
+| Atendimentos (`services`) | 173 | 542 | 12:05 |
+| Interações (`service_follow_ups`) | 226 | 344 | 12:07 |
+| Reembolsos (`refunds`) | 32 | 52 | 11:59 |
+| Transferências | 9 | 57 | 09:53 |
+| Tomadas de ticket | 18 | 55 | 11:35 |
+| Pedidos em espera (importados) | 25 | 92 | 10:10 |
+| Caderno do agente | 0 | 0 | ontem 17:08 |
+
+Edge Functions: `zendesk` v9 e `lya` v11, ambas `ACTIVE`.
+
+### As regras de servidor que o fluxo depende estão vivas
+
+Medido nos 174 atendimentos de hoje:
+
+| Regra | Mecanismo | Resultado hoje |
+|---|---|---|
+| Data do atendimento fixada em hoje | `trg_service_pin_date_on_insert` | 0 com data diferente |
+| Motivo "reembolso" cria o reembolso | `trg_service_sync_refund_ins` | 21 tickets, 0 sem registro |
+| Dono atual preenchido | `trg_service_default_current_owner` | 0 sem dono |
+| Instante da interação é `now()` | `trg_follow_up_force_now` | 0 no futuro |
+| Interação em ticket alheio | RLS permite (`CHECK user_id = uid` só) | 0 hoje; 15 em 45 dias |
+
+### A queixa da gestora: o mecanismo, medido
+
+A regra das 18h **vive só no navegador** (`useStatusTracking.canAddInteraction`).
+O banco não barra: ele só **marca** (`_tg_follow_up_mark_same_day_repeat` →
+`is_same_day_repeat`). O diálogo de acompanhamento aplica a regra e desabilita
+o botão — **exceto quando o status escolhido é "Concluído"**:
+
+```ts
+// StatusTrackingDialog.tsx:94
+const canSubmit = !addEntryMutation.isPending &&
+  (status === "concluido" || interactionCheck.allowed || isReopening);
+```
+
+Isso é deliberado: entrou em **30/04/2026**, commit `db89cdb` — "permitir concluir
+ticket mesmo quando interação em andamento está bloqueada" —, do dev anterior.
+O arquivo não é tocado desde 17/08. E é por aí que passa tudo:
+
+| Em 45 dias | |
+|---|---|
+| Interações repetidas no mesmo dia, antes das 18h, sem código de rastreio | **439** |
+| … com status "Concluído" | **435** (99%) |
+| … registradas por outro agente que o anterior | 15 |
+| … em menos de 90 s da anterior | 47 (16 em menos de 10 s) |
+| … sem explicação | **0** |
+| Agentes envolvidos | 8 — um deles responde por 310 das 443 marcações |
+
+**Não é regressão.** Por semana, desde 17/08: 56, 88, 42, 48, 75, 95, 39. É
+assim há pelo menos sete semanas, e o código não mudou nesse período.
+
+**O que isso faz com os números.** A marcação existe, mas só
+`dashboard_same_day_repeats` (a seção "Interações repetidas no mesmo dia" em
+`/dashboard/alertas`) a lê. `_interaction_events` **não** filtra, então todas as
+outras métricas — inclusive a **meta diária do agente** — contam o "Concluído"
+do mesmo dia como segunda interação. Em 30/09, uma agente contou 201 na meta
+com 6 repetidos; outra, 152 com 9.
+
+A outra leitura da queixa — ticket **novo** para o mesmo e-mail no mesmo dia —
+é pequena (3 a 8 por semana) e passa porque `find_ticket_by_email` só acha
+ticket **não concluído**: concluiu, pode abrir de novo.
+
+### O que isso significa para a arquitetura nova `BLOQUEIO DO CORTE`
+
+A decisão D1 removeu o bloqueio das 18h e disse: "`is_same_day_repeat`
+**continua sendo marcado** — a marcação é o que evita contar a conversa duas
+vezes". Conferido em código e em produção: **nada na v2 marca.** A coluna
+existe em `core.interactions` com `DEFAULT false`; os três gatilhos da tabela
+(`freeze_recorded_at`, `refresh_ticket_state`, `sync_fact`) não a calculam; a
+API só a devolve. As 1.720 marcações que o `core` tem vieram copiadas do
+legado na travessia; 0 interações nasceram pela API até agora.
+
+No dia em que a tela do agente virar, toda interação nova entraria como
+`false`, e a seção de repetidos da gestora ficaria cega. **É um gatilho em
+`core` replicando `_tg_follow_up_mark_same_day_repeat`, e precisa entrar antes
+do corte.** Está no backlog como B26.
+
+---
+
 ## 3. O que está fora de produção
 
 ### 3.1 Migrations `RESOLVIDO 01/10`
@@ -270,6 +361,8 @@ O que falta em código para o caminho A:
 - **Tela do agente:** `PATCH /tickets/:id`, `DELETE /tickets/:id` e a exportação.
 - **Painel da gestora:** ~~as rotas de auditoria, padrão por horário, detalhe de
   canal e detalhe de interações~~ — **prontas em #107.** Nada falta aqui.
+- **Gatilho que marca `is_same_day_repeat` em `core.interactions`** (B26) —
+  sem ele, a seção de repetidos da gestora fica cega no dia do corte. Ver 2-A.
 - **Roteiro do corte:** congelar escrita, rodar `0005_sync_edicoes.sql` e a
   travessia uma última vez, reconciliar, apontar as telas, liberar. Com
   reversão: enquanto o legado continuar intacto, voltar é mudar o apontamento.
@@ -477,4 +570,7 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 01/10 | Filtro do criador materializado (`0008`) | 158.597 marcadas = 165.711 − 7.114; padrão por horário de 110,6 ms / 45.378 páginas para **26,8 ms / 51 páginas** |
 | 01/10 | Erro de mapeamento pego pelo árbitro | filtro escrito com `current_owner_id` dava 955 linhas a mais em agosto; o legado usa o **criador** |
 | 01/10 | Quebra de paridade pega lendo os guardas | `/metrics/dashboard` exigia `can_view_all_tickets`, que 0 de 49 usuários têm — recusaria a gestora |
-| — | **Decisão do corte** | **próximo — aguarda o dono. Passo 4, caminho A recomendado** |
+| 01/10 | Fluxos do agente em produção mapeados (seção 2-A) | 7 fluxos vivos com registro nos últimos minutos; 5 regras de servidor com 0 violações hoje |
+| 01/10 | Queixa da gestora explicada com número | 435 de 439 repetições do mesmo dia são "Concluído", exceção deliberada do diálogo; estável há 7 semanas; a meta diária conta |
+| 01/10 | **Lacuna da v2 encontrada antes do corte** | nada marca `is_same_day_repeat` em `core` — B26, bloqueio do passo 4 |
+| — | **Decisão do corte** | **próximo — aguarda o dono. Passo 4, caminho A recomendado, depois de B26** |
