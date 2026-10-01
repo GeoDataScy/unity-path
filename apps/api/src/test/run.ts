@@ -473,6 +473,13 @@ async function main() {
   check("atalho de desenvolvimento é recusado sem a variável explícita", r2.status === 401);
   if (semDev !== undefined) process.env.ALLOW_DEV_TOKENS = semDev;
 
+  console.log("\n— rota inexistente —");
+  const r404 = await json(await call("/isso-nao-existe", { as: AGENT }));
+  // Codigo proprio, e nao TICKET_NOT_FOUND: um cliente que trate o codigo
+  // leria erro de URL como "o ticket nao existe".
+  check("rota inexistente tem codigo proprio",
+    r404.status === 404 && r404.body.error.code === "ROUTE_NOT_FOUND", r404.body);
+
   console.log("\n— tamanho da resposta (G10.2) —");
   const raw = await (await call("/tickets?limit=25")).text();
   const kb = Buffer.byteLength(raw) / 1024;
