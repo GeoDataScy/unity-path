@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   ZendeskGroup,
+  ZendeskLookup,
   ZendeskStatus,
   ZendeskTicketDetail,
   ZendeskTicketFilters,
@@ -76,5 +77,26 @@ export function useZendeskGroupsQuery(enabled = true) {
     enabled,
     staleTime: 60 * 60_000,
     gcTime: 60 * 60_000,
+  });
+}
+
+/**
+ * Tickets recentes de um e-mail, para o agente pré-encher o atendimento.
+ *
+ * Não dispara enquanto o agente digita: `email` só muda quando ele clica em
+ * buscar. Cada chamada gasta 2 das 400 chamadas/min da conta no Zendesk, e um
+ * e-mail meio digitado não devolveria nada útil.
+ *
+ * `retry: false` porque as falhas aqui não são transitórias — 403 de permissão,
+ * credencial ausente, ou o próprio limite de chamadas do Zendesk. Repetir três
+ * vezes só piora o limite e faz o agente esperar.
+ */
+export function useZendeskLookupQuery(email: string | null) {
+  return useQuery({
+    queryKey: ["zendesk", "lookup", email],
+    queryFn: () => callZendesk<ZendeskLookup>({ action: "lookup", email }),
+    enabled: Boolean(email),
+    staleTime: 5 * 60_000,
+    retry: false,
   });
 }
