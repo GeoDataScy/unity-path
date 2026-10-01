@@ -170,7 +170,7 @@ export function RadarActionDialog({ item, today, open, onOpenChange }: Props) {
 
         {/* Ação necessária — o motivo de o caso existir. */}
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
             Ação necessária
           </p>
           <p className="mt-1 text-sm">{item.action_needed}</p>
@@ -205,7 +205,7 @@ export function RadarActionDialog({ item, today, open, onOpenChange }: Props) {
 
         {/* Histórico */}
         <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
             Histórico ({item.event_count})
           </p>
           {eventsQuery.isLoading ? (

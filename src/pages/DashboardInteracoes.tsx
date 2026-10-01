@@ -189,7 +189,7 @@ export default function DashboardInteracoes() {
     <div className="space-y-6">
       {/* Header */}
       <header>
-        <h1 className="text-3xl font-medium tracking-tight flex items-center gap-2">
+        <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em] flex items-center gap-2">
           <Activity className="h-7 w-7" />
           Interacoes dos Agentes
         </h1>
@@ -609,7 +609,7 @@ function KpiCard({
           <Skeleton className="h-8 w-16" />
         ) : (
           <div>
-            <div className={`text-3xl font-medium ${accent ?? ""}`}>
+            <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${accent ?? ""}`}>
               {value ?? 0}
             </div>
             {subtitle && (

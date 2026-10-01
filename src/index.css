@@ -560,3 +560,71 @@
 .refunds-visual .rf-body {
   font-family: var(--font-sans);
 }
+
+/* ---------------------------------------------------------------------------
+   Gráficos (Recharts) — linguagem hubi aplicada a todos de uma vez
+   ---------------------------------------------------------------------------
+   Gridlines só horizontais em `chart-grid`, sem eixo vertical desenhado,
+   rótulos em Geist Mono 11px na cor `chart-axis`, tooltip padrão invertido
+   (`bg-inverse` + `ink-inverse`) e legenda em `ink-secondary`. Recharts põe
+   cor e tamanho como atributo SVG (perde para CSS), mas o tooltip e a
+   legenda vêm com `style` inline — por isso o `!important` só neles.
+*/
+.recharts-cartesian-grid line {
+  stroke: hsl(var(--chart-grid));
+  stroke-dasharray: none;
+}
+.recharts-cartesian-grid-vertical line {
+  stroke: transparent;
+}
+.recharts-cartesian-axis-tick-value,
+.recharts-cartesian-axis-tick text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: hsl(var(--chart-axis));
+  font-variant-numeric: tabular-nums;
+}
+.recharts-cartesian-axis-line {
+  stroke: hsl(var(--line-strong));
+}
+.recharts-yAxis .recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: transparent;
+}
+.recharts-tooltip-cursor {
+  fill: hsl(var(--subtle));
+}
+.recharts-default-tooltip {
+  background: hsl(var(--inverse)) !important;
+  border: 0 !important;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 8px 10px !important;
+  font-size: 12px;
+  line-height: 16px;
+}
+.recharts-default-tooltip .recharts-tooltip-label {
+  color: hsl(var(--ink-inverse));
+  font-weight: 500;
+  margin-bottom: 2px !important;
+}
+.recharts-default-tooltip .recharts-tooltip-item {
+  font-family: var(--font-mono);
+  padding: 1px 0 !important;
+}
+.recharts-default-tooltip .recharts-tooltip-item-name,
+.recharts-default-tooltip .recharts-tooltip-item-separator {
+  font-family: var(--font-sans);
+  color: hsl(var(--ink-inverse) / 0.72);
+}
+.recharts-default-tooltip .recharts-tooltip-item-value {
+  color: hsl(var(--ink-inverse));
+}
+.recharts-legend-item-text {
+  color: hsl(var(--ink-secondary)) !important;
+  font-size: 12px;
+}
+.recharts-pie-sector path,
+.recharts-sector {
+  stroke: hsl(var(--surface));
+}

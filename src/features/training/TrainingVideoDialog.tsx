@@ -185,7 +185,7 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
             {nextVideo && (
               <div className="flex shrink-0 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-white/55">A seguir</p>
+                  <p className="text-[11px] uppercase tracking-[0.06em] text-white/55">A seguir</p>
                   <p className="line-clamp-1 max-w-[200px] text-sm font-medium text-white">
                     {nextVideo.title}
                   </p>

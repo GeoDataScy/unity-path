@@ -94,7 +94,7 @@ export function SupportBaseScreen() {
         <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
           {GRUPOS.map((grupo) => (
             <div key={grupo.titulo} className="flex flex-col gap-1.5">
-              <span className="px-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="px-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {grupo.titulo}
               </span>
               <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">

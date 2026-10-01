@@ -276,7 +276,7 @@ function LinhaArquivo({
             </pre>
           ) : detalhe.data && detalhe.data.amostra.length > 0 ? (
             <div className="overflow-x-auto">
-              <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
                 Primeiras {detalhe.data.amostra.length} de {arquivo.total_linhas.toLocaleString("pt-BR")} linha(s)
               </p>
               <table className="w-full text-left text-xs">

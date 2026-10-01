@@ -142,7 +142,7 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
                     {f.error ? (
                       <span className="text-destructive text-xs">{f.error}</span>
                     ) : (
-                      <span className="text-muted-foreground tabular-nums text-xs">{f.rows.length} pedidos</span>
+                      <span className="text-muted-foreground font-mono tabular-nums text-xs">{f.rows.length} pedidos</span>
                     )}
                     <button
                       type="button"
@@ -160,7 +160,7 @@ export function ImportHeldOrdersDialog({ open, onOpenChange }: Props) {
 
           {totalRows > 0 && (
             <p className="text-sm text-muted-foreground">
-              Total a importar: <span className="font-medium text-foreground tabular-nums">{totalRows}</span> pedidos.
+              Total a importar: <span className="font-medium text-foreground font-mono tabular-nums">{totalRows}</span> pedidos.
             </p>
           )}
         </div>

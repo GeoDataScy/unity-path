@@ -126,7 +126,7 @@ export function RefundReasonDetailModal({
         <div className="flex flex-wrap items-stretch gap-3 pb-1">
           <div className="rounded-lg border bg-card p-3 min-w-[180px]">
             <p className="text-xs text-muted-foreground">Reembolsos nesta categoria</p>
-            <p className="text-2xl font-medium tabular-nums">{total.toLocaleString("pt-BR")}</p>
+            <p className="text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{total.toLocaleString("pt-BR")}</p>
           </div>
           <div className="rounded-lg border bg-card p-3 min-w-[200px]">
             <p className="text-xs text-muted-foreground">Período</p>
@@ -186,7 +186,7 @@ export function RefundReasonDetailModal({
                       <TableCell className="font-mono text-xs">{row.order_id}</TableCell>
                       <TableCell>{row.channel ?? "—"}</TableCell>
                       <TableCell>{row.refund_type ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatValue(row.refund_value)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{formatValue(row.refund_value)}</TableCell>
                       <TableCell className="max-w-[260px] truncate text-muted-foreground" title={row.original_reason ?? undefined}>
                         {row.original_reason ?? "—"}
                       </TableCell>

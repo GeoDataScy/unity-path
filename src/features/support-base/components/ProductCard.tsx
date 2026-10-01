@@ -15,7 +15,7 @@ const isVsl = (label: string, url: string) =>
 /** Título das faixas internas do card (links extras, bônus, SMS). */
 function BlocoLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
       {children}
     </div>
   );
@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
               </Badge>
             )}
             {product.plataforma && (
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
                 {product.plataforma}
               </span>
             )}

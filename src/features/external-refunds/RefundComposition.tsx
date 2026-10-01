@@ -46,7 +46,7 @@ export function RefundComposition({ full, partial, unspecified }: Props) {
           <div key={c.key} className="flex items-center gap-2 text-sm">
             <span className="h-3 w-3 rounded" style={{ background: c.color }} />
             <span style={{ color: "var(--rf-ink)" }}>{c.lab}</span>
-            <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+            <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
               {fmtInt(c.n)} · {fmtPct((c.n / total) * 100)}
             </span>
           </div>

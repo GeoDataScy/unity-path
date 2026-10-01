@@ -202,7 +202,7 @@ export function RefundPlaybookPanel() {
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FRASES_APOIO.map((f) => (
             <Card key={f.tipo} className="space-y-1 p-4">
-              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {f.tipo}
               </div>
               <p className="text-xs leading-relaxed">"{f.frase}"</p>

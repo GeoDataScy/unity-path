@@ -143,7 +143,7 @@ export default function Transferencias() {
           <TabsTrigger value="to-resolve">
             A resolver
             {stats.toResolve > 0 && (
-              <Badge variant="secondary" className="ml-2 tabular-nums">
+              <Badge variant="secondary" className="ml-2 font-mono tabular-nums">
                 {stats.toResolve}
               </Badge>
             )}
@@ -402,7 +402,7 @@ function StatCard({
       <CardContent className="flex items-center justify-between py-4">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-2xl font-medium">{value}</p>
+          <p className="font-mono text-2xl font-normal tracking-[-0.03em] tabular-nums">{value}</p>
         </div>
         <div className="rounded-md bg-muted/40 p-2 text-muted-foreground">{icon}</div>
       </CardContent>

@@ -16,7 +16,7 @@ export function AtendimentosSubNav({ className }: { className?: string }) {
   return (
     <nav
       aria-label="Seções de atendimentos"
-      className={cn("inline-flex h-10 items-center rounded-md bg-muted p-1 text-muted-foreground", className)}
+      className={cn("inline-flex h-[34px] items-center rounded-[9px] bg-subtle p-[3px] text-ink-secondary", className)}
     >
       {ITEMS.map((item) => (
         <NavLink
@@ -25,9 +25,9 @@ export function AtendimentosSubNav({ className }: { className?: string }) {
           end={item.end}
           className={({ isActive }) =>
             cn(
-              "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
+              "inline-flex h-7 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              isActive ? "bg-background text-foreground shadow-sm" : "hover:text-foreground",
+              isActive ? "bg-background text-foreground shadow-[var(--shadow-sm),0_0_0_1px_hsl(var(--line))]" : "hover:text-foreground",
             )
           }
         >

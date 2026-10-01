@@ -149,7 +149,7 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
         {/* Produtos */}
         {items.length > 0 && (
           <section className="rounded-lg border bg-muted/30 p-3">
-            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               <Package className="h-3.5 w-3.5" />
               Produtos
               <span className="font-normal normal-case tracking-normal">
@@ -159,7 +159,7 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
             <ul className="space-y-1">
               {items.map((item, idx) => (
                 <li key={`${item.sku}-${idx}`} className="flex items-baseline gap-2 text-sm">
-                  <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-medium tabular-nums text-primary">
+                  <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-medium font-mono tabular-nums text-primary">
                     {item.qty}×
                   </span>
                   <span className="min-w-0">
@@ -175,7 +175,7 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
         {/* Endereço */}
         {address.oneLine && (
           <section className="rounded-lg border bg-muted/30 p-3">
-            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" /> Endereço
             </p>
             <address className="space-y-0.5 text-sm not-italic">

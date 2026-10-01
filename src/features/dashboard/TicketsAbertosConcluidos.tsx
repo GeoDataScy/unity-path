@@ -89,14 +89,14 @@ function DailyTooltip({
         <div className="flex items-center gap-2">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR_OPEN }} />
           <span className="text-muted-foreground">Abertos</span>
-          <span className="ml-auto font-medium tabular-nums">{count(row.opened)}</span>
+          <span className="ml-auto font-medium font-mono tabular-nums">{count(row.opened)}</span>
         </div>
       )}
       {series?.closed && (
         <div className="flex items-center gap-2">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR_CLOSED }} />
           <span className="text-muted-foreground">Concluídos</span>
-          <span className="ml-auto font-medium tabular-nums">{count(row.closed)}</span>
+          <span className="ml-auto font-medium font-mono tabular-nums">{count(row.closed)}</span>
         </div>
       )}
     </div>
@@ -136,7 +136,7 @@ function SerieToggle({
         className="inline-block h-2.5 w-2.5 shrink-0 translate-y-[-2px] rounded-full border-2"
         style={{ borderColor: color, background: ativo ? color : "transparent" }}
       />
-      <span className="text-2xl font-medium tabular-nums">{count(value)}</span>
+      <span className="text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{count(value)}</span>
       <span className="text-sm text-muted-foreground">{label}</span>
     </button>
   );

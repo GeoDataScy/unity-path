@@ -277,7 +277,7 @@ export default function DashboardAcompanhamento() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-medium tracking-tight">Acompanhamento</h1>
+        <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Acompanhamento</h1>
         <p className="text-sm text-muted-foreground">
           Controle semanal de performance dos agentes — Últimas {WEEKS_WINDOW} semanas
         </p>
@@ -292,7 +292,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{kpi.totalAgents}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpi.totalAgents}</div>}
           </CardContent>
         </Card>
 
@@ -303,7 +303,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-emerald-600">{kpi.allGood}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-emerald-600">{kpi.allGood}</div>}
           </CardContent>
         </Card>
 
@@ -314,7 +314,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-amber-600">{kpi.withWarnings}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-amber-600">{kpi.withWarnings}</div>}
           </CardContent>
         </Card>
 
@@ -325,7 +325,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-red-600">{kpi.atRisk}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-red-600">{kpi.atRisk}</div>}
           </CardContent>
         </Card>
       </section>

@@ -100,7 +100,7 @@ export function TicketDetailSheet({ ticketId, onClose }: Props) {
             </dl>
 
             <div>
-              <div className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">Tags</div>
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Tags</div>
               {t.tags.length === 0 ? (
                 <span className="text-sm text-muted-foreground">Nenhuma tag.</span>
               ) : (
@@ -160,7 +160,7 @@ function Fato({
 }) {
   return (
     <div className={cn("min-w-0 rounded-md border p-2.5", destaque && "border-primary/40 bg-primary/5")}>
-      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{rotulo}</dt>
+      <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{rotulo}</dt>
       <dd className="truncate font-medium" title={valor}>
         {valor}
       </dd>

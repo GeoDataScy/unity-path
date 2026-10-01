@@ -178,8 +178,8 @@ export function TendenciaTemporal({
 
   const VerdictIcon = verdict === "up" ? TrendingUp : verdict === "down" ? TrendingDown : Activity;
   const verdictColor =
-    verdict === "up" ? "text-emerald-600 dark:text-emerald-400"
-    : verdict === "down" ? "text-rose-600 dark:text-rose-400"
+    verdict === "up" ? "text-success"
+    : verdict === "down" ? "text-destructive"
     : "text-muted-foreground";
   const verdictLabel = verdict === "up" ? "Crescendo" : verdict === "down" ? "Caindo" : "Estável";
 
@@ -214,8 +214,8 @@ export function TendenciaTemporal({
                 <ComposedChart data={chartData.rows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="tendArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.04} />
+                      <stop offset="5%" stopColor="hsl(var(--chart-mute-2))" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="hsl(var(--chart-mute-2))" stopOpacity={0.03} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -237,7 +237,7 @@ export function TendenciaTemporal({
                   <Area
                     type="monotone"
                     dataKey="value"
-                    stroke="hsl(var(--primary))"
+                    stroke="hsl(var(--chart-mute-1))"
                     fill="url(#tendArea)"
                     strokeWidth={2}
                     isAnimationActive={false}
@@ -277,10 +277,10 @@ export function TendenciaTemporal({
           <div className="flex flex-col gap-2">
             <KpiButton onClick={() => setOpenTopic("trend")} disabled={loading || !stats}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Tendência</span>
+                <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Tendência</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className={cn("mt-1 flex items-baseline gap-1.5 text-2xl font-medium tabular-nums", verdictColor)}>
+              <div className={cn("mt-1 flex items-baseline gap-1.5 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]", verdictColor)}>
                 <VerdictIcon className="h-5 w-5" />
                 {slope >= 0 ? "+" : ""}{fmt(slope, 1)}
                 <span className="text-xs font-normal text-muted-foreground">/dia</span>
@@ -290,20 +290,20 @@ export function TendenciaTemporal({
 
             <KpiButton onClick={() => setOpenTopic("r2")} disabled={loading || !stats}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Confiança (R²)</span>
+                <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Confiança (R²)</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className="mt-1 text-2xl font-medium tabular-nums">{fmt(r2, 2)}</div>
+              <div className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{fmt(r2, 2)}</div>
               <div className="mt-0.5 text-xs text-muted-foreground">qualidade {r2Quality}</div>
             </KpiButton>
 
             <KpiButton onClick={() => setOpenTopic("forecast")} disabled={loading || !stats}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Projeção (+{forecastDays}d)</span>
+                <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Projeção (+{forecastDays}d)</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className="mt-1 flex items-baseline gap-1.5 text-2xl font-medium tabular-nums">
-                <Sparkles className="h-4 w-4 text-amber-500" />
+              <div className="mt-1 flex items-baseline gap-1.5 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">
+                <Sparkles className="h-4 w-4 text-warning" />
                 ~{fmt(projected)}
                 <span className="text-xs font-normal text-muted-foreground">/dia</span>
               </div>
@@ -312,7 +312,7 @@ export function TendenciaTemporal({
 
             <KpiButton onClick={() => setOpenTopic("ma")} disabled={loading || !stats}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Média móvel {movingWindow}d</span>
+                <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Média móvel {movingWindow}d</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">linha azul tracejada</div>
@@ -322,10 +322,10 @@ export function TendenciaTemporal({
 
         {/* Legend */}
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[11px] text-muted-foreground">
-          <Legend swatch="bg-primary/40 border border-primary/60" label="Atendimentos por dia (real)" />
-          <Legend swatch="border-2 border-blue-500 border-dashed" label={`Média móvel ${movingWindow} dias`} />
-          <Legend swatch={cn("border-2", verdict === "down" ? "border-rose-500" : "border-emerald-500")} label="Tendência (regressão linear)" />
-          <Legend swatch="border-2 border-amber-500 border-dashed" label={`Projeção +${forecastDays} dias`} />
+          <Legend swatch="bg-chart-mute-2/40 border border-chart-mute-1" label="Atendimentos por dia (real)" />
+          <Legend swatch="border-2 border-info border-dashed" label={`Média móvel ${movingWindow} dias`} />
+          <Legend swatch={cn("border-2", verdict === "down" ? "border-destructive" : "border-success")} label="Tendência (regressão linear)" />
+          <Legend swatch="border-2 border-warning border-dashed" label={`Projeção +${forecastDays} dias`} />
         </div>
       </CardContent>
 
@@ -420,7 +420,7 @@ function ExplainDialog({
                 </ul>
               </Section>
               {content.caveat && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                <div className="rounded-md border border-warning/40 bg-amber-soft p-3 text-xs text-ink">
                   <strong>Importante:</strong> {content.caveat}
                 </div>
               )}
@@ -435,7 +435,7 @@ function ExplainDialog({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-foreground">{title}</h4>
+      <h4 className="mb-1 text-xs font-medium uppercase tracking-[0.06em] text-foreground">{title}</h4>
       {children}
     </div>
   );

@@ -175,7 +175,7 @@ export function AgentDailyMetricsSection({
               <Skeleton className="h-10 w-24" />
             ) : (
               <div
-                className={cn("text-4xl font-medium tabular-nums", pulse && effectiveCount >= goal && "pulse")}
+                className={cn("text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]", pulse && effectiveCount >= goal && "pulse")}
               >
                 {effectiveCount.toLocaleString("pt-BR")}
               </div>
@@ -204,7 +204,7 @@ export function AgentDailyMetricsSection({
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Você está{" "}
-                  <span className="font-medium text-foreground tabular-nums">
+                  <span className="font-medium text-foreground font-mono tabular-nums">
                     {Math.max(0, (dailyMetrics.leader_count ?? 0) - effectiveCount).toLocaleString("pt-BR")}
                   </span>{" "}
                   atendimentos atrás de{" "}
@@ -225,7 +225,7 @@ export function AgentDailyMetricsSection({
             {metricsLoading ? (
               <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-4xl font-medium tabular-nums">{remainingToGoal.toLocaleString("pt-BR")}</div>
+              <div className="text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]">{remainingToGoal.toLocaleString("pt-BR")}</div>
             )}
             <p className="mt-2 text-sm text-muted-foreground">Meta diária: {goal}</p>
           </CardContent>
@@ -236,7 +236,7 @@ export function AgentDailyMetricsSection({
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">Progresso da meta</p>
           {!metricsLoading && (
-            <p className="text-sm tabular-nums text-muted-foreground">
+            <p className="text-sm font-mono tabular-nums text-muted-foreground">
               {effectiveCount.toLocaleString("pt-BR")}/{goal}
             </p>
           )}

@@ -1200,7 +1200,7 @@ export default function Atendimentos() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="tabular-nums text-muted-foreground">
+                    <TableCell className="font-mono tabular-nums text-muted-foreground">
                       {formatCreatedAtTimeSP(s.created_at)}
                     </TableCell>
                     {canViewAllTickets && (

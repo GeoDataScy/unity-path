@@ -122,7 +122,7 @@ export function MemoryCard({ memoria }: { memoria: LyaMemoriaSalva }) {
     <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-primary/40 bg-primary/5 px-3.5 py-2.5">
       <Brain className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-primary">Aprendido · {memoria.type}</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-primary">Aprendido · {memoria.type}</p>
         <p className="text-[13px] leading-snug text-foreground">{memoria.description}</p>
         {memoria.tags?.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">

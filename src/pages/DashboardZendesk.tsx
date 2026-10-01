@@ -147,7 +147,7 @@ export default function DashboardZendesk() {
 
         {status.data?.connected && (
           <>
-            <div className="mt-5 mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="mt-5 mb-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
               Tickets criados no período ({formatarPeriodo(fromISO, toISO)})
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
@@ -394,8 +394,8 @@ function Tile({
         ativo && "border-primary ring-1 ring-primary/40",
       )}
     >
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{rotulo}</div>
-      <div className="text-lg font-medium tabular-nums">{valor.toLocaleString("pt-BR")}</div>
+      <div className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{rotulo}</div>
+      <div className="text-lg font-medium font-mono tabular-nums">{valor.toLocaleString("pt-BR")}</div>
     </button>
   );
 }

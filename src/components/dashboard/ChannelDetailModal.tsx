@@ -164,18 +164,18 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo, agen
             <DateRangePicker
               value={range}
               onChange={(r) => setRange(r)}
-              className="bg-muted text-foreground hover:bg-muted/80"
+              className="bg-surface text-foreground hover:bg-subtle"
             />
           </div>
           <div className="flex rounded-md border overflow-hidden text-sm">
             <button
-              className={`px-4 py-1.5 transition-colors ${view === "por-agente" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+              className={`px-4 py-1.5 transition-colors ${view === "por-agente" ? "bg-primary text-primary-foreground" : "bg-surface hover:bg-subtle"}`}
               onClick={() => setView("por-agente")}
             >
               Por Agente
             </button>
             <button
-              className={`px-4 py-1.5 transition-colors ${view === "por-tipo" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+              className={`px-4 py-1.5 transition-colors ${view === "por-tipo" ? "bg-primary text-primary-foreground" : "bg-surface hover:bg-subtle"}`}
               onClick={() => setView("por-tipo")}
             >
               Por Tipo
@@ -194,7 +194,7 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo, agen
           <div className="grid grid-cols-3 gap-3 pb-2">
             <div className="rounded-lg border bg-card p-3">
               <p className="text-xs text-muted-foreground">Total no período</p>
-              <p className="text-2xl font-medium">{grandTotal}</p>
+              <p className="font-mono text-2xl font-normal tracking-[-0.03em] tabular-nums">{grandTotal}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{channels.length} canal(is) ativos</p>
             </div>
             {topChannel && (

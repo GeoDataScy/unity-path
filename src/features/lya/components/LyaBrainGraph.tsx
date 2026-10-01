@@ -647,11 +647,11 @@ export function LyaBrainGraph({
         <div className="flex flex-col items-start gap-2">
           {painelAjustes && (
             <div className="w-64 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-xs text-slate-200 shadow-2xl backdrop-blur-xl">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">Forças</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Forças</p>
               <Controle label="Repulsão" valor={ajustes.repulsao} min={30} max={500} step={10} onChange={(v) => setAjuste("repulsao", v)} />
               <Controle label="Distância das ligações" valor={ajustes.distancia} min={15} max={200} step={5} onChange={(v) => setAjuste("distancia", v)} />
               <Controle label="Força central" valor={ajustes.centro} min={0} max={0.5} step={0.01} onChange={(v) => setAjuste("centro", v)} fmt={(v) => v.toFixed(2)} />
-              <p className="mb-2 mt-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">Exibição</p>
+              <p className="mb-2 mt-3 text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Exibição</p>
               <Controle label="Tamanho dos nós" valor={ajustes.tamanho} min={0.5} max={2.5} step={0.1} onChange={(v) => setAjuste("tamanho", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <Controle label="Espessura das linhas" valor={ajustes.espessura} min={0.3} max={3} step={0.1} onChange={(v) => setAjuste("espessura", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <div className="mt-2 flex items-center justify-between">
@@ -724,7 +724,7 @@ export function LyaBrainGraph({
                 >
                   {TIPO_MEMORIA_MAP[selecionada.type]?.label ?? selecionada.type}
                 </span>
-                {selecionada.seed && <span className="text-[10px] uppercase tracking-wide text-slate-500">exemplo</span>}
+                {selecionada.seed && <span className="text-[10px] uppercase tracking-[0.06em] text-slate-500">exemplo</span>}
               </span>
               <button type="button" onClick={() => setSel(null)} className="text-slate-400 hover:text-white" aria-label="Fechar">
                 <X className="h-4 w-4" />
@@ -798,7 +798,7 @@ export function LyaBrainGraph({
                   {arquivoSel.tipo === "csv" ? "Planilha" : "Documento"}
                 </span>
                 {arquivoSel.status !== "pronto" && (
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <span className="text-[10px] uppercase tracking-[0.06em] text-slate-500">
                     {arquivoSel.status === "processando" ? "lendo…" : "com erro"}
                   </span>
                 )}
@@ -881,7 +881,7 @@ export function LyaBrainGraph({
           </>
         ) : (
           <>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Últimos treinos</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-slate-400">Últimos treinos</p>
             {recentes.length === 0 ? (
               <p className="mt-2 text-[12px] text-slate-400">A Lya ainda não tem memórias. Ensine a primeira.</p>
             ) : (

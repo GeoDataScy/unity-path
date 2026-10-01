@@ -35,7 +35,7 @@ export function QuickLinksMenu() {
         {Object.entries(grupos).map(([grupo, links], idx) => (
           <div key={grupo}>
             {idx > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
               {grupo}
             </DropdownMenuLabel>
             {links.map((link) => (

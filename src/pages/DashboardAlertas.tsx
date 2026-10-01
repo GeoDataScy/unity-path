@@ -218,7 +218,7 @@ export default function DashboardAlertas() {
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <div>
-            <h1 className="text-3xl font-medium tracking-tight">Alertas</h1>
+            <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Alertas</h1>
             <p className="text-sm text-muted-foreground">
               Reembolsos em aberto há mais de 24 horas — atualizado a cada 60s
             </p>
@@ -246,7 +246,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-16" />
             ) : (
-              <div className={`text-3xl font-medium ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
                 {data?.total_overdue ?? 0}
               </div>
             )}
@@ -261,7 +261,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-12" />
             ) : (
-              <div className={`text-3xl font-medium ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
                 {data?.agents_affected ?? 0}
               </div>
             )}

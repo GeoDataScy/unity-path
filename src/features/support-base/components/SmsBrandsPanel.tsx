@@ -111,7 +111,7 @@ function SmsBrandCard({ brand }: { brand: SupportSmsBrand }) {
       </div>
 
       <div className="rounded-md bg-muted/60 p-2.5">
-        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           Nome no sistema
         </div>
         <div className="flex items-start gap-1">

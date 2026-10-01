@@ -253,8 +253,8 @@ const Dashboard = () => {
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-lg font-medium text-muted-foreground">Olá {fullName ?? ""}!</p>
-          <h1 className="text-3xl font-medium tracking-tight">Atendimentos</h1>
+          <p className="text-[15px] text-ink-tertiary">Olá {fullName ?? ""}!</p>
+          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Atendimentos</h1>
           <AtendimentosSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
@@ -270,35 +270,35 @@ const Dashboard = () => {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <Users className="h-4 w-4" />
               {agentId === "all" ? "Total de atendimentos (todos)" : `Atendimentos — ${byAgentSeries[0]?.name ?? "agente"}`}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{formatCompactNumber(kpiTotal)}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{formatCompactNumber(kpiTotal)}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" /> Média diária
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" /> Média diária
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-28" />
             ) : (
-              <div className="text-3xl font-medium">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
+              <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" /> {agentId === "all" ? "Top agente" : "Distância do Líder"}
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> {agentId === "all" ? "Top agente" : "Distância do Líder"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -306,7 +306,7 @@ const Dashboard = () => {
               <Skeleton className="h-8 w-40" />
             ) : (
               <>
-                <div className={`text-lg font-medium ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
+                <div className={`text-lg font-medium ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-coral" : ""}`}>
                   {kpiTopAgentLabel}
                 </div>
                 {agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL && (
@@ -320,8 +320,8 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Package className="h-4 w-4 text-primary" /> Produto + saída
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <Package className="h-4 w-4" /> Produto + saída
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -348,7 +348,7 @@ const Dashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -399,8 +399,8 @@ const Dashboard = () => {
                             style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}
                           />
                           <span className="flex-1 truncate" title={p.name}>{p.name}</span>
-                          <span className="tabular-nums text-muted-foreground">{formatCompactNumber(p.value)}</span>
-                          <span className="tabular-nums text-[10px] text-muted-foreground w-10 text-right">
+                          <span className="font-mono tabular-nums text-muted-foreground">{formatCompactNumber(p.value)}</span>
+                          <span className="font-mono tabular-nums text-[10px] text-muted-foreground w-10 text-right">
                             {pct.toFixed(1)}%
                           </span>
                         </li>
@@ -432,7 +432,7 @@ const Dashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -440,7 +440,7 @@ const Dashboard = () => {
         </Card>
 
         <Card
-          className="cursor-pointer hover:ring-2 hover:ring-primary/40 transition-shadow"
+          className="cursor-pointer transition-[border-color,box-shadow] duration-200 hover:border-line-strong hover:shadow-sm"
           onClick={() => setChannelModalOpen(true)}
         >
           <CardHeader className="flex flex-row items-center justify-between">
@@ -459,7 +459,7 @@ const Dashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--ring))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

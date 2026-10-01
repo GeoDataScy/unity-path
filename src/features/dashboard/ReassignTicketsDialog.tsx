@@ -404,7 +404,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                       </TableCell>
                       <TableCell className="font-medium">{t.client_email}</TableCell>
                       <TableCell>{t.product}</TableCell>
-                      <TableCell className="tabular-nums">
+                      <TableCell className="font-mono tabular-nums">
                         {formatServiceDate(t.service_date)}
                       </TableCell>
                       <TableCell>
@@ -412,7 +412,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                           {t.effective_status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center tabular-nums text-muted-foreground">
+                      <TableCell className="text-center font-mono tabular-nums text-muted-foreground">
                         {t.follow_up_count}
                       </TableCell>
                       <TableCell>

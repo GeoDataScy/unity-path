@@ -276,7 +276,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.total}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.total}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -286,7 +286,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.waiting}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.waiting}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -296,7 +296,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.inProgress}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.inProgress}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -306,7 +306,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.confirmed}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.confirmed}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -316,7 +316,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.unassigned}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.unassigned}</div>}
           </CardContent>
         </Card>
       </section>
@@ -332,9 +332,9 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
               {summary.map((s) => (
                 <div key={s.agent_id} className="rounded-md border px-3 py-1.5 text-sm">
                   <span className="font-medium">{s.full_name ?? "Sem nome"}</span>{" "}
-                  <span className="text-amber-600 dark:text-amber-400 tabular-nums">{s.pending} pend.</span>{" "}
-                  <span className="text-status-in-progress tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{s.confirmed} conf.</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-mono tabular-nums">{s.pending} pend.</span>{" "}
+                  <span className="text-status-in-progress font-mono tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">{s.confirmed} conf.</span>
                 </div>
               ))}
             </div>
@@ -539,7 +539,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
                             {o.email && <span className="text-xs text-muted-foreground">{o.email}</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm tabular-nums">{formatDate(o.order_date)}</TableCell>
+                        <TableCell className="text-sm font-mono tabular-nums">{formatDate(o.order_date)}</TableCell>
                         <TableCell className="text-sm">
                           {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
                         </TableCell>

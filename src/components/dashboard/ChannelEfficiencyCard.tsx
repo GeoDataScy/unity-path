@@ -220,17 +220,17 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       className={cn(row.isTotal && "bg-muted/40 font-medium")}
                     >
                       <TableCell className="font-medium">{row.name}</TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.total_done)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.partial_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.total_done)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.partial_count)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                         {row.isTotal ? "—" : pct(row.partial_share)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.full_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.full_count)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                         {row.isTotal ? "—" : pct(row.full_share)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{pct(row.partial_rate)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{pct(row.full_rate)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{pct(row.partial_rate)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{pct(row.full_rate)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

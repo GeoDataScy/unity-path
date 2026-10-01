@@ -142,7 +142,7 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
         {label}
       </div>
       <div
-        className="rf-display mt-1 text-[clamp(19px,2.2vw,22px)] font-medium leading-tight tabular-nums"
+        className="rf-display mt-1 text-[clamp(19px,2.2vw,22px)] font-medium leading-tight font-mono tabular-nums"
         style={{ color: "var(--rf-ink)" }}
       >
         {value}
@@ -388,7 +388,7 @@ export default function DashboardRefundsComparativo() {
         <div className="grid gap-3 sm:grid-cols-3">
           {filtros.map((f) => (
             <div key={f.lab} className="space-y-1.5">
-              <div className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--rf-ink-faint)" }}>
+              <div className="text-xs font-medium uppercase tracking-[0.06em]" style={{ color: "var(--rf-ink-faint)" }}>
                 {f.lab}
               </div>
               {f.node}
@@ -511,7 +511,7 @@ export default function DashboardRefundsComparativo() {
                 >
                   <span className="h-3 w-3 rounded" style={{ background: p.color }} />
                   {p.key}
-                  <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
                     {metric === "qtd" ? fmtInt(tot) : fmtUsd(tot)}
                   </span>
                 </button>
@@ -658,7 +658,7 @@ export default function DashboardRefundsComparativo() {
                   <span style={{ color: "var(--rf-ink)" }}>
                     {b.product} · {fmtMonth(b.month_ref.slice(0, 7))}
                   </span>
-                  <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
                     {fmtInt(b.orders)} pedido(s) · importado em {fmtDate(b.imported_at)}
                   </span>
                   {isManager && (

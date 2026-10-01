@@ -244,8 +244,8 @@ export default function DashboardUsers() {
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-lg font-medium text-muted-foreground">Administração</p>
-            <h1 className="text-3xl font-medium tracking-tight">Usuários</h1>
+            <p className="text-[15px] text-ink-tertiary">Administração</p>
+            <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Usuários</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie acesso, inative ou exclua contas. O histórico (atendimentos, reembolsos) é sempre preservado.
             </p>
@@ -267,7 +267,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.total}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.total}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -277,7 +277,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.active}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.active}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -287,7 +287,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.inactive}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.inactive}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -301,7 +301,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.online}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.online}</div>}
             </CardContent>
           </Card>
         </section>
@@ -426,7 +426,7 @@ export default function DashboardUsers() {
                                 {user.open_tickets_count > 0 ? (
                                   <Badge
                                     variant={user.is_active ? "outline" : "destructive"}
-                                    className="tabular-nums"
+                                    className="font-mono tabular-nums"
                                   >
                                     {user.open_tickets_count}
                                   </Badge>

@@ -222,7 +222,7 @@ export default function Radar() {
     <div className="mx-auto max-w-7xl px-4 py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-medium tracking-tight">
+          <h1 className="flex items-center gap-2 text-[28px] font-medium leading-[34px] tracking-[-0.025em]">
             <RadarIcon className="h-7 w-7 text-primary" /> Radar
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -273,7 +273,7 @@ export default function Radar() {
                 {radarQuery.isLoading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <div className={`text-3xl font-medium tabular-nums ${c.tone}`}>
+                  <div className={`text-3xl font-normal font-mono tabular-nums ${c.tone} tracking-[-0.03em]`}>
                     {c.value.toLocaleString("pt-BR")}
                   </div>
                 )}
