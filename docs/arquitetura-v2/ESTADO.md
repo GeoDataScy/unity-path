@@ -208,7 +208,9 @@ const canSubmit = !addEntryMutation.isPending &&
   (status === "concluido" || interactionCheck.allowed || isReopening);
 ```
 
-Isso é deliberado no código: concluir sempre pode. E é por aí que passa tudo:
+Isso é deliberado: entrou em **30/04/2026**, commit `db89cdb` — "permitir concluir
+ticket mesmo quando interação em andamento está bloqueada" —, do dev anterior.
+O arquivo não é tocado desde 17/08. E é por aí que passa tudo:
 
 | Em 45 dias | |
 |---|---|

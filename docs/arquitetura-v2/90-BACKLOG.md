@@ -166,7 +166,8 @@ tela do agente virar.
 ### B27 · "Concluído" sempre passa, e conta na meta `DECISÃO DO DONO — 01/10`
 
 Em produção hoje, o diálogo de acompanhamento desabilita a segunda interação do dia
-**exceto** quando o status é "Concluído" (`StatusTrackingDialog.tsx:94`, deliberado). Em
+**exceto** quando o status é "Concluído" (`StatusTrackingDialog.tsx:94`, deliberado desde
+30/04/2026, commit `db89cdb`, do dev anterior). Em
 45 dias: 439 repetições do mesmo dia antes das 18h sem rastreio, **435 são "Concluído"**,
 8 agentes, uma responde por 70%. Estável há 7 semanas — não é regressão.
 
