@@ -522,7 +522,7 @@ export function LyaBrainGraph({
     >
       {/* legenda / status */}
       <div className="absolute left-4 top-4 z-10 flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-slate-300 shadow-2xl backdrop-blur-md">
-        <span className="flex items-center gap-2 text-sm font-semibold tracking-tight text-slate-100">
+        <span className="flex items-center gap-2 text-sm font-medium tracking-tight text-slate-100">
           <Brain className="h-4 w-4" style={{ color: HALO }} />
           Cérebro da Lya
         </span>
@@ -647,11 +647,11 @@ export function LyaBrainGraph({
         <div className="flex flex-col items-start gap-2">
           {painelAjustes && (
             <div className="w-64 rounded-2xl border border-white/10 bg-white/[0.05] p-3.5 text-xs text-slate-200 shadow-2xl backdrop-blur-xl">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Forças</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">Forças</p>
               <Controle label="Repulsão" valor={ajustes.repulsao} min={30} max={500} step={10} onChange={(v) => setAjuste("repulsao", v)} />
               <Controle label="Distância das ligações" valor={ajustes.distancia} min={15} max={200} step={5} onChange={(v) => setAjuste("distancia", v)} />
               <Controle label="Força central" valor={ajustes.centro} min={0} max={0.5} step={0.01} onChange={(v) => setAjuste("centro", v)} fmt={(v) => v.toFixed(2)} />
-              <p className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Exibição</p>
+              <p className="mb-2 mt-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">Exibição</p>
               <Controle label="Tamanho dos nós" valor={ajustes.tamanho} min={0.5} max={2.5} step={0.1} onChange={(v) => setAjuste("tamanho", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <Controle label="Espessura das linhas" valor={ajustes.espessura} min={0.3} max={3} step={0.1} onChange={(v) => setAjuste("espessura", v)} fmt={(v) => `${v.toFixed(1)}×`} />
               <div className="mt-2 flex items-center justify-between">
@@ -730,7 +730,7 @@ export function LyaBrainGraph({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <h3 className="text-sm font-semibold leading-snug">{selecionada.description || selecionada.name}</h3>
+            <h3 className="text-sm font-medium leading-snug">{selecionada.description || selecionada.name}</h3>
             {selecionada.body && (
               <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
                 {selecionada.body.split(/(\[\[[^\]]+\]\])/g).map((parte, i) => {
@@ -807,7 +807,7 @@ export function LyaBrainGraph({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <h3 className="text-sm font-semibold leading-snug">{arquivoSel.nome}</h3>
+            <h3 className="text-sm font-medium leading-snug">{arquivoSel.nome}</h3>
             <p className="mt-0.5 truncate text-[11px] text-slate-500" title={arquivoSel.arquivo}>
               {arquivoSel.arquivo}
             </p>
@@ -865,13 +865,13 @@ export function LyaBrainGraph({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <h3 className="text-sm font-semibold leading-snug">{sistemaSel.label}</h3>
+            <h3 className="text-sm font-medium leading-snug">{sistemaSel.label}</h3>
             {sistemaSel.detalhe && (
               <p className="mt-2 text-[12px] leading-relaxed text-slate-300">{sistemaSel.detalhe}</p>
             )}
             {sistemaSel.total != null && (
               <p className="mt-2.5 text-[12px] text-slate-200">
-                <span className="text-lg font-semibold">{numero(sistemaSel.total)}</span>{" "}
+                <span className="text-lg font-medium">{numero(sistemaSel.total)}</span>{" "}
                 <span className="text-slate-400">registro(s) agora</span>
               </p>
             )}
@@ -881,7 +881,7 @@ export function LyaBrainGraph({
           </>
         ) : (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Últimos treinos</p>
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Últimos treinos</p>
             {recentes.length === 0 ? (
               <p className="mt-2 text-[12px] text-slate-400">A Lya ainda não tem memórias. Ensine a primeira.</p>
             ) : (

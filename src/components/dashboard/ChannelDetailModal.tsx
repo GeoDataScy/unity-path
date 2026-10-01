@@ -194,20 +194,20 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo, agen
           <div className="grid grid-cols-3 gap-3 pb-2">
             <div className="rounded-lg border bg-card p-3">
               <p className="text-xs text-muted-foreground">Total no período</p>
-              <p className="text-2xl font-bold">{grandTotal}</p>
+              <p className="text-2xl font-medium">{grandTotal}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{channels.length} canal(is) ativos</p>
             </div>
             {topChannel && (
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Canal mais ativo</p>
-                <p className="text-2xl font-bold truncate">{topChannel.channel}</p>
+                <p className="text-2xl font-medium truncate">{topChannel.channel}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{topChannel.total} atendimentos</p>
               </div>
             )}
             {bestRate && bestRate.new_tickets > 0 && (
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Melhor taxa de conclusão</p>
-                <p className="text-2xl font-bold">{bestRate.channel}</p>
+                <p className="text-2xl font-medium">{bestRate.channel}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{bestRate.rate}% concluídos</p>
               </div>
             )}
@@ -258,7 +258,7 @@ export function ChannelDetailModal({ open, onClose, initialFrom, initialTo, agen
                   const agentRows = rows.filter((r) => r.channel === ct.channel);
                   return [
                     // Channel summary row
-                    <TableRow key={`ch-${ct.channel}`} className="font-semibold bg-muted/40">
+                    <TableRow key={`ch-${ct.channel}`} className="font-medium bg-muted/40">
                       <TableCell colSpan={2}>{ct.channel}</TableCell>
                       <TableCell className="text-right">{ct.new_tickets}</TableCell>
                       <TableCell className="text-right">{ct.interactions}</TableCell>

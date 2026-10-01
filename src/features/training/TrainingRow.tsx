@@ -49,7 +49,7 @@ export function TrainingRow({ title, subtitle, videos, onPlay }: Props) {
   return (
     <section className="group/row relative">
       <div className="mb-3 flex items-baseline gap-3 px-1">
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        <h2 className="text-lg font-medium text-slate-900">{title}</h2>
         {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
       </div>
 

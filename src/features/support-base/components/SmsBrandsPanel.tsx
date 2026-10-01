@@ -106,7 +106,7 @@ function SmsBrandCard({ brand }: { brand: SupportSmsBrand }) {
   return (
     <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-tight">{brand.nome}</h3>
+        <h3 className="min-w-0 flex-1 text-sm font-medium leading-tight">{brand.nome}</h3>
         <EstruturaBadge estrutura={brand.estrutura} curto />
       </div>
 

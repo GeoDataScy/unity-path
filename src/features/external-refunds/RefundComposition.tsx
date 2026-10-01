@@ -32,7 +32,7 @@ export function RefundComposition({ full, partial, unspecified }: Props) {
           return (
             <div
               key={c.key}
-              className="flex items-center justify-center text-xs font-semibold text-white"
+              className="flex items-center justify-center text-xs font-medium text-white"
               style={{ background: c.color, flex: `${pct} 1 0` }}
               title={`${c.lab}: ${fmtInt(c.n)} (${fmtPct(pct)})`}
             >

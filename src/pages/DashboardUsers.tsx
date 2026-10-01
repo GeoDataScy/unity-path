@@ -244,8 +244,8 @@ export default function DashboardUsers() {
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-lg font-semibold text-muted-foreground">Administração</p>
-            <h1 className="text-3xl font-semibold tracking-tight">Usuários</h1>
+            <p className="text-lg font-medium text-muted-foreground">Administração</p>
+            <h1 className="text-3xl font-medium tracking-tight">Usuários</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie acesso, inative ou exclua contas. O histórico (atendimentos, reembolsos) é sempre preservado.
             </p>
@@ -267,7 +267,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.total}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.total}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -277,7 +277,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.active}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.active}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -287,7 +287,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.inactive}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.inactive}</div>}
             </CardContent>
           </Card>
           <Card>
@@ -301,7 +301,7 @@ export default function DashboardUsers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.online}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{counts.online}</div>}
             </CardContent>
           </Card>
         </section>
@@ -566,7 +566,7 @@ export default function DashboardUsers() {
               <AlertDialogDescription asChild>
                 <div className="space-y-3 text-sm">
                   <p>
-                    Esta ação remove o acesso de <span className="font-semibold">{deleteTarget?.full_name ?? deleteTarget?.email}</span> ao sistema.
+                    Esta ação remove o acesso de <span className="font-medium">{deleteTarget?.full_name ?? deleteTarget?.email}</span> ao sistema.
                   </p>
                   <p className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-emerald-700 dark:text-emerald-300">
                     O histórico (atendimentos, reembolsos, transferências) será <strong>preservado</strong>. Apenas a conta de login é removida.

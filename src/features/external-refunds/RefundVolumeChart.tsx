@@ -142,7 +142,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
 
       {hover && (
         <ChartTooltip x={hover.x} y={hover.y}>
-          <div className="mb-1.5 font-semibold" style={{ color: "var(--rf-ink)" }}>
+          <div className="mb-1.5 font-medium" style={{ color: "var(--rf-ink)" }}>
             {hover.bucket.label}
             {gran === "dia" && <span style={{ color: "var(--rf-ink-faint)" }}> · {hover.bucket.sub}</span>}
           </div>
@@ -158,7 +158,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
               </div>
             ))}
           <div
-            className="mt-1.5 flex items-center justify-between gap-6 border-t pt-1.5 font-semibold"
+            className="mt-1.5 flex items-center justify-between gap-6 border-t pt-1.5 font-medium"
             style={{ borderColor: "var(--rf-line)" }}
           >
             <span>Total</span>

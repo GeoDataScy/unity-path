@@ -126,7 +126,7 @@ export function RefundReasonDetailModal({
         <div className="flex flex-wrap items-stretch gap-3 pb-1">
           <div className="rounded-lg border bg-card p-3 min-w-[180px]">
             <p className="text-xs text-muted-foreground">Reembolsos nesta categoria</p>
-            <p className="text-2xl font-bold tabular-nums">{total.toLocaleString("pt-BR")}</p>
+            <p className="text-2xl font-medium tabular-nums">{total.toLocaleString("pt-BR")}</p>
           </div>
           <div className="rounded-lg border bg-card p-3 min-w-[200px]">
             <p className="text-xs text-muted-foreground">Período</p>

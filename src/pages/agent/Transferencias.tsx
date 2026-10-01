@@ -402,7 +402,7 @@ function StatCard({
       <CardContent className="flex items-center justify-between py-4">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-2xl font-semibold">{value}</p>
+          <p className="text-2xl font-medium">{value}</p>
         </div>
         <div className="rounded-md bg-muted/40 p-2 text-muted-foreground">{icon}</div>
       </CardContent>

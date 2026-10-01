@@ -197,10 +197,10 @@ function RateBar({
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <span className={cn("text-sm", strong ? "font-semibold text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-sm", strong ? "font-medium text-foreground" : "text-muted-foreground")}>
           {label}
         </span>
-        <span className={cn("tabular-nums", strong ? "text-lg font-semibold" : "text-sm text-muted-foreground")}>
+        <span className={cn("tabular-nums", strong ? "text-lg font-medium" : "text-sm text-muted-foreground")}>
           {fmtRate(value)}
           <span className="ml-1 text-xs font-normal text-muted-foreground">/dia</span>
         </span>
@@ -242,7 +242,7 @@ function KpiCard({
           <Skeleton className="h-9 w-24" />
         ) : (
           <>
-            <div className={cn("text-3xl font-semibold tabular-nums", valueClass)}>{value}</div>
+            <div className={cn("text-3xl font-medium tabular-nums", valueClass)}>{value}</div>
             <p className="mt-1 text-xs leading-snug text-muted-foreground">{hint}</p>
           </>
         )}
@@ -369,7 +369,7 @@ export default function MinhasMetricas() {
       {/* ── Cabeçalho + período ──────────────────────────────────────────── */}
       <header className="mb-6">
         <p className="text-sm font-medium text-muted-foreground">Olá, {firstName}!</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Minhas Métricas</h1>
+        <h1 className="text-3xl font-medium tracking-tight">Minhas Métricas</h1>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {(Object.keys(presets) as PresetKey[]).map((key) => (
@@ -407,7 +407,7 @@ export default function MinhasMetricas() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Seu ritmo</p>
                 <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-5xl font-semibold tabular-nums leading-none">{fmtRate(myRate)}</span>
+                  <span className="text-5xl font-medium tabular-nums leading-none">{fmtRate(myRate)}</span>
                   <span className="text-sm text-muted-foreground">atendimentos por dia trabalhado</span>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">
@@ -456,7 +456,7 @@ export default function MinhasMetricas() {
             <div className={cn("flex items-start gap-3 border-t px-6 py-4", TONE_CARD[headline.tone])}>
               <HeadlineIcon className={cn("mt-0.5 h-5 w-5 shrink-0", TONE_ICON_COLOR[headline.tone])} />
               <div>
-                <p className="font-semibold">{headline.title}</p>
+                <p className="font-medium">{headline.title}</p>
                 <p className="text-sm text-muted-foreground">{headline.message}</p>
               </div>
             </div>
@@ -557,7 +557,7 @@ export default function MinhasMetricas() {
       </Card>
 
       {/* ── 4. Reembolsos ────────────────────────────────────────────────── */}
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Reembolsos</h2>
+      <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">Reembolsos</h2>
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="Em aberto"
@@ -652,7 +652,7 @@ export default function MinhasMetricas() {
                           return (
                             <TableRow key={row.day} className={row.value === 0 ? "opacity-50" : ""}>
                               <TableCell className="whitespace-nowrap">{format(parseISO(row.day), "dd/MM/yyyy")}</TableCell>
-                              <TableCell className="text-right font-semibold tabular-nums">{fmtN(row.value)}</TableCell>
+                              <TableCell className="text-right font-medium tabular-nums">{fmtN(row.value)}</TableCell>
                               <TableCell className="text-right tabular-nums text-muted-foreground">{fmtN(row.services)}</TableCell>
                               <TableCell className="text-right tabular-nums text-muted-foreground">{fmtN(row.followups)}</TableCell>
                               <TableCell>

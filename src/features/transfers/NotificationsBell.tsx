@@ -139,7 +139,7 @@ export function NotificationsBell({ enabled }: Props) {
         >
           <Bell className="h-4 w-4" />
           {totalCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
               {totalCount > 9 ? "9+" : totalCount}
             </span>
           )}
@@ -147,7 +147,7 @@ export function NotificationsBell({ enabled }: Props) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 p-0">
         <div className="border-b px-4 py-3">
-          <h3 className="text-sm font-semibold">Notificações</h3>
+          <h3 className="text-sm font-medium">Notificações</h3>
           <p className="text-xs text-muted-foreground">
             Encaminhamentos de tickets dos seus colegas
           </p>

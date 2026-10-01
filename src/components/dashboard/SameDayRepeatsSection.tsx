@@ -58,7 +58,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
           <CopyCheck className="h-6 w-6 text-amber-600 dark:text-amber-500" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Interações repetidas no mesmo dia</h2>
+          <h2 className="text-xl font-medium tracking-tight">Interações repetidas no mesmo dia</h2>
           <p className="text-sm text-muted-foreground">
             Mais de uma interação no mesmo ticket no mesmo dia. Não é bloqueado — cada caso pode ter
             motivo legítimo. Serve para você conferir o número.
@@ -79,7 +79,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
             ) : (
               <>
                 <div
-                  className={`text-3xl font-semibold ${hasAny ? "text-amber-600 dark:text-amber-500" : "text-green-600"}`}
+                  className={`text-3xl font-medium ${hasAny ? "text-amber-600 dark:text-amber-500" : "text-green-600"}`}
                 >
                   {data?.same_day_extra ?? 0}
                 </div>
@@ -102,7 +102,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
               <Skeleton className="h-9 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-semibold">{data?.rule_violations ?? 0}</div>
+                <div className="text-3xl font-medium">{data?.rule_violations ?? 0}</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   registradas antes das 18h do dia da interação anterior
                 </p>
@@ -120,13 +120,13 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
               <Skeleton className="h-9 w-40" />
             ) : worst ? (
               <div>
-                <div className="text-lg font-semibold leading-tight">{worst.agent_name}</div>
+                <div className="text-lg font-medium leading-tight">{worst.agent_name}</div>
                 <div className="text-sm text-muted-foreground">
                   {worst.repeat_count} de {worst.total_count} ({worst.pct}%)
                 </div>
               </div>
             ) : (
-              <div className="text-lg font-semibold text-green-600">Nenhum</div>
+              <div className="text-lg font-medium text-green-600">Nenhum</div>
             )}
           </CardContent>
         </Card>
@@ -146,7 +146,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
       {!isLoading && !!data?.by_agent?.length && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Por agente</CardTitle>
+            <CardTitle className="text-base font-medium">Por agente</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">

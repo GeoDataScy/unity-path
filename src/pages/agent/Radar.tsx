@@ -222,7 +222,7 @@ export default function Radar() {
     <div className="mx-auto max-w-7xl px-4 py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2 text-3xl font-medium tracking-tight">
             <RadarIcon className="h-7 w-7 text-primary" /> Radar
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -264,7 +264,7 @@ export default function Radar() {
               }`}
             >
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-between gap-2 text-sm font-semibold">
+                <CardTitle className="flex items-center justify-between gap-2 text-sm font-medium">
                   {c.title}
                   <Icon className={`h-4 w-4 ${c.tone}`} />
                 </CardTitle>
@@ -273,7 +273,7 @@ export default function Radar() {
                 {radarQuery.isLoading ? (
                   <Skeleton className="h-9 w-16" />
                 ) : (
-                  <div className={`text-3xl font-semibold tabular-nums ${c.tone}`}>
+                  <div className={`text-3xl font-medium tabular-nums ${c.tone}`}>
                     {c.value.toLocaleString("pt-BR")}
                   </div>
                 )}

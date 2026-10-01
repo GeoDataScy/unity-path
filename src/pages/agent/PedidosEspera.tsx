@@ -151,7 +151,7 @@ export default function PedidosEspera() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <header className="mb-6">
-        <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-3xl font-medium tracking-tight">
           <PackageSearch className="h-7 w-7 text-primary" /> Pedidos em Espera
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -166,7 +166,7 @@ export default function PedidosEspera() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base font-semibold">Concluídos hoje</CardTitle>
+              <CardTitle className="text-base font-medium">Concluídos hoje</CardTitle>
               {!metricsQuery.isLoading && confirmedToday >= goal && <Badge variant="success">🏆 Meta Batida!</Badge>}
             </div>
           </CardHeader>
@@ -174,20 +174,20 @@ export default function PedidosEspera() {
             {metricsQuery.isLoading ? (
               <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-4xl font-semibold tabular-nums">{confirmedToday.toLocaleString("pt-BR")}</div>
+              <div className="text-4xl font-medium tabular-nums">{confirmedToday.toLocaleString("pt-BR")}</div>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Faltam para a meta</CardTitle>
+            <CardTitle className="text-base font-medium">Faltam para a meta</CardTitle>
           </CardHeader>
           <CardContent>
             {metricsQuery.isLoading ? (
               <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-4xl font-semibold tabular-nums">{remaining.toLocaleString("pt-BR")}</div>
+              <div className="text-4xl font-medium tabular-nums">{remaining.toLocaleString("pt-BR")}</div>
             )}
             <p className="mt-2 text-sm text-muted-foreground">Meta diária: {goal}</p>
           </CardContent>
@@ -195,13 +195,13 @@ export default function PedidosEspera() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Pendentes</CardTitle>
+            <CardTitle className="text-base font-medium">Pendentes</CardTitle>
           </CardHeader>
           <CardContent>
             {metricsQuery.isLoading ? (
               <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-4xl font-semibold tabular-nums">
+              <div className="text-4xl font-medium tabular-nums">
                 {(metrics?.pending ?? 0).toLocaleString("pt-BR")}
               </div>
             )}
@@ -335,7 +335,7 @@ export default function PedidosEspera() {
                   {/* Linha 1 — o que identifica o pedido, em destaque */}
                   <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <span className="font-mono text-xl font-bold leading-none tracking-tight">
+                      <span className="font-mono text-xl font-medium leading-none tracking-tight">
                         {o.order_number ?? "Sem número"}
                       </span>
                       <Badge variant="secondary">
@@ -381,7 +381,7 @@ export default function PedidosEspera() {
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {items.length > 0 && (
                         <section className="rounded-md border bg-muted/30 p-2.5">
-                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                             <Package className="h-3.5 w-3.5" />
                             Produtos
                             <span className="font-normal normal-case tracking-normal">
@@ -391,7 +391,7 @@ export default function PedidosEspera() {
                           <ul className="space-y-1">
                             {items.map((item, idx) => (
                               <li key={`${item.sku}-${idx}`} className="flex items-baseline gap-2 text-sm">
-                                <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-semibold tabular-nums text-primary">
+                                <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-medium tabular-nums text-primary">
                                   {item.qty}×
                                 </span>
                                 <span className="min-w-0">
@@ -408,7 +408,7 @@ export default function PedidosEspera() {
 
                       {address.oneLine && (
                         <section className="rounded-md border bg-muted/30 p-2.5">
-                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                             <MapPin className="h-3.5 w-3.5" /> Endereço
                           </p>
                           <address className="space-y-0.5 text-sm not-italic">

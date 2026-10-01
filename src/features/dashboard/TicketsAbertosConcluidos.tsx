@@ -136,7 +136,7 @@ function SerieToggle({
         className="inline-block h-2.5 w-2.5 shrink-0 translate-y-[-2px] rounded-full border-2"
         style={{ borderColor: color, background: ativo ? color : "transparent" }}
       />
-      <span className="text-2xl font-semibold tabular-nums">{count(value)}</span>
+      <span className="text-2xl font-medium tabular-nums">{count(value)}</span>
       <span className="text-sm text-muted-foreground">{label}</span>
     </button>
   );

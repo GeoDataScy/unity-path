@@ -122,7 +122,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
         {/* History */}
         {entries.length > 0 && (
           <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Histórico</p>
+            <p className="text-xs font-medium uppercase text-muted-foreground">Histórico</p>
             {entries.map((e) => {
               const dt = new Date(e.recorded_at);
               const dateStr = dt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -165,7 +165,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
         {/* Interaction block warning — only when trying to add Em Andamento, not when concluding */}
         {(!isConcluded || isReopening) && !interactionCheck.allowed && status !== "concluido" && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            <p className="font-semibold">Interação bloqueada</p>
+            <p className="font-medium">Interação bloqueada</p>
             <p className="mt-1 text-xs">A próxima interação com este atendimento só pode ser registrada no dia seguinte. Você ainda pode concluir o ticket.</p>
           </div>
         )}
@@ -173,7 +173,7 @@ export function StatusTrackingDialog({ serviceId, clientEmail, serviceDate, serv
         {/* New entry form — always visible for non-concluded tickets so user can conclude */}
         {(!isConcluded || isReopening) && (
           <div className="grid gap-4 rounded-lg border bg-card p-4">
-            <p className="text-sm font-semibold">Novo registro de acompanhamento</p>
+            <p className="text-sm font-medium">Novo registro de acompanhamento</p>
 
             <div className="grid gap-2">
               <Label>Status</Label>

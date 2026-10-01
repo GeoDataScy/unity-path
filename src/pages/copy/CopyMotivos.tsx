@@ -59,7 +59,7 @@ function KpiCard({
   return (
     <div className="rounded-lg border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-2xl font-medium tabular-nums">{value}</p>
       {hint && <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
       {children}
     </div>
@@ -133,7 +133,7 @@ export default function CopyMotivos() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-medium tracking-tight">
           Motivos de reembolso
           {fullName ? <span className="ml-2 text-base font-normal text-muted-foreground">Olá, {fullName}</span> : null}
         </h1>

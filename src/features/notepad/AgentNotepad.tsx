@@ -93,7 +93,7 @@ export function AgentNotepad({ enabled, fullName }: Props) {
         {pending > 0 && (
           <span
             aria-hidden
-            className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-open px-1 text-[10px] font-bold text-status-open-foreground"
+            className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-open px-1 text-[10px] font-medium text-status-open-foreground"
           >
             {pending > 99 ? "99+" : pending}
           </span>

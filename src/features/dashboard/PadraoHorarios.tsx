@@ -150,7 +150,7 @@ export function PadraoHorarios({ loading, data }: Props) {
           <div className="flex flex-col gap-2">
             <KpiButton onClick={() => setTopic("peak")} disabled={loading || !data}>
               <KpiHeader icon={<TrendingUp className="h-3.5 w-3.5 text-emerald-500" />} label="Hora de pico" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 text-2xl font-medium tabular-nums">
                 {data?.peak.hour != null ? `${data.peak.hour}h` : "—"}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -160,7 +160,7 @@ export function PadraoHorarios({ loading, data }: Props) {
 
             <KpiButton onClick={() => setTopic("start")} disabled={loading || !data}>
               <KpiHeader icon={<Coffee className="h-3.5 w-3.5 text-amber-500" />} label="Começa às" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 text-2xl font-medium tabular-nums">
                 {decimalToHHMM(data?.shift.start_hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">início típico do dia</div>
@@ -168,7 +168,7 @@ export function PadraoHorarios({ loading, data }: Props) {
 
             <KpiButton onClick={() => setTopic("end")} disabled={loading || !data}>
               <KpiHeader icon={<Sunset className="h-3.5 w-3.5 text-rose-500" />} label="Termina às" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 text-2xl font-medium tabular-nums">
                 {decimalToHHMM(data?.shift.end_hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">fim típico do dia</div>
@@ -176,7 +176,7 @@ export function PadraoHorarios({ loading, data }: Props) {
 
             <KpiButton onClick={() => setTopic("goal")} disabled={loading || !data}>
               <KpiHeader icon={<Target className="h-3.5 w-3.5 text-primary" />} label={`Bate meta às`} />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 text-2xl font-medium tabular-nums">
                 {decimalToHHMM(data?.goal_hit.hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -242,7 +242,7 @@ export function PadraoHorarios({ loading, data }: Props) {
         {/* Auto insights */}
         {!loading && insights.length > 0 && (
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               O que esses dados estão dizendo
             </h4>
             <ul className="space-y-2">
@@ -427,7 +427,7 @@ function ExplainDialog({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h4>
+      <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-foreground">{title}</h4>
       {children}
     </div>
   );

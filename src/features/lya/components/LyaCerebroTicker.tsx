@@ -202,7 +202,7 @@ export function LyaCerebroTicker({
                 <div className="flex h-full cursor-default items-center gap-2 border-r border-white/10 px-5 text-[12px]">
                   <m.icon className="h-3.5 w-3.5 shrink-0" style={{ color: m.cor }} />
                   <span className="text-slate-400">{m.label}</span>
-                  <span className="font-semibold text-slate-100">{m.valor}</span>
+                  <span className="font-medium text-slate-100">{m.valor}</span>
                   {m.nota && <span className="text-[11px] text-slate-500">{m.nota}</span>}
                 </div>
               </TooltipTrigger>

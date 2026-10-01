@@ -92,7 +92,7 @@ export function PendingRefundsAlert({ enabled }: Props) {
             <div className="flex-1">
               <DialogTitle className="text-xl">Reembolsos pendentes há mais de 24h</DialogTitle>
               <DialogDescription className="mt-1">
-                Você tem <span className="font-semibold text-foreground">{pending.length}</span>{" "}
+                Você tem <span className="font-medium text-foreground">{pending.length}</span>{" "}
                 {pending.length === 1 ? "reembolso aguardando" : "reembolsos aguardando"} atenção.
               </DialogDescription>
             </div>

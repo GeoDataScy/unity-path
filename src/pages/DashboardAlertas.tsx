@@ -64,7 +64,7 @@ function AgentCard({
     <Card className={`border-2 ${severity}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">{group.agent_name}</CardTitle>
+          <CardTitle className="text-base font-medium">{group.agent_name}</CardTitle>
           <Badge variant="destructive" className="text-sm px-3 py-0.5">
             {group.overdue_count} {group.overdue_count === 1 ? "reembolso" : "reembolsos"} em atraso
           </Badge>
@@ -218,7 +218,7 @@ export default function DashboardAlertas() {
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Alertas</h1>
+            <h1 className="text-3xl font-medium tracking-tight">Alertas</h1>
             <p className="text-sm text-muted-foreground">
               Reembolsos em aberto há mais de 24 horas — atualizado a cada 60s
             </p>
@@ -246,7 +246,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-16" />
             ) : (
-              <div className={`text-3xl font-semibold ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
+              <div className={`text-3xl font-medium ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
                 {data?.total_overdue ?? 0}
               </div>
             )}
@@ -261,7 +261,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-12" />
             ) : (
-              <div className={`text-3xl font-semibold ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
+              <div className={`text-3xl font-medium ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
                 {data?.agents_affected ?? 0}
               </div>
             )}
@@ -277,11 +277,11 @@ export default function DashboardAlertas() {
               <Skeleton className="h-9 w-40" />
             ) : worstAgent ? (
               <div>
-                <div className="text-lg font-semibold text-destructive leading-tight">{worstAgent.agent_name}</div>
+                <div className="text-lg font-medium text-destructive leading-tight">{worstAgent.agent_name}</div>
                 <div className="text-sm text-muted-foreground">{worstAgent.overdue_count} reembolsos</div>
               </div>
             ) : (
-              <div className="text-lg font-semibold text-green-600">Nenhum</div>
+              <div className="text-lg font-medium text-green-600">Nenhum</div>
             )}
           </CardContent>
         </Card>
@@ -338,7 +338,7 @@ export default function DashboardAlertas() {
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
               <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-semibold text-green-600">Sem alertas</p>
+              <p className="text-lg font-medium text-green-600">Sem alertas</p>
               <p className="text-sm text-muted-foreground">
                 Todos os reembolsos estão dentro do prazo de 24 horas.
               </p>

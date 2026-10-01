@@ -1027,7 +1027,7 @@ export default function Atendimentos() {
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
+            <h2 className="text-lg font-medium">Meus Atendimentos Recentes</h2>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -1094,7 +1094,7 @@ export default function Atendimentos() {
             </div>
             <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs">
               <span className="text-muted-foreground">Total de atendimentos:</span>
-              <span className="font-semibold text-foreground">{totalFilteredInteractions}</span>
+              <span className="font-medium text-foreground">{totalFilteredInteractions}</span>
             </div>
             <Button
               type="button"

@@ -9,7 +9,7 @@ export default function ProdutosPedidosEspera() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Pedidos em espera</h1>
+        <h1 className="text-2xl font-medium tracking-tight">Pedidos em espera</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Os mesmos pedidos que a gestora acompanha, com todos os status e agentes. Somente leitura.
         </p>

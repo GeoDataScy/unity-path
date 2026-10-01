@@ -295,7 +295,7 @@ export function NotepadPanel({ visible, onClose, fullName }: Props) {
               <div className="min-w-0 flex-1 text-center">
                 {/* Sem `capitalize` do CSS: quem cuida da maiúscula é
                     notepadDates, que capitaliza só a primeira letra. */}
-                <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                <p className="truncate text-sm font-medium leading-tight text-foreground">
                   {scopeHeadline(scope, cursor, today)}
                 </p>
                 <p className="truncate text-[10px] leading-tight text-muted-foreground">
@@ -545,7 +545,7 @@ function SpreadView({
             >
               <span
                 className={cn(
-                  "text-[11px] font-semibold",
+                  "text-[11px] font-medium",
                   date === today ? "text-primary" : "text-muted-foreground",
                 )}
               >

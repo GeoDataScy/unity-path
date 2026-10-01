@@ -31,7 +31,7 @@ export function EstruturaBadge({
     <Badge
       variant="outline"
       title={ESTRUTURA_LABEL[estrutura]}
-      className={cn("shrink-0 text-[10px] font-semibold", TOM[estrutura], className)}
+      className={cn("shrink-0 text-[10px] font-medium", TOM[estrutura], className)}
     >
       {curto ? CURTO[estrutura] : ESTRUTURA_LABEL[estrutura]}
     </Badge>

@@ -276,7 +276,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.total}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.total}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -286,7 +286,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.waiting}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.waiting}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -296,7 +296,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.inProgress}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.inProgress}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -306,7 +306,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.confirmed}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.confirmed}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -316,7 +316,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.unassigned}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{totals.unassigned}</div>}
           </CardContent>
         </Card>
       </section>

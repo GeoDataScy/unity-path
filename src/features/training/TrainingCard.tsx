@@ -72,7 +72,7 @@ export function TrainingCard({ video, onPlay }: Props) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">{video.title}</h3>
+        <h3 className="line-clamp-2 text-sm font-medium text-slate-900">{video.title}</h3>
         {video.description && (
           <p className="line-clamp-2 text-xs leading-snug text-slate-500">{video.description}</p>
         )}

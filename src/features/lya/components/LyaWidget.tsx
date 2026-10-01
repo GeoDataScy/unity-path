@@ -75,7 +75,7 @@ export function LyaWidget({ contexto }: { contexto: LyaContexto }) {
           <header className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-primary to-violet-700 px-4 py-3 text-primary-foreground">
             <LyaMark size={36} tone="branco" estado={conv.estado} label={null} />
             <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-sm font-semibold">Lya</p>
+              <p className="text-sm font-medium">Lya</p>
               <p className="truncate text-xs text-primary-foreground/75">Pergunte sobre os dados do suporte</p>
             </div>
             <Link

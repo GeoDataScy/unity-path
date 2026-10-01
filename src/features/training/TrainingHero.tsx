@@ -45,7 +45,7 @@ export function TrainingHero({ agentName }: Props) {
 
         <div className="max-w-2xl space-y-3">
           <p className="text-sm text-white/70">{greeting}</p>
-          <h1 className="text-3xl font-bold leading-tight sm:text-4xl">Comece por aqui</h1>
+          <h1 className="text-3xl font-medium leading-tight sm:text-4xl">Comece por aqui</h1>
           <p className="text-sm text-white/80 sm:text-base">
             Vídeos curtos para você dominar a plataforma — atendimento, reembolsos e métricas. Assista no
             seu ritmo: cada card abre direto no player.

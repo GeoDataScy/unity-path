@@ -47,7 +47,7 @@ export function NotepadCarryOver({ notes, onToggleDone, onMoveToToday, onOpenDay
         className="flex w-full items-center gap-2 px-3 py-2 text-left"
       >
         <Flag aria-hidden className="h-3.5 w-3.5 shrink-0 text-status-open" />
-        <span className="text-[11px] font-semibold text-foreground">
+        <span className="text-[11px] font-medium text-foreground">
           {notes.length} {notes.length === 1 ? "pendência" : "pendências"} de dias anteriores
         </span>
         <ChevronDown

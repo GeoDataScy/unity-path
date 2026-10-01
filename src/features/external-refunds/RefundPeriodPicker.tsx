@@ -70,7 +70,7 @@ export function RefundPeriodPicker({ value, onChange, months, fallbackLabel, fir
         >
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
           período{" "}
-          <b className="rf-display font-semibold" style={{ color: "var(--rf-ink)" }}>
+          <b className="rf-display font-medium" style={{ color: "var(--rf-ink)" }}>
             {label}
           </b>
         </button>

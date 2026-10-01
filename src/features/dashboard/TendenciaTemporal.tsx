@@ -280,7 +280,7 @@ export function TendenciaTemporal({
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Tendência</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className={cn("mt-1 flex items-baseline gap-1.5 text-2xl font-semibold tabular-nums", verdictColor)}>
+              <div className={cn("mt-1 flex items-baseline gap-1.5 text-2xl font-medium tabular-nums", verdictColor)}>
                 <VerdictIcon className="h-5 w-5" />
                 {slope >= 0 ? "+" : ""}{fmt(slope, 1)}
                 <span className="text-xs font-normal text-muted-foreground">/dia</span>
@@ -293,7 +293,7 @@ export function TendenciaTemporal({
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Confiança (R²)</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className="mt-1 text-2xl font-semibold tabular-nums">{fmt(r2, 2)}</div>
+              <div className="mt-1 text-2xl font-medium tabular-nums">{fmt(r2, 2)}</div>
               <div className="mt-0.5 text-xs text-muted-foreground">qualidade {r2Quality}</div>
             </KpiButton>
 
@@ -302,7 +302,7 @@ export function TendenciaTemporal({
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Projeção (+{forecastDays}d)</span>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
-              <div className="mt-1 flex items-baseline gap-1.5 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 flex items-baseline gap-1.5 text-2xl font-medium tabular-nums">
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 ~{fmt(projected)}
                 <span className="text-xs font-normal text-muted-foreground">/dia</span>
@@ -435,7 +435,7 @@ function ExplainDialog({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h4>
+      <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-foreground">{title}</h4>
       {children}
     </div>
   );

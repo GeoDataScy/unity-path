@@ -175,7 +175,7 @@ export function TrainingVideoDialog({ userId, video, nextVideo, onClose, onPlayN
           <div className="flex flex-col gap-4 border-t border-white/10 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="truncate text-lg font-semibold text-white">{video?.title}</h2>
+                <h2 className="truncate text-lg font-medium text-white">{video?.title}</h2>
               </div>
               {video?.description && (
                 <p className="mt-1 line-clamp-3 text-sm text-white/70">{video.description}</p>

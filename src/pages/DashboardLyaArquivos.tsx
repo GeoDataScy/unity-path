@@ -79,7 +79,7 @@ export default function DashboardLyaArquivos() {
             <Table2 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Arquivos da Lya</h1>
+            <h1 className="text-xl font-medium">Arquivos da Lya</h1>
             <p className="text-sm text-muted-foreground">
               Planilhas e documentos que você deu para ela. Ela lê, guarda e cruza com os dados do sistema quando você pergunta.
             </p>
@@ -212,7 +212,7 @@ function LinhaArquivo({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={onAlternar} className="text-left text-sm font-semibold hover:underline">
+            <button type="button" onClick={onAlternar} className="text-left text-sm font-medium hover:underline">
               {arquivo.nome}
             </button>
             {arquivo.status !== "pronto" && (

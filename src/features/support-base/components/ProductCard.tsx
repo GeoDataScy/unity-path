@@ -56,7 +56,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
     <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="space-y-1.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 flex-1 text-sm font-semibold leading-tight">{product.nome}</h3>
+          <h3 className="min-w-0 flex-1 text-sm font-medium leading-tight">{product.nome}</h3>
           <EstruturaBadge estrutura={product.estrutura} curto />
         </div>
 
@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
                   <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                     {link.label}
                     {isVsl(link.label, link.url) && (
-                      <Badge variant="outline" className="px-1 py-0 text-[9px] font-bold">
+                      <Badge variant="outline" className="px-1 py-0 text-[9px] font-medium">
                         VSL
                       </Badge>
                     )}

@@ -60,15 +60,15 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Reembolsos no motivo</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.total)}</p>
+                <p className="text-2xl font-medium tabular-nums">{fmtInt(data.total)}</p>
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Com algum texto no motivo</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.com_texto)}</p>
+                <p className="text-2xl font-medium tabular-nums">{fmtInt(data.com_texto)}</p>
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Texto escrito à mão</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.texto_livre)}</p>
+                <p className="text-2xl font-medium tabular-nums">{fmtInt(data.texto_livre)}</p>
               </div>
             </div>
 
@@ -85,7 +85,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             {data.textos.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Texto registrado no motivo</h3>
+                <h3 className="text-sm font-medium">Texto registrado no motivo</h3>
                 <div className="overflow-x-auto rounded-lg border bg-card">
                   <Table>
                     <TableHeader>
@@ -118,7 +118,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             {data.termos.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Palavras mais frequentes no texto escrito à mão</h3>
+                <h3 className="text-sm font-medium">Palavras mais frequentes no texto escrito à mão</h3>
                 <div className="flex flex-wrap gap-2">
                   {data.termos.map((row) => (
                     <span
@@ -137,7 +137,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Produtos com mais casos deste motivo</h3>
+                <h3 className="text-sm font-medium">Produtos com mais casos deste motivo</h3>
                 <p className="text-xs text-muted-foreground">
                   O percentual é a fatia deste motivo dentro do produto: de todos os reembolsos que o
                   produto teve no período, quantos foram por este motivo.
@@ -166,7 +166,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Canal de atendimento</h3>
+                <h3 className="text-sm font-medium">Canal de atendimento</h3>
                 <ul className="space-y-2">
                   {data.por_canal.map((row) => (
                     <li key={row.canal} className="flex items-center gap-3 text-sm">

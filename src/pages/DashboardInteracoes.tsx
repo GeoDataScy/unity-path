@@ -189,7 +189,7 @@ export default function DashboardInteracoes() {
     <div className="space-y-6">
       {/* Header */}
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
+        <h1 className="text-3xl font-medium tracking-tight flex items-center gap-2">
           <Activity className="h-7 w-7" />
           Interacoes dos Agentes
         </h1>
@@ -348,12 +348,12 @@ export default function DashboardInteracoes() {
                       if (!item) return null;
                       return (
                         <div className="rounded-md border bg-background p-2 text-xs shadow-md">
-                          <p className="mb-1 font-semibold">{label}</p>
+                          <p className="mb-1 font-medium">{label}</p>
                           <div className="space-y-0.5">
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.open }} />Novos em aberto: <span className="font-medium">{item["Novos em aberto"]}</span></p>
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.in_progress }} />Interações: <span className="font-medium">{item["Interações"]}</span></p>
                             <p className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_COLORS.done }} />Concluído: <span className="font-medium">{item.Concluido}</span></p>
-                            <p className="mt-1 border-t pt-1 font-semibold">Total: {item.total}</p>
+                            <p className="mt-1 border-t pt-1 font-medium">Total: {item.total}</p>
                           </div>
                         </div>
                       );
@@ -412,7 +412,7 @@ export default function DashboardInteracoes() {
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Destaque do Periodo</p>
-                    <p className="text-lg font-semibold">{insights.top_performer.agent_name}</p>
+                    <p className="text-lg font-medium">{insights.top_performer.agent_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {insights.top_performer.rate}% de conclusao ({insights.top_performer.done}/{insights.top_performer.total} tickets)
                     </p>
@@ -431,7 +431,7 @@ export default function DashboardInteracoes() {
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Mais Tickets Novos</p>
-                    <p className="text-lg font-semibold">{insights.most_open.agent_name}</p>
+                    <p className="text-lg font-medium">{insights.most_open.agent_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {insights.most_open.open_count} tickets novos
                     </p>
@@ -450,7 +450,7 @@ export default function DashboardInteracoes() {
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Mais Produtivo</p>
-                    <p className="text-lg font-semibold">{insights.most_productive.agent_name}</p>
+                    <p className="text-lg font-medium">{insights.most_productive.agent_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {insights.most_productive.interaction_count} interacoes registradas
                     </p>
@@ -609,7 +609,7 @@ function KpiCard({
           <Skeleton className="h-8 w-16" />
         ) : (
           <div>
-            <div className={`text-3xl font-semibold ${accent ?? ""}`}>
+            <div className={`text-3xl font-medium ${accent ?? ""}`}>
               {value ?? 0}
             </div>
             {subtitle && (
@@ -636,7 +636,7 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
   return (
     <TableRow>
       <TableCell className="font-medium">{agent.agent_name}</TableCell>
-      <TableCell className="text-center font-semibold">{agent.total_tickets}</TableCell>
+      <TableCell className="text-center font-medium">{agent.total_tickets}</TableCell>
       <TableCell className="text-center">
         <span className={agent.new_tickets_count > 0 ? "text-slate-600 font-medium" : "text-muted-foreground"}>
           {agent.new_tickets_count}
@@ -665,7 +665,7 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
             value={agent.completion_rate}
             className="h-2 flex-1"
           />
-          <span className={`text-sm font-semibold min-w-[40px] text-right ${rateColor}`}>
+          <span className={`text-sm font-medium min-w-[40px] text-right ${rateColor}`}>
             {agent.completion_rate}%
           </span>
         </div>

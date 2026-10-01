@@ -167,8 +167,8 @@ export default function DashboardRefunds() {
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-lg font-semibold text-muted-foreground">Analytics</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Reembolsos</h1>
+          <p className="text-lg font-medium text-muted-foreground">Analytics</p>
+          <h1 className="text-3xl font-medium tracking-tight">Reembolsos</h1>
           <RefundsSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
@@ -245,7 +245,7 @@ export default function DashboardRefunds() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.total}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{kpis.total}</div>}
           </CardContent>
         </Card>
 
@@ -256,7 +256,7 @@ export default function DashboardRefunds() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.open}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{kpis.open}</div>}
           </CardContent>
         </Card>
 
@@ -267,7 +267,7 @@ export default function DashboardRefunds() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.done}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{kpis.done}</div>}
           </CardContent>
         </Card>
 
@@ -278,7 +278,7 @@ export default function DashboardRefunds() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.doneRate.toFixed(0)}%</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{kpis.doneRate.toFixed(0)}%</div>}
           </CardContent>
         </Card>
       </section>
@@ -432,7 +432,7 @@ export default function DashboardRefunds() {
               {!isLoading && kpis.byPlatform.length > 0 && (
                 <div className="shrink-0 rounded-md border bg-muted/40 px-2.5 py-1 text-right">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
-                  <p className="text-base font-semibold tabular-nums leading-tight">
+                  <p className="text-base font-medium tabular-nums leading-tight">
                     {platformTotal.toLocaleString("pt-BR")}
                   </p>
                 </div>
@@ -515,7 +515,7 @@ export default function DashboardRefunds() {
                   </div>
                   <div className="rounded-md border bg-muted/40 px-3 py-1.5 text-right">
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Classificados</p>
-                    <p className="text-sm font-semibold tabular-nums leading-tight">
+                    <p className="text-sm font-medium tabular-nums leading-tight">
                       {reasonTotal.toLocaleString("pt-BR")}
                     </p>
                   </div>

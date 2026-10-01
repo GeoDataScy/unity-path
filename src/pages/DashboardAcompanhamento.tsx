@@ -277,7 +277,7 @@ export default function DashboardAcompanhamento() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Acompanhamento</h1>
+        <h1 className="text-3xl font-medium tracking-tight">Acompanhamento</h1>
         <p className="text-sm text-muted-foreground">
           Controle semanal de performance dos agentes — Últimas {WEEKS_WINDOW} semanas
         </p>
@@ -292,7 +292,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{kpi.totalAgents}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium">{kpi.totalAgents}</div>}
           </CardContent>
         </Card>
 
@@ -303,7 +303,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-emerald-600">{kpi.allGood}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-emerald-600">{kpi.allGood}</div>}
           </CardContent>
         </Card>
 
@@ -314,7 +314,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-amber-600">{kpi.withWarnings}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-amber-600">{kpi.withWarnings}</div>}
           </CardContent>
         </Card>
 
@@ -325,7 +325,7 @@ export default function DashboardAcompanhamento() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-red-600">{kpi.atRisk}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-medium text-red-600">{kpi.atRisk}</div>}
           </CardContent>
         </Card>
       </section>
@@ -428,7 +428,7 @@ export default function DashboardAcompanhamento() {
                           </TableCell>
                         ))}
                         <TableCell className="text-center">
-                          <span className={`text-lg font-bold ${agent.totalWarnings >= 3 ? "text-red-600" : agent.totalWarnings > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                          <span className={`text-lg font-medium ${agent.totalWarnings >= 3 ? "text-red-600" : agent.totalWarnings > 0 ? "text-amber-600" : "text-emerald-600"}`}>
                             {agent.totalWarnings}
                           </span>
                           <span className="text-xs text-muted-foreground">/{WEEKS_WINDOW} sem.</span>

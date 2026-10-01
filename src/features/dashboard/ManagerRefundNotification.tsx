@@ -38,7 +38,7 @@ export function ManagerRefundNotification() {
               <AlertTriangle className="h-4 w-4 text-amber-500" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold leading-snug">Reembolsos em atraso</p>
+              <p className="text-sm font-medium leading-snug">Reembolsos em atraso</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{data.total_overdue}</span> pendentes há +24h —{" "}
                 <span className="font-medium text-foreground">{data.agents_affected}</span>{" "}

@@ -253,8 +253,8 @@ const Dashboard = () => {
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-lg font-semibold text-muted-foreground">Olá {fullName ?? ""}!</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Atendimentos</h1>
+          <p className="text-lg font-medium text-muted-foreground">Olá {fullName ?? ""}!</p>
+          <h1 className="text-3xl font-medium tracking-tight">Atendimentos</h1>
           <AtendimentosSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
@@ -276,7 +276,7 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{formatCompactNumber(kpiTotal)}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-medium">{formatCompactNumber(kpiTotal)}</div>}
           </CardContent>
         </Card>
 
@@ -290,7 +290,7 @@ const Dashboard = () => {
             {isLoading ? (
               <Skeleton className="h-8 w-28" />
             ) : (
-              <div className="text-3xl font-semibold">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
+              <div className="text-3xl font-medium">{kpiDailyAvg.toFixed(1).replace(".", ",")}</div>
             )}
           </CardContent>
         </Card>
@@ -306,7 +306,7 @@ const Dashboard = () => {
               <Skeleton className="h-8 w-40" />
             ) : (
               <>
-                <div className={`text-lg font-semibold ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
+                <div className={`text-lg font-medium ${agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL ? "text-orange-600 dark:text-orange-400" : ""}`}>
                   {kpiTopAgentLabel}
                 </div>
                 {agentId !== "all" && kpiTopAgentLabel !== LEADER_LABEL && (
@@ -325,7 +325,7 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-lg font-semibold">{kpiTopProduct}</div>}
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-lg font-medium">{kpiTopProduct}</div>}
           </CardContent>
         </Card>
       </section>
