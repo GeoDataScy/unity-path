@@ -36,8 +36,9 @@ export type TrainingVideoView = {
   lastWatchedAt: string;
 };
 
+// `watchedSeconds` e `completed` não aparecem na tela: o player usa os dois
+// para retomar o vídeo de onde o agente parou.
 export type TrainingVideoWithProgress = TrainingVideo & {
   watchedSeconds: number;
   completed: boolean;
-  progressPct: number;
 };
