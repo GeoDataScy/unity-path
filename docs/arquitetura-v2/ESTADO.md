@@ -10,7 +10,7 @@
 > a resposta foi conferida. Quatro correções seguidas na mesma função (#94,
 > #95, #97, #99) existem porque essa regra foi ignorada.
 
-**Última verificação:** 01/10/2026 (segunda rodada), conferida contra
+**Última verificação:** 01/10/2026 (terceira rodada), conferida contra
 `origin/main`, contra o banco de produção e contra `https://xmxapp.vercel.app`.
 
 > **A API está no ar, lendo o banco, com as métricas apoiadas em tabela de
@@ -235,7 +235,7 @@ A outra leitura da queixa — ticket **novo** para o mesmo e-mail no mesmo dia �
 é pequena (3 a 8 por semana) e passa porque `find_ticket_by_email` só acha
 ticket **não concluído**: concluiu, pode abrir de novo.
 
-### O que isso significa para a arquitetura nova `RESOLVIDO NO CÓDIGO 01/10 — 0009`
+### O que isso significa para a arquitetura nova `RESOLVIDO EM PRODUÇÃO 01/10 — 0009`
 
 A decisão D1 removeu o bloqueio das 18h e disse: "`is_same_day_repeat`
 **continua sendo marcado** — a marcação é o que evita contar a conversa duas
@@ -267,14 +267,21 @@ exata, a meia-noite e a armadilha do fuso (23h de SP já é o dia seguinte em
 UTC) — e foi conferida contra mutação: **sem o gatilho, ela falha**, a
 qualquer hora do dia.
 
+**Em produção desde 01/10**, conferido depois de aplicar: gatilho `BEFORE
+INSERT ON core.interactions` presente, corpo com a guarda do legado e a chamada
+com `now()`; as 1.720 marcas já existentes no `core` intocadas, 0 divergentes do
+legado. E o árbitro repetido chamando a **função real** gravada no banco:
+**62.046 de 62.046** concordam — 9 a mais que na validação, porque os agentes
+seguiram registrando, e as novas também batem.
+
 ---
 
 ## 3. O que está fora de produção
 
 ### 3.1 Migrations `RESOLVIDO 01/10`
 
-Nada pendente. As migrations 0001, 0002, 0004, 0005, 0006, **0007 e 0008** estão
-aplicadas, e as travessias 0003, 0004 e 0006 rodaram. 18 tabelas em `core`.
+Nada pendente. As migrations 0001, 0002, 0004, 0005, 0006, 0007, 0008 e **0009**
+estão aplicadas, e as travessias 0003, 0004 e 0006 rodaram. 18 tabelas em `core`.
 
 > `0008` recusa a segunda execução com `column already exists`, porque não usa
 > `IF NOT EXISTS`. Isso é proteção, não defeito: a mensagem diz que já entrou.
@@ -379,7 +386,7 @@ O que falta em código para o caminho A:
 - **Painel da gestora:** ~~as rotas de auditoria, padrão por horário, detalhe de
   canal e detalhe de interações~~ — **prontas em #107.** Nada falta aqui.
 - ~~**Gatilho que marca `is_same_day_repeat` em `core.interactions`** (B26)~~
-  — **escrito em `0009`**, aguarda aplicação em produção. Ver 2-A.
+  — **em produção desde 01/10** (`0009`). Ver 2-A.
 - **Roteiro do corte:** congelar escrita, rodar `0005_sync_edicoes.sql` e a
   travessia uma última vez, reconciliar, apontar as telas, liberar. Com
   reversão: enquanto o legado continuar intacto, voltar é mudar o apontamento.
@@ -591,5 +598,5 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 01/10 | Queixa da gestora explicada com número | 435 de 439 repetições do mesmo dia são "Concluído", exceção deliberada do diálogo; estável há 7 semanas; a meta diária conta |
 | 01/10 | **Lacuna da v2 encontrada antes do corte** | nada marca `is_same_day_repeat` em `core` — B26, bloqueio do passo 4 |
 | 01/10 | **B26 resolvido no código (`0009`)** | regra validada contra as 62.037 interações do legado: 62.037 concordam; 19 garantias novas, conferidas contra mutação; travessia ensaiada com marcas na fixture, preservadas |
-| — | Aplicar `0009` em produção | **próximo** — depois, conferir o gatilho e repetir o árbitro chamando a função real |
+| 01/10 | **`0009` em produção — B26 fechado** | gatilho presente e com o corpo certo; 1.720 marcas do `core` intocadas; árbitro com a função real: 62.046 de 62.046 concordam |
 | — | **Decisão do corte** | aguarda o dono. Passo 4, caminho A recomendado |
