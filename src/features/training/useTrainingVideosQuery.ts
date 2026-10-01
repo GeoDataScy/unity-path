@@ -67,7 +67,14 @@ export function useTrainingVideosQuery(userId: string | null) {
         });
       }
 
-      const videos: TrainingVideoWithProgress[] = (videosRes.data ?? []).map((row) => {
+      // Só as seções que o guia mostra. "rotinas" (Check-in do agente e Padrão
+      // de horários) saiu em 01/10/2026 por decisão do dono; as linhas continuam
+      // no banco, só não aparecem — nem nos cards, nem na lista de próximos.
+      const visiveis = (videosRes.data ?? []).filter((row) =>
+        TRAINING_SECTION_ORDER.includes(row.section as TrainingSection),
+      );
+
+      const videos: TrainingVideoWithProgress[] = visiveis.map((row) => {
         const view = viewsByVideoId.get(row.id);
         const watched = view?.watchedSeconds ?? 0;
         const total = row.duration_seconds ?? 0;
