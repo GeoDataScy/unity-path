@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import defaultColors from "tailwindcss/colors";
 
 export default {
   darkMode: ["class"],
@@ -39,6 +40,9 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          // = amber-soft do design system (nome sem "amber" para não colidir
+          // com a paleta âmbar do Tailwind).
+          soft: "hsl(var(--amber) / var(--soft-alpha))",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
@@ -174,6 +178,20 @@ export default {
         "sidebar-accent-foreground": "hsl(var(--sidebar-accent-foreground))",
         "sidebar-border": "hsl(var(--sidebar-border))",
         "sidebar-ring": "hsl(var(--sidebar-ring))",
+      },
+      // Texto semântico usa o tom de texto (AA no claro); bg/border/ring
+      // continuam no tom exato do design system.
+      textColor: {
+        signal: { DEFAULT: "hsl(var(--signal-text))", foreground: "hsl(var(--on-signal))" },
+        success: { DEFAULT: "hsl(var(--signal-text))", foreground: "hsl(var(--success-foreground))" },
+        aqua: { DEFAULT: "hsl(var(--aqua-text))" },
+        ice: { DEFAULT: "hsl(var(--ice-text))" },
+        info: { DEFAULT: "hsl(var(--ice-text))", foreground: "hsl(var(--info-foreground))" },
+        coral: { DEFAULT: "hsl(var(--coral-text))" },
+        destructive: { DEFAULT: "hsl(var(--coral-text))", foreground: "hsl(var(--destructive-foreground))" },
+        // A paleta âmbar padrão do Tailwind continua disponível para texto.
+        amber: { ...defaultColors.amber, DEFAULT: "hsl(var(--amber-text))" },
+        warning: { DEFAULT: "hsl(var(--amber-text))", foreground: "hsl(var(--warning-foreground))" },
       },
       // Raios hubi: lg = cards/popovers (10px), md = botões/inputs (6px),
       // sm = checkbox/chip (4px), xl = dialogs/sheets (14px).

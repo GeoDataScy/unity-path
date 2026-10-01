@@ -412,7 +412,7 @@ function ExplainDialog({
                 </ul>
               </Section>
               {content.caveat && (
-                <div className="rounded-md border border-warning/40 bg-amber-soft p-3 text-xs text-ink">
+                <div className="rounded-md border border-warning/40 bg-warning-soft p-3 text-xs text-ink">
                   <strong>Vale lembrar:</strong> {content.caveat}
                 </div>
               )}

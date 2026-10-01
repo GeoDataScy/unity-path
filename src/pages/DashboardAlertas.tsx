@@ -32,13 +32,13 @@ function DelayBadge({ days }: { days: number }) {
   }
   if (days >= 2) {
     return (
-      <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+      <Badge className="border-transparent bg-warning hover:bg-warning text-warning-foreground">
         {days}d de atraso
       </Badge>
     );
   }
   return (
-    <Badge className="bg-amber-400 hover:bg-amber-500 text-amber-950">
+    <Badge className="bg-warning hover:bg-warning text-ink">
       {days}d de atraso
     </Badge>
   );
@@ -57,8 +57,8 @@ function AgentCard({
     group.overdue_count >= 5
       ? "border-destructive/60"
       : group.overdue_count >= 3
-      ? "border-orange-400/60"
-      : "border-amber-400/60";
+      ? "border-warning/40"
+      : "border-warning/40";
 
   return (
     <Card className={`border-2 ${severity}`}>
@@ -246,7 +246,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-16" />
             ) : (
-              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.total_overdue ? "text-destructive" : "text-success"}`}>
                 {data?.total_overdue ?? 0}
               </div>
             )}
@@ -261,7 +261,7 @@ export default function DashboardAlertas() {
             {isLoading ? (
               <Skeleton className="h-9 w-12" />
             ) : (
-              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.agents_affected ? "text-destructive" : "text-success"}`}>
                 {data?.agents_affected ?? 0}
               </div>
             )}
@@ -281,7 +281,7 @@ export default function DashboardAlertas() {
                 <div className="text-sm text-muted-foreground">{worstAgent.overdue_count} reembolsos</div>
               </div>
             ) : (
-              <div className="text-lg font-medium text-green-600">Nenhum</div>
+              <div className="text-lg font-medium text-success">Nenhum</div>
             )}
           </CardContent>
         </Card>
@@ -337,8 +337,8 @@ export default function DashboardAlertas() {
         ) : !data?.by_agent?.length ? (
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-medium text-green-600">Sem alertas</p>
+              <CheckCircle2 className="h-12 w-12 text-success" />
+              <p className="text-lg font-medium text-success">Sem alertas</p>
               <p className="text-sm text-muted-foreground">
                 Todos os reembolsos estão dentro do prazo de 24 horas.
               </p>

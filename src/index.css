@@ -56,6 +56,18 @@
        (escuro). Aqui viram a opacidade padrão dos utilitários `*-soft`. */
     --soft-alpha: 0.1;
 
+    /* Tons de TEXTO (só no claro). Como texto pequeno sobre o próprio
+       "-soft", os tons do design system ficam abaixo de AA no claro
+       (signal 4,22 · aqua 4,17 · coral 4,37 · amber 3,89). Estes são o MESMO
+       matiz escurecido o mínimo para dar ≥ 4,5:1 sobre surface, canvas,
+       subtle e o próprio -soft. Fundos, pontos, ícones e gráficos seguem com
+       o hex exato do design system; no escuro texto = tom (já passa). */
+    --signal-text: 82.4 100% 22.5%;   /* #487300 (signal #4f7f00) */
+    --aqua-text: 184.8 100% 24.3%;    /* #00727c (aqua #007f8a) */
+    --ice-text: 226 70.5% 53.5%;      /* #355cdc (ice #3d63dd) */
+    --coral-text: 4.7 61% 45.3%;      /* #ba382d (coral #c93c30) */
+    --amber-text: 38.1 100% 28.4%;    /* #915c00 (amber #a86b00) */
+
     /* Semânticos de estado. Texto sobre amber é SEMPRE escuro: branco dá
        4,40:1 no claro (abaixo de AA); #0a0a0a dá 4,50:1. */
     --success: var(--signal);
@@ -195,6 +207,11 @@
     --coral: 7.3 100% 74.1%;          /* #ff8b7b */
     --amber: 39.2 83.6% 68.8%;        /* #f2c46d */
     --soft-alpha: 0.12;
+    --signal-text: var(--signal);
+    --aqua-text: var(--aqua);
+    --ice-text: var(--ice);
+    --coral-text: var(--coral);
+    --amber-text: var(--amber);
 
     --primary: 240 4.8% 95.9%;        /* #f4f4f5 */
     --primary-foreground: 0 0% 3.9%;  /* #0a0a0a */

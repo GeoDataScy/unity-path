@@ -54,7 +54,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
   return (
     <section className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-full bg-amber-soft p-2.5">
+        <div className="mt-0.5 rounded-full bg-warning-soft p-2.5">
           <CopyCheck className="h-6 w-6 text-warning" />
         </div>
         <div>

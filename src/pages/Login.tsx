@@ -162,7 +162,7 @@ const Login = () => {
             </div>
 
             {reachable === false && (
-              <div className="rounded-lg border border-warning/40 bg-amber-soft p-3 text-sm text-ink">
+              <div className="rounded-lg border border-warning/40 bg-warning-soft p-3 text-sm text-ink">
                 <p className="font-medium">Não conseguimos alcançar o servidor.</p>
                 <p className="mt-1 text-ink-secondary">
                   Sua rede está bloqueando o acesso. Desative VPN/antivírus, troque o DNS

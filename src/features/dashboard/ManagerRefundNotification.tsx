@@ -34,7 +34,7 @@ export function ManagerRefundNotification() {
       <div className="fixed top-4 right-4 z-50 w-[320px]">
         <div className="rounded-lg border border-warning/40 bg-raised shadow-md p-4">
           <div className="flex items-start gap-3">
-            <div className="shrink-0 rounded-full bg-amber-soft p-1.5">
+            <div className="shrink-0 rounded-full bg-warning-soft p-1.5">
               <AlertTriangle className="h-4 w-4 text-warning" />
             </div>
             <div className="min-w-0 flex-1">

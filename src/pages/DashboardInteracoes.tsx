@@ -55,9 +55,11 @@ import {
 // ── Colors ──────────────────────────────────────────────────────────────────
 
 const STATUS_COLORS = {
-  open: "hsl(var(--chart-neutral))",
-  in_progress: "hsl(var(--chart-warning))",
-  done: "hsl(var(--chart-success))",
+  // Status hubi: novo/aberto = grafite, em andamento = aqua, concluído =
+  // signal. Amber × signal se confundem em daltonismo (barra empilhada).
+  open: "hsl(var(--chart-mute-1))",
+  in_progress: "hsl(var(--status-in-progress))",
+  done: "hsl(var(--status-done))",
 } as const;
 
 const AGENT_BAR_COLORS = [
@@ -206,34 +208,34 @@ export default function DashboardInteracoes() {
             total do modal por canal. Chamar isso de "Total Tickets" era o que
             fazia a gestora comparar com contagem de ticket e não fechar. */}
         <KpiCard
-          icon={<Target className="h-4 w-4 text-blue-600" />}
+          icon={<Target className="h-4 w-4 text-info" />}
           label="Total de Atendimentos"
           value={kpi?.total_services}
           isLoading={isLoading}
           subtitle="aberturas + interações"
         />
         <KpiCard
-          icon={<FolderOpen className="h-4 w-4 text-slate-500" />}
+          icon={<FolderOpen className="h-4 w-4 text-ink-tertiary" />}
           label="Tickets Novos"
           value={kpi?.new_tickets_count}
-          accent="text-slate-600"
+          accent="text-ink-secondary"
           isLoading={isLoading}
           subtitle={kpi && kpi.total_services > 0 ? pct(kpi.new_tickets_count, kpi.total_services) : undefined}
         />
         <KpiCard
-          icon={<Loader2 className="h-4 w-4 text-amber-500" />}
+          icon={<Loader2 className="h-4 w-4 text-warning" />}
           label="Interações"
           value={kpi?.interactions_count}
-          accent="text-amber-600"
+          accent="text-warning"
           isLoading={isLoading}
         />
         {/* Concluídos são tickets ABERTOS no período que já estão concluídos —
             a taxa tem de ser sobre tickets novos, não sobre eventos. */}
         <KpiCard
-          icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+          icon={<CheckCircle2 className="h-4 w-4 text-success" />}
           label="Concluidos"
           value={kpi?.done_count}
-          accent="text-emerald-600"
+          accent="text-success"
           isLoading={isLoading}
           subtitle={
             kpi && kpi.new_tickets_count > 0
@@ -242,14 +244,13 @@ export default function DashboardInteracoes() {
           }
         />
         <KpiCard
-          icon={<MessageSquareText className="h-4 w-4 text-violet-500" />}
+          icon={<MessageSquareText className="h-4 w-4" />}
           label="Interações por Ticket"
           value={
             kpi && kpi.new_tickets_count > 0
               ? Number((kpi.interactions_count / kpi.new_tickets_count).toFixed(1))
               : 0
           }
-          accent="text-violet-600"
           isLoading={isLoading}
           subtitle="média no período"
         />
@@ -361,13 +362,13 @@ export default function DashboardInteracoes() {
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="Novos em aberto" stackId="status" fill={STATUS_COLORS.open} radius={[0, 0, 0, 0]}>
-                    <LabelList dataKey="Novos em aberto" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                    <LabelList dataKey="Novos em aberto" position="inside" style={{ fontSize: 10, fill: "hsl(var(--ink-inverse))" }} formatter={(v: number) => v > 0 ? v : ""} />
                   </Bar>
                   <Bar dataKey="Interações" stackId="status" fill={STATUS_COLORS.in_progress}>
-                    <LabelList dataKey="Interações" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                    <LabelList dataKey="Interações" position="inside" style={{ fontSize: 10, fill: "hsl(var(--on-signal))" }} formatter={(v: number) => v > 0 ? v : ""} />
                   </Bar>
                   <Bar dataKey="Concluido" stackId="status" fill={STATUS_COLORS.done} radius={[6, 6, 0, 0]}>
-                    <LabelList dataKey="Concluido" position="inside" style={{ fontSize: 10, fill: "#fff" }} formatter={(v: number) => v > 0 ? v : ""} />
+                    <LabelList dataKey="Concluido" position="inside" style={{ fontSize: 10, fill: "hsl(var(--on-signal))" }} formatter={(v: number) => v > 0 ? v : ""} />
                     <LabelList dataKey="total" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
                   </Bar>
                 </BarChart>
@@ -404,11 +405,11 @@ export default function DashboardInteracoes() {
       {!isLoading && insights && (
         <section className="grid gap-4 md:grid-cols-3">
           {insights.top_performer && (
-            <Card className="border-emerald-500/30 bg-emerald-500/5">
+            <Card className="border-success/40 bg-signal-soft">
               <CardContent className="pt-5">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-emerald-500/15 p-2">
-                    <Award className="h-5 w-5 text-emerald-600" />
+                  <div className="rounded-full bg-signal-soft p-2">
+                    <Award className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Destaque do Periodo</p>
@@ -423,11 +424,11 @@ export default function DashboardInteracoes() {
           )}
 
           {insights.most_open && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
+            <Card className="border-warning/40 bg-warning-soft">
               <CardContent className="pt-5">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-amber-500/15 p-2">
-                    <FolderOpen className="h-5 w-5 text-amber-600" />
+                  <div className="rounded-full bg-warning-soft p-2">
+                    <FolderOpen className="h-5 w-5 text-warning" />
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Mais Tickets Novos</p>
@@ -442,11 +443,11 @@ export default function DashboardInteracoes() {
           )}
 
           {insights.most_productive && (
-            <Card className="border-violet-500/30 bg-violet-500/5">
+            <Card className="border-success/40 bg-signal-soft">
               <CardContent className="pt-5">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-violet-500/15 p-2">
-                    <Zap className="h-5 w-5 text-violet-600" />
+                  <div className="rounded-full bg-signal-soft p-2">
+                    <Zap className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">Mais Produtivo</p>
@@ -626,11 +627,11 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
   const hasTickets = agent.total_tickets > 0;
   const rateColor =
     agent.completion_rate >= 80
-      ? "text-emerald-600"
+      ? "text-success"
       : agent.completion_rate >= 50
-        ? "text-amber-600"
+        ? "text-warning"
         : agent.completion_rate > 0
-          ? "text-red-600"
+          ? "text-destructive"
           : "text-muted-foreground";
 
   return (
@@ -638,17 +639,17 @@ function AgentRow({ agent }: { agent: AgentBreakdown }) {
       <TableCell className="font-medium">{agent.agent_name}</TableCell>
       <TableCell className="text-center font-medium">{agent.total_tickets}</TableCell>
       <TableCell className="text-center">
-        <span className={agent.new_tickets_count > 0 ? "text-slate-600 font-medium" : "text-muted-foreground"}>
+        <span className={agent.new_tickets_count > 0 ? "text-ink-secondary font-medium" : "text-muted-foreground"}>
           {agent.new_tickets_count}
         </span>
       </TableCell>
       <TableCell className="text-center">
-        <span className={agent.interactions_count > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}>
+        <span className={agent.interactions_count > 0 ? "text-warning font-medium" : "text-muted-foreground"}>
           {agent.interactions_count}
         </span>
       </TableCell>
       <TableCell className="text-center">
-        <span className={agent.done_count > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+        <span className={agent.done_count > 0 ? "text-success font-medium" : "text-muted-foreground"}>
           {agent.done_count}
         </span>
       </TableCell>
