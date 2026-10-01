@@ -151,7 +151,7 @@ não, porque ali a regra antiga é que está errada.
 **Decisão do dono:** manter uma definição só (como está), ou reproduzir a antiga para o
 número não mudar na virada.
 
-### B26 · Nada na v2 marca `is_same_day_repeat` `BLOQUEIO DO CORTE — 01/10`
+### B26 · Nada na v2 marca `is_same_day_repeat` `RESOLVIDO NO CÓDIGO 01/10 — 0009`
 
 A decisão D1 removeu o bloqueio das 18h apoiada na marcação: "é o que evita contar a
 conversa duas vezes". Conferido: `core.interactions.is_same_day_repeat` tem `DEFAULT
@@ -162,6 +162,11 @@ false`, nenhum gatilho de `core` a calcula e a API só a devolve. As 1.720 marca
 `public._tg_follow_up_mark_same_day_repeat` (sem rastreio → `false`; senão `now() <
 18:00 SP do dia da última interação`), com garantia na suíte. Entra **antes** de qualquer
 tela do agente virar.
+
+**Feito:** `0009_marca_repeticao.sql`. A regra é a função `core.same_day_repeat`; o
+gatilho a chama com `now()`, deixa intocada a linha com `legacy_id` e ignora o valor que
+o chamador mandar. Validada contra as 62.037 interações do legado antes de escrita:
+concordância total. 19 garantias, conferidas contra mutação.
 
 ### B27 · "Concluído" sempre passa, e conta na meta `DECISÃO DO DONO — 01/10`
 
@@ -185,6 +190,18 @@ Três caminhos, e a escolha é de produto, não de código:
 | C. Fechar a exceção | "Concluído" também respeita as 18h, salvo rastreio | o agente não consegue concluir à tarde o que abriu de manhã — foi por isso que a exceção existe |
 
 Na v2 (D1) não há bloqueio nenhum, então B é o único que preserva a intenção declarada.
+
+### B28 · `recorded_at` de linha nova aceita valor do chamador `ACHADO 01/10 — BAIXO`
+
+O legado força `recorded_at := now()` em **todo** insert (`trg_follow_up_force_now`). O
+`core` faz `COALESCE(NEW.recorded_at, now())` — aceita o valor enviado, porque a travessia
+precisa gravar o instante original. Pela API não há efeito: a rota nunca envia
+`recorded_at`. Mas o comentário de `0001` diz "do servidor e imutável, como no legado", e
+para linha nova isso só é verdade por disciplina da API, não por garantia do banco.
+
+A marca de B26 não depende disto (usa `now()`). Corrigir é forçar `now()` quando
+`legacy_id IS NULL`, e ajustar o teste de `0007` que grava um instante escolhido em linha
+nova.
 
 ---
 

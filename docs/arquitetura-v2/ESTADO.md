@@ -235,7 +235,7 @@ A outra leitura da queixa — ticket **novo** para o mesmo e-mail no mesmo dia �
 é pequena (3 a 8 por semana) e passa porque `find_ticket_by_email` só acha
 ticket **não concluído**: concluiu, pode abrir de novo.
 
-### O que isso significa para a arquitetura nova `BLOQUEIO DO CORTE`
+### O que isso significa para a arquitetura nova `RESOLVIDO NO CÓDIGO 01/10 — 0009`
 
 A decisão D1 removeu o bloqueio das 18h e disse: "`is_same_day_repeat`
 **continua sendo marcado** — a marcação é o que evita contar a conversa duas
@@ -246,9 +246,26 @@ API só a devolve. As 1.720 marcações que o `core` tem vieram copiadas do
 legado na travessia; 0 interações nasceram pela API até agora.
 
 No dia em que a tela do agente virar, toda interação nova entraria como
-`false`, e a seção de repetidos da gestora ficaria cega. **É um gatilho em
-`core` replicando `_tg_follow_up_mark_same_day_repeat`, e precisa entrar antes
-do corte.** Está no backlog como B26.
+`false`, e a seção de repetidos da gestora ficaria cega.
+
+**Resolvido em `0009_marca_repeticao.sql` (B26).** A regra virou função pura,
+`core.same_day_repeat(anterior, instante, rastreio)`, chamada por um gatilho
+`BEFORE INSERT`. Antes de escrita, a regra foi aplicada às **62.037**
+interações do legado e **concordou com as 62.037** marcas gravadas — as 1.741
+marcadas pelo legado são as mesmas 1.741 marcadas por ela.
+
+Três decisões do gatilho, todas cobertas por garantia:
+
+| Decisão | Por quê |
+|---|---|
+| Usa `now()`, não `recorded_at` | como o legado: a marca é de quando o **servidor** recebeu |
+| Linha com `legacy_id` sai intocada | é o passado chegando; recalcular usaria o relógio de hoje contra um registro de meses atrás |
+| Valor enviado em linha nova é ignorado | quem marca é o servidor, nunca o chamador |
+
+A suíte testa a regra com instantes fixos — os dois lados das 18h, a fronteira
+exata, a meia-noite e a armadilha do fuso (23h de SP já é o dia seguinte em
+UTC) — e foi conferida contra mutação: **sem o gatilho, ela falha**, a
+qualquer hora do dia.
 
 ---
 
@@ -361,8 +378,8 @@ O que falta em código para o caminho A:
 - **Tela do agente:** `PATCH /tickets/:id`, `DELETE /tickets/:id` e a exportação.
 - **Painel da gestora:** ~~as rotas de auditoria, padrão por horário, detalhe de
   canal e detalhe de interações~~ — **prontas em #107.** Nada falta aqui.
-- **Gatilho que marca `is_same_day_repeat` em `core.interactions`** (B26) —
-  sem ele, a seção de repetidos da gestora fica cega no dia do corte. Ver 2-A.
+- ~~**Gatilho que marca `is_same_day_repeat` em `core.interactions`** (B26)~~
+  — **escrito em `0009`**, aguarda aplicação em produção. Ver 2-A.
 - **Roteiro do corte:** congelar escrita, rodar `0005_sync_edicoes.sql` e a
   travessia uma última vez, reconciliar, apontar as telas, liberar. Com
   reversão: enquanto o legado continuar intacto, voltar é mudar o apontamento.
@@ -402,20 +419,20 @@ módulos, **6 existem**, e `metricas` está completo.
 ./packages/db/run-tests.sh
 ```
 
-Esperado, com o denominador: **59 garantias em 4 arquivos, zero falhas.**
+Esperado, com o denominador: **78 garantias em 5 arquivos, zero falhas.**
 
 ```bash
 dropdb --if-exists xmx_api_test; createdb xmx_api_test
-for f in packages/db/migrations/000[1-8]*.sql; do psql -q -d xmx_api_test -v ON_ERROR_STOP=1 -f "$f"; done
+for f in packages/db/migrations/000[1-9]*.sql; do psql -q -d xmx_api_test -v ON_ERROR_STOP=1 -f "$f"; done
 cd apps/api && PGDATABASE=xmx_api_test DATABASE_URL=postgres://localhost/xmx_api_test ALLOW_DEV_TOKENS=1 SUPABASE_URL=https://kjkyyqxqrqsdozjyyuon.supabase.co ../../node_modules/.bin/tsx src/test/run.ts
 ```
 
-Esperado: **88 verificações, zero falhas.** Precisa de Postgres local.
+Esperado: **91 verificações, zero falhas.** Precisa de Postgres local.
 
 Ensaio da travessia, com os casos difíceis medidos em produção:
 
 ```bash
-createdb xmx_bf && for f in packages/db/migrations/000[1-8]*.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0006_backfill_fatos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
+createdb xmx_bf && for f in packages/db/migrations/000[1-9]*.sql packages/db/backfill/fixture_legado.sql packages/db/backfill/0003_backfill.sql packages/db/backfill/0004_backfill_reembolsos.sql packages/db/backfill/0006_backfill_fatos.sql; do psql -q -d xmx_bf -v ON_ERROR_STOP=1 -f "$f"; done && psql -d xmx_bf -f packages/db/backfill/reconciliacao.sql
 ```
 
 > `reconciliacao.sql` usa `\set`, que é comando do `psql` e a Management API
@@ -535,9 +552,9 @@ usa hoje?".
 | `docs/arquitetura-v2/91-MEDICOES.md` | medições que fecharam itens abertos |
 | `docs/arquitetura-v2/TAREFA-vercel-variaveis.md` | tarefa fechada, já concluída, serve de modelo |
 | `packages/contract/` | a fronteira entre web e api |
-| `packages/db/migrations/` | schema (0001, 0002, 0004, 0005, 0006, 0007, 0008) |
+| `packages/db/migrations/` | schema (0001, 0002, 0004, 0005, 0006, 0007, 0008, 0009) |
 | `packages/db/backfill/` | a travessia (0003, 0004, 0006) e as reconciliações |
-| `packages/db/tests/` | as 59 garantias de schema |
+| `packages/db/tests/` | as 78 garantias de schema |
 | `apps/api/` | a API (Hono + postgres.js); `src/test/run.ts` tem as 88 verificações |
 | `api/index.ts` | ponto de entrada como Função da Vercel |
 
@@ -573,4 +590,6 @@ Quem termina um passo escreve aqui: data, o que foi feito, e **a evidência**.
 | 01/10 | Fluxos do agente em produção mapeados (seção 2-A) | 7 fluxos vivos com registro nos últimos minutos; 5 regras de servidor com 0 violações hoje |
 | 01/10 | Queixa da gestora explicada com número | 435 de 439 repetições do mesmo dia são "Concluído", exceção deliberada do diálogo; estável há 7 semanas; a meta diária conta |
 | 01/10 | **Lacuna da v2 encontrada antes do corte** | nada marca `is_same_day_repeat` em `core` — B26, bloqueio do passo 4 |
-| — | **Decisão do corte** | **próximo — aguarda o dono. Passo 4, caminho A recomendado, depois de B26** |
+| 01/10 | **B26 resolvido no código (`0009`)** | regra validada contra as 62.037 interações do legado: 62.037 concordam; 19 garantias novas, conferidas contra mutação; travessia ensaiada com marcas na fixture, preservadas |
+| — | Aplicar `0009` em produção | **próximo** — depois, conferir o gatilho e repetir o árbitro chamando a função real |
+| — | **Decisão do corte** | aguarda o dono. Passo 4, caminho A recomendado |
