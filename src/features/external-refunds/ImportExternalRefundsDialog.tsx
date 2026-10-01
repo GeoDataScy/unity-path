@@ -336,7 +336,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                     {pagamerican!.unspecified > 0 && <> · {pagamerican!.unspecified} sem tipo no arquivo</>}
                   </p>
                   {pagamerican!.unknownProducts.length > 0 && (
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    <p className="mt-1 text-xs text-warning">
                       Fora do catálogo: {pagamerican!.unknownProducts.join(", ")}. Vão entrar com esse nome e não vão
                       casar com o interno.
                     </p>
@@ -353,7 +353,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                   {product ? (
                     <BatchTable batches={batches} />
                   ) : (
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">Escolha o produto do arquivo.</p>
+                    <p className="mt-1 text-xs text-warning">Escolha o produto do arquivo.</p>
                   )}
                 </>
               ) : (
@@ -361,7 +361,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                   {cartpanda!.rows.length} linha(s) · {cartpanda!.orders} pedido(s)
                   {cartpanda!.invalidDates > 0 && <> · {cartpanda!.invalidDates} com data ilegível (serão ignoradas)</>}
                   {outsideMonth > 0 && (
-                    <span className="text-amber-700 dark:text-amber-400"> · {outsideMonth} fora de {fmtMonth(monthRef)}</span>
+                    <span className="text-warning"> · {outsideMonth} fora de {fmtMonth(monthRef)}</span>
                   )}
                 </p>
               )}

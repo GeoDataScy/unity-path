@@ -621,11 +621,11 @@
   --rf-p7: hsl(var(--chart-7));
   --rf-p8: hsl(var(--chart-8));
 
-  /* Média / tendência = a série protagonista; parcial × total = aqua ×
-     cinza; "outros" e plataforma = o cinza de fundo; equipe = signal. */
+  /* Média = tinta; parcial × total = aqua × grafite; "outros" e
+     plataforma = o cinza de fundo; equipe = signal; tendência = coral. */
   --rf-ma: hsl(var(--ink));
   --rf-parcial: hsl(var(--aqua));
-  --rf-total: hsl(var(--chart-mute-2));
+  --rf-total: hsl(var(--chart-mute-1));
   --rf-outros: hsl(var(--chart-mute-3));
   --rf-equipe: hsl(var(--signal));
   --rf-plat: hsl(var(--chart-mute-3));

@@ -22,7 +22,7 @@ function KindBadge({ row }: { row: DivergenceRow }) {
   if (row.kind === "ambos") return <Badge variant="success">{label}</Badge>;
   if (row.kind === "interno") return <Badge variant="in-progress">{label}</Badge>;
   return (
-    <Badge variant="outline" className="border-amber-500/60 text-amber-700 dark:text-amber-400">
+    <Badge variant="outline" className="border-warning/40 text-warning">
       {label}
     </Badge>
   );
