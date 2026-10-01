@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 import { ESTRUTURA_LABEL, type Estrutura } from "../types";
 
 const TOM: Record<Estrutura, string> = {
-  nova: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300",
+  nova: "border-success/40 bg-signal-soft text-success",
   antiga:
-    "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-300",
+    "border-warning/40 bg-warning-soft text-ink",
 };
 
 const CURTO: Record<Estrutura, string> = {

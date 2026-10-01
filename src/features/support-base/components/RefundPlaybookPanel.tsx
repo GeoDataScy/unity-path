@@ -16,15 +16,15 @@ import {
 } from "../data/refundPlaybook";
 
 const TOM_BORDA = {
-  verde: "border-t-emerald-500",
-  roxo: "border-t-violet-500",
-  ambar: "border-t-amber-500",
+  verde: "border-t-success",
+  roxo: "border-t-info",
+  ambar: "border-t-warning",
 } as const;
 
 const TOM_TEXTO = {
-  verde: "text-emerald-700 dark:text-emerald-400",
-  roxo: "text-violet-700 dark:text-violet-400",
-  ambar: "text-amber-700 dark:text-amber-400",
+  verde: "text-success",
+  roxo: "text-info",
+  ambar: "text-warning",
 } as const;
 
 /**
@@ -74,7 +74,7 @@ export function RefundPlaybookPanel() {
         ))}
       </div>
 
-      <Alert className="border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
+      <Alert className="border-warning/40 bg-warning-soft text-ink">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
           <strong className="mb-1 block">Regra obrigatória</strong>

@@ -125,7 +125,7 @@ export default function DashboardZendesk() {
           <div className="flex items-center gap-2">
             <Badge
               variant={conectado ? "secondary" : "outline"}
-              className={cn("text-[11px]", conectado && "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300")}
+              className={cn("text-[11px]", conectado && "bg-signal-soft text-success")}
             >
               {status.isLoading ? "Verificando…" : conectado ? "Conectado" : "Não conectado"}
             </Badge>

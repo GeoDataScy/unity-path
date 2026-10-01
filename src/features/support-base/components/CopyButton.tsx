@@ -52,7 +52,7 @@ export function CopyButton({ value, label = "Copiar", className, size = "sm" }: 
         size="icon"
         onClick={handleCopy}
         aria-label={copied ? "Copiado" : label}
-        className={cn("h-7 w-7 shrink-0", copied && "text-emerald-600", className)}
+        className={cn("h-7 w-7 shrink-0", copied && "text-success", className)}
       >
         <Icon className="h-3.5 w-3.5" />
       </Button>
@@ -65,7 +65,7 @@ export function CopyButton({ value, label = "Copiar", className, size = "sm" }: 
       variant="outline"
       size="sm"
       onClick={handleCopy}
-      className={cn("h-8 gap-1.5 text-xs", copied && "border-emerald-500 text-emerald-600", className)}
+      className={cn("h-8 gap-1.5 text-xs", copied && "border-success text-success", className)}
     >
       <Icon className="h-3.5 w-3.5" />
       {copied ? "Copiado" : label}

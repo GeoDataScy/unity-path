@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 import { ZENDESK_STATUS_LABEL, type ZendeskTicketStatus } from "../types";
 
 const STATUS_CLASS: Record<ZendeskTicketStatus, string> = {
-  new: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  open: "bg-red-500/15 text-red-700 dark:text-red-300",
-  pending: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
-  hold: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
-  solved: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  new: "bg-warning-soft text-warning",
+  open: "bg-coral-soft text-destructive",
+  pending: "bg-ice-soft text-info",
+  hold: "bg-inverse text-ink-inverse",
+  solved: "bg-signal-soft text-success",
   closed: "bg-muted text-muted-foreground",
 };
 

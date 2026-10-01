@@ -54,7 +54,7 @@ export function SmsBrandsPanel() {
 
   return (
     <div className="space-y-4">
-      <Alert className="border-blue-300 bg-blue-50 py-2.5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+      <Alert className="border-info/40 bg-ice-soft py-2.5 text-ink">
         <Info className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
           <strong>Nome no sistema</strong> é como a brand aparece no sistema de suporte. Sempre

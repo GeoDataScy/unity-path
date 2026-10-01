@@ -57,13 +57,13 @@ function statusBadge(o: ManagerHeldOrder) {
   if (label === "Em andamento") return <Badge variant="in-progress">Em andamento</Badge>;
   if (label === "Novo") {
     return (
-      <Badge variant="outline" className="text-sky-600 dark:text-sky-400">
+      <Badge variant="outline" className="text-info">
         Novo
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+    <Badge variant="outline" className="text-warning">
       {label}
     </Badge>
   );
@@ -282,7 +282,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Clock className="h-4 w-4 text-amber-500" /> Aguardando
+              <Clock className="h-4 w-4 text-warning" /> Aguardando
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -302,7 +302,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Confirmados
+              <CheckCircle2 className="h-4 w-4 text-success" /> Confirmados
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -332,9 +332,9 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
               {summary.map((s) => (
                 <div key={s.agent_id} className="rounded-md border px-3 py-1.5 text-sm">
                   <span className="font-medium">{s.full_name ?? "Sem nome"}</span>{" "}
-                  <span className="text-amber-600 dark:text-amber-400 font-mono tabular-nums">{s.pending} pend.</span>{" "}
+                  <span className="text-warning font-mono tabular-nums">{s.pending} pend.</span>{" "}
                   <span className="text-status-in-progress font-mono tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">{s.confirmed} conf.</span>
+                  <span className="text-success font-mono tabular-nums">{s.confirmed} conf.</span>
                 </div>
               ))}
             </div>

@@ -126,7 +126,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
             url={product.bonus_url}
             className={cn(
               "text-[11px]",
-              product.bonus_tipo === "super" && "text-fuchsia-600 dark:text-fuchsia-400",
+              product.bonus_tipo === "super" && "text-signal",
             )}
           />
         </div>
