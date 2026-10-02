@@ -39,7 +39,8 @@ const ON_HOLDS_MAP: Record<string, keyof HeldOrderImportRow> = {
 // Cabeçalhos do arquivo "Returned Shipments" -> chaves do RPC de import.
 const RETURNS_MAP: Record<string, keyof HeldOrderImportRow> = {
   ordernumber: "order_number",
-  returndate: "order_date",
+  // A devolução não traz a data da compra: Return Date é a data da devolução.
+  returndate: "return_date",
   "rma#": "rma",
   rma: "rma",
   shipname: "name",
@@ -52,7 +53,7 @@ const RETURNS_MAP: Record<string, keyof HeldOrderImportRow> = {
 };
 
 // Chaves cujo valor é uma data e precisa sair normalizado como YYYY-MM-DD.
-const DATE_KEYS = new Set<keyof HeldOrderImportRow>(["order_date"]);
+const DATE_KEYS = new Set<keyof HeldOrderImportRow>(["order_date", "return_date"]);
 
 function normalizeHeader(h: string): string {
   return String(h ?? "").trim().toLowerCase().replace(/\s+/g, "");
