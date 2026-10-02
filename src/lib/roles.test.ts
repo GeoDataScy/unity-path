@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   areasForRole,
   canAccessArea,
+  areaCardsForRole,
   defaultAreaForRole,
   hasAreaChoice,
   homePathForRole,
@@ -18,8 +19,8 @@ describe("homePathForRole", () => {
     expect(homePathForRole("copy_grup")).toBe("/areas");
   });
 
-  it("manda o time de produtos direto para a área de produtos (só tem uma)", () => {
-    expect(homePathForRole("produto")).toBe("/produtos");
+  it("manda o time de produtos para a tela de cards, como todo mundo", () => {
+    expect(homePathForRole("produto")).toBe("/areas");
   });
 
   it("manda o agente direto para o workspace", () => {
@@ -52,7 +53,17 @@ describe("acesso por área", () => {
     expect(canAccessArea("produto", "analytics")).toBe(false);
     expect(canAccessArea("produto", "copy")).toBe(false);
     expect(canAccessArea("produto", "workspace")).toBe(false);
-    expect(hasAreaChoice("produto")).toBe(false);
+  });
+
+  it("o time de produtos vê os três cards, mas o acesso continua só em produtos", () => {
+    expect(areaCardsForRole("produto")).toEqual(["analytics", "copy", "produtos"]);
+    expect(areasForRole("produto")).toEqual(["produtos"]);
+  });
+
+  it("os outros perfis veem exatamente as áreas que podem acessar", () => {
+    expect(areaCardsForRole("manager")).toEqual(areasForRole("manager"));
+    expect(areaCardsForRole("copy_grup")).toEqual(areasForRole("copy_grup"));
+    expect(areaCardsForRole("agent")).toEqual(["workspace"]);
   });
 
   it("copy entra nas duas áreas, e a casa dele é a área de copy", () => {
@@ -82,7 +93,7 @@ describe("acesso por área", () => {
   it("só quem tem mais de uma área precisa escolher", () => {
     expect(hasAreaChoice("manager")).toBe(true);
     expect(hasAreaChoice("copy_grup")).toBe(true);
-    expect(hasAreaChoice("produto")).toBe(false);
+    expect(hasAreaChoice("produto")).toBe(true);
     expect(hasAreaChoice("agent")).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BarChart3, ClipboardList, Loader2, LogOut, Package, PenLine } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
@@ -8,7 +9,8 @@ import {
   AREA_LABEL,
   AREA_PATH,
   LAST_AREA_KEY,
-  areasForRole,
+  areaCardsForRole,
+  canAccessArea,
   hasAreaChoice,
   homePathForRole,
   isValidArea,
@@ -18,7 +20,8 @@ import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 // Escolha de área depois do login, para quem tem acesso a mais de uma
-// (gestora e time de copy). É uma tela e não um modal de propósito: sobrevive a
+// (gestora e time de copy) e para o time de produtos, que vê os mesmos cards mas
+// só entra em Produtos. É uma tela e não um modal de propósito: sobrevive a
 // refresh, é linkável (/areas), não pisca por cima de um dashboard vazio e o
 // usuário pode voltar aqui pelo botão de trocar área na sidebar.
 
@@ -45,8 +48,8 @@ const AREA_CARDS: Record<AppArea, AreaCard> = {
   produtos: {
     icon: Package,
     headline: "Área de Produtos",
-    description: "O espaço do time de produtos — em construção.",
-    bullets: [],
+    description: "Os pedidos retidos no fulfillment, até o atendimento fechar.",
+    bullets: ["Pedidos em espera", "Motivos do on-hold", "Andamento por agente"],
   },
   // O agente nunca chega nesta tela (só tem uma área), mas o mapa é completo
   // para o dia em que alguém acumular workspace + outra área.
@@ -63,6 +66,7 @@ export default function AreaSelect() {
 
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [areas, setAreas] = useState<readonly AppArea[]>([]);
   const [lastArea, setLastArea] = useState<AppArea | null>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
@@ -113,7 +117,8 @@ export default function AreaSelect() {
 
       if (!active) return;
       setFullName(profile?.full_name ?? null);
-      setAreas(areasForRole(profile?.role));
+      setRole(profile?.role ?? null);
+      setAreas(areaCardsForRole(profile?.role));
       const stored = window.localStorage.getItem(LAST_AREA_KEY);
       setLastArea(isValidArea(stored) ? stored : null);
       setLoading(false);
@@ -131,6 +136,13 @@ export default function AreaSelect() {
   }, [loading]);
 
   const enterArea = (area: AppArea) => {
+    // O card pode estar na tela sem dar acesso (time de produtos vê todos).
+    if (!canAccessArea(role, area)) {
+      toast.error("Acesso negado", {
+        description: `Seu perfil não tem acesso à ${AREA_LABEL[area]}.`,
+      });
+      return;
+    }
     window.localStorage.setItem(LAST_AREA_KEY, area);
     navigate(AREA_PATH[area], { replace: true });
   };

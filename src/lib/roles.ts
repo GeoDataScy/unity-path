@@ -10,8 +10,10 @@
 //                               nem a gestora entra)
 //
 // Quem tem mais de uma área não cai direto numa delas depois do login: cai em
-// /areas e escolhe (ver AreaSelect). A ordem do array é significativa — a
-// primeira área é a "casa" do perfil e é o destino quando não há escolha a
+// /areas e escolhe (ver AreaSelect). O time de produtos também passa por /areas
+// e vê os mesmos cards que os outros, mas só entra em Produtos — os demais
+// respondem "Acesso negado" (ver areaCardsForRole). A ordem do array é
+// significativa — a primeira área é a "casa" do perfil e é o destino quando não há escolha a
 // fazer.
 
 export type AppRole = "agent" | "manager" | "copy_grup" | "produto";
@@ -51,6 +53,12 @@ const ROLE_AREAS: Record<AppRole, readonly AppArea[]> = {
   agent: ["workspace"],
 };
 
+// Cards mostrados em /areas quando diferem das áreas permitidas. Mostrar um card
+// NÃO dá acesso: quem decide é canAccessArea, e os layouts continuam barrando.
+const ROLE_AREA_CARDS: Partial<Record<AppRole, readonly AppArea[]>> = {
+  produto: ["analytics", "copy", "produtos"],
+};
+
 /** Como cada role aparece na tela de Usuários da gestora. */
 const ROLE_LABEL: Record<AppRole, string> = {
   manager: "Manager",
@@ -85,9 +93,14 @@ export function canAccessArea(role: string | null | undefined, area: AppArea): b
   return areasForRole(role).includes(area);
 }
 
-/** true quando o perfil tem mais de uma área e portanto precisa escolher. */
+/** Cards da tela /areas. Por padrão, as próprias áreas do perfil. */
+export function areaCardsForRole(role: string | null | undefined): readonly AppArea[] {
+  return ROLE_AREA_CARDS[role as AppRole] ?? areasForRole(role);
+}
+
+/** true quando o perfil passa pela tela /areas depois do login. */
 export function hasAreaChoice(role: string | null | undefined): boolean {
-  return areasForRole(role).length > 1;
+  return areaCardsForRole(role).length > 1;
 }
 
 /** Área "casa" do perfil — usada como destino quando não há escolha. */
