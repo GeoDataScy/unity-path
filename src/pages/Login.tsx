@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
 import { homePathForRole } from "@/lib/roles";
 import { Logo } from "@/components/brand/Logo";
+import { LoginStories } from "@/components/auth/LoginStories";
 
 function isNetworkError(error: unknown): boolean {
   if (!error) return false;
@@ -150,7 +151,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-login-bg flex items-center justify-center p-4">
+    // Duas colunas no desktop: stories (vídeo/imagem) à esquerda, login à direita.
+    // No celular só o login — o painel de mídia some abaixo de lg.
+    <div className="grid min-h-screen bg-login-bg p-3 lg:grid-cols-2 lg:gap-3">
+      <LoginStories className="sticky top-3 hidden h-[calc(100vh-1.5rem)] lg:block" />
+
+      <div className="flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 animate-in fade-in-50 duration-500">
         <div className="flex flex-col items-center space-y-8">
           <Logo height={40} className="animate-in fade-in-0 duration-500" />
@@ -211,6 +217,7 @@ const Login = () => {
             </form>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
