@@ -59,7 +59,7 @@ export function AgentSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-sidebar-border [&_[data-sidebar=sidebar]]:bg-sidebar [&_[data-sidebar=sidebar]]:text-sidebar-foreground"
+      className="hubi-sidebar border-r border-sidebar-border [&_[data-sidebar=sidebar]]:bg-sidebar [&_[data-sidebar=sidebar]]:text-sidebar-foreground"
     >
       <SidebarContent>
         <SidebarGroup>
@@ -76,6 +76,7 @@ export function AgentSidebar() {
                     <SidebarMenuButton
                       asChild
                       isActive={isActive}
+                      className="hover:bg-sidebar-hover data-[active=true]:hover:bg-sidebar-accent data-[active=true]:[&_svg]:text-signal"
                       tooltip={showBadge ? `${item.title} — ${needsAttention} para hoje` : item.title}
                     >
                       <NavLink to={item.to} end>

@@ -175,6 +175,7 @@ export default {
         sidebar: "hsl(var(--sidebar))",
         "sidebar-foreground": "hsl(var(--sidebar-foreground))",
         "sidebar-accent": "hsl(var(--sidebar-accent))",
+        "sidebar-hover": "hsl(var(--sidebar-hover))",
         "sidebar-accent-foreground": "hsl(var(--sidebar-accent-foreground))",
         "sidebar-border": "hsl(var(--sidebar-border))",
         "sidebar-ring": "hsl(var(--sidebar-ring))",

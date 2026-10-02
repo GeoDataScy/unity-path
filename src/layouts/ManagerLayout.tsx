@@ -317,7 +317,7 @@ export default function ManagerLayout() {
           o Logout simplesmente saía por baixo da janela. */}
       <aside
         className={cn(
-          "sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
+          "hubi-sidebar sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[248px]",
         )}
       >
