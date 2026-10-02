@@ -298,3 +298,81 @@ describe("HeldOrdersManagerTab — readOnly (Área de Produtos)", () => {
     expect(exportCall().filters.agent).toBe("Rita");
   });
 });
+
+// Paginação da Área de Produtos: só a tabela é fatiada. Cartões, filtros e a
+// exportação continuam olhando o conjunto filtrado inteiro.
+describe("HeldOrdersManagerTab — paginação (Área de Produtos)", () => {
+  const many = (n: number) =>
+    Array.from({ length: n }, (_, i) => order({ id: String(i + 1), order_number: `PED-${i + 1}` }));
+
+  /** No readOnly não há coluna de seleção: o pedido é a 1ª célula. */
+  function pageOrderNumbers(): string[] {
+    return within(screen.getByRole("table"))
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => within(row).getAllByRole("cell")[0].textContent?.trim() ?? "");
+  }
+
+  it("mostra 50 pedidos por página e o total no rodapé", () => {
+    setRows(many(120));
+    render(<HeldOrdersManagerTab readOnly paginate />);
+
+    const shown = pageOrderNumbers();
+    expect(shown).toHaveLength(50);
+    expect(shown[0]).toBe("PED-1");
+    expect(shown[49]).toBe("PED-50");
+    expect(screen.getByText("1–50")).toBeInTheDocument();
+    expect(screen.getByText(/de 120 pedidos/)).toBeInTheDocument();
+  });
+
+  it("navega pelos números de página", () => {
+    setRows(many(120));
+    render(<HeldOrdersManagerTab readOnly paginate />);
+
+    fireEvent.click(screen.getByRole("link", { name: "3" }));
+    const shown = pageOrderNumbers();
+    expect(shown).toEqual(Array.from({ length: 20 }, (_, i) => `PED-${101 + i}`));
+    expect(screen.getByText("101–120")).toBeInTheDocument();
+  });
+
+  it("troca o tamanho da página", () => {
+    setRows(many(120));
+    render(<HeldOrdersManagerTab readOnly paginate />);
+
+    openSelect("50 por página");
+    chooseOption("100 por página");
+    expect(pageOrderNumbers()).toHaveLength(100);
+  });
+
+  it("volta para a página 1 quando a busca muda", () => {
+    setRows(many(120));
+    render(<HeldOrdersManagerTab readOnly paginate />);
+
+    fireEvent.click(screen.getByRole("link", { name: "2" }));
+    expect(pageOrderNumbers()[0]).toBe("PED-51");
+
+    fireEvent.change(screen.getByPlaceholderText(/Buscar pedido/), { target: { value: "PED-1" } });
+    // PED-1, PED-10..19, PED-100..120 = 32 pedidos, todos numa página só.
+    expect(pageOrderNumbers()[0]).toBe("PED-1");
+    expect(screen.getByText("1–32")).toBeInTheDocument();
+  });
+
+  it("exporta todos os filtrados, não só a página aberta", () => {
+    const rows = many(120);
+    setRows(rows);
+    render(<HeldOrdersManagerTab readOnly paginate />);
+
+    fireEvent.click(screen.getByRole("link", { name: "2" }));
+    expect(exportButton()).toHaveTextContent("Exportar (120)");
+    fireEvent.click(exportButton());
+    expect(ids(exportCall().rows)).toEqual(ids(rows));
+  });
+
+  it("a visão da gestora continua sem paginação", () => {
+    setRows(many(120));
+    render(<HeldOrdersManagerTab />);
+
+    expect(orderNumbersOnScreen()).toHaveLength(120);
+    expect(screen.queryByText(/de 120 pedidos/)).not.toBeInTheDocument();
+  });
+});
