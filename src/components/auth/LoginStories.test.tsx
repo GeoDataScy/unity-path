@@ -40,7 +40,7 @@ describe("LoginStories", () => {
     render(<LoginStories />);
     expect(screen.getByRole("heading", { name: "Tudo num lugar só" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver: hubi" })).toHaveAttribute("aria-current", "step");
-    expect(screen.getByRole("button", { name: "Ver: Para o agente" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver: IA Treinada" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver: Para a gestão" })).toBeInTheDocument();
   });
 
@@ -77,7 +77,7 @@ describe("LoginStories", () => {
 
   it("clicar na barrinha pula para aquele slide", () => {
     render(<LoginStories />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver: Para o agente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver: IA Treinada" }));
     expect(current()).toBe(1);
     expect(screen.getByRole("heading", { name: "Sua fila, sua meta" })).toBeInTheDocument();
   });

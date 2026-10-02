@@ -25,7 +25,7 @@ const LOGIN_SLIDES: Slide[] = [
   {
     kind: "image",
     src: "/login/hubi-simbolo.jpg",
-    label: "Para o agente",
+    label: "IA Treinada",
     title: "Sua fila, sua meta",
   },
   {
