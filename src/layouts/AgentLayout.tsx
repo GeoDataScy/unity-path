@@ -13,6 +13,7 @@ import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { useSidebarTone } from "@/lib/sidebarTone";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
+import { createSessionExit } from "@/lib/sessionExit";
 import { homePathForRole, isKnownRole } from "@/lib/roles";
 
 export type AgentOutletContext = {
@@ -115,20 +116,20 @@ export default function AgentLayout() {
 
     checkAuth();
 
-    const handleBlockedOrSignedOut = async (target: "login" | "blocked") => {
-      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-      for (const key of Object.keys(localStorage)) {
-        if (key.startsWith("sb-")) localStorage.removeItem(key);
-      }
-      navigate(target === "blocked" ? "/blocked" : "/login", { replace: true });
-    };
+    // Sai uma vez só; ver src/lib/sessionExit.ts (loop de signOut que congelava a aba).
+    const sessionExit = createSessionExit(supabase.auth, (target) =>
+      navigate(target === "blocked" ? "/blocked" : "/login", { replace: true }),
+    );
+    const handleBlockedOrSignedOut = (target: "login" | "blocked") =>
+      sessionExit.exit(target, { signOut: true });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
       if (event === "SIGNED_OUT" || !session) {
-        handleBlockedOrSignedOut("login");
+        // A sessão já foi removida: chamar signOut aqui reemitia SIGNED_OUT em loop.
+        sessionExit.exit("login", { signOut: false });
       }
     });
 
