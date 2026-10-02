@@ -173,6 +173,10 @@ export type MyHeldOrder = {
   status_changed_at: string | null;
   /** Observação do registro mais recente (no Inativo, o motivo informado pelo agente). */
   last_note?: string | null;
+  /** Quem fez o registro mais recente (my_held_orders). */
+  last_event_user_id?: string | null;
+  /** O registro mais recente foi da gestão (devolução de um inativo). */
+  last_event_by_manager?: boolean;
   event_count: number;
 };
 

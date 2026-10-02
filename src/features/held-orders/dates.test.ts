@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatHeldOrderDate, formatHeldOrderDateTime } from "./dates";
+import { formatHeldOrderAge, formatHeldOrderDate, formatHeldOrderDateTime } from "./dates";
 
 describe("formatHeldOrderDate", () => {
   it("converte YYYY-MM-DD para dd/MM/aaaa", () => {
@@ -30,5 +30,12 @@ describe("formatHeldOrderDateTime", () => {
   it("devolve o marcador de vazio para valor ausente ou inválido", () => {
     expect(formatHeldOrderDateTime(null)).toBe("—");
     expect(formatHeldOrderDateTime("não é data", "")).toBe("");
+  });
+});
+
+describe("formatHeldOrderAge", () => {
+  it("traduz a idade do arquivo", () => {
+    expect(formatHeldOrderAge("9 day(s)")).toBe("9 dia(s)");
+    expect(formatHeldOrderAge(null)).toBe("");
   });
 });

@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { formatHeldOrderAge, formatHeldOrderDate, formatHeldOrderDateTime, HELD_ORDER_DATE_LABEL } from "@/features/held-orders/dates";
 import { useToast } from "@/hooks/use-toast";
 import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
 import { parseAddress, parseItems, parseReasons, totalUnits } from "@/features/held-orders/format";
@@ -48,6 +50,13 @@ function daysSinceLastContact(order: MyHeldOrder): number | null {
   if (Number.isNaN(t)) return null;
   return Math.floor((Date.now() - t) / 86_400_000);
 }
+
+const STATUS_OPTIONS: { value: HeldOrderAgentStatus; label: string; hint: string }[] = [
+  { value: "novo", label: "Novo", hint: "Ainda não comecei" },
+  { value: "em_andamento", label: "Em andamento", hint: "Estou tratando o pedido" },
+  { value: "concluido", label: "Concluído", hint: "Resolvido" },
+  { value: "inativo", label: "Inativo", hint: "Cliente não responde" },
+];
 
 /** O Select do shadcn não aceita item com value vazio — sentinela para "sem pendência". */
 const NO_TAG = "sem_pendencia";
@@ -140,6 +149,21 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
+        {/* As datas do pedido, cada uma no seu campo */}
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
+          {[
+            [HELD_ORDER_DATE_LABEL.order_date, formatHeldOrderDate(order.order_date)],
+            [HELD_ORDER_DATE_LABEL.return_date, formatHeldOrderDate(order.return_date)],
+            [HELD_ORDER_DATE_LABEL.imported_at, formatHeldOrderDateTime(order.imported_at)],
+            [HELD_ORDER_DATE_LABEL.status_changed_at, formatHeldOrderDateTime(order.status_changed_at)],
+          ].map(([label, value]) => (
+            <div key={label} className="grid gap-0.5 bg-card px-3 py-2">
+              <dt className="text-[11px] text-ink-tertiary">{label}</dt>
+              <dd className="font-mono text-sm font-medium tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
         {/* Motivo do On Hold + idade */}
         {(reasons.length > 0 || order.age || order.rma) && (
           <div className="flex flex-wrap items-center gap-1.5">
@@ -154,7 +178,7 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
             ))}
             {order.age && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" /> {order.age}
+                <Clock className="h-3 w-3" /> {formatHeldOrderAge(order.age)}
               </span>
             )}
             {order.rma && <span className="text-xs text-muted-foreground">RMA: {order.rma}</span>}
@@ -241,14 +265,6 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
             </p>
           ) : (
             events.map((e) => {
-              const dt = new Date(e.recorded_at);
-              const dateStr = dt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-              const timeStr = dt.toLocaleTimeString("pt-BR", {
-                timeZone: "America/Sao_Paulo",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              });
               return (
                 <div
                   key={e.id}
@@ -267,7 +283,7 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
                       )}
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {dateStr} {timeStr}
+                        {formatHeldOrderDateTime(e.recorded_at)}
                       </span>
                       {e.user_name && (
                         <span className="text-xs text-muted-foreground">· {e.user_name}</span>
@@ -285,18 +301,32 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
         <div className="grid gap-4 rounded-lg border bg-card p-4">
           <p className="text-sm font-medium">Novo registro</p>
           <div className="grid gap-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as HeldOrderAgentStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="novo">Novo</SelectItem>
-                <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                <SelectItem value="concluido">Concluído</SelectItem>
-                <SelectItem value="inativo">Inativo — cliente não responde</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label id="held-order-status-label">Status</Label>
+            <div
+              role="radiogroup"
+              aria-labelledby="held-order-status-label"
+              className="grid grid-cols-2 overflow-hidden rounded-md border sm:grid-cols-4"
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={status === opt.value}
+                  title={opt.hint}
+                  onClick={() => setStatus(opt.value)}
+                  className={cn(
+                    "border-b border-r px-2 py-2 text-xs font-medium transition-colors last:border-r-0 sm:border-b-0",
+                    status === opt.value ? "bg-primary text-primary-foreground" : "bg-card text-ink-secondary hover:bg-muted",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {status === "inativo" && (
+              <p className="text-xs text-muted-foreground">Cliente não responde: o pedido sai da sua fila e vai para Inativos.</p>
+            )}
             {earlyInactive && (
               <p className="flex items-start gap-1.5 text-xs text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
