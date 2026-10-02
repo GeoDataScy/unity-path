@@ -10,6 +10,8 @@ import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
 import { TopBar } from "@/components/layout/TopBar";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
+import { AgentSettingsDialog } from "@/features/agent/components/AgentSettingsDialog";
+import { useSidebarTone } from "@/features/agent/sidebarTone";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { homePathForRole, isKnownRole } from "@/lib/roles";
 
@@ -45,6 +47,8 @@ export default function AgentLayout() {
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  const [sidebarTone, setSidebarTone] = useSidebarTone(userId);
 
   useEffect(() => {
     let active = true;
@@ -220,6 +224,7 @@ export default function AgentLayout() {
           onToggle={() => setCollapsed((v) => !v)}
           onLogout={handleLogout}
           fullName={fullName}
+          tone={sidebarTone}
         />
 
         <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
@@ -227,6 +232,13 @@ export default function AgentLayout() {
               sobra só o que é de topo de tela: notificações e tema. */}
           <TopBar>
             <NotificationsBell enabled={Boolean(userId)} />
+            {/* Fica colada no tema (o TopBar põe o tema por último). */}
+            <AgentSettingsDialog
+              fullName={fullName}
+              tone={sidebarTone}
+              onToneChange={setSidebarTone}
+              className="text-ink-secondary hover:text-ink"
+            />
           </TopBar>
 
           <main className="flex-1">

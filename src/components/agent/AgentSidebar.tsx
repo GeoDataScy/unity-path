@@ -17,6 +17,7 @@ import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRadarBadgeQuery } from "@/features/radar/useMyRadarQuery";
+import type { SidebarTone } from "@/features/agent/sidebarTone";
 import { cn } from "@/lib/utils";
 
 // Mesma estrutura das sidebars da gestora e do copy (feitas à mão, sem o
@@ -42,9 +43,11 @@ type Props = {
   onToggle: () => void;
   onLogout: () => void;
   fullName: string | null;
+  /** Cor escolhida em Configurações → Personalize sua tela. */
+  tone: SidebarTone;
 };
 
-export function AgentSidebar({ collapsed, onToggle, onLogout, fullName }: Props) {
+export function AgentSidebar({ collapsed, onToggle, onLogout, fullName, tone }: Props) {
   // A sidebar fica montada em toda a área do agente, então este badge é o único
   // lugar onde uma pendência atrasada aparece sem o agente ir procurar. A
   // contagem é indexada e barata (my_radar_summary, Index Only Scan) e não tem
@@ -78,6 +81,7 @@ export function AgentSidebar({ collapsed, onToggle, onLogout, fullName }: Props)
 
   return (
     <aside
+      data-tone={tone}
       className={cn(
         "hubi-sidebar sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
         collapsed ? "w-16" : "w-[248px]",
