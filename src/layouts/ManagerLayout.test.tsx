@@ -86,3 +86,15 @@ describe("ManagerLayout — nome de quem está logado", () => {
     await waitFor(() => expect(screen.getByTestId("nome").textContent).toBe("(sem nome)"));
   });
 });
+
+// O botão de tema flutuava com `fixed top-4 right-4` por cima do conteúdo
+// (cobria o seletor de ambiente do Late Hunter e cantos de cabeçalho). Agora
+// mora na faixa de topo, no fluxo da página.
+describe("ManagerLayout — controles de canto de tela", () => {
+  it("o botão de tema fica na barra de topo, sem flutuar sobre a página", async () => {
+    renderLayout();
+    const toggle = await screen.findByRole("button", { name: /Mudar para modo/ });
+    expect(screen.getByRole("banner").contains(toggle)).toBe(true);
+    expect(toggle.className).not.toMatch(/\bfixed\b/);
+  });
+});

@@ -4,11 +4,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { TopBar } from "@/components/layout/TopBar";
 import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { Crosshair, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -270,15 +270,13 @@ export default function ProdutosLayout() {
         </div>
       </aside>
 
-      <ThemeToggle
-        variant="ghost"
-        className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
-      />
-
-      {/* Sem padding/max-width aqui: cada página de produtos define o seu container. */}
-      <main className="min-w-0 flex-1 bg-dashboard-surface">
-        <Outlet context={outletContext} />
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
+        <TopBar />
+        {/* Sem padding/max-width aqui: cada página de produtos define o seu container. */}
+        <main className="min-w-0 flex-1">
+          <Outlet context={outletContext} />
+        </main>
+      </div>
     </div>
   );
 }

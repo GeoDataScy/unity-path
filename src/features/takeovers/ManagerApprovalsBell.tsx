@@ -109,7 +109,8 @@ export function ManagerApprovalsBell({ enabled }: Props) {
   if (!enabled) return null;
 
   return (
-    <div className="fixed top-4 right-16 z-50">
+    // Mora na TopBar do ManagerLayout — sem `fixed`, para não cobrir a página.
+    <div>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

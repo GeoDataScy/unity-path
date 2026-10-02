@@ -31,7 +31,9 @@ export function ManagerRefundNotification() {
       {/* Sem "fechar" no canto: o X fazia exatamente o mesmo que o "Ciente"
           logo abaixo, e dois jeitos de dispensar o mesmo aviso só dividem a
           atenção de quem precisa decidir se vai ver os agentes. */}
-      <div className="fixed top-4 right-4 z-50 w-[320px]">
+      {/* Logo abaixo da TopBar (h-12): flutua sobre a página, mas não cobre o
+          tema nem o sino. */}
+      <div className="fixed top-16 right-4 z-50 w-[320px]">
         <div className="rounded-lg border border-warning/40 bg-raised shadow-md p-4">
           <div className="flex items-start gap-3">
             <div className="shrink-0 rounded-full bg-warning-soft p-1.5">

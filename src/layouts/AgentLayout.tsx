@@ -8,7 +8,7 @@ import { Logo } from "@/components/brand/Logo";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { TopBar } from "@/components/layout/TopBar";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { homePathForRole, isKnownRole } from "@/lib/roles";
@@ -225,12 +225,9 @@ export default function AgentLayout() {
         <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
           {/* Logo e Sair moraram aqui até a sidebar virar a das outras áreas;
               sobra só o que é de topo de tela: notificações e tema. */}
-          <header className="border-b border-line bg-canvas text-ink">
-            <div className="mx-auto flex h-12 max-w-7xl items-center justify-end gap-2 px-4">
-              <NotificationsBell enabled={Boolean(userId)} />
-              <ThemeToggle variant="ghost" className="text-ink-secondary hover:text-ink" />
-            </div>
-          </header>
+          <TopBar>
+            <NotificationsBell enabled={Boolean(userId)} />
+          </TopBar>
 
           <main className="flex-1">
             <Outlet context={outletContext} />
