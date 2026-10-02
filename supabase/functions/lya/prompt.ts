@@ -40,8 +40,14 @@ export const REGRAS_DO_SISTEMA = `REGRAS DO SISTEMA XMX SUPORTE (fatos fixos —
   cancelamento_de_assinatura, reclamacao_vsl, troca_de_endereco, embalagem_danificada, duvida_de_envio,
   ingredientes, duvidas_geral, outro. "outro" e "reclamacao_vsl" trazem a descrição em contact_reason_note.
 - Pedidos em espera (held_orders): pedidos importados por planilha que ficaram retidos na logística;
-  status 'pending' (aguardando) ou 'confirmed' (confirmado pela gestora); agent_status 'novo' |
-  'em_andamento' | 'concluido' (andamento do agente). duplicate_of preenchido = linha repetida.
+  agent_status 'novo' | 'em_andamento' | 'concluido' | 'inativo' (andamento do agente; 'inativo' = cliente
+  não responde: sai da fila do agente, conta na meta do dia como concluído e pode ser reaberto). status
+  'pending'/'confirmed' é legado ('confirmed' = concluído). duplicate_of preenchido = linha repetida.
+  Datas, cada uma no seu campo: order_date = data do pedido (compra, da planilha; NULL nas devoluções);
+  return_date = data da devolução (só arquivo de devoluções, dyna_code 'RETURNS'); imported_at = entrada no
+  sistema (nunca muda); a última mudança de status é o max(recorded_at) em held_order_events.
+  Na tela da gestora (/dashboard/pedidos-espera) o status é: sem agente (assigned_to NULL e não encerrado),
+  novo, em andamento, inativo, concluído.
 - Transferência de ticket (ticket_transfers): pedido para o DONO continuar um ticket; o ticket nunca troca de
   dono por transferência. Tomada de ticket (ticket_takeover_requests): pedido de um agente para assumir o
   ticket de um colega de folga, aprovado pela gestora.
@@ -77,11 +83,16 @@ REEMBOLSOS
   linha por reembolso com a categoria do motivo.
 
 PEDIDOS EM ESPERA
-- held_orders(id, dyna_code, order_number, merged_orders, reason, order_date date, email, customer_name, city,
-  state, country, items, rma, restocked_items, damaged_items, comments, source_file, status ['pending'|'confirmed'],
-  agent_status ['novo'|'em_andamento'|'concluido'], pending_tag, assign_count, assigned_to text, confirmed_at,
-  confirmed_by, imported_at, imported_by, duplicate_of)
-- held_order_events(id, order_id, user_id, status, note, recorded_at) — trilha de andamento do agente.
+- held_orders(id, dyna_code, order_number, merged_orders, reason, order_date date, return_date date, email,
+  customer_name, city, state, country, items, rma, restocked_items, damaged_items, comments, source_file,
+  status ['pending'|'confirmed'], agent_status ['novo'|'em_andamento'|'concluido'|'inativo'], pending_tag,
+  assign_count, assigned_to text, confirmed_at, confirmed_by, imported_at, imported_by, duplicate_of)
+- held_order_events(id, order_id, user_id, status, note, pending_tag, recorded_at) — trilha de andamento do
+  agente (status também pode ser 'inativo'). A meta diária de Pedidos em Espera conta pedidos distintos com
+  evento 'concluido' ou 'inativo' no dia (São Paulo), por user_id.
+- held_order_inactive_alerts(id, order_id, event_id, agent_id, marked_at, last_contact_at, days_since_contact,
+  decision [NULL = aguardando revisão | 'correto' | 'devolvido'], reviewed_by, reviewed_at, review_note) —
+  Inativo marcado com menos de 14 dias desde o último contato; a gestora revisa pelo sino.
 
 TIME E METAS
 - products(id, name, is_active) — catálogo de produtos do formulário do agente.

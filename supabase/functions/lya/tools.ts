@@ -322,31 +322,67 @@ const painelPedidosEspera: AgentTool = {
   name: "painel_pedidos_espera",
   origem: "painel",
   description:
-    "Tela ACOMPANHAMENTO / Pedidos em espera (RPC manager_list_held_orders; só gestora): total, duplicados, resumo por agente " +
-    "(pending, in_progress, confirmed) e até 60 pedidos (sem endereço). Filtros: status 'all' | 'pending' | 'confirmed' | " +
-    "'aguardando' | 'em_andamento'; agente responsável; período pela order_date (opcional).",
+    "Tela PEDIDOS EM ESPERA da gestora (/dashboard/pedidos-espera; RPCs manager_held_orders_page e " +
+    "manager_held_orders_team; só gestora). Devolve os MESMOS números da tela: contagem por status (sem_agente, " +
+    "novo, andamento, inativo, concluido) com os filtros, total filtrado, pedidos em aberto fora do período, " +
+    "equipe hoje (fila, em andamento, inativos, concluídos+inativados hoje x meta, último registro), movimento do " +
+    "dia e até 60 pedidos (sem endereço). Período pela entrada no sistema ou pela data do pedido (opcional; sem " +
+    "período = tudo).",
   input_schema: {
     type: "object",
     properties: {
-      status: { type: "string", enum: ["all", "pending", "confirmed", "aguardando", "em_andamento"], description: "Filtro de status (default all)." },
+      status: {
+        type: "string",
+        enum: ["all", "sem_agente", "novo", "andamento", "inativo", "concluido"],
+        description: "Filtro de status da tela (default all).",
+      },
       agente_id: P_AGENTE,
-      de: { type: "string", description: "Opcional. Início pela data do pedido, YYYY-MM-DD." },
-      ate: { type: "string", description: "Opcional. Fim pela data do pedido, YYYY-MM-DD." },
+      data_por: {
+        type: "string",
+        enum: ["entrada", "pedido"],
+        description: "O período filtra pela entrada no sistema (default) ou pela data do pedido/devolução.",
+      },
+      de: { type: "string", description: "Opcional. Início do período, YYYY-MM-DD." },
+      ate: { type: "string", description: "Opcional. Fim do período, YYYY-MM-DD." },
     },
   },
   async execute(input, ctx) {
     const status = texto(input.status, "all"), ag = agenteId(input.agente_id);
+    const dataPor = texto(input.data_por, "entrada") === "pedido" ? "pedido" : "entrada";
     const de = input.de ? dataISO(input.de, "de") : null, ate = input.ate ? dataISO(input.ate, "ate") : null;
-    const data = (await rpc(ctx, "manager_list_held_orders", { from_date: de, to_date: ate, agent_id: ag, status_filter: status })) as Record<string, unknown>;
-    const rows = Array.isArray(data?.rows) ? (data.rows as Record<string, unknown>[]) : [];
-    const enxuto = rows.slice(0, 60).map((r) => ({
-      id: r.id, order_number: r.order_number, dyna_code: r.dyna_code, reason: r.reason, order_date: r.order_date, email: r.email,
-      customer_name: r.customer_name, items: r.items, status: r.status, agent_status: r.agent_status, pending_tag: r.pending_tag,
-      assigned_to: r.assigned_to, assigned_to_name: r.assigned_to_name, assign_count: r.assign_count, confirmed_at: r.confirmed_at,
-      imported_at: r.imported_at, duplicate_of: r.duplicate_of,
+    const [page, team] = await Promise.all([
+      rpc(ctx, "manager_held_orders_page", {
+        p_status: status === "all" ? null : status,
+        p_agent_id: ag,
+        p_date_field: dataPor,
+        p_from: de,
+        p_to: ate,
+        p_limit: 60,
+        p_offset: 0,
+      }) as Promise<Record<string, unknown>>,
+      rpc(ctx, "manager_held_orders_team", {}) as Promise<Record<string, unknown>>,
+    ]);
+    const rows = Array.isArray(page?.rows) ? (page.rows as Record<string, unknown>[]) : [];
+    const enxuto = rows.map((r) => ({
+      id: r.id, order_number: r.order_number, dyna_code: r.dyna_code, reason: r.reason, status_tela: r.bucket,
+      data_do_pedido: r.order_date, data_da_devolucao: r.return_date, entrada_no_sistema: r.imported_at,
+      ultima_mudanca_de_status: r.status_changed_at, email: r.email, customer_name: r.customer_name, items: r.items,
+      agent_status: r.agent_status, pending_tag: r.pending_tag, assigned_to: r.assigned_to,
+      assigned_to_name: r.assigned_to_name, assign_count: r.assign_count,
     }));
-    return cabecalho("tela Acompanhamento — manager_list_held_orders", { status, agente_id: ag, de, ate }) +
-      clip({ total: data?.total, duplicates: data?.duplicates, summary_by_agent: data?.summary_by_agent, rows_mostradas: enxuto.length, rows: enxuto });
+    return cabecalho("tela Pedidos em Espera — manager_held_orders_page + manager_held_orders_team", {
+      status, agente_id: ag, data_por: dataPor, de, ate,
+    }) +
+      clip({
+        total_filtrado: page?.total,
+        por_status: page?.counts,
+        em_aberto_fora_do_periodo: page?.open_outside_period,
+        hoje: team?.today,
+        meta_por_agente: team?.goal,
+        equipe: team?.agents,
+        rows_mostradas: enxuto.length,
+        rows: enxuto,
+      });
   },
 };
 
