@@ -21,6 +21,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  PackageSearch,
   RefreshCcw,
   Table2,
   Users,
@@ -50,7 +51,7 @@ const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 // e continuam guardadas por is_manager() no Postgres. Desde 02/10/2026 só a
 // gestora entra nesta área (copy e produtos ficam cada um na sua); o corte
 // abaixo continua como segunda barreira, caso outra role volte a ler analytics.
-const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base", "/dashboard/lya/cerebro", "/dashboard/lya/arquivos"];
+const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/pedidos-espera", "/dashboard/base", "/dashboard/lya/cerebro", "/dashboard/lya/arquivos"];
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -303,6 +304,7 @@ export default function ManagerLayout() {
   const isOnInteracoes = location.pathname.startsWith("/dashboard/interacoes");
   const isOnAlertas = location.pathname.startsWith("/dashboard/alertas");
   const isOnZendesk = location.pathname.startsWith("/dashboard/zendesk");
+  const isOnHeldOrders = location.pathname.startsWith("/dashboard/pedidos-espera");
   const overdueCount = alertsQuery.data?.total_overdue ?? 0;
 
   const alertsBadge = overdueCount > 0 ? (
@@ -413,6 +415,12 @@ export default function ManagerLayout() {
                   label="Alertas"
                   collapsed={collapsed}
                   badge={alertsBadge}
+                />
+                <SidebarNavItem
+                  to="/dashboard/pedidos-espera"
+                  icon={<PackageSearch className={SIDEBAR_ICON} />}
+                  label="Pedidos em Espera"
+                  collapsed={collapsed}
                 />
                 <SidebarNavItem
                   to="/dashboard/usuarios"
@@ -542,7 +550,7 @@ export default function ManagerLayout() {
                 </Button>
 
                 <div className="text-[11px] text-ink-tertiary px-1">
-                  {isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+                  {isOnHeldOrders ? "Visualizando: Pedidos em Espera" : isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
                 </div>
               </>
           )}
