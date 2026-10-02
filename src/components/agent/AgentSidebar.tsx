@@ -17,7 +17,7 @@ import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRadarBadgeQuery } from "@/features/radar/useMyRadarQuery";
-import type { SidebarTone } from "@/features/agent/sidebarTone";
+import type { SidebarTone } from "@/lib/sidebarTone";
 import { cn } from "@/lib/utils";
 
 // Mesma estrutura das sidebars da gestora e do copy (feitas à mão, sem o

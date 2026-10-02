@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { TopBar } from "@/components/layout/TopBar";
+import { SettingsDialog } from "@/components/layout/SettingsDialog";
+import { useSidebarTone } from "@/lib/sidebarTone";
 import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { Crosshair, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -41,6 +43,8 @@ export default function ProdutosLayout() {
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  const [sidebarTone, setSidebarTone] = useSidebarTone(userId);
 
   useEffect(() => {
     let active = true;
@@ -178,6 +182,7 @@ export default function ProdutosLayout() {
   return (
     <div className="min-h-screen flex">
       <aside
+        data-tone={sidebarTone}
         className={cn(
           "hubi-sidebar sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[248px]",
@@ -271,7 +276,14 @@ export default function ProdutosLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
-        <TopBar />
+        <TopBar>
+          <SettingsDialog
+            fullName={fullName}
+            tone={sidebarTone}
+            onToneChange={setSidebarTone}
+            className="text-ink-secondary hover:text-ink"
+          />
+        </TopBar>
         {/* Sem padding/max-width aqui: cada página de produtos define o seu container. */}
         <main className="min-w-0 flex-1">
           <Outlet context={outletContext} />
