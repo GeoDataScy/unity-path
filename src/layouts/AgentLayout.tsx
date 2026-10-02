@@ -3,7 +3,6 @@ import { Outlet, useNavigate } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/brand/Logo";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
@@ -22,6 +21,8 @@ export type AgentOutletContext = {
   canClaimTickets: boolean;
 };
 
+const SIDEBAR_COLLAPSED_KEY = "agent-sidebar-collapsed";
+
 export default function AgentLayout() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,6 +36,15 @@ export default function AgentLayout() {
   const [canViewAllTickets, setCanViewAllTickets] = useState(false);
   const [canRegisterDuplicateEmails, setCanRegisterDuplicateEmails] = useState(false);
   const [canClaimTickets, setCanClaimTickets] = useState(false);
+
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   useEffect(() => {
     let active = true;
@@ -203,38 +213,29 @@ export default function AgentLayout() {
   }
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="min-h-screen flex w-full bg-dashboard-surface">
-        <AgentSidebar />
+    <>
+      <div className="min-h-screen flex">
+        <AgentSidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((v) => !v)}
+          onLogout={handleLogout}
+          fullName={fullName}
+        />
 
-        <SidebarInset>
+        <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
+          {/* Logo e Sair moraram aqui até a sidebar virar a das outras áreas;
+              sobra só o que é de topo de tela: notificações e tema. */}
           <header className="border-b border-line bg-canvas text-ink">
-            <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="-ml-1 text-ink-secondary hover:bg-subtle hover:text-ink" />
-                <div className="flex items-center gap-2">
-                  <Logo height={18} />
-                  <span className="text-sm font-medium text-ink-secondary">Workspace</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <NotificationsBell enabled={Boolean(userId)} />
-                <ThemeToggle variant="ghost" className="text-ink-secondary hover:text-ink" />
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                >
-                  Sair
-                </Button>
-              </div>
+            <div className="mx-auto flex h-12 max-w-7xl items-center justify-end gap-2 px-4">
+              <NotificationsBell enabled={Boolean(userId)} />
+              <ThemeToggle variant="ghost" className="text-ink-secondary hover:text-ink" />
             </div>
           </header>
 
-          <div className="bg-dashboard-surface">
+          <main className="flex-1">
             <Outlet context={outletContext} />
-          </div>
-        </SidebarInset>
+          </main>
+        </div>
       </div>
 
       <PendingRefundsAlert enabled={Boolean(userId)} />
@@ -243,6 +244,6 @@ export default function AgentLayout() {
           de altura inteira à direita. Fica no layout (e não numa página) porque
           a anotação nasce no meio de qualquer tela do workspace. */}
       <AgentNotepad enabled={Boolean(userId)} fullName={fullName} />
-    </SidebarProvider>
+    </>
   );
 }
