@@ -35,6 +35,8 @@ import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { TopBar } from "@/components/layout/TopBar";
+import { SettingsDialog } from "@/components/layout/SettingsDialog";
+import { useSidebarTone } from "@/lib/sidebarTone";
 import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { LyaMark } from "@/features/lya/components/LyaMark";
 import { LyaWidget } from "@/features/lya/components/LyaWidget";
@@ -74,6 +76,7 @@ export default function ManagerLayout() {
   const { toast } = useToast();
 
   const [authLoading, setAuthLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [canApproveTakeovers, setCanApproveTakeovers] = useState(false);
@@ -87,6 +90,8 @@ export default function ManagerLayout() {
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  const [sidebarTone, setSidebarTone] = useSidebarTone(userId);
 
   // Default: 1st of current month → today
   const [range, setRange] = useState<DateRange | undefined>(() => {
@@ -153,6 +158,7 @@ export default function ManagerLayout() {
       }
 
       if (!active) return;
+      setUserId(session.user.id);
       setRole(profile?.role ?? null);
       setFullName(profile?.full_name ?? null);
       setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
@@ -316,6 +322,7 @@ export default function ManagerLayout() {
           presos, miolo rolável. Antes era uma coluna só, então numa tela baixa
           o Logout simplesmente saía por baixo da janela. */}
       <aside
+        data-tone={sidebarTone}
         className={cn(
           "hubi-sidebar sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out",
           collapsed ? "w-16" : "w-[248px]",
@@ -548,6 +555,12 @@ export default function ManagerLayout() {
       <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
         <TopBar>
           <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
+          <SettingsDialog
+            fullName={fullName}
+            tone={sidebarTone}
+            onToneChange={setSidebarTone}
+            className="text-ink-secondary hover:text-ink"
+          />
         </TopBar>
         <main className="flex-1 p-8">
           <div className="mx-auto max-w-7xl">

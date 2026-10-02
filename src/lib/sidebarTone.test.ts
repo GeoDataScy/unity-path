@@ -20,13 +20,18 @@ describe("useSidebarTone", () => {
     expect(renderHook(() => useSidebarTone("u2")).result.current[0]).toBe("verde");
   });
 
+  it("agente que escolheu na primeira versão mantém a cor", () => {
+    window.localStorage.setItem("agent-sidebar-tone:u1", "rosa");
+    expect(renderHook(() => useSidebarTone("u1")).result.current[0]).toBe("rosa");
+  });
+
   it("valor desconhecido no armazenamento volta para o verde", () => {
-    window.localStorage.setItem("agent-sidebar-tone:u1", "roxo");
+    window.localStorage.setItem("sidebar-tone:u1", "roxo");
     expect(renderHook(() => useSidebarTone("u1")).result.current[0]).toBe("verde");
   });
 
   it("lê a cor quando o userId chega depois do primeiro render", () => {
-    window.localStorage.setItem("agent-sidebar-tone:u1", "azul");
+    window.localStorage.setItem("sidebar-tone:u1", "azul");
     const { result, rerender } = renderHook(({ id }) => useSidebarTone(id), {
       initialProps: { id: null as string | null },
     });

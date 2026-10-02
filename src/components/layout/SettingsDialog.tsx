@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SIDEBAR_TONES, isSidebarTone, type SidebarTone } from "@/features/agent/sidebarTone";
+import { SIDEBAR_TONES, isSidebarTone, type SidebarTone } from "@/lib/sidebarTone";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -45,7 +45,7 @@ function TonePreview({ tone }: { tone: SidebarTone }) {
   );
 }
 
-export function AgentSettingsDialog({ fullName, tone, onToneChange, className }: Props) {
+export function SettingsDialog({ fullName, tone, onToneChange, className }: Props) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -69,7 +69,7 @@ export function AgentSettingsDialog({ fullName, tone, onToneChange, className }:
             </div>
             <div className="min-w-0 text-left">
               <DialogTitle className="truncate text-base font-medium">{fullName || "Meu perfil"}</DialogTitle>
-              <DialogDescription className="text-xs">Configurações do seu workspace</DialogDescription>
+              <DialogDescription className="text-xs">Suas configurações</DialogDescription>
             </div>
           </div>
         </DialogHeader>

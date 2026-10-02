@@ -10,8 +10,8 @@ import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
 import { TopBar } from "@/components/layout/TopBar";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
-import { AgentSettingsDialog } from "@/features/agent/components/AgentSettingsDialog";
-import { useSidebarTone } from "@/features/agent/sidebarTone";
+import { SettingsDialog } from "@/components/layout/SettingsDialog";
+import { useSidebarTone } from "@/lib/sidebarTone";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { homePathForRole, isKnownRole } from "@/lib/roles";
 
@@ -233,7 +233,7 @@ export default function AgentLayout() {
           <TopBar>
             <NotificationsBell enabled={Boolean(userId)} />
             {/* Fica colada no tema (o TopBar põe o tema por último). */}
-            <AgentSettingsDialog
+            <SettingsDialog
               fullName={fullName}
               tone={sidebarTone}
               onToneChange={setSidebarTone}

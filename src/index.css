@@ -329,7 +329,8 @@
   --line: var(--sidebar-border);
 }
 
-/* Cor da sidebar escolhida pelo agente (Configurações → Personalize sua tela).
+/* Cor da sidebar escolhida pela pessoa (Configurações → Personalize sua tela),
+   nas quatro áreas.
    Verde é o padrão e não tem regra: são os tokens de :root/.dark acima. Azul e
    rosa repetem a saturação e a luminosidade de cada token do verde e trocam só
    o matiz, então o peso visual é o mesmo (contraste igual ou maior que o verde).
@@ -378,6 +379,17 @@
   --signal: 333 85% 68.6%;             /* #f36ba8 */
   --signal-text: 333 85% 68.6%;
   --glow-signal: 0 0 0 1px rgba(243, 107, 168, 0.18), 0 0 18px rgba(243, 107, 168, 0.22);
+}
+
+/* A marca da Lya (item da gestora) também é identidade, como o ponto do logo:
+   o núcleo continua no verde mesmo com a sidebar azul ou rosa. Repete os
+   valores de --signal de :root e .dark porque, dentro do <nav>, eles já foram
+   trocados acima. */
+.hubi-sidebar[data-tone] nav .lya {
+  --signal: 82.7 100% 24.9%;           /* #4f7f00 */
+}
+.dark .hubi-sidebar[data-tone] nav .lya {
+  --signal: 79.9 85% 68.6%;            /* #c6f36b */
 }
 
 /* Movimento hubi: curto e com intenção (120–240ms). */
