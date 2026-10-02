@@ -46,3 +46,6 @@ supabase/.temp/
 apps/api/node_modules
 packages/*/node_modules
 packages/contract/dist
+
+# Vídeos da tela de login (cortados e comprimidos, ~300 KB cada) precisam ir para o deploy.
+!public/login/*.mp4
