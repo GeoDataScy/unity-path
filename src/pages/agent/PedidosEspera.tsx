@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   AlertCircle,
@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePanelPagination } from "@/features/support-base/usePanelPagination";
+import { PanelPagination } from "@/features/support-base/components/PanelPagination";
 import { useMyHeldOrdersMetricsQuery, useMyHeldOrdersQuery } from "@/features/held-orders/useMyHeldOrdersQuery";
 import { HeldOrderTrackingDialog } from "@/features/held-orders/HeldOrderTrackingDialog";
 import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
@@ -48,6 +50,9 @@ type StatusFilter = "all" | HeldOrderAgentStatus;
 /** "any" = qualquer pendência; "none" = sem pendência. */
 type PendingFilter = "all" | "any" | "none" | HeldOrderPendingTag;
 
+// Cards são altos (produtos + endereço): 10 por página já ocupa a tela toda.
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "novo", label: "Novo" },
@@ -65,6 +70,8 @@ export default function PedidosEspera() {
   const [reasonFilter, setReasonFilter] = useState<string>("all");
   const [pendingFilter, setPendingFilter] = useState<PendingFilter>("all");
   const [selected, setSelected] = useState<MyHeldOrder | null>(null);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const orders = ordersQuery.data ?? [];
   const metrics = metricsQuery.data;
@@ -133,6 +140,27 @@ export default function PedidosEspera() {
       }),
     [parsed, statusFilter, reasonFilter, pendingFilter],
   );
+
+  // Qualquer filtro novo volta para a página 1.
+  const pagination = usePanelPagination(
+    filtered,
+    pageSize,
+    [statusFilter, reasonFilter, pendingFilter].join("|"),
+  );
+
+  // O pager fica no fim da lista: ao trocar de página, volta para o topo dela
+  // em vez de deixar o agente no rodapé dos cards novos.
+  const isFirstPageRender = useRef(true);
+  useEffect(() => {
+    if (isFirstPageRender.current) {
+      isFirstPageRender.current = false;
+      return;
+    }
+    const el = listRef.current;
+    if (el && el.getBoundingClientRect().top < 0) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [pagination.pagina]);
 
   const hasExtraFilters = reasonFilter !== "all" || pendingFilter !== "all";
 
@@ -227,7 +255,7 @@ export default function PedidosEspera() {
       </div>
 
       {/* Lista de pedidos */}
-      <Card>
+      <Card ref={listRef} className="scroll-mt-4">
         <CardHeader className="gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Pedidos atribuídos a você</CardTitle>
@@ -325,7 +353,7 @@ export default function PedidosEspera() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filtered.map(({ order: o, reasons, address, items }) => (
+              {pagination.visiveis.map(({ order: o, reasons, address, items }) => (
                 <button
                   key={o.id}
                   type="button"
@@ -440,6 +468,17 @@ export default function PedidosEspera() {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+          {!ordersQuery.isLoading && !ordersQuery.isError && (
+            <div className="mt-4">
+              <PanelPagination
+                estado={pagination}
+                rotulo={["pedido", "pedidos"]}
+                porPagina={pageSize}
+                onPorPaginaChange={setPageSize}
+                opcoesPorPagina={PAGE_SIZE_OPTIONS}
+              />
             </div>
           )}
         </CardContent>
