@@ -27,6 +27,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { isUsableFilterDate } from "@/lib/filterDate";
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
 import { useMyAgentMetricsQuery } from "@/features/agent/useMyAgentMetricsQuery";
@@ -460,11 +462,19 @@ export default function Atendimentos() {
    *  Quando o agente está buscando por e-mail ou filtrando por cód. de rastreio,
    *  a RPC (que não conhece esses filtros) não se aplica — aí mostramos a
    *  contagem da própria tabela filtrada, como "resultados encontrados". */
-  const rangeMetricsFrom = dateFrom || "2025-01-01";
-  const rangeMetricsTo = dateTo || todayISO();
+  // A RPC só recebe as datas depois que a digitação para e quando o ano é
+  // plausível: enquanto se digita o ano, o input emite "0002-…", "0020-…" etc.
+  // (ver isUsableFilterDate). A tabela continua filtrando na hora.
+  const metricsDateFrom = useDebouncedValue(dateFrom, 400);
+  const metricsDateTo = useDebouncedValue(dateTo, 400);
+  const metricsDatesUsable =
+    (!metricsDateFrom || isUsableFilterDate(metricsDateFrom)) &&
+    (!metricsDateTo || isUsableFilterDate(metricsDateTo));
+  const rangeMetricsFrom = metricsDateFrom || "2025-01-01";
+  const rangeMetricsTo = metricsDateTo || todayISO();
   const isFilteringTable = Boolean(emailSearch) || filterTrackingCode;
   const { data: rangeMetrics } = useMyAgentMetricsQuery({
-    enabled: Boolean(userId) && !isFilteringTable,
+    enabled: Boolean(userId) && !isFilteringTable && metricsDatesUsable,
     from: rangeMetricsFrom,
     to: rangeMetricsTo,
   });
