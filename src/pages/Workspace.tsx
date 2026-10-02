@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 
 import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyServicesQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
@@ -311,7 +311,7 @@ const Workspace = () => {
       <header className="border-b bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="XMX" className="h-7 w-auto" loading="lazy" />
+            <Logo height={28} className="text-primary-foreground" mono />
             <span className="text-sm font-medium tracking-wide">Workspace</span>
           </div>
           <Button onClick={handleLogout} variant="secondary">
