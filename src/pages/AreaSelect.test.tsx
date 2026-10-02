@@ -4,8 +4,8 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import AreaSelect from "./AreaSelect";
 
-// O time de produtos vê os mesmos cards que os outros perfis, mas só entra em
-// Produtos. Clicar em Data Analytics ou Copy avisa "Acesso negado" e fica em /areas.
+// Gestora, copy e produtos veem os mesmos três cards; cada um só entra onde o
+// perfil permite. O card sem acesso avisa "Acesso negado" e a pessoa fica em /areas.
 
 const perfil = { role: "produto", full_name: "Teste Produtos" };
 
@@ -84,7 +84,38 @@ describe("AreaSelect — time de produtos", () => {
     renderTela();
     fireEvent.click(await screen.findByLabelText("Entrar na Data Analytics do Suporte"));
     expect(await screen.findByText("tela analytics")).toBeTruthy();
-    expect(screen.queryByLabelText("Entrar na Área de Produtos")).toBeNull();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("a gestora vê os três cards e entra em Produtos", async () => {
+    perfil.role = "manager";
+    renderTela();
+    fireEvent.click(await screen.findByLabelText("Entrar na Área de Produtos"));
+    expect(await screen.findByText("tela produtos")).toBeTruthy();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("AreaSelect — time de copy", () => {
+  beforeEach(() => {
+    toastError.mockClear();
+    perfil.role = "copy_grup";
+  });
+
+  it("vê os três cards, mas Data Analytics e Produtos dão acesso negado", async () => {
+    renderTela();
+    fireEvent.click(await screen.findByLabelText("Entrar na Data Analytics do Suporte"));
+    fireEvent.click(screen.getByLabelText("Entrar na Área de Produtos"));
+    expect(toastError).toHaveBeenCalledTimes(2);
+    expect(toastError.mock.calls.every((c) => c[0] === "Acesso negado")).toBe(true);
+    expect(screen.queryByText("tela analytics")).toBeNull();
+    expect(screen.queryByText("tela produtos")).toBeNull();
+  });
+
+  it("entra em Copy normalmente", async () => {
+    renderTela();
+    fireEvent.click(await screen.findByLabelText("Entrar na Área de Copy"));
+    expect(await screen.findByText("tela copy")).toBeTruthy();
     expect(toastError).not.toHaveBeenCalled();
   });
 });

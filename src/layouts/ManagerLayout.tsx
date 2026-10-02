@@ -44,9 +44,9 @@ const SIDEBAR_COLLAPSED_KEY = "manager-sidebar-collapsed";
 
 // Páginas desta área que são de gestão, não de análise: escrevem no banco
 // (dar baixa em reembolso, ativar/desativar usuário, editar a Base de Suporte)
-// e continuam guardadas por is_manager() no Postgres. O time de copy entra na
-// área de analytics só para ler os números, então essas rotas não aparecem para
-// ele — e um acesso direto pela URL volta para o dashboard.
+// e continuam guardadas por is_manager() no Postgres. Desde 02/10/2026 só a
+// gestora entra nesta área (copy e produtos ficam cada um na sua); o corte
+// abaixo continua como segunda barreira, caso outra role volte a ler analytics.
 const MANAGER_ONLY_PATHS = ["/dashboard/alertas", "/dashboard/usuarios", "/dashboard/base", "/dashboard/lya/cerebro", "/dashboard/lya/arquivos"];
 
 function toISODate(d: Date) {
@@ -58,7 +58,7 @@ function toISODate(d: Date) {
 
 export type ManagerOutletContext = {
   fullName: string | null;
-  /** profiles.role de quem está logado (manager | copy_grup). */
+  /** profiles.role de quem está logado (hoje, só manager entra nesta área). */
   role: string | null;
   range: DateRange | undefined;
   setRange: (next: DateRange | undefined) => void;
@@ -221,7 +221,7 @@ export default function ManagerLayout() {
     };
   }, [navigate]);
 
-  // Só a gestora tem as ações de gestão desta área; o copy entra para ler.
+  // Ações de gestão só para a gestora — defesa extra, já que hoje só ela entra.
   const isManager = role === "manager";
 
   const agentsQuery = useAgentsQuery(!authLoading);

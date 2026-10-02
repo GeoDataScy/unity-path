@@ -6,15 +6,13 @@
 //   workspace  -> /workspace  (o agente trabalhando os tickets)
 //   analytics  -> /dashboard  (Data Analytics do Suporte)
 //   copy       -> /copy       (time de copy)
-//   produtos   -> /produtos   (time de produtos — exclusiva da role produto:
-//                               nem a gestora entra)
+//   produtos   -> /produtos   (time de produtos)
 //
-// Quem tem mais de uma área não cai direto numa delas depois do login: cai em
-// /areas e escolhe (ver AreaSelect). O time de produtos também passa por /areas
-// e vê os mesmos cards que os outros, mas só entra em Produtos — os demais
-// respondem "Acesso negado" (ver areaCardsForRole). A ordem do array é
-// significativa — a primeira área é a "casa" do perfil e é o destino quando não há escolha a
-// fazer.
+// Gestão (gestora, copy e produtos) cai em /areas depois do login e vê os três
+// cards — Data Analytics, Copy e Produtos —, mas só entra nos que o perfil
+// permite; os demais respondem "Acesso negado" (ver areaCardsForRole). O agente
+// vai direto para o workspace. A ordem do array de áreas é significativa — a
+// primeira é a "casa" do perfil e é o destino quando não há escolha a fazer.
 
 export type AppRole = "agent" | "manager" | "copy_grup" | "produto";
 
@@ -46,17 +44,24 @@ export const AREA_SHORT_LABEL: Record<AppArea, string> = {
   produtos: "Produtos",
 };
 
+// Acesso por perfil (decisão do dono, 02/10/2026): a gestora entra em tudo; copy
+// e produtos, cada um só na sua área.
 const ROLE_AREAS: Record<AppRole, readonly AppArea[]> = {
-  manager: ["analytics", "copy"],
-  copy_grup: ["copy", "analytics"],
+  manager: ["analytics", "copy", "produtos"],
+  copy_grup: ["copy"],
   produto: ["produtos"],
   agent: ["workspace"],
 };
 
-// Cards mostrados em /areas quando diferem das áreas permitidas. Mostrar um card
-// NÃO dá acesso: quem decide é canAccessArea, e os layouts continuam barrando.
+// Os três cards de /areas aparecem para todos os perfis de gestão, tenham ou não
+// acesso — o card sem acesso responde "Acesso negado". Mostrar um card NÃO dá
+// acesso: quem decide é canAccessArea, e os layouts continuam barrando. O
+// agente não passa por /areas: vai direto para o workspace.
+const TODOS_OS_CARDS: readonly AppArea[] = ["analytics", "copy", "produtos"];
 const ROLE_AREA_CARDS: Partial<Record<AppRole, readonly AppArea[]>> = {
-  produto: ["analytics", "copy", "produtos"],
+  manager: TODOS_OS_CARDS,
+  copy_grup: TODOS_OS_CARDS,
+  produto: TODOS_OS_CARDS,
 };
 
 /** Como cada role aparece na tela de Usuários da gestora. */

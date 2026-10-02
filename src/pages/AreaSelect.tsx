@@ -19,9 +19,9 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
-// Escolha de área depois do login, para quem tem acesso a mais de uma
-// (gestora e time de copy) e para o time de produtos, que vê os mesmos cards mas
-// só entra em Produtos. É uma tela e não um modal de propósito: sobrevive a
+// Escolha de área depois do login, para os perfis de gestão (gestora, copy e
+// produtos): todos veem os mesmos três cards, e cada um só entra onde o perfil
+// permite (ver roles.ts). É uma tela e não um modal de propósito: sobrevive a
 // refresh, é linkável (/areas), não pisca por cima de um dashboard vazio e o
 // usuário pode voltar aqui pelo botão de trocar área na sidebar.
 
