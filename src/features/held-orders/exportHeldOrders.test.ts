@@ -163,6 +163,17 @@ describe("exportHeldOrders", () => {
     expect(aoa[FIRST_DATA_ROW + 1][devolucao]).toBe("17/06/2026");
   });
 
+  it("mostra o pedido inativo como Inativo, não como aguardando", () => {
+    exportHeldOrders({
+      rows: [order({ agent_status: "inativo", status: "pending", assign_count: 1 })],
+      filters: NO_FILTERS,
+    });
+
+    const aoa = sheetOfLastExport();
+    expect(aoa[FIRST_DATA_ROW][column("Situação")]).toBe("Inativo");
+    expect(aoa[FIRST_DATA_ROW][column("Status")]).toBe("Inativo");
+  });
+
   it("traduz situação, status e loja de devolução", () => {
     exportHeldOrders({
       rows: [

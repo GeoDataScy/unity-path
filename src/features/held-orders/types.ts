@@ -4,14 +4,34 @@
 
 export type HeldOrderStatus = "pending" | "confirmed";
 
-/** Status que o AGENTE gerencia (3 estados). Distinto de `status` (legado, lido pelo manager). */
-export type HeldOrderAgentStatus = "novo" | "em_andamento" | "concluido";
+/**
+ * Status que o AGENTE gerencia. Distinto de `status` (legado, lido pelo manager).
+ * "inativo" = cliente não respondeu: sai da fila do agente, conta na meta do dia,
+ * mas continua em aberto para o import (o relatório diário repete o pedido) e
+ * pode ser reaberto.
+ */
+export type HeldOrderAgentStatus = "novo" | "em_andamento" | "concluido" | "inativo";
 
 export const HELD_ORDER_AGENT_STATUS_LABEL: Record<HeldOrderAgentStatus, string> = {
   novo: "Novo",
   em_andamento: "Em Andamento",
   concluido: "Concluído",
+  inativo: "Inativo",
 };
+
+/** Cor do badge de cada status do agente (variantes do Badge). */
+export const HELD_ORDER_AGENT_STATUS_BADGE: Record<
+  HeldOrderAgentStatus,
+  "new" | "in-progress" | "done" | "secondary"
+> = {
+  novo: "new",
+  em_andamento: "in-progress",
+  concluido: "done",
+  inativo: "secondary",
+};
+
+/** Dias sem contato a partir dos quais marcar Inativo não gera alerta para a gestora. */
+export const HELD_ORDER_INACTIVE_DAYS = 14;
 
 /**
  * Tag de pendência: por que o pedido ainda não foi concluído. Opcional (null =
@@ -47,7 +67,7 @@ export const HELD_ORDER_PENDING_TAGS = Object.keys(
  * Filtro de status da listagem do MANAGER (manager_list_held_orders.status_filter).
  * "aguardando" = pendente que ninguém começou; "em_andamento" = já em atendimento.
  */
-export type ManagerHeldOrderStatusFilter = "all" | "aguardando" | "em_andamento" | "confirmed";
+export type ManagerHeldOrderStatusFilter = "all" | "aguardando" | "em_andamento" | "inativo" | "confirmed";
 
 /**
  * Rótulos do filtro de status na visão da GESTORA — é este o vocabulário em que a
@@ -58,6 +78,7 @@ export const MANAGER_HELD_ORDER_STATUS_FILTER_LABEL: Record<ManagerHeldOrderStat
   all: "Todos os status",
   aguardando: "Aguardando atendimento",
   em_andamento: "Em andamento",
+  inativo: "Inativo",
   confirmed: "Concluído",
 };
 
@@ -78,6 +99,7 @@ export function heldOrderStatusBucketLabel(
   if (o.status === "confirmed" || o.agent_status === "concluido") {
     return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.confirmed;
   }
+  if (o.agent_status === "inativo") return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.inativo;
   if (heldOrderIsInProgress(o)) return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.em_andamento;
   return MANAGER_HELD_ORDER_STATUS_FILTER_LABEL.aguardando;
 }
@@ -88,6 +110,7 @@ export function heldOrderStatusBucketLabel(
  * tabela:
  *   linha repetida       -> "Repetido"
  *   concluído            -> "Confirmado"
+ *   inativo              -> "Inativo"
  *   em atendimento       -> "Em andamento"
  *   nunca distribuído    -> "Novo"        (assign_count = 0)
  *   distribuído N vezes  -> "Pendente N"  (assign_count >= 1, sem início)
@@ -97,6 +120,7 @@ export function heldOrderManagerStatusLabel(
 ): string {
   if (o.duplicate_of) return "Repetido";
   if (o.agent_status === "concluido" || o.status === "confirmed") return "Confirmado";
+  if (o.agent_status === "inativo") return "Inativo";
   if (heldOrderIsInProgress(o)) return "Em andamento";
   if ((o.assign_count ?? 0) === 0) return "Novo";
   return `Pendente ${o.assign_count}`;
@@ -147,6 +171,8 @@ export type MyHeldOrder = {
   imported_at: string | null;
   /** Última mudança de status registrada pelo agente (held_order_events). */
   status_changed_at: string | null;
+  /** Observação do registro mais recente (no Inativo, o motivo informado pelo agente). */
+  last_note?: string | null;
   event_count: number;
 };
 
@@ -178,11 +204,13 @@ export type DistributeHeldOrdersResult = {
 export type HeldOrderAgentSummary = {
   agent_id: string;
   full_name: string | null;
-  /** Tudo que ainda não foi concluído (inclui os em andamento). */
+  /** Tudo que ainda não foi concluído nem marcado inativo (inclui os em andamento). */
   pending: number;
   /** Subconjunto de `pending` que o agente já começou a tratar. */
   in_progress: number;
   confirmed: number;
+  /** Clientes sem resposta: fora da fila do agente. */
+  inactive?: number;
 };
 
 export type ManagerHeldOrdersResult = {
@@ -213,9 +241,32 @@ export type ImportHeldOrdersResult = {
 };
 
 export type HeldOrdersDailyMetrics = {
+  /** Concluídos + inativados hoje (cada pedido uma vez). */
   confirmed_today: number;
+  /** Em aberto na fila do agente (não conta os inativos). */
   pending: number;
+  inactive?: number;
   goal: number;
+};
+
+/**
+ * Inativo marcado antes de HELD_ORDER_INACTIVE_DAYS dias sem contato — aguarda a
+ * gestora dizer se está correto ou devolver o pedido ao agente.
+ */
+export type HeldOrderInactiveAlert = {
+  alert_id: string;
+  order_id: string;
+  order_number: string | null;
+  dyna_code: string;
+  customer_name: string | null;
+  email: string | null;
+  agent_status: HeldOrderAgentStatus;
+  agent_id: string | null;
+  agent_name: string | null;
+  marked_at: string;
+  last_contact_at: string;
+  days_since_contact: number;
+  note: string | null;
 };
 
 /** Uma linha do CSV já normalizada para o RPC de import. */

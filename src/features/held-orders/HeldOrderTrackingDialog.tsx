@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Clock, Flag, MapPin, Package, PackageSearch } from "lucide-react";
+import { AlertTriangle, Clock, Flag, MapPin, Package, PackageSearch } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,9 @@ import {
   useSetHeldOrderStatusMutation,
 } from "@/features/held-orders/useMyHeldOrdersQuery";
 import {
+  HELD_ORDER_AGENT_STATUS_BADGE as STATUS_BADGE,
   HELD_ORDER_AGENT_STATUS_LABEL,
+  HELD_ORDER_INACTIVE_DAYS,
   HELD_ORDER_PENDING_TAG_HINT,
   HELD_ORDER_PENDING_TAG_LABEL,
   HELD_ORDER_PENDING_TAGS,
@@ -38,11 +40,14 @@ import {
   type MyHeldOrder,
 } from "@/features/held-orders/types";
 
-const STATUS_BADGE: Record<HeldOrderAgentStatus, "new" | "in-progress" | "done"> = {
-  novo: "new",
-  em_andamento: "in-progress",
-  concluido: "done",
-};
+/** Dias inteiros desde o último contato (último registro; sem registro, a entrada no sistema). */
+function daysSinceLastContact(order: MyHeldOrder): number | null {
+  const ref = order.status_changed_at ?? order.imported_at;
+  if (!ref) return null;
+  const t = new Date(ref).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86_400_000);
+}
 
 /** O Select do shadcn não aceita item com value vazio — sentinela para "sem pendência". */
 const NO_TAG = "sem_pendencia";
@@ -62,7 +67,8 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
   const [pendingTag, setPendingTag] = useState<string>(NO_TAG);
   const [note, setNote] = useState("");
 
-  // Ao abrir um pedido, parte do status e da pendência atuais dele.
+  // Ao abrir um pedido, parte do status e da pendência atuais dele. Pedido inativo
+  // abre já em "Em Andamento": quem abre um inativo é porque o cliente voltou.
   useEffect(() => {
     if (open && order) {
       setStatus(order.agent_status === "concluido" ? "concluido" : "em_andamento");
@@ -77,8 +83,13 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
   const reasons = parseReasons(order.reason);
   const address = parseAddress(order);
   const items = parseItems(order.items);
-  // Concluir encerra o caso: o RPC limpa a tag, então a seleção fica desabilitada.
-  const tagDisabled = status === "concluido";
+  // Concluir e inativar tiram o pedido da fila: o RPC limpa a tag.
+  const tagDisabled = status === "concluido" || status === "inativo";
+  const markingInactive = status === "inativo" && order.agent_status !== "inativo";
+  const noteMissing = status === "inativo" && note.trim() === "";
+  const daysSinceContact = daysSinceLastContact(order);
+  const earlyInactive =
+    markingInactive && daysSinceContact !== null && daysSinceContact < HELD_ORDER_INACTIVE_DAYS;
 
   const handleSubmit = async () => {
     try {
@@ -93,7 +104,11 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
         description:
           status === "concluido"
             ? "Pedido marcado como concluído."
-            : `Status atualizado para "${HELD_ORDER_AGENT_STATUS_LABEL[status]}".`,
+            : status === "inativo"
+              ? "Pedido marcado como inativo. Ele saiu da sua fila e está na lista de Inativos."
+              : order.agent_status === "inativo"
+                ? "Pedido reaberto e de volta à sua fila."
+                : `Status atualizado para "${HELD_ORDER_AGENT_STATUS_LABEL[status]}".`,
       });
       setNote("");
       onOpenChange(false);
@@ -279,8 +294,18 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
                 <SelectItem value="novo">Novo</SelectItem>
                 <SelectItem value="em_andamento">Em Andamento</SelectItem>
                 <SelectItem value="concluido">Concluído</SelectItem>
+                <SelectItem value="inativo">Inativo — cliente não responde</SelectItem>
               </SelectContent>
             </Select>
+            {earlyInactive && (
+              <p className="flex items-start gap-1.5 text-xs text-warning">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  Último contato há {daysSinceContact} dia(s). Inativo antes de{" "}
+                  {HELD_ORDER_INACTIVE_DAYS} dias sem resposta gera um alerta para a gestão revisar.
+                </span>
+              </p>
+            )}
           </div>
           <div className="grid gap-2">
             <Label>Pendência</Label>
@@ -299,14 +324,22 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
             </Select>
             <p className="text-xs text-muted-foreground">
               {tagDisabled
-                ? "Concluir o pedido remove a pendência."
+                ? status === "inativo"
+                  ? "Marcar como inativo remove a pendência."
+                  : "Concluir o pedido remove a pendência."
                 : "Marque quando o caso depende de alguém e precisa ser retomado depois."}
             </p>
           </div>
           <div className="grid gap-2">
-            <Label>Observação</Label>
+            <Label>
+              Observação{status === "inativo" && <span className="text-destructive"> *</span>}
+            </Label>
             <Textarea
-              placeholder="Descreva o que foi feito neste pedido..."
+              placeholder={
+                status === "inativo"
+                  ? "Obrigatório: quais contatos foram tentados e quando (ex.: 3 e-mails sem resposta)."
+                  : "Descreva o que foi feito neste pedido..."
+              }
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
@@ -318,7 +351,12 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={setStatusMutation.isPending}>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={setStatusMutation.isPending || noteMissing}
+            title={noteMissing ? "Informe na observação por que o pedido ficou inativo" : undefined}
+          >
             {setStatusMutation.isPending ? "Registrando..." : "Registrar"}
           </Button>
         </DialogFooter>

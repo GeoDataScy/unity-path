@@ -52,6 +52,7 @@ function statusBadge(o: ManagerHeldOrder) {
   const label = heldOrderManagerStatusLabel(o);
   if (label === "Confirmado") return <Badge variant="success">Confirmado</Badge>;
   if (label === "Em andamento") return <Badge variant="in-progress">Em andamento</Badge>;
+  if (label === "Inativo") return <Badge variant="secondary">Inativo</Badge>;
   if (label === "Novo") {
     return (
       <Badge variant="outline" className="text-info">
@@ -352,6 +353,12 @@ export function HeldOrdersManagerTab({ readOnly = false, paginate = false }: Pro
                   <span className="text-warning font-mono tabular-nums">{s.pending} pend.</span>{" "}
                   <span className="text-status-in-progress font-mono tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
                   <span className="text-success font-mono tabular-nums">{s.confirmed} conf.</span>
+                  {(s.inactive ?? 0) > 0 && (
+                    <>
+                      {" "}
+                      <span className="text-muted-foreground font-mono tabular-nums">{s.inactive} inat.</span>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -385,6 +392,7 @@ export function HeldOrdersManagerTab({ readOnly = false, paginate = false }: Pro
                   <SelectItem value="all">Todos status</SelectItem>
                   <SelectItem value="aguardando">Aguardando</SelectItem>
                   <SelectItem value="em_andamento">Em andamento</SelectItem>
+                  <SelectItem value="inativo">Inativos</SelectItem>
                   <SelectItem value="confirmed">Confirmados</SelectItem>
                 </SelectContent>
               </Select>
