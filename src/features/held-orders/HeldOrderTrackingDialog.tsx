@@ -62,10 +62,14 @@ export function HeldOrderTrackingDialog({ order, open, onOpenChange }: Props) {
   const [pendingTag, setPendingTag] = useState<string>(NO_TAG);
   const [note, setNote] = useState("");
 
-  // Ao abrir um pedido, parte do status e da pendência atuais dele.
+  // Ao abrir um pedido, parte do status e da pendência atuais dele. O select NÃO
+  // pode vir adiantado: com "Em Andamento" pré-selecionado, quem só queria anotar o
+  // que fez e clicou em Registrar promovia o pedido sem perceber — em 30 dias foram
+  // 701 primeiros registros caindo em "Em Andamento" contra 330 "Concluído", e o
+  // card "Concluídos hoje" não andava. Avançar o status passa a ser uma escolha.
   useEffect(() => {
     if (open && order) {
-      setStatus(order.agent_status === "concluido" ? "concluido" : "em_andamento");
+      setStatus(order.agent_status);
       setPendingTag(order.pending_tag ?? NO_TAG);
       setNote("");
     }

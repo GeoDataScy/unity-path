@@ -88,8 +88,10 @@ export function useSetHeldOrderStatusMutation() {
       if (error) throw error;
     },
     onSuccess: (_data, params) => {
+      // MY_HELD_ORDERS_KEY é prefixo de MY_HELD_METRICS_KEY, então esta linha já
+      // invalida a lista E a métrica. Invalidar a métrica de novo só fazia a RPC
+      // rodar duas vezes por registro (visível nos logs: dois POSTs no mesmo segundo).
       qc.invalidateQueries({ queryKey: MY_HELD_ORDERS_KEY });
-      qc.invalidateQueries({ queryKey: MY_HELD_METRICS_KEY });
       qc.invalidateQueries({ queryKey: [...HELD_ORDER_EVENTS_KEY, params.orderId] });
     },
   });
