@@ -4,10 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AgentDailyMetrics = {
   my_count: number;
-  leader_count: number;
-  leader_name: string;
-  leader_id: string | null;
-  is_leader: boolean;
 };
 
 function saoPauloISODate(d = new Date()) {

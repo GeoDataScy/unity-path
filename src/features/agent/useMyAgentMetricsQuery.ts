@@ -25,7 +25,6 @@ export type AgentMyMetrics = {
   best_day: string | null;
   best_day_count: number;
   trend_pct: number;
-  trend_label: "Evoluindo" | "Estável" | "Regredindo" | string;
   /** false quando não há dias trabalhados suficientes nas duas metades — a UI esconde a tendência. */
   trend_reliable: boolean;
   by_day: AgentMetricsByDayItem[];
@@ -33,43 +32,21 @@ export type AgentMyMetrics = {
   by_platform: AgentMetricsItem[];
   by_product: AgentMetricsItem[];
 
-  // ── Ritmo (comparação justa) ───────────────────────────────────────────────
+  // ── Ritmo ─────────────────────────────────────────────────────────────────
   /** Dias de calendário do período. */
   period_days: number;
   /** Dias em que o agente registrou pelo menos 1 interação. */
   active_days: number;
-  /** Dias de calendário que ainda restam no período (contando hoje). 0 se já acabou. */
-  days_remaining: number;
   /** total / active_days — interações por dia TRABALHADO. */
   my_rate: number;
-  /** Mediana do ritmo dos OUTROS agentes. Robusta a outlier, ao contrário da média. */
-  team_median_rate: number;
-  /** Mediana do total dos OUTROS agentes. */
-  team_median_total: number;
-  /** Quantos agentes tiveram atividade no período (inclui o próprio). */
-  team_size: number;
-  /** Ritmo do líder (que é definido por volume total, não por ritmo). */
-  team_leader_rate: number;
-  /** Quantos a mais por dia trabalhado para alcançar a mediana. 0 se já está igual ou acima. */
-  gap_per_day: number;
-  /** Quantos % o ritmo da mediana está acima do seu. 0 se já está igual ou acima. */
-  gap_to_median_pct: number;
-  /** true quando o ritmo próprio está abaixo de 80% da mediana do time. */
-  is_below_team_rate: boolean;
 
-  // Team comparison
-  /** Average total across OTHER agents (excludes the current agent). */
-  team_average: number;
-  team_leader_name: string;
-  team_leader_count: number;
-  is_leader: boolean;
-  /** How many % the team average is ABOVE own count. 0 if own >= avg. */
-  gap_to_avg_pct: number;
-  /** True when own_total > 0 and own < team_average * 0.8. */
-  is_below_team_avg_20pct: boolean;
-  // Legacy benchmark fields (point to leader, kept for back-compat)
-  benchmark_name: string;
-  benchmark_count: number;
+  // ── Referência da operação (item 3 do documento jurídico) ─────────────────
+  // Sem líder, posição, nome de outro prestador ou "quanto falta": só a mediana
+  // anônima do volume de todos os prestadores ativos no período.
+  /** Mediana do volume no período. 0 quando há menos de 4 prestadores (não seria anônima). */
+  team_median_total: number;
+  /** Quantos prestadores tiveram atividade no período (inclui o próprio). */
+  team_size: number;
   // Refunds
   refunds_open: number;
   refunds_done: number;

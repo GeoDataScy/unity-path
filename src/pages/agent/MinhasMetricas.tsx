@@ -7,7 +7,6 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,10 +18,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Crown,
   Minus,
   RefreshCw,
-  Target,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -31,7 +28,6 @@ import {
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,7 +44,7 @@ import { useMyAgentMetricsQuery, type AgentMyMetrics } from "@/features/agent/us
 // era a MESMA cor para boa parte das pessoas. Não voltar para ele.)
 const COLOR_NOVOS      = "hsl(var(--chart-1))"; // roxo
 const COLOR_FOLLOWUPS  = "hsl(var(--chart-6))"; // turquesa
-const COLOR_MAGNITUDE  = "hsl(var(--chart-1))"; // hue única p/ ranking de canal/plataforma
+const COLOR_MAGNITUDE  = "hsl(var(--chart-1))"; // hue única p/ canal/plataforma
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -78,109 +74,38 @@ function plural(n: number, one: string, many: string) {
   return n === 1 ? one : many;
 }
 
-// ── Mensagem principal ────────────────────────────────────────────────────────
+// ── Referência da operação ────────────────────────────────────────────────────
 //
-// Regra: toda mensagem termina em algo que a pessoa PODE FAZER, com número
-// contável. Nunca só "você está atrás" — isso informa o problema e não dá saída.
+// Item 3 do documento jurídico: nada de ranking, líder, posição ou "quanto falta
+// para alcançar o time". A única comparação permitida é a mediana anônima do
+// volume dos prestadores no mesmo período, ao lado do volume do próprio.
+//
+// Com poucos prestadores a mediana deixa de ser anônima (com 2 ela é a média de
+// dois volumes conhecidos). A RPC já devolve 0 abaixo deste mínimo; a UI repete
+// a regra para não depender só do banco.
+const MIN_PROVIDERS_FOR_MEDIAN = 4;
 
-type Tone = "leader" | "ahead" | "onpar" | "action" | "empty";
-
-interface Headline {
-  title: string;
-  message: string;
-  tone: Tone;
-}
-
-function getHeadline(m: AgentMyMetrics): Headline {
-  const total     = m.total_interactions ?? 0;
-  const myRate    = Number(m.my_rate ?? 0);
-  const median    = Number(m.team_median_rate ?? 0);
-  const gap       = Number(m.gap_per_day ?? 0);
-  const left      = Number(m.days_remaining ?? 0);
-  const activeDays = Number(m.active_days ?? 0);
-
-  if (total === 0) {
-    return {
-      title: "Nada registrado neste período",
-      message: "Escolha outro período acima, ou comece a registrar — o primeiro atendimento do dia é o que destrava o resto.",
-      tone: "empty",
-    };
-  }
-
-  if (m.is_leader) {
-    return {
-      title: "Você foi quem mais atendeu no período",
-      message: `${fmtN(total)} atendimentos em ${activeDays} ${plural(activeDays, "dia trabalhado", "dias trabalhados")}. Seu ritmo é ${fmtRate(myRate)} por dia. Segura esse ritmo.`,
-      tone: "leader",
-    };
-  }
-
-  // Sem time suficiente para comparar (agente sozinho no período).
-  if (median <= 0) {
-    return {
-      title: `Seu ritmo é ${fmtRate(myRate)} por dia trabalhado`,
-      message: `${fmtN(total)} atendimentos em ${activeDays} ${plural(activeDays, "dia", "dias")}. Ainda não dá para comparar com o time neste período.`,
-      tone: "onpar",
-    };
-  }
-
-  if (gap <= 0) {
-    const aheadPct = median > 0 ? Math.round((myRate / median - 1) * 100) : 0;
-    if (aheadPct <= 0) {
-      return {
-        title: "Você está no mesmo ritmo do time",
-        message: `${fmtRate(myRate)} por dia trabalhado, igual à metade do time. Mais 1 por dia já te coloca na frente.`,
-        tone: "onpar",
-      };
-    }
-    return {
-      title: `Você está ${aheadPct}% acima do time`,
-      message: `Seu ritmo é ${fmtRate(myRate)} por dia trabalhado. A metade do time faz ${fmtRate(median)}. Continue assim.`,
-      tone: "ahead",
-    };
-  }
-
-  // Atrás: sempre vira alvo contável, nunca só "você está atrás".
-  const catchUp = Math.ceil(gap * Math.max(left, 1));
-  const projection =
-    left >= 2
-      ? ` São cerca de ${fmtN(catchUp)} atendimentos nos ${left} dias que faltam no período.`
-      : "";
-
+/** Mesma divisão que a RPC usa para a tendência: metade do período até hoje. */
+function trendHalves(fromISO: string, toISO: string) {
+  const from = parseISOLocal(fromISO);
+  const end  = parseISOLocal(toISO < spToday() ? toISO : spToday());
+  const span = Math.round((end.getTime() - from.getTime()) / 86_400_000);
+  if (span < 1) return null;
+  const mid = addDays(from, Math.floor(span / 2));
   return {
-    title: `Faltam ${fmtRate(gap)} por dia para alcançar o time`,
-    message: `Você faz ${fmtRate(myRate)} por dia trabalhado e a metade do time faz ${fmtRate(median)}.${projection}`,
-    tone: "action",
+    first:  `${format(from, "dd/MM")} a ${format(mid, "dd/MM")}`,
+    second: `${format(addDays(mid, 1), "dd/MM")} a ${format(end, "dd/MM")}`,
   };
 }
 
-const TONE_CARD: Record<Tone, string> = {
-  leader: "border-warning/40 bg-warning-soft",
-  ahead:  "border-success/40 bg-signal-soft",
-  onpar:  "border-border bg-card",
-  action: "border-primary/50 bg-primary/5",
-  empty:  "border-border bg-muted/40",
-};
+function fmtPct(n: number) {
+  const v = Math.round(Number(n) || 0);
+  return `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v)}%`;
+}
 
-const TONE_ICON: Record<Tone, React.ElementType> = {
-  leader: Crown,
-  ahead:  TrendingUp,
-  onpar:  Minus,
-  action: Target,
-  empty:  BarChart3,
-};
+// ── Barra "você vs referência" ──────────────────────────────────────────────────────
 
-const TONE_ICON_COLOR: Record<Tone, string> = {
-  leader: "text-warning",
-  ahead:  "text-success",
-  onpar:  "text-muted-foreground",
-  action: "text-primary",
-  empty:  "text-muted-foreground",
-};
-
-// ── Barra "você vs time" ──────────────────────────────────────────────────────
-
-function RateBar({
+function VolumeBar({
   label,
   value,
   max,
@@ -201,8 +126,8 @@ function RateBar({
           {label}
         </span>
         <span className={cn("font-mono tabular-nums", strong ? "text-lg font-medium" : "text-sm text-muted-foreground")}>
-          {fmtRate(value)}
-          <span className="ml-1 text-xs font-normal text-muted-foreground">/dia</span>
+          {fmtN(Math.round(value))}
+          <span className="ml-1 text-xs font-normal text-muted-foreground">atendimentos</span>
         </span>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-muted">
@@ -255,9 +180,9 @@ function ChartEmpty({ msg = "Nenhum dado no período" }: { msg?: string }) {
   return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{msg}</div>;
 }
 
-/** Ranking por magnitude → uma hue só. Cor diferente por categoria sugeriria
+/** Ordenado por magnitude → uma hue só. Cor diferente por categoria sugeriria
  *  uma identidade que esses cortes não têm. */
-function RankingChart({ data, unit = "interações" }: { data: { name: string; value: number }[]; unit?: string }) {
+function BreakdownChart({ data, unit = "interações" }: { data: { name: string; value: number }[]; unit?: string }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart layout="vertical" data={data} margin={{ top: 5, right: 28, left: 8, bottom: 5 }}>
@@ -327,10 +252,13 @@ export default function MinhasMetricas() {
   const firstName = ((fullName ?? "").trim().split(/\s+/)[0]) || "Agente";
 
   const myRate     = Number(m?.my_rate ?? 0);
-  const medianRate = Number(m?.team_median_rate ?? 0);
+  const myTotal    = Number(m?.total_interactions ?? 0);
+  const medianTotal = Number(m?.team_median_total ?? 0);
+  // team_size inclui o próprio agente, assim como a mediana.
+  const showMedian = Number(m?.team_size ?? 0) >= MIN_PROVIDERS_FOR_MEDIAN && medianTotal > 0;
   const activeDays = Number(m?.active_days ?? 0);
 
-  const headline = useMemo(() => (m ? getHeadline(m) : null), [m]);
+  const halves = useMemo(() => trendHalves(fromISO, toISO), [fromISO, toISO]);
 
   const chartSeries = useMemo(() => {
     if (!m) return [];
@@ -342,16 +270,13 @@ export default function MinhasMetricas() {
     }));
   }, [m]);
 
-  const trend = useMemo(() => {
-    const pct = Number(m?.trend_pct ?? 0);
-    if (pct >= 10)  return { Icon: TrendingUp,   cls: "text-success" };
-    if (pct <= -10) return { Icon: TrendingDown, cls: "text-destructive" };
-    return { Icon: Minus, cls: "text-foreground" };
-  }, [m]);
+  // Tendência só como número: sem rótulo de julgamento e sem cor de "bom/ruim".
+  const trendPct = Number(m?.trend_pct ?? 0);
+  const TrendIcon = trendPct > 0 ? TrendingUp : trendPct < 0 ? TrendingDown : Minus;
 
-  // Escala das barras de ritmo: 15% de folga em cima do maior valor, para a
-  // barra cheia nunca encostar na borda e sugerir "no máximo".
-  const rateMax = Math.max(myRate, medianRate, 0.1) * 1.15;
+  // Escala das barras: 15% de folga em cima do maior valor, para a barra cheia
+  // nunca encostar na borda e sugerir "no máximo".
+  const volumeMax = Math.max(myTotal, medianTotal, 1) * 1.15;
 
   // ── Paginação da tabela "Dia a dia" ─────────────────────────────────────────
   // Clampar em vez de sincronizar com efeito: se o período novo tiver menos
@@ -361,8 +286,6 @@ export default function MinhasMetricas() {
   const page      = Math.min(Math.max(dayPage, 1), pageCount);
   const pageStart = (page - 1) * DAYS_PER_PAGE;
   const pagedDays = allDays.slice(pageStart, pageStart + DAYS_PER_PAGE);
-
-  const HeadlineIcon = headline ? TONE_ICON[headline.tone] : BarChart3;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -399,7 +322,7 @@ export default function MinhasMetricas() {
       {/* ── 1. O número principal: seu ritmo ─────────────────────────────── */}
       {isLoading ? (
         <Skeleton className="mb-6 h-56 w-full rounded-xl" />
-      ) : m && headline ? (
+      ) : m ? (
         <Card className="mb-6 overflow-hidden">
           <CardContent className="p-0">
             <div className="grid gap-6 p-6 md:grid-cols-2">
@@ -422,42 +345,32 @@ export default function MinhasMetricas() {
                 </p>
               </div>
 
-              {/* Comparação */}
+              {/* Referência da operação */}
               <div className="space-y-4 md:border-l md:pl-6">
-                <RateBar
-                  label="Você"
-                  value={myRate}
-                  max={rateMax}
-                  colorClass={myRate >= medianRate ? "bg-success" : "bg-primary"}
-                  strong
-                />
-                <RateBar
-                  label="Metade do time faz até"
-                  value={medianRate}
-                  max={rateMax}
-                  colorClass="bg-muted-foreground/50"
-                />
-                <p className="text-xs leading-snug text-muted-foreground">
-                  A referência é a <span className="font-medium text-foreground">mediana</span>: metade do time está
-                  acima dela e metade abaixo. Usamos ela no lugar da média porque um único colega muito acima não
-                  distorce o alvo de todo mundo.
-                  {m.team_leader_name && !m.is_leader && (
-                    <>
-                      {" "}Quem mais atendeu no período foi{" "}
-                      <span className="font-medium text-foreground">{m.team_leader_name}</span>, com{" "}
-                      {fmtN(m.team_leader_count)}.
-                    </>
-                  )}
+                <p className="text-sm font-medium text-muted-foreground">
+                  Volume no período ({format(parseISO(fromISO), "dd/MM")} a {format(parseISO(toISO), "dd/MM")})
                 </p>
-              </div>
-            </div>
-
-            {/* Faixa de ação */}
-            <div className={cn("flex items-start gap-3 border-t px-6 py-4", TONE_CARD[headline.tone])}>
-              <HeadlineIcon className={cn("mt-0.5 h-5 w-5 shrink-0", TONE_ICON_COLOR[headline.tone])} />
-              <div>
-                <p className="font-medium">{headline.title}</p>
-                <p className="text-sm text-muted-foreground">{headline.message}</p>
+                <VolumeBar label="Seu volume" value={myTotal} max={volumeMax} colorClass="bg-primary" strong />
+                {showMedian ? (
+                  <>
+                    <VolumeBar
+                      label="Referência da operação (mediana)"
+                      value={medianTotal}
+                      max={volumeMax}
+                      colorClass="bg-muted-foreground/50"
+                    />
+                    <p className="text-xs leading-snug text-muted-foreground">
+                      A mediana é o valor central dos volumes de atendimento dos prestadores no mesmo período. Por
+                      exemplo: para volumes de 800, 1.000 e 1.500 atendimentos, a mediana é 1.000. Ela não identifica
+                      nenhum prestador.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs leading-snug text-muted-foreground">
+                    A referência da operação (mediana) aparece quando há prestadores suficientes no período para que
+                    ela não identifique ninguém.
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -485,15 +398,15 @@ export default function MinhasMetricas() {
           loading={isLoading}
         />
         <KpiCard
-          label="Como você vem indo"
-          value={isLoading ? "—" : !m?.trend_reliable ? "Sem leitura" : m.trend_label}
+          label="Variação no período"
+          value={isLoading || !m?.trend_reliable ? "—" : fmtPct(trendPct)}
           hint={
-            !m?.trend_reliable
-              ? "Poucos dias trabalhados para comparar o começo com o fim do período sem virar chute."
-              : `A segunda metade do período está ${Math.abs(Number(m?.trend_pct ?? 0))}% ${Number(m?.trend_pct ?? 0) >= 0 ? "acima" : "abaixo"} da primeira, comparando ritmo por dia trabalhado.`
+            !m?.trend_reliable || !halves
+              ? "Poucos dias trabalhados para comparar o começo com o fim do período."
+              : `Atendimentos por dia trabalhado de ${halves.second}, comparados com ${halves.first}.`
           }
-          icon={trend.Icon}
-          valueClass={m?.trend_reliable ? trend.cls : "text-muted-foreground text-2xl"}
+          icon={TrendIcon}
+          valueClass={m?.trend_reliable ? undefined : "text-muted-foreground"}
           loading={isLoading}
         />
       </section>
@@ -503,7 +416,7 @@ export default function MinhasMetricas() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Seus dias no período</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Cada barra é um dia. A altura é quanto você fez; a linha tracejada é o ritmo do time.
+            Cada barra é um dia. A altura é quanto você fez.
           </p>
         </CardHeader>
         <CardContent className="h-[320px]">
@@ -532,20 +445,6 @@ export default function MinhasMetricas() {
                   formatter={(v) => (v === "novos" ? "Novos atendimentos" : "Follow-ups")}
                   wrapperStyle={{ fontSize: 12 }}
                 />
-                {medianRate > 0 && (
-                  <ReferenceLine
-                    y={medianRate}
-                    stroke="hsl(var(--chart-axis))"
-                    strokeDasharray="6 4"
-                    strokeWidth={2}
-                    label={{
-                      value: `Ritmo do time: ${fmtRate(medianRate)}`,
-                      position: "insideTopRight",
-                      fontSize: 11,
-                      fill: "hsl(var(--chart-axis))",
-                    }}
-                  />
-                )}
                 {/* stroke na cor da superfície = separador de 1,5px entre os
                     segmentos empilhados, sem inventar uma terceira cor */}
                 <Bar dataKey="novos"     stackId="dia" fill={COLOR_NOVOS}     stroke="hsl(var(--card))" strokeWidth={1.5} maxBarSize={38} />
@@ -600,7 +499,7 @@ export default function MinhasMetricas() {
                   <CardTitle className="text-sm">Por canal</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[240px]">
-                  {!m?.by_channel?.length ? <ChartEmpty /> : <RankingChart data={m.by_channel} />}
+                  {!m?.by_channel?.length ? <ChartEmpty /> : <BreakdownChart data={m.by_channel} />}
                 </CardContent>
               </Card>
 
@@ -609,7 +508,7 @@ export default function MinhasMetricas() {
                   <CardTitle className="text-sm">Por plataforma</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[240px]">
-                  {!m?.by_platform?.length ? <ChartEmpty /> : <RankingChart data={m.by_platform} />}
+                  {!m?.by_platform?.length ? <ChartEmpty /> : <BreakdownChart data={m.by_platform} />}
                 </CardContent>
               </Card>
             </div>
@@ -630,34 +529,16 @@ export default function MinhasMetricas() {
                           <TableHead className="text-right">Total</TableHead>
                           <TableHead className="text-right">Novos</TableHead>
                           <TableHead className="text-right">Follow-ups</TableHead>
-                          <TableHead>Leitura</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {pagedDays.map((row) => {
-                          // Comparação contra o PRÓPRIO ritmo por dia trabalhado.
-                          // Dia sem atividade não é "dia ruim" — é dia de folga.
-                          const reading =
-                            row.value === 0             ? "Sem atividade"
-                            : myRate <= 0               ? "—"
-                            : row.value > myRate * 1.2  ? "Dia forte"
-                            : row.value < myRate * 0.8  ? "Dia fraco"
-                            : "No seu ritmo";
-                          const badge =
-                            reading === "Dia forte"     ? "success"
-                            : reading === "Dia fraco"   ? "destructive"
-                            : reading === "Sem atividade" ? "open"
-                            : "secondary";
-
                           return (
                             <TableRow key={row.day} className={row.value === 0 ? "opacity-50" : ""}>
                               <TableCell className="whitespace-nowrap">{format(parseISO(row.day), "dd/MM/yyyy")}</TableCell>
                               <TableCell className="text-right font-medium font-mono tabular-nums">{fmtN(row.value)}</TableCell>
                               <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{fmtN(row.services)}</TableCell>
                               <TableCell className="text-right font-mono tabular-nums text-muted-foreground">{fmtN(row.followups)}</TableCell>
-                              <TableCell>
-                                <Badge variant={badge as any} className="text-xs">{reading}</Badge>
-                              </TableCell>
                             </TableRow>
                           );
                         })}
