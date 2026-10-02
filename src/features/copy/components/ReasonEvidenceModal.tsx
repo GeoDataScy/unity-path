@@ -60,15 +60,15 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Reembolsos no motivo</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.total)}</p>
+                <p className="text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{fmtInt(data.total)}</p>
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Com algum texto no motivo</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.com_texto)}</p>
+                <p className="text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{fmtInt(data.com_texto)}</p>
               </div>
               <div className="rounded-lg border bg-card p-3">
                 <p className="text-xs text-muted-foreground">Texto escrito à mão</p>
-                <p className="text-2xl font-semibold tabular-nums">{fmtInt(data.texto_livre)}</p>
+                <p className="text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{fmtInt(data.texto_livre)}</p>
               </div>
             </div>
 
@@ -85,7 +85,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             {data.textos.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Texto registrado no motivo</h3>
+                <h3 className="text-sm font-medium">Texto registrado no motivo</h3>
                 <div className="overflow-x-auto rounded-lg border bg-card">
                   <Table>
                     <TableHeader>
@@ -106,8 +106,8 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
                               </Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">{fmtInt(row.n)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{fmtPct(row.share)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{fmtInt(row.n)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.share)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -118,7 +118,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             {data.termos.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Palavras mais frequentes no texto escrito à mão</h3>
+                <h3 className="text-sm font-medium">Palavras mais frequentes no texto escrito à mão</h3>
                 <div className="flex flex-wrap gap-2">
                   {data.termos.map((row) => (
                     <span
@@ -127,7 +127,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
                       title={`${row.n} ocorrência(s)`}
                     >
                       {row.termo}
-                      <span className="tabular-nums text-muted-foreground">{fmtInt(row.n)}</span>
+                      <span className="font-mono tabular-nums text-muted-foreground">{fmtInt(row.n)}</span>
                       <ShareBar value={row.n} max={maxTermo} className="w-10" />
                     </span>
                   ))}
@@ -137,7 +137,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Produtos com mais casos deste motivo</h3>
+                <h3 className="text-sm font-medium">Produtos com mais casos deste motivo</h3>
                 <p className="text-xs text-muted-foreground">
                   O percentual é a fatia deste motivo dentro do produto: de todos os reembolsos que o
                   produto teve no período, quantos foram por este motivo.
@@ -149,9 +149,9 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
                         {row.produto}
                       </span>
                       <ShareBar value={row.n} max={maxProduto} />
-                      <span className="w-12 shrink-0 text-right tabular-nums">{fmtInt(row.n)}</span>
+                      <span className="w-12 shrink-0 text-right font-mono tabular-nums">{fmtInt(row.n)}</span>
                       <span
-                        className="w-14 shrink-0 text-right tabular-nums text-muted-foreground"
+                        className="w-14 shrink-0 text-right font-mono tabular-nums text-muted-foreground"
                         title={
                           row.total_produto
                             ? `${fmtInt(row.n)} de ${fmtInt(row.total_produto)} reembolsos do ${row.produto} no período`
@@ -166,7 +166,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold">Canal de atendimento</h3>
+                <h3 className="text-sm font-medium">Canal de atendimento</h3>
                 <ul className="space-y-2">
                   {data.por_canal.map((row) => (
                     <li key={row.canal} className="flex items-center gap-3 text-sm">
@@ -174,7 +174,7 @@ export function ReasonEvidenceModal({ category, onClose, from, to, product, plat
                         {row.canal}
                       </span>
                       <ShareBar value={row.n} max={maxCanal} />
-                      <span className="w-12 shrink-0 text-right tabular-nums">{fmtInt(row.n)}</span>
+                      <span className="w-12 shrink-0 text-right font-mono tabular-nums">{fmtInt(row.n)}</span>
                     </li>
                   ))}
                 </ul>

@@ -54,11 +54,11 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
   return (
     <section className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-full bg-amber-500/15 p-2.5">
-          <CopyCheck className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+        <div className="mt-0.5 rounded-full bg-warning-soft p-2.5">
+          <CopyCheck className="h-6 w-6 text-warning" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Interações repetidas no mesmo dia</h2>
+          <h2 className="text-xl font-medium tracking-tight">Interações repetidas no mesmo dia</h2>
           <p className="text-sm text-muted-foreground">
             Mais de uma interação no mesmo ticket no mesmo dia. Não é bloqueado — cada caso pode ter
             motivo legítimo. Serve para você conferir o número.
@@ -67,9 +67,9 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className={hasAny ? "border-amber-500/40" : undefined}>
+        <Card className={hasAny ? "border-warning/40" : undefined}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">
               Contagens duplicadas no período
             </CardTitle>
           </CardHeader>
@@ -79,7 +79,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
             ) : (
               <>
                 <div
-                  className={`text-3xl font-semibold ${hasAny ? "text-amber-600 dark:text-amber-500" : "text-green-600"}`}
+                  className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${hasAny ? "text-warning" : "text-success"}`}
                 >
                   {data?.same_day_extra ?? 0}
                 </div>
@@ -93,7 +93,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">
               Furaram a regra das 18h
             </CardTitle>
           </CardHeader>
@@ -102,7 +102,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
               <Skeleton className="h-9 w-16" />
             ) : (
               <>
-                <div className="text-3xl font-semibold">{data?.rule_violations ?? 0}</div>
+                <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{data?.rule_violations ?? 0}</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   registradas antes das 18h do dia da interação anterior
                 </p>
@@ -113,20 +113,20 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Maior proporção</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Maior proporção</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-9 w-40" />
             ) : worst ? (
               <div>
-                <div className="text-lg font-semibold leading-tight">{worst.agent_name}</div>
+                <div className="text-lg font-medium leading-tight">{worst.agent_name}</div>
                 <div className="text-sm text-muted-foreground">
                   {worst.repeat_count} de {worst.total_count} ({worst.pct}%)
                 </div>
               </div>
             ) : (
-              <div className="text-lg font-semibold text-green-600">Nenhum</div>
+              <div className="text-lg font-medium text-success">Nenhum</div>
             )}
           </CardContent>
         </Card>
@@ -146,7 +146,7 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
       {!isLoading && !!data?.by_agent?.length && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Por agente</CardTitle>
+            <CardTitle className="text-base font-medium">Por agente</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -163,8 +163,8 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
                   {data.by_agent.map((a) => (
                     <TableRow key={a.agent_id}>
                       <TableCell className="font-medium">{a.agent_name}</TableCell>
-                      <TableCell className="text-right tabular-nums">{a.repeat_count}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right font-mono tabular-nums">{a.repeat_count}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                         {a.total_count}
                       </TableCell>
                       <TableCell className="text-right">
@@ -207,11 +207,11 @@ export function SameDayRepeatsSection({ fromISO, toISO, agentId }: Props) {
                         <TableCell className="break-all font-medium">{d.client_email}</TableCell>
                         <TableCell>{d.product ?? "—"}</TableCell>
                         <TableCell>{d.agent_name}</TableCell>
-                        <TableCell className="tabular-nums text-muted-foreground">
+                        <TableCell className="font-mono tabular-nums text-muted-foreground">
                           {formatDateTimeSP(d.previous_at)}
                         </TableCell>
-                        <TableCell className="tabular-nums">{formatDateTimeSP(d.recorded_at)}</TableCell>
-                        <TableCell className="text-right tabular-nums">
+                        <TableCell className="font-mono tabular-nums">{formatDateTimeSP(d.recorded_at)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">
                           {d.hours_apart == null ? "—" : `${d.hours_apart}h`}
                         </TableCell>
                         <TableCell className="max-w-[240px] truncate text-muted-foreground">

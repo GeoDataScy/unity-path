@@ -32,13 +32,13 @@ function DelayBadge({ days }: { days: number }) {
   }
   if (days >= 2) {
     return (
-      <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+      <Badge className="border-transparent bg-warning hover:bg-warning text-warning-foreground">
         {days}d de atraso
       </Badge>
     );
   }
   return (
-    <Badge className="bg-amber-400 hover:bg-amber-500 text-amber-950">
+    <Badge className="bg-warning hover:bg-warning text-ink">
       {days}d de atraso
     </Badge>
   );
@@ -57,14 +57,14 @@ function AgentCard({
     group.overdue_count >= 5
       ? "border-destructive/60"
       : group.overdue_count >= 3
-      ? "border-orange-400/60"
-      : "border-amber-400/60";
+      ? "border-warning/40"
+      : "border-warning/40";
 
   return (
     <Card className={`border-2 ${severity}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">{group.agent_name}</CardTitle>
+          <CardTitle className="text-base font-medium">{group.agent_name}</CardTitle>
           <Badge variant="destructive" className="text-sm px-3 py-0.5">
             {group.overdue_count} {group.overdue_count === 1 ? "reembolso" : "reembolsos"} em atraso
           </Badge>
@@ -218,7 +218,7 @@ export default function DashboardAlertas() {
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Alertas</h1>
+            <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Alertas</h1>
             <p className="text-sm text-muted-foreground">
               Reembolsos em aberto há mais de 24 horas — atualizado a cada 60s
             </p>
@@ -240,13 +240,13 @@ export default function DashboardAlertas() {
       <section className="grid gap-4 md:grid-cols-3">
         <Card className={data?.total_overdue ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total em atraso</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Total em atraso</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-9 w-16" />
             ) : (
-              <div className={`text-3xl font-semibold ${data?.total_overdue ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.total_overdue ? "text-destructive" : "text-success"}`}>
                 {data?.total_overdue ?? 0}
               </div>
             )}
@@ -255,13 +255,13 @@ export default function DashboardAlertas() {
 
         <Card className={data?.agents_affected ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Agentes com atraso</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Agentes com atraso</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-9 w-12" />
             ) : (
-              <div className={`text-3xl font-semibold ${data?.agents_affected ? "text-destructive" : "text-green-600"}`}>
+              <div className={`font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums ${data?.agents_affected ? "text-destructive" : "text-success"}`}>
                 {data?.agents_affected ?? 0}
               </div>
             )}
@@ -270,18 +270,18 @@ export default function DashboardAlertas() {
 
         <Card className={worstAgent ? "border-destructive/40" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Mais crítico</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Mais crítico</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-9 w-40" />
             ) : worstAgent ? (
               <div>
-                <div className="text-lg font-semibold text-destructive leading-tight">{worstAgent.agent_name}</div>
+                <div className="text-lg font-medium text-destructive leading-tight">{worstAgent.agent_name}</div>
                 <div className="text-sm text-muted-foreground">{worstAgent.overdue_count} reembolsos</div>
               </div>
             ) : (
-              <div className="text-lg font-semibold text-green-600">Nenhum</div>
+              <div className="text-lg font-medium text-success">Nenhum</div>
             )}
           </CardContent>
         </Card>
@@ -337,8 +337,8 @@ export default function DashboardAlertas() {
         ) : !data?.by_agent?.length ? (
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-semibold text-green-600">Sem alertas</p>
+              <CheckCircle2 className="h-12 w-12 text-success" />
+              <p className="text-lg font-medium text-success">Sem alertas</p>
               <p className="text-sm text-muted-foreground">
                 Todos os reembolsos estão dentro do prazo de 24 horas.
               </p>

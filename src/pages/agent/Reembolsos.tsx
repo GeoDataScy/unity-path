@@ -507,7 +507,7 @@ export default function Reembolsos() {
                   )}
                 </span>
                 {filteredDoneRefunds.length > 0 && (
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-medium">
                     Total reembolsado: {formatUsdPtBr(doneTotalValue)}
                   </span>
                 )}

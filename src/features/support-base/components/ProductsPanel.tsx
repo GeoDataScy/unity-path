@@ -73,7 +73,7 @@ export function ProductsPanel() {
 
   return (
     <div className="space-y-4">
-      <Alert className="border-amber-300 bg-amber-50 py-2.5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+      <Alert className="border-warning/40 bg-warning-soft py-2.5 text-ink">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
           <strong>Confira a estrutura antes de enviar links:</strong>{" "}

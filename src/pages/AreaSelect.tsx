@@ -14,7 +14,7 @@ import {
   isValidArea,
   type AppArea,
 } from "@/lib/roles";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 
 // Escolha de área depois do login, para quem tem acesso a mais de uma
@@ -146,7 +146,7 @@ export default function AreaSelect() {
   if (loading) {
     return (
       <div className="min-h-screen bg-login-bg flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+        <Loader2 className="h-6 w-6 animate-spin text-ink-tertiary" />
       </div>
     );
   }
@@ -155,24 +155,14 @@ export default function AreaSelect() {
 
   return (
     <div className="min-h-screen bg-login-bg flex items-center justify-center p-4 sm:p-8">
-      {/* Brilho roxo do logo, só decoração */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 opacity-60"
-        style={{
-          background:
-            "radial-gradient(60% 45% at 50% 0%, hsl(263 70% 62% / 0.22) 0%, transparent 70%)",
-        }}
-      />
-
       <main className="relative w-full max-w-4xl space-y-10 animate-in fade-in-50 duration-500">
         <header className="flex flex-col items-center gap-6 text-center">
-          <img src={logo} alt="XMX" className="h-14 w-auto" />
+          <Logo height={40} />
           <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white">
+            <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em] text-ink">
               {firstName ? `Olá, ${firstName}` : "Bem-vindo de volta"}
             </h1>
-            <p className="text-sm text-white/60">Escolha a área que você quer acessar agora.</p>
+            <p className="text-sm text-ink-tertiary">Escolha a área que você quer acessar agora.</p>
           </div>
         </header>
 
@@ -198,38 +188,38 @@ export default function AreaSelect() {
                 onClick={() => enterArea(area)}
                 aria-label={`Entrar na ${AREA_LABEL[area]}`}
                 className={cn(
-                  "group relative flex h-full flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left",
-                  "transition duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-white/[0.07]",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                  "group relative flex h-full flex-col gap-4 rounded-lg border border-line bg-surface p-6 text-left",
+                  "transition duration-200 hover:border-line-strong hover:shadow-sm",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 )}
               >
                 {isLast && (
-                  <span className="absolute right-4 top-4 rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/60">
+                  <span className="absolute right-4 top-4 rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
                     última usada
                   </span>
                 )}
 
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-primary/25">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-subtle text-ink transition-colors group-hover:bg-inverse group-hover:text-ink-inverse">
                   <Icon className="h-5 w-5" />
                 </span>
 
                 <div className="space-y-1.5">
-                  <h2 className="text-lg font-semibold text-white">{card.headline}</h2>
-                  <p className="text-sm text-white/60">{card.description}</p>
+                  <h2 className="text-lg font-medium tracking-[-0.015em] text-ink">{card.headline}</h2>
+                  <p className="text-sm text-ink-secondary">{card.description}</p>
                 </div>
 
                 {card.bullets.length > 0 && (
-                  <ul className="space-y-1 text-[13px] text-white/45">
+                  <ul className="space-y-1 text-[13px] text-ink-tertiary">
                     {card.bullets.map((b) => (
                       <li key={b} className="flex items-center gap-2">
-                        <span className="h-1 w-1 shrink-0 rounded-full bg-primary/70" />
+                        <span className="h-1 w-1 shrink-0 rounded-full bg-line-control" />
                         {b}
                       </li>
                     ))}
                   </ul>
                 )}
 
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-medium text-primary">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-medium text-ink">
                   Entrar
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </span>
@@ -239,13 +229,13 @@ export default function AreaSelect() {
         </div>
 
         <footer className="flex flex-col items-center gap-3 text-center">
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-ink-tertiary">
             Você pode trocar de área depois pelo menu lateral, sem sair da conta.
           </p>
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-white/50 transition hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-ink-tertiary transition-colors hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <LogOut className="h-3.5 w-3.5" />
             Sair da conta

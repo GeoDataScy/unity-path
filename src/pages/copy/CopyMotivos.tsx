@@ -38,7 +38,7 @@ function DeltaBadge({ value, suffix }: { value: number | null; suffix: string })
         : "text-muted-foreground";
 
   return (
-    <span className={cn("inline-flex items-center gap-1 tabular-nums", tone)}>
+    <span className={cn("inline-flex items-center gap-1 font-mono tabular-nums", tone)}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {fmtSigned(value, suffix)}
     </span>
@@ -59,7 +59,7 @@ function KpiCard({
   return (
     <div className="rounded-lg border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">{value}</p>
       {hint && <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
       {children}
     </div>
@@ -133,7 +133,7 @@ export default function CopyMotivos() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-medium tracking-tight">
           Motivos de reembolso
           {fullName ? <span className="ml-2 text-base font-normal text-muted-foreground">Olá, {fullName}</span> : null}
         </h1>
@@ -319,14 +319,14 @@ export default function CopyMotivos() {
                         <TableCell>
                           <ShareBar value={row.share} max={maxReasonShare} />
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtPct(row.share)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtInt(row.n)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.share)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtInt(row.n)}</TableCell>
                         <TableCell className="text-right text-xs">
                           <DeltaBadge value={row.delta_pp} suffix=" p.p." />
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtMoney(row.refunded_value)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtPct(row.devolvido_pct)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtDays(row.dias_mediano)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtMoney(row.refunded_value)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.devolvido_pct)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtDays(row.dias_mediano)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -378,15 +378,15 @@ export default function CopyMotivos() {
                         <TableCell>
                           <ShareBar value={row.n} max={maxProductN} />
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtInt(row.n)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtPct(row.share)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtMoney(row.refunded_value)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmtPct(row.devolvido_pct)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtInt(row.n)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.share)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtMoney(row.refunded_value)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.devolvido_pct)}</TableCell>
                         <TableCell className="text-sm">
                           {row.top_reason ? (
                             <span className="text-muted-foreground">
                               {row.top_reason}{" "}
-                              <span className="tabular-nums">({fmtPct(row.top_reason_share)})</span>
+                              <span className="font-mono tabular-nums">({fmtPct(row.top_reason_share)})</span>
                             </span>
                           ) : (
                             "—"
@@ -441,12 +441,12 @@ export default function CopyMotivos() {
                         >
                           <TableCell className="font-medium">{row.product}</TableCell>
                           <TableCell>{row.category}</TableCell>
-                          <TableCell className="text-right tabular-nums">{fmtInt(row.n)}</TableCell>
-                          <TableCell className="text-right tabular-nums">{fmtPct(row.share_in_product)}</TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground">
+                          <TableCell className="text-right font-mono tabular-nums">{fmtInt(row.n)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{fmtPct(row.share_in_product)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                             {fmtPct(row.baseline_share)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums font-medium">
+                          <TableCell className="text-right font-mono tabular-nums font-medium">
                             {row.lift?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×
                           </TableCell>
                         </TableRow>
@@ -471,7 +471,7 @@ export default function CopyMotivos() {
                         {row.name}
                       </span>
                       <ShareBar value={row.n} max={maxPlatform} />
-                      <span className="w-24 shrink-0 text-right tabular-nums">
+                      <span className="w-24 shrink-0 text-right font-mono tabular-nums">
                         {fmtInt(row.n)}{" "}
                         <span className="text-muted-foreground">({fmtPct(row.share)})</span>
                       </span>
@@ -493,7 +493,7 @@ export default function CopyMotivos() {
                         {row.name}
                       </span>
                       <ShareBar value={row.n} max={maxChannel} />
-                      <span className="w-24 shrink-0 text-right tabular-nums">
+                      <span className="w-24 shrink-0 text-right font-mono tabular-nums">
                         {fmtInt(row.n)}{" "}
                         <span className="text-muted-foreground">({fmtPct(row.share)})</span>
                       </span>

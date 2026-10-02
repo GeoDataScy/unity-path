@@ -62,7 +62,7 @@ export function ProductBreakdownCards({ series, products, metric }: Props) {
               <span className="h-3 w-3 rounded" style={{ background: p.color }} />
               {p.key}
             </div>
-            <div className="rf-display mt-1 text-2xl font-bold tabular-nums" style={{ color: "var(--rf-ink)" }}>
+            <div className="rf-display mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]" style={{ color: "var(--rf-ink)" }}>
               {metric === "qtd" ? fmtInt(a.orders) : fmtUsd(a.amount)}
             </div>
             <div className="mt-0.5 text-xs" style={{ color: "var(--rf-ink-soft)" }}>

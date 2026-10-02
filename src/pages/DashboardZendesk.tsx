@@ -91,7 +91,7 @@ export default function DashboardZendesk() {
           <Headset className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold">Zendesk</h1>
+          <h1 className="text-xl font-medium">Zendesk</h1>
           <p className="text-sm text-muted-foreground">
             Tickets do Zendesk lidos ao vivo da API. O período é o mesmo da barra lateral.
           </p>
@@ -104,7 +104,7 @@ export default function DashboardZendesk() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Link2 className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold">Status da integração</h2>
+              <h2 className="text-sm font-medium">Status da integração</h2>
             </div>
             {status.isLoading ? (
               <Skeleton className="h-4 w-72" />
@@ -125,7 +125,7 @@ export default function DashboardZendesk() {
           <div className="flex items-center gap-2">
             <Badge
               variant={conectado ? "secondary" : "outline"}
-              className={cn("text-[11px]", conectado && "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300")}
+              className={cn("text-[11px]", conectado && "bg-signal-soft text-success")}
             >
               {status.isLoading ? "Verificando…" : conectado ? "Conectado" : "Não conectado"}
             </Badge>
@@ -147,7 +147,7 @@ export default function DashboardZendesk() {
 
         {status.data?.connected && (
           <>
-            <div className="mt-5 mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="mt-5 mb-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
               Tickets criados no período ({formatarPeriodo(fromISO, toISO)})
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
@@ -394,8 +394,8 @@ function Tile({
         ativo && "border-primary ring-1 ring-primary/40",
       )}
     >
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{rotulo}</div>
-      <div className="text-lg font-semibold tabular-nums">{valor.toLocaleString("pt-BR")}</div>
+      <div className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{rotulo}</div>
+      <div className="text-lg font-medium font-mono tabular-nums">{valor.toLocaleString("pt-BR")}</div>
     </button>
   );
 }
@@ -470,7 +470,7 @@ function Explicacao() {
       <Card className="p-4">
         <CollapsibleTrigger asChild>
           <button type="button" className="flex w-full items-center justify-between text-left">
-            <span className="flex items-center gap-2 text-sm font-semibold">
+            <span className="flex items-center gap-2 text-sm font-medium">
               <HelpCircle className="h-4 w-4 text-muted-foreground" />
               Como ler esta tela
             </span>

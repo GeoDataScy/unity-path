@@ -42,7 +42,7 @@ export function LyaGuia() {
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <h2 className="flex items-center gap-2 text-[15px] font-medium">
             <GraduationCap className="h-4 w-4 text-primary" /> Como treinar a Lya
           </h2>
           <p className="mt-0.5 text-[12.5px] text-muted-foreground">
@@ -66,11 +66,11 @@ export function LyaGuia() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-[13px] font-semibold">Como escrever uma boa memória</h3>
+              <h3 className="mb-2 text-[13px] font-medium">Como escrever uma boa memória</h3>
               <ul className="space-y-1.5 text-[12.5px] text-muted-foreground">
                 {["Um assunto por memória, curto e claro.", "Ao corrigir, escreva a regra: “sempre separar X de Y”.", "Diga de onde vem a informação quando houver."].map((t, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" /> {t}
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" /> {t}
                   </li>
                 ))}
                 {["Não misture vários assuntos na mesma memória.", "Não use a memória para “colar” um número: os números vêm do painel e do banco."].map((t, i) => (
@@ -81,7 +81,7 @@ export function LyaGuia() {
               </ul>
             </div>
             <div>
-              <h3 className="mb-2 text-[13px] font-semibold">O passo a passo</h3>
+              <h3 className="mb-2 text-[13px] font-medium">O passo a passo</h3>
               <ol className="space-y-1.5 text-[12.5px] text-muted-foreground">
                 <li><b className="text-foreground">1.</b> Pergunte à Lya no chat.</li>
                 <li><b className="text-foreground">2.</b> Ela responde citando a tela ou a consulta usada.</li>
@@ -91,7 +91,7 @@ export function LyaGuia() {
             </div>
           </div>
           <div>
-            <h3 className="mb-2 text-[13px] font-semibold">Exemplos prontos para adaptar</h3>
+            <h3 className="mb-2 text-[13px] font-medium">Exemplos prontos para adaptar</h3>
             <div className="grid gap-2 sm:grid-cols-2">
               {EXEMPLOS.map((ex, i) => (
                 <div key={i} className="rounded-xl border border-border bg-muted/40 p-3">
@@ -201,7 +201,7 @@ export function LyaTreinar({
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-[15px] font-semibold">{form.editing ? "Editar memória" : "Ensinar algo novo à Lya"}</h2>
+            <h2 className="text-[15px] font-medium">{form.editing ? "Editar memória" : "Ensinar algo novo à Lya"}</h2>
             <p className="text-[12.5px] text-muted-foreground">
               {form.editing
                 ? "Ajuste o conteúdo e salve — a Lya atualiza na hora."
@@ -275,7 +275,7 @@ export function LyaTreinar({
 
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-[14px] font-semibold">O que a Lya já sabe</h3>
+          <h3 className="text-[14px] font-medium">O que a Lya já sabe</h3>
           <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar memórias…" className="max-w-xs" />
         </div>
         <div className="mb-5 flex flex-wrap gap-2">
@@ -306,7 +306,7 @@ export function LyaTreinar({
                     <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-medium", tp.className)}>{tp.label}</span>
                     <span className="font-mono text-[10.5px] text-muted-foreground">{m.name}</span>
                   </div>
-                  <h4 className="text-[13.5px] font-semibold leading-snug">{m.description || m.name}</h4>
+                  <h4 className="text-[13.5px] font-medium leading-snug">{m.description || m.name}</h4>
                   {m.body && <p className="mt-1.5 line-clamp-3 text-[12.5px] leading-relaxed text-muted-foreground">{m.body}</p>}
                   {m.tags?.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap gap-1">

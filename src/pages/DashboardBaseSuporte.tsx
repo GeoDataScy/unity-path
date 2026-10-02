@@ -121,7 +121,7 @@ export default function DashboardBaseSuporte() {
           <BookOpen className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold">Base de Suporte</h1>
+          <h1 className="text-xl font-medium">Base de Suporte</h1>
           <p className="text-sm text-muted-foreground">
             O que você cadastra aqui aparece na Base de Suporte de todos os agentes.
           </p>

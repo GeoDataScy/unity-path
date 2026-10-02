@@ -308,7 +308,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
         ) : (
           <>
             {tickets.length > LARGE_BATCH_WARNING_THRESHOLD && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm text-ink">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <strong>{tickets.length} tickets em aberto.</strong> Considere redistribuir em
@@ -404,7 +404,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                       </TableCell>
                       <TableCell className="font-medium">{t.client_email}</TableCell>
                       <TableCell>{t.product}</TableCell>
-                      <TableCell className="tabular-nums">
+                      <TableCell className="font-mono tabular-nums">
                         {formatServiceDate(t.service_date)}
                       </TableCell>
                       <TableCell>
@@ -412,7 +412,7 @@ export function ReassignTicketsDialog({ open, onOpenChange, sourceAgent, allUser
                           {t.effective_status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center tabular-nums text-muted-foreground">
+                      <TableCell className="text-center font-mono tabular-nums text-muted-foreground">
                         {t.follow_up_count}
                       </TableCell>
                       <TableCell>

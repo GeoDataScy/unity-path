@@ -138,7 +138,7 @@ export function LyaChat({
   const avisos = (
     <>
       {conv.saveError && (
-        <div role="alert" className="mb-2 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-amber-500/50 bg-card px-3 py-2 text-[12px] text-foreground">
+        <div role="alert" className="mb-2 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-warning/40 bg-card px-3 py-2 text-[12px] text-foreground">
           <span>
             Não foi possível salvar esta conversa no histórico.{" "}
             <span className="text-muted-foreground">Ela continua na tela, mas pode se perder ao recarregar.</span>
@@ -149,7 +149,7 @@ export function LyaChat({
         </div>
       )}
       {conv.aviso && (
-        <div role="alert" className="mb-2 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-amber-500/50 bg-card px-3 py-2 text-[12px] text-foreground">
+        <div role="alert" className="mb-2 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-warning/40 bg-card px-3 py-2 text-[12px] text-foreground">
           <span>{conv.aviso}</span>
           <button type="button" onClick={conv.dismissAviso} className="rounded-lg border border-border px-2 py-0.5 font-medium text-primary">
             Entendi

@@ -150,7 +150,7 @@ export function NotepadNote({
       <div className="absolute right-2 top-0 flex h-7 items-center">
         <span
           className={cn(
-            "text-[10px] tabular-nums text-muted-foreground/70 transition-opacity",
+            "text-[10px] font-mono tabular-nums text-muted-foreground/70 transition-opacity",
             "group-hover/note:opacity-0 group-focus-within/note:opacity-0",
           )}
         >

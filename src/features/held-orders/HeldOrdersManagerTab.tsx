@@ -57,13 +57,13 @@ function statusBadge(o: ManagerHeldOrder) {
   if (label === "Em andamento") return <Badge variant="in-progress">Em andamento</Badge>;
   if (label === "Novo") {
     return (
-      <Badge variant="outline" className="text-sky-600 dark:text-sky-400">
+      <Badge variant="outline" className="text-info">
         Novo
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+    <Badge variant="outline" className="text-warning">
       {label}
     </Badge>
   );
@@ -276,17 +276,17 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.total}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.total}</div>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Clock className="h-4 w-4 text-amber-500" /> Aguardando
+              <Clock className="h-4 w-4 text-warning" /> Aguardando
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.waiting}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.waiting}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -296,17 +296,17 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.inProgress}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.inProgress}</div>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Confirmados
+              <CheckCircle2 className="h-4 w-4 text-success" /> Confirmados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.confirmed}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.confirmed}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -316,7 +316,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{totals.unassigned}</div>}
+            {ordersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{totals.unassigned}</div>}
           </CardContent>
         </Card>
       </section>
@@ -325,16 +325,16 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
       {summary.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Por agente</CardTitle>
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary">Por agente</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {summary.map((s) => (
                 <div key={s.agent_id} className="rounded-md border px-3 py-1.5 text-sm">
                   <span className="font-medium">{s.full_name ?? "Sem nome"}</span>{" "}
-                  <span className="text-amber-600 dark:text-amber-400 tabular-nums">{s.pending} pend.</span>{" "}
-                  <span className="text-status-in-progress tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{s.confirmed} conf.</span>
+                  <span className="text-warning font-mono tabular-nums">{s.pending} pend.</span>{" "}
+                  <span className="text-status-in-progress font-mono tabular-nums">{s.in_progress ?? 0} em and.</span>{" "}
+                  <span className="text-success font-mono tabular-nums">{s.confirmed} conf.</span>
                 </div>
               ))}
             </div>
@@ -539,7 +539,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
                             {o.email && <span className="text-xs text-muted-foreground">{o.email}</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm tabular-nums">{formatDate(o.order_date)}</TableCell>
+                        <TableCell className="text-sm font-mono tabular-nums">{formatDate(o.order_date)}</TableCell>
                         <TableCell className="text-sm">
                           {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
                         </TableCell>

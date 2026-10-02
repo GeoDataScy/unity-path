@@ -10,10 +10,11 @@ import type {
   ChannelEfficiencyTotal,
 } from "@/features/dashboard/useDashboardRefundMetricsQuery";
 
-// Azul = parcial (a conversão que a operação persegue), laranja = integral.
-// Par validado para daltonismo nos dois temas; verde/vermelho não passa.
-const COLOR_PARTIAL = "hsl(var(--chart-2))";
-const COLOR_FULL = "hsl(var(--chart-8))";
+// Aqua = parcial (a conversão que a operação persegue), grafite = integral
+// (hubi). O par se separa por luminosidade, não só por matiz: seguro em
+// daltonismo nos dois temas.
+const COLOR_PARTIAL = "hsl(var(--aqua))";
+const COLOR_FULL = "hsl(var(--chart-mute-1))";
 const TOTAL_LABEL = "Todos os canais";
 const ROW_HEIGHT = 44;
 
@@ -173,7 +174,7 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       <LabelList
                         dataKey="partial_rate"
                         position="center"
-                        style={{ fontSize: 11, fontWeight: 600, fill: "#fff" }}
+                        style={{ fontSize: 11, fontWeight: 500, fill: "hsl(var(--on-signal))" }}
                         formatter={(v: number) => (v >= 12 ? pct(v, 0) : "")}
                       />
                     </Bar>
@@ -190,7 +191,7 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       <LabelList
                         dataKey="full_rate"
                         position="center"
-                        style={{ fontSize: 11, fontWeight: 600, fill: "#fff" }}
+                        style={{ fontSize: 11, fontWeight: 500, fill: "hsl(var(--ink-inverse))" }}
                         formatter={(v: number) => (v >= 12 ? pct(v, 0) : "")}
                       />
                     </Bar>
@@ -220,17 +221,17 @@ export function ChannelEfficiencyCard({ rows, total, isLoading, className }: Pro
                       className={cn(row.isTotal && "bg-muted/40 font-medium")}
                     >
                       <TableCell className="font-medium">{row.name}</TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.total_done)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.partial_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.total_done)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.partial_count)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                         {row.isTotal ? "—" : pct(row.partial_share)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{count(row.full_count)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="text-right font-mono tabular-nums">{count(row.full_count)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                         {row.isTotal ? "—" : pct(row.full_share)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{pct(row.partial_rate)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{pct(row.full_rate)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{pct(row.partial_rate)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{pct(row.full_rate)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

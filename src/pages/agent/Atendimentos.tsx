@@ -820,7 +820,7 @@ export default function Atendimentos() {
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${supportChannel === "sms" ? "bg-aqua-soft text-aqua" : "bg-ice-soft text-info"}`}>
             {supportChannel.toUpperCase()}
           </span>
         </div>
@@ -1005,7 +1005,7 @@ export default function Atendimentos() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1 gap-1.5 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800 lg:flex-none dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+                  className="flex-1 gap-1.5 border-success text-success hover:bg-signal-soft hover:text-ink lg:flex-none"
                   disabled={!canSubmit || createMutation.isPending}
                   onClick={handleCreateAndConclude}
                 >
@@ -1027,7 +1027,7 @@ export default function Atendimentos() {
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
+            <h2 className="text-lg font-medium">Meus Atendimentos Recentes</h2>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -1094,7 +1094,7 @@ export default function Atendimentos() {
             </div>
             <div className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1 text-xs">
               <span className="text-muted-foreground">Total de atendimentos:</span>
-              <span className="font-semibold text-foreground">{totalFilteredInteractions}</span>
+              <span className="font-medium text-foreground">{totalFilteredInteractions}</span>
             </div>
             <Button
               type="button"
@@ -1200,7 +1200,7 @@ export default function Atendimentos() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="tabular-nums text-muted-foreground">
+                    <TableCell className="font-mono tabular-nums text-muted-foreground">
                       {formatCreatedAtTimeSP(s.created_at)}
                     </TableCell>
                     {canViewAllTickets && (
@@ -1222,7 +1222,7 @@ export default function Atendimentos() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-green-600 hover:bg-green-50 hover:text-green-700"
+                            className="h-6 w-6 text-success hover:bg-signal-soft hover:text-success"
                             title="Concluir atendimento"
                             aria-label="Concluir atendimento"
                             disabled={concludingId === s.id}

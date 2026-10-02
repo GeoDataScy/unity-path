@@ -137,7 +137,7 @@ function ReplyCard({
     <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
-          <h3 className="text-sm font-semibold leading-tight">{reply.titulo}</h3>
+          <h3 className="text-sm font-medium leading-tight">{reply.titulo}</h3>
           <Badge variant="secondary" className="text-[10px] font-medium">
             {reply.categoria}
           </Badge>

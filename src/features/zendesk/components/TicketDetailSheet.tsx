@@ -100,7 +100,7 @@ export function TicketDetailSheet({ ticketId, onClose }: Props) {
             </dl>
 
             <div>
-              <div className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">Tags</div>
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Tags</div>
               {t.tags.length === 0 ? (
                 <span className="text-sm text-muted-foreground">Nenhuma tag.</span>
               ) : (
@@ -117,7 +117,7 @@ export function TicketDetailSheet({ ticketId, onClose }: Props) {
             {/* ── Conversa ── */}
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <h3 className="flex items-center gap-2 text-sm font-medium">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   Conversa
                   <span className="font-normal text-muted-foreground">mais recente primeiro</span>
@@ -160,7 +160,7 @@ function Fato({
 }) {
   return (
     <div className={cn("min-w-0 rounded-md border p-2.5", destaque && "border-primary/40 bg-primary/5")}>
-      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{rotulo}</dt>
+      <dt className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{rotulo}</dt>
       <dd className="truncate font-medium" title={valor}>
         {valor}
       </dd>
@@ -179,22 +179,22 @@ function Mensagem({ c }: { c: ZendeskComment }) {
     <article
       className={cn(
         "rounded-lg border-l-4 bg-card p-3 shadow-sm",
-        doCliente && "border-l-sky-500",
-        !doCliente && c.public && "border-l-emerald-500",
-        c.internal_note && "border-l-amber-500 border-dashed bg-amber-500/5",
+        doCliente && "border-l-info",
+        !doCliente && c.public && "border-l-success",
+        c.internal_note && "border-l-warning border-dashed bg-warning-soft",
       )}
     >
       <header className="mb-1.5 flex flex-wrap items-center gap-2 text-xs">
         {doCliente ? (
-          <Badge variant="secondary" className="gap-1 bg-sky-500/15 text-[10px] text-sky-700 dark:text-sky-300">
+          <Badge variant="secondary" className="gap-1 bg-ice-soft text-[10px] text-info">
             <User className="h-3 w-3" /> Cliente
           </Badge>
         ) : c.internal_note ? (
-          <Badge variant="secondary" className="gap-1 bg-amber-500/15 text-[10px] text-amber-700 dark:text-amber-300">
+          <Badge variant="secondary" className="gap-1 bg-warning-soft text-[10px] text-ink">
             <Lock className="h-3 w-3" /> Nota interna
           </Badge>
         ) : (
-          <Badge variant="secondary" className="gap-1 bg-emerald-500/15 text-[10px] text-emerald-700 dark:text-emerald-300">
+          <Badge variant="secondary" className="gap-1 bg-signal-soft text-[10px] text-success">
             <Users className="h-3 w-3" /> Time
           </Badge>
         )}

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
@@ -180,8 +180,8 @@ export default function AgentLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md space-y-3 text-center">
-          <img src={logo} alt="XMX" className="mx-auto h-10 w-auto" />
-          <h1 className="text-lg font-semibold">Área em construção</h1>
+          <Logo height={32} className="mx-auto" />
+          <h1 className="text-xl font-medium tracking-[-0.015em]">Área em construção</h1>
           <p className="text-sm text-muted-foreground">
             Sua conta é do time <span className="font-medium">{roleSemArea}</span>, e a área desse time
             ainda não está publicada nesta versão do app. Assim que ela subir, o login já cai direto lá.
@@ -208,23 +208,22 @@ export default function AgentLayout() {
         <AgentSidebar />
 
         <SidebarInset>
-          <header className="border-b border-white/10 bg-dashboard-sidebar text-dashboard-sidebar-foreground">
+          <header className="border-b border-line bg-canvas text-ink">
             <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="-ml-1 text-dashboard-sidebar-foreground hover:bg-white/10" />
+                <SidebarTrigger className="-ml-1 text-ink-secondary hover:bg-subtle hover:text-ink" />
                 <div className="flex items-center gap-2">
-                  <img src={logo} alt="XMX" className="h-6 w-auto" loading="lazy" />
-                  <span className="text-sm font-medium tracking-wide">Workspace</span>
+                  <Logo height={18} />
+                  <span className="text-sm font-medium text-ink-secondary">Workspace</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <NotificationsBell enabled={Boolean(userId)} />
-                <ThemeToggle className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15" />
+                <ThemeToggle variant="ghost" className="text-ink-secondary hover:text-ink" />
                 <Button
                   onClick={handleLogout}
-                  variant="secondary"
-                  className="bg-white/10 text-dashboard-sidebar-foreground hover:bg-white/15"
+                  variant="outline"
                 >
                   Sair
                 </Button>

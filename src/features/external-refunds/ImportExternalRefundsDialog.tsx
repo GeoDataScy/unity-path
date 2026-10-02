@@ -251,7 +251,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
         <div className="space-y-4">
           <div className={autoSplit ? "grid gap-3" : monthSplit ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-3"}>
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Plataforma</div>
+              <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Plataforma</div>
               <Select value={platform} onValueChange={(v) => setPlatform(v as ExternalPlatform)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Plataforma" />
@@ -267,7 +267,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
             </div>
             {!autoSplit && (
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto</div>
+              <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Produto</div>
               <Select value={product} onValueChange={setProduct}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Escolha o produto" />
@@ -284,7 +284,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
             )}
             {manual && (
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mês do arquivo</div>
+              <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Mês do arquivo</div>
               <Select value={monthRef} onValueChange={setMonthRef}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Mês" />
@@ -330,13 +330,13 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                 <p className="mt-1 text-xs text-destructive">{parseError}</p>
               ) : autoSplit ? (
                 <>
-                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                  <p className="mt-1 text-xs text-muted-foreground font-mono tabular-nums">
                     {pagamerican!.refunds} reembolso(s) em {batches.length} lote(s)
                     {pagamerican!.chargebacks > 0 && <> · {pagamerican!.chargebacks} chargeback(s) fora da conta</>}
                     {pagamerican!.unspecified > 0 && <> · {pagamerican!.unspecified} sem tipo no arquivo</>}
                   </p>
                   {pagamerican!.unknownProducts.length > 0 && (
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    <p className="mt-1 text-xs text-warning">
                       Fora do catálogo: {pagamerican!.unknownProducts.join(", ")}. Vão entrar com esse nome e não vão
                       casar com o interno.
                     </p>
@@ -345,7 +345,7 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                 </>
               ) : monthSplit ? (
                 <>
-                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                  <p className="mt-1 text-xs text-muted-foreground font-mono tabular-nums">
                     {buygoods!.refunds} pedido(s) reembolsado(s) em {batches.length} mês(es) · {buygoods!.lines} estorno(s)
                     no arquivo
                     {buygoods!.invalid > 0 && <> · {buygoods!.invalid} linha(s) ilegível(is) (serão ignoradas)</>}
@@ -353,15 +353,15 @@ export function ImportExternalRefundsDialog({ open, onOpenChange }: Props) {
                   {product ? (
                     <BatchTable batches={batches} />
                   ) : (
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">Escolha o produto do arquivo.</p>
+                    <p className="mt-1 text-xs text-warning">Escolha o produto do arquivo.</p>
                   )}
                 </>
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                <p className="mt-1 text-xs text-muted-foreground font-mono tabular-nums">
                   {cartpanda!.rows.length} linha(s) · {cartpanda!.orders} pedido(s)
                   {cartpanda!.invalidDates > 0 && <> · {cartpanda!.invalidDates} com data ilegível (serão ignoradas)</>}
                   {outsideMonth > 0 && (
-                    <span className="text-amber-700 dark:text-amber-400"> · {outsideMonth} fora de {fmtMonth(monthRef)}</span>
+                    <span className="text-warning"> · {outsideMonth} fora de {fmtMonth(monthRef)}</span>
                   )}
                 </p>
               )}
@@ -411,7 +411,7 @@ function BatchTable({ batches }: { batches: ExternalRefundBatch[] }) {
                 )}
               </td>
               <td className="px-2 py-1">{fmtMonth(b.monthRef)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{b.rows.length}</td>
+              <td className="px-2 py-1 text-right font-mono tabular-nums">{b.rows.length}</td>
             </tr>
           ))}
         </tbody>

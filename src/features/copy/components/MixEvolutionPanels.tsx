@@ -75,7 +75,7 @@ export function MixEvolutionPanels({ rows, categories }: Props) {
               {s.category}
             </p>
             <div className="mt-0.5 flex items-baseline gap-2">
-              <span className="text-xl font-semibold tabular-nums">{fmtPct(last.share)}</span>
+              <span className="text-xl font-medium font-mono tabular-nums">{fmtPct(last.share)}</span>
               <span className="text-[11px] text-muted-foreground">
                 em {last.label} · {deltaPp >= 0 ? "+" : ""}
                 {deltaPp.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p. desde {first.label}

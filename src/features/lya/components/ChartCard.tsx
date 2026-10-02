@@ -51,7 +51,7 @@ export function ChartCard({ chart }: { chart: LyaChart }) {
 
   return (
     <div className="mt-3 w-full rounded-xl border border-border bg-card p-4">
-      <div className="text-[13px] font-semibold text-foreground">{chart.titulo}</div>
+      <div className="text-[13px] font-medium text-foreground">{chart.titulo}</div>
       {chart.subtitulo && <div className="mb-1 text-[11px] text-muted-foreground">{chart.subtitulo}</div>}
       <div className="mt-2" style={{ width: "100%", height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">

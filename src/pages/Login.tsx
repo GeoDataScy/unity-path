@@ -6,7 +6,7 @@ import { InputLogin } from "@/components/ui/input-login";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent } from "@/lib/userSession";
 import { homePathForRole } from "@/lib/roles";
-import logo from "@/assets/logo-xmx.png";
+import { Logo } from "@/components/brand/Logo";
 
 function isNetworkError(error: unknown): boolean {
   if (!error) return false;
@@ -153,22 +153,18 @@ const Login = () => {
     <div className="min-h-screen bg-login-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 animate-in fade-in-50 duration-500">
         <div className="flex flex-col items-center space-y-8">
-          <img 
-            src={logo} 
-            alt="XMX Logo" 
-            className="w-32 h-auto animate-in zoom-in-50 duration-700"
-          />
+          <Logo height={40} className="animate-in fade-in-0 duration-500" />
           
           <div className="w-full space-y-6">
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-semibold text-white">Bem-vindo de volta</h1>
-              <p className="text-sm text-muted-foreground/80">Faça login para continuar</p>
+              <h1 className="text-[48px] font-medium leading-[52px] tracking-[-0.035em] text-ink">Bem-vindo de volta</h1>
+              <p className="text-sm text-ink-tertiary">Faça login para continuar</p>
             </div>
 
             {reachable === false && (
-              <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-100">
+              <div className="rounded-lg border border-warning/40 bg-warning-soft p-3 text-sm text-ink">
                 <p className="font-medium">Não conseguimos alcançar o servidor.</p>
-                <p className="mt-1 text-amber-100/80">
+                <p className="mt-1 text-ink-secondary">
                   Sua rede está bloqueando o acesso. Desative VPN/antivírus, troque o DNS
                   para 1.1.1.1 ou 8.8.8.8, ou tente em outra rede (ex.: 4G do celular).
                 </p>
@@ -177,7 +173,7 @@ const Login = () => {
 
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-white/90">
+                <label htmlFor="email" className="text-[13px] font-medium text-ink">
                   Email
                 </label>
                 <InputLogin
@@ -191,7 +187,7 @@ const Login = () => {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-white/90">
+                <label htmlFor="password" className="text-[13px] font-medium text-ink">
                   Senha
                 </label>
                 <InputLogin
@@ -207,7 +203,7 @@ const Login = () => {
 
               <Button
                 type="submit"
-                className="w-full h-12 text-base font-medium"
+                className="w-full h-11 text-[15px] font-medium"
                 disabled={loading}
               >
                 {loading ? "Carregando..." : "Entrar"}

@@ -22,7 +22,7 @@ function KindBadge({ row }: { row: DivergenceRow }) {
   if (row.kind === "ambos") return <Badge variant="success">{label}</Badge>;
   if (row.kind === "interno") return <Badge variant="in-progress">{label}</Badge>;
   return (
-    <Badge variant="outline" className="border-amber-500/60 text-amber-700 dark:text-amber-400">
+    <Badge variant="outline" className="border-warning/40 text-warning">
       {label}
     </Badge>
   );
@@ -87,8 +87,8 @@ export function DivergencesTable({ rows, isLoading }: Props) {
                   )}
                 </div>
               </TableCell>
-              <TableCell className="tabular-nums">{fmtDate(r.external_date)}</TableCell>
-              <TableCell className="tabular-nums">
+              <TableCell className="font-mono tabular-nums">{fmtDate(r.external_date)}</TableCell>
+              <TableCell className="font-mono tabular-nums">
                 {fmtDate(r.internal_request_date)}
                 {r.internal_request_date && !r.internal_completion_date && (
                   <span className="ml-1 text-xs text-muted-foreground">(em aberto)</span>
@@ -113,7 +113,7 @@ export function DivergencesTable({ rows, isLoading }: Props) {
                   "—"
                 )}
               </TableCell>
-              <TableCell className="text-right tabular-nums">{fmtUsd(r.refund_amount)}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{fmtUsd(r.refund_amount)}</TableCell>
               <TableCell className="max-w-[160px] truncate" title={r.agent_name ?? ""}>
                 {r.agent_name ?? "—"}
               </TableCell>

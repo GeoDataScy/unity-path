@@ -108,7 +108,7 @@ function Segmented<T extends string>({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(o.value)}
-              className="rounded-lg px-4 py-2 text-[13.5px] font-semibold transition-colors"
+              className="rounded-lg px-4 py-2 text-[13.5px] font-medium transition-colors"
               style={{
                 background: on ? "var(--rf-panel)" : "transparent",
                 color: on ? "var(--rf-ink)" : "var(--rf-ink-soft)",
@@ -142,7 +142,7 @@ function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub
         {label}
       </div>
       <div
-        className="rf-display mt-1 text-[clamp(19px,2.2vw,22px)] font-bold leading-tight tabular-nums"
+        className="rf-display mt-1 text-[clamp(19px,2.2vw,22px)] font-medium leading-tight font-mono tabular-nums"
         style={{ color: "var(--rf-ink)" }}
       >
         {value}
@@ -353,7 +353,7 @@ export default function DashboardRefundsComparativo() {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-2">
             <RefundsSubNav />
-            <h1 className="rf-display text-[clamp(24px,4.5vw,34px)] font-bold leading-none" style={{ color: "var(--rf-ink)" }}>
+            <h1 className="rf-display text-[clamp(24px,4.5vw,34px)] font-medium leading-none" style={{ color: "var(--rf-ink)" }}>
               Volume de reembolsos
             </h1>
             <p className="max-w-[52ch] text-sm" style={{ color: "var(--rf-ink-soft)" }}>
@@ -388,7 +388,7 @@ export default function DashboardRefundsComparativo() {
         <div className="grid gap-3 sm:grid-cols-3">
           {filtros.map((f) => (
             <div key={f.lab} className="space-y-1.5">
-              <div className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--rf-ink-faint)" }}>
+              <div className="text-xs font-medium uppercase tracking-[0.06em]" style={{ color: "var(--rf-ink-faint)" }}>
                 {f.lab}
               </div>
               {f.node}
@@ -474,7 +474,7 @@ export default function DashboardRefundsComparativo() {
 
         <Panel className="px-2 pb-3 pt-5">
           <div className="flex items-baseline justify-between gap-3 px-3.5 pb-1.5">
-            <span className="rf-display text-[15px] font-semibold" style={{ color: "var(--rf-ink)" }}>
+            <span className="rf-display text-[15px] font-medium" style={{ color: "var(--rf-ink)" }}>
               Reembolsos por {gran === "dia" ? "dia" : gran === "sem" ? "semana" : "mês"}
             </span>
             {gran === "dia" && (
@@ -511,7 +511,7 @@ export default function DashboardRefundsComparativo() {
                 >
                   <span className="h-3 w-3 rounded" style={{ background: p.color }} />
                   {p.key}
-                  <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
                     {metric === "qtd" ? fmtInt(tot) : fmtUsd(tot)}
                   </span>
                 </button>
@@ -522,7 +522,7 @@ export default function DashboardRefundsComparativo() {
 
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
+            <h2 className="rf-display text-lg font-medium" style={{ color: "var(--rf-ink)" }}>
               Migração do atendimento: sua equipe × plataforma
             </h2>
             <span className="text-xs" style={{ color: "var(--rf-ink-faint)" }}>
@@ -562,7 +562,7 @@ export default function DashboardRefundsComparativo() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
+          <h2 className="rf-display text-lg font-medium" style={{ color: "var(--rf-ink)" }}>
             Composição: parciais × integrais
           </h2>
           <Panel className="p-4">
@@ -586,7 +586,7 @@ export default function DashboardRefundsComparativo() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
+          <h2 className="rf-display text-lg font-medium" style={{ color: "var(--rf-ink)" }}>
             Por produto no período
           </h2>
           {isLoading ? (
@@ -602,7 +602,7 @@ export default function DashboardRefundsComparativo() {
 
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
+            <h2 className="rf-display text-lg font-medium" style={{ color: "var(--rf-ink)" }}>
               Pedido a pedido
             </h2>
             <span className="text-xs" style={{ color: "var(--rf-ink-faint)" }}>
@@ -645,7 +645,7 @@ export default function DashboardRefundsComparativo() {
 
         {hasImports && (
           <section className="space-y-3">
-            <h2 className="rf-display text-lg font-semibold" style={{ color: "var(--rf-ink)" }}>
+            <h2 className="rf-display text-lg font-medium" style={{ color: "var(--rf-ink)" }}>
               Arquivos importados
             </h2>
             <Panel>
@@ -658,7 +658,7 @@ export default function DashboardRefundsComparativo() {
                   <span style={{ color: "var(--rf-ink)" }}>
                     {b.product} · {fmtMonth(b.month_ref.slice(0, 7))}
                   </span>
-                  <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+                  <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
                     {fmtInt(b.orders)} pedido(s) · importado em {fmtDate(b.imported_at)}
                   </span>
                   {isManager && (

@@ -79,7 +79,7 @@ export default function DashboardLyaArquivos() {
             <Table2 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Arquivos da Lya</h1>
+            <h1 className="text-xl font-medium">Arquivos da Lya</h1>
             <p className="text-sm text-muted-foreground">
               Planilhas e documentos que você deu para ela. Ela lê, guarda e cruza com os dados do sistema quando você pergunta.
             </p>
@@ -212,7 +212,7 @@ function LinhaArquivo({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={onAlternar} className="text-left text-sm font-semibold hover:underline">
+            <button type="button" onClick={onAlternar} className="text-left text-sm font-medium hover:underline">
               {arquivo.nome}
             </button>
             {arquivo.status !== "pronto" && (
@@ -276,7 +276,7 @@ function LinhaArquivo({
             </pre>
           ) : detalhe.data && detalhe.data.amostra.length > 0 ? (
             <div className="overflow-x-auto">
-              <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
                 Primeiras {detalhe.data.amostra.length} de {arquivo.total_linhas.toLocaleString("pt-BR")} linha(s)
               </p>
               <table className="w-full text-left text-xs">

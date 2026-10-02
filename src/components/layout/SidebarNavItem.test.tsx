@@ -30,31 +30,31 @@ describe("SidebarNavItem", () => {
 
   it("marca a página atual nos dois estados", () => {
     const { unmount } = renderItem({ collapsed: true });
-    expect(screen.getByRole("link").className).toContain("bg-white/15");
+    expect(screen.getByRole("link").className).toContain("bg-sidebar-accent");
     unmount();
 
     renderItem({ collapsed: false });
-    expect(screen.getByRole("link").className).toContain("bg-white/15");
+    expect(screen.getByRole("link").className).toContain("bg-sidebar-accent");
   });
 
   it("não marca quando a rota é outra", () => {
     renderItem({ collapsed: true }, "/dashboard/reembolsos");
-    expect(screen.getByRole("link").className).not.toContain("bg-white/15");
+    expect(screen.getByRole("link").className).not.toContain("bg-sidebar-accent");
   });
 
   it("casa rotas filhas quando não é `end`", () => {
     renderItem({ to: "/dashboard/reembolsos", end: false }, "/dashboard/reembolsos/comparativo");
-    expect(screen.getByRole("link").className).toContain("bg-white/15");
+    expect(screen.getByRole("link").className).toContain("bg-sidebar-accent");
   });
 
   it("marca também a rota irmã declarada em `matchAlso`", () => {
     renderItem({ to: "/dashboard", end: true, matchAlso: "/dashboard/visao-geral" }, "/dashboard/visao-geral");
-    expect(screen.getByRole("link").className).toContain("bg-white/15");
+    expect(screen.getByRole("link").className).toContain("bg-sidebar-accent");
   });
 
   it("sem `matchAlso`, o item com `end` não vaza para as rotas filhas", () => {
     renderItem({ to: "/dashboard", end: true }, "/dashboard/visao-geral");
-    expect(screen.getByRole("link").className).not.toContain("bg-white/15");
+    expect(screen.getByRole("link").className).not.toContain("bg-sidebar-accent");
   });
 
   it("recolhido, o badge fica dentro do slot do ícone — é ele que ancora", () => {

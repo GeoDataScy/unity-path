@@ -16,15 +16,15 @@ import {
 } from "../data/refundPlaybook";
 
 const TOM_BORDA = {
-  verde: "border-t-emerald-500",
-  roxo: "border-t-violet-500",
-  ambar: "border-t-amber-500",
+  verde: "border-t-success",
+  roxo: "border-t-info",
+  ambar: "border-t-warning",
 } as const;
 
 const TOM_TEXTO = {
-  verde: "text-emerald-700 dark:text-emerald-400",
-  roxo: "text-violet-700 dark:text-violet-400",
-  ambar: "text-amber-700 dark:text-amber-400",
+  verde: "text-success",
+  roxo: "text-info",
+  ambar: "text-warning",
 } as const;
 
 /**
@@ -44,7 +44,7 @@ type SecaoId = (typeof SECOES)[number]["id"];
 function SectionHead({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
-      <h2 className="text-sm font-semibold">{children}</h2>
+      <h2 className="text-sm font-medium">{children}</h2>
       <div className="h-px flex-1 bg-border" />
     </div>
   );
@@ -74,7 +74,7 @@ export function RefundPlaybookPanel() {
         ))}
       </div>
 
-      <Alert className="border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
+      <Alert className="border-warning/40 bg-warning-soft text-ink">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
           <strong className="mb-1 block">Regra obrigatória</strong>
@@ -93,13 +93,13 @@ export function RefundPlaybookPanel() {
           {FUNIL_STEPS.map((step) => (
             <Card key={step.numero} className="p-4">
               <div className="flex gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                   {step.numero}
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold">{step.titulo}</h3>
-                    <Badge variant="secondary" className="text-[11px] font-bold">
+                    <h3 className="text-sm font-medium">{step.titulo}</h3>
+                    <Badge variant="secondary" className="text-[11px] font-medium">
                       {step.selo}
                     </Badge>
                   </div>
@@ -151,7 +151,7 @@ export function RefundPlaybookPanel() {
                 ex.larguraTotal && "sm:col-span-2",
               )}
             >
-              <h3 className={cn("text-sm font-semibold", TOM_TEXTO[ex.tom])}>{ex.titulo}</h3>
+              <h3 className={cn("text-sm font-medium", TOM_TEXTO[ex.tom])}>{ex.titulo}</h3>
               <p className="text-xs leading-relaxed text-muted-foreground">{ex.quando}</p>
               {ex.detalhe && (
                 <div className="rounded-md bg-muted/60 p-3 text-xs leading-relaxed">
@@ -182,7 +182,7 @@ export function RefundPlaybookPanel() {
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PERFIS_CLIENTE.map((p) => (
             <Card key={p.titulo} className="space-y-2 p-4">
-              <h3 className="text-sm font-semibold">{p.titulo}</h3>
+              <h3 className="text-sm font-medium">{p.titulo}</h3>
               <p className="text-xs leading-relaxed text-muted-foreground">{p.comoIdentificar}</p>
               <p className="rounded-md bg-muted/60 px-3 py-2 text-xs leading-relaxed">
                 {p.comoResponder}
@@ -202,7 +202,7 @@ export function RefundPlaybookPanel() {
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {FRASES_APOIO.map((f) => (
             <Card key={f.tipo} className="space-y-1 p-4">
-              <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {f.tipo}
               </div>
               <p className="text-xs leading-relaxed">"{f.frase}"</p>

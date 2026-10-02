@@ -386,7 +386,7 @@ const Workspace = () => {
 
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Meus Atendimentos Recentes</h2>
+            <h2 className="text-lg font-medium">Meus Atendimentos Recentes</h2>
             {(servicesLoading || createMutation.isPending) && (
               <span className="text-sm text-muted-foreground">Atualizando...</span>
             )}

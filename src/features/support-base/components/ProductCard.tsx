@@ -15,7 +15,7 @@ const isVsl = (label: string, url: string) =>
 /** Título das faixas internas do card (links extras, bônus, SMS). */
 function BlocoLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
       {children}
     </div>
   );
@@ -56,7 +56,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
     <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="space-y-1.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 flex-1 text-sm font-semibold leading-tight">{product.nome}</h3>
+          <h3 className="min-w-0 flex-1 text-sm font-medium leading-tight">{product.nome}</h3>
           <EstruturaBadge estrutura={product.estrutura} curto />
         </div>
 
@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
               </Badge>
             )}
             {product.plataforma && (
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
                 {product.plataforma}
               </span>
             )}
@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
                   <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                     {link.label}
                     {isVsl(link.label, link.url) && (
-                      <Badge variant="outline" className="px-1 py-0 text-[9px] font-bold">
+                      <Badge variant="outline" className="px-1 py-0 text-[9px] font-medium">
                         VSL
                       </Badge>
                     )}
@@ -126,7 +126,7 @@ export function ProductCard({ product }: { product: SupportProduct }) {
             url={product.bonus_url}
             className={cn(
               "text-[11px]",
-              product.bonus_tipo === "super" && "text-fuchsia-600 dark:text-fuchsia-400",
+              product.bonus_tipo === "super" && "text-signal",
             )}
           />
         </div>

@@ -208,11 +208,11 @@ function evaluateAgents(
 function statusColor(s: WeekStatus) {
   switch (s) {
     case "ok":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
+      return "bg-signal-soft text-success border-success/40";
     case "alerta":
-      return "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30";
+      return "bg-warning-soft text-warning border-warning/40";
     case "advertencia":
-      return "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30";
+      return "bg-coral-soft text-destructive border-destructive/40";
   }
 }
 
@@ -230,11 +230,11 @@ function statusLabel(s: WeekStatus) {
 function StatusIcon({ status }: { status: WeekStatus }) {
   switch (status) {
     case "ok":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+      return <CheckCircle2 className="h-4 w-4 text-success" />;
     case "alerta":
-      return <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+      return <AlertTriangle className="h-4 w-4 text-warning" />;
     case "advertencia":
-      return <ShieldAlert className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      return <ShieldAlert className="h-4 w-4 text-destructive" />;
   }
 }
 
@@ -277,7 +277,7 @@ export default function DashboardAcompanhamento() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Acompanhamento</h1>
+        <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Acompanhamento</h1>
         <p className="text-sm text-muted-foreground">
           Controle semanal de performance dos agentes — Últimas {WEEKS_WINDOW} semanas
         </p>
@@ -287,45 +287,45 @@ export default function DashboardAcompanhamento() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
               Total de agentes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{kpi.totalAgents}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpi.totalAgents}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Sem ocorrências
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-success" /> Sem ocorrências
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-emerald-600">{kpi.allGood}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-success">{kpi.allGood}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600" /> Com advertências
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" /> Com advertências
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-amber-600">{kpi.withWarnings}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-warning">{kpi.withWarnings}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-600" /> Risco de não renovação
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-destructive" /> Risco de não renovação
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold text-red-600">{kpi.atRisk}</div>}
+            {isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums text-destructive">{kpi.atRisk}</div>}
           </CardContent>
         </Card>
       </section>
@@ -339,21 +339,21 @@ export default function DashboardAcompanhamento() {
               <p><strong>Regras de acompanhamento:</strong></p>
               <div className="grid gap-3 sm:grid-cols-2 mt-1">
                 <div>
-                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">Email (meta: 500/semana)</p>
+                  <p className="font-medium text-info mb-1">Email (meta: 500/semana)</p>
                   <ul className="list-disc pl-4 space-y-0.5">
-                    <li><span className="text-emerald-600 font-medium">500+</span> → OK</li>
-                    <li><span className="text-amber-600 font-medium">450–499</span> → Alerta</li>
-                    <li><span className="text-red-600 font-medium">400–449</span> → Advertência</li>
-                    <li><span className="text-red-600 font-medium">&lt;400</span> → Advertência</li>
+                    <li><span className="text-success font-medium">500+</span> → OK</li>
+                    <li><span className="text-warning font-medium">450–499</span> → Alerta</li>
+                    <li><span className="text-destructive font-medium">400–449</span> → Advertência</li>
+                    <li><span className="text-destructive font-medium">&lt;400</span> → Advertência</li>
                   </ul>
                 </div>
                 <div>
-                  <p className="font-medium text-violet-600 dark:text-violet-400 mb-1">SMS (meta: 750/semana)</p>
+                  <p className="font-medium text-aqua mb-1">SMS (meta: 750/semana)</p>
                   <ul className="list-disc pl-4 space-y-0.5">
-                    <li><span className="text-emerald-600 font-medium">750+</span> → OK</li>
-                    <li><span className="text-amber-600 font-medium">675–749</span> → Alerta</li>
-                    <li><span className="text-red-600 font-medium">600–674</span> → Advertência</li>
-                    <li><span className="text-red-600 font-medium">&lt;600</span> → Advertência</li>
+                    <li><span className="text-success font-medium">750+</span> → OK</li>
+                    <li><span className="text-warning font-medium">675–749</span> → Alerta</li>
+                    <li><span className="text-destructive font-medium">600–674</span> → Advertência</li>
+                    <li><span className="text-destructive font-medium">&lt;600</span> → Advertência</li>
                   </ul>
                 </div>
               </div>
@@ -399,11 +399,11 @@ export default function DashboardAcompanhamento() {
                   </TableHeader>
                   <TableBody>
                     {summaries.map((agent) => (
-                      <TableRow key={agent.userId} className={agent.contractRisk ? "bg-red-500/5" : ""}>
+                      <TableRow key={agent.userId} className={agent.contractRisk ? "bg-coral-soft" : ""}>
                         <TableCell className="sticky left-0 bg-card z-10 font-medium">
                           <div className="flex items-center gap-2">
                             <span>{agent.name}</span>
-                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-aqua-soft text-aqua" : "bg-ice-soft text-info"}`}>
                               {agent.supportChannel.toUpperCase()} · {agent.weeklyGoal}/sem
                             </span>
                           </div>
@@ -428,7 +428,7 @@ export default function DashboardAcompanhamento() {
                           </TableCell>
                         ))}
                         <TableCell className="text-center">
-                          <span className={`text-lg font-bold ${agent.totalWarnings >= 3 ? "text-red-600" : agent.totalWarnings > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                          <span className={`text-lg font-medium ${agent.totalWarnings >= 3 ? "text-destructive" : agent.totalWarnings > 0 ? "text-warning" : "text-success"}`}>
                             {agent.totalWarnings}
                           </span>
                           <span className="text-xs text-muted-foreground">/{WEEKS_WINDOW} sem.</span>
@@ -470,7 +470,7 @@ export default function DashboardAcompanhamento() {
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     {agent.name}
-                    <span className={`inline-flex rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-violet-500/15 text-violet-700 dark:text-violet-400" : "bg-blue-500/15 text-blue-700 dark:text-blue-400"}`}>
+                    <span className={`inline-flex rounded-full px-1.5 py-0 text-[10px] font-medium ${agent.supportChannel === "sms" ? "bg-aqua-soft text-aqua" : "bg-ice-soft text-info"}`}>
                       {agent.supportChannel.toUpperCase()}
                     </span>
                   </span>

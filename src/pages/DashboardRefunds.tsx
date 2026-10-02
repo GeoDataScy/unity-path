@@ -167,8 +167,8 @@ export default function DashboardRefunds() {
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-lg font-semibold text-muted-foreground">Analytics</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Reembolsos</h1>
+          <p className="text-[15px] text-ink-tertiary">Analytics</p>
+          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Reembolsos</h1>
           <RefundsSubNav />
           <p className="text-sm text-muted-foreground">
             Período: {format(parseISO(fromISO), "dd/MM/yyyy")} — {format(parseISO(toISO), "dd/MM/yyyy")} • Agente: {agentId === "all" ? "Todos" : "Selecionado"}
@@ -186,7 +186,7 @@ export default function DashboardRefunds() {
       {/* Local filters */}
       <section className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</div>
+          <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Status</div>
           <Select value={status} onValueChange={(v) => setStatus(v as any)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Todos" />
@@ -200,7 +200,7 @@ export default function DashboardRefunds() {
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tipo de reembolso</div>
+          <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Tipo de reembolso</div>
           <Select value={refundType} onValueChange={setRefundType}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Todos" />
@@ -218,7 +218,7 @@ export default function DashboardRefunds() {
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Produto</div>
+          <div className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Produto</div>
           <Select value={product} onValueChange={setProduct}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Todos" />
@@ -240,45 +240,45 @@ export default function DashboardRefunds() {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" /> Total de reembolsos
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Total de reembolsos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.total}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpis.total}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CircleDot className="h-4 w-4 text-primary" /> Em aberto
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <CircleDot className="h-4 w-4" /> Em aberto
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.open}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpis.open}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <PackageCheck className="h-4 w-4 text-primary" /> Concluídos
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <PackageCheck className="h-4 w-4" /> Concluídos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.done}</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpis.done}</div>}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" /> Taxa de conclusão
+            <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Taxa de conclusão
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-semibold">{kpis.doneRate.toFixed(0)}%</div>}
+            {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{kpis.doneRate.toFixed(0)}%</div>}
           </CardContent>
         </Card>
       </section>
@@ -301,7 +301,7 @@ export default function DashboardRefunds() {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -431,8 +431,8 @@ export default function DashboardRefunds() {
               </div>
               {!isLoading && kpis.byPlatform.length > 0 && (
                 <div className="shrink-0 rounded-md border bg-muted/40 px-2.5 py-1 text-right">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
-                  <p className="text-base font-semibold tabular-nums leading-tight">
+                  <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Total</p>
+                  <p className="text-base font-medium font-mono tabular-nums leading-tight">
                     {platformTotal.toLocaleString("pt-BR")}
                   </p>
                 </div>
@@ -505,7 +505,7 @@ export default function DashboardRefunds() {
               {!isLoading && topReason && reasonTotal > 0 && (
                 <div className="flex items-center gap-3">
                   <div className="rounded-md border bg-muted/40 px-3 py-1.5">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mais comum</p>
+                    <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Mais comum</p>
                     <p className="text-sm font-medium leading-tight" title={topReason.name}>
                       {topReason.name}
                       <span className="ml-1.5 text-muted-foreground">
@@ -514,8 +514,8 @@ export default function DashboardRefunds() {
                     </p>
                   </div>
                   <div className="rounded-md border bg-muted/40 px-3 py-1.5 text-right">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Classificados</p>
-                    <p className="text-sm font-semibold tabular-nums leading-tight">
+                    <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">Classificados</p>
+                    <p className="text-sm font-medium font-mono tabular-nums leading-tight">
                       {reasonTotal.toLocaleString("pt-BR")}
                     </p>
                   </div>

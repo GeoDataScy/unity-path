@@ -67,8 +67,8 @@ export default function DashboardAtendimentosVisaoGeral() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-lg font-semibold text-muted-foreground">Olá {fullName ?? ""}!</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Atendimentos</h1>
+          <p className="text-[15px] text-ink-tertiary">Olá {fullName ?? ""}!</p>
+          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Atendimentos</h1>
           <AtendimentosSubNav />
           <p className="text-sm text-muted-foreground">
             Agente: {agentId === "all" ? "Todos" : "Selecionado"} (filtro da barra lateral)
@@ -101,7 +101,7 @@ export default function DashboardAtendimentosVisaoGeral() {
             disabled={dailyQuery.isLoading}
           />
           <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
               Período desta tela
             </span>
             <DateRangePicker

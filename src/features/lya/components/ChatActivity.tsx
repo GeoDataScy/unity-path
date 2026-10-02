@@ -34,18 +34,18 @@ const TOOL_INFO: Record<string, ToolInfo> = {
   painel_status_tickets: { area: "Atendimentos", detail: "Status dos tickets", icon: BarChart3, tone: "text-primary bg-primary/10" },
   painel_canais: { area: "Atendimentos", detail: "Detalhe por canal", icon: BarChart3, tone: "text-primary bg-primary/10" },
   painel_padrao_horarios: { area: "Atendimentos", detail: "Padrão de horários", icon: Clock, tone: "text-primary bg-primary/10" },
-  painel_interacoes: { area: "Interações", detail: "KPIs e ranking por agente", icon: Activity, tone: "text-blue-600 bg-blue-500/10 dark:text-blue-400" },
-  painel_repeticoes_mesmo_dia: { area: "Interações", detail: "Repetições no mesmo dia", icon: Activity, tone: "text-blue-600 bg-blue-500/10 dark:text-blue-400" },
-  painel_reembolsos: { area: "Reembolsos", detail: "Métricas da tela", icon: RefreshCcw, tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" },
-  painel_reembolsos_motivo: { area: "Reembolsos", detail: "Detalhe por motivo", icon: RefreshCcw, tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" },
+  painel_interacoes: { area: "Interações", detail: "KPIs e ranking por agente", icon: Activity, tone: "text-info bg-ice-soft" },
+  painel_repeticoes_mesmo_dia: { area: "Interações", detail: "Repetições no mesmo dia", icon: Activity, tone: "text-info bg-ice-soft" },
+  painel_reembolsos: { area: "Reembolsos", detail: "Métricas da tela", icon: RefreshCcw, tone: "text-success bg-signal-soft" },
+  painel_reembolsos_motivo: { area: "Reembolsos", detail: "Detalhe por motivo", icon: RefreshCcw, tone: "text-success bg-signal-soft" },
   painel_alertas_reembolso: { area: "Alertas", detail: "Reembolsos em atraso", icon: AlertTriangle, tone: "text-destructive bg-destructive/10" },
-  painel_usuarios: { area: "Usuários", detail: "Time e status online", icon: Users, tone: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
-  painel_pedidos_espera: { area: "Acompanhamento", detail: "Pedidos em espera", icon: ClipboardCheck, tone: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
+  painel_usuarios: { area: "Usuários", detail: "Time e status online", icon: Users, tone: "text-warning bg-warning-soft" },
+  painel_pedidos_espera: { area: "Acompanhamento", detail: "Pedidos em espera", icon: ClipboardCheck, tone: "text-warning bg-warning-soft" },
   listar_atendimentos: { area: "Atendimentos", detail: "Tabela de auditoria", icon: BarChart3, tone: "text-primary bg-primary/10" },
-  listar_reembolsos: { area: "Reembolsos", detail: "Tabela de auditoria", icon: RefreshCcw, tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" },
-  listar_agentes: { area: "Time", detail: "Lista de agentes", icon: Users, tone: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
+  listar_reembolsos: { area: "Reembolsos", detail: "Tabela de auditoria", icon: RefreshCcw, tone: "text-success bg-signal-soft" },
+  listar_agentes: { area: "Time", detail: "Lista de agentes", icon: Users, tone: "text-warning bg-warning-soft" },
   consultar_banco: { area: "Banco de dados", detail: "Consulta SQL", icon: Database, tone: "text-muted-foreground bg-muted" },
-  buscar_base_suporte: { area: "Base de Suporte", detail: "Produtos, brands e respostas", icon: BookOpen, tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" },
+  buscar_base_suporte: { area: "Base de Suporte", detail: "Produtos, brands e respostas", icon: BookOpen, tone: "text-success bg-signal-soft" },
   gerar_grafico: { area: "Gráfico", detail: "Montando a visualização", icon: BarChart3, tone: "text-primary bg-primary/10" },
   salvar_memoria: { area: "Cérebro", detail: "Gravando o aprendizado", icon: Brain, tone: "text-primary bg-primary/10" },
 };
@@ -81,7 +81,7 @@ export function ToolActivity({ tools, active }: { tools: LyaToolCall[]; active: 
             </span>
             <span className="flex flex-col leading-tight">
               <span className="text-[12px] text-muted-foreground">
-                {running ? "Consultando" : "Consultou"} <span className="font-semibold text-foreground">{info.area}</span>
+                {running ? "Consultando" : "Consultou"} <span className="font-medium text-foreground">{info.area}</span>
               </span>
               <span className="text-[11px] text-muted-foreground">
                 {info.detail}
@@ -89,7 +89,7 @@ export function ToolActivity({ tools, active }: { tools: LyaToolCall[]; active: 
               </span>
             </span>
             <span className="ml-1 shrink-0">
-              {running ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Check className="h-3.5 w-3.5 text-emerald-500" />}
+              {running ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Check className="h-3.5 w-3.5 text-success" />}
             </span>
           </div>
         );
@@ -122,7 +122,7 @@ export function MemoryCard({ memoria }: { memoria: LyaMemoriaSalva }) {
     <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-primary/40 bg-primary/5 px-3.5 py-2.5">
       <Brain className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Aprendido · {memoria.type}</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-primary">Aprendido · {memoria.type}</p>
         <p className="text-[13px] leading-snug text-foreground">{memoria.description}</p>
         {memoria.tags?.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">

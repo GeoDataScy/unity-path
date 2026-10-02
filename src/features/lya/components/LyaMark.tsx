@@ -2,9 +2,10 @@ import { cn } from "@/lib/utils";
 
 import type { LyaEstado } from "../types";
 
-// Símbolo "Juba" — a marca da Lya: três arcos concêntricos abertos em três
-// níveis de roxo com um ponto rosa no centro. Lê como juba de leão e como onda
-// de sinal. É um símbolo abstrato: não tem rosto, não é personagem.
+// Símbolo "Juba" — a marca da Lya (identidade hubi): três arcos concêntricos
+// abertos em ink-tertiary, ink-secondary e ink, com o núcleo em `signal`. Lê
+// como juba de leão e como onda de sinal. É um símbolo abstrato: não tem
+// rosto, não é personagem.
 //
 // O que faz a Lya parecer viva é o movimento, não a forma parada. Os quatro
 // estados moram no CSS global (`src/index.css`, bloco `.lya`) e são trocados
@@ -12,8 +13,9 @@ import type { LyaEstado } from "../types";
 //
 // Regras de aplicação (ver prompt de identidade visual):
 //  · abaixo de 24px o símbolo congela — movimento minúsculo é ruído, não charme;
-//  · sobre superfície roxa, usar `tone="branco"` (o lilás externo some no roxo);
-//  · `tone="neon"` é só da bolha flutuante — e é a única exceção ao "sem sombra";
+//  · sobre `bg-inverse` (bolha, botão primário), usar `tone="branco"`: os arcos
+//    vão para a tinta invertida e o núcleo continua `signal`;
+//  · `tone="neon"` ficou como sinônimo de `branco` (a paleta neon aposentou);
 //  · o símbolo nunca é distorcido, recortado, nem recebe sombra ou gradiente.
 
 interface LyaMarkProps {
@@ -21,9 +23,8 @@ interface LyaMarkProps {
   /** Lado do quadrado, em px. O tamanho vem sempre daqui, nunca do SVG. */
   size?: number;
   /**
-   * `branco` = monocromática, para fundo roxo. `neon` = ciano bem claro com
-   * halo curto, exclusivo da bolha flutuante (ver `.lya-bolha` no index.css):
-   * é o único lugar onde a marca precisa puxar o olho de longe.
+   * `branco` = arcos na tinta invertida, para `bg-inverse`. `neon` é o nome
+   * antigo da bolha flutuante e hoje rende igual a `branco`.
    */
   tone?: "branco" | "neon";
   /**
@@ -58,13 +59,13 @@ export function LyaMark({
     >
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <g className="lya-l1">
-          <circle className="lya-arc1" cx="50" cy="50" r="40" strokeWidth="6" strokeDasharray="85 166" strokeDashoffset="95" />
+          <circle className="lya-arc1" cx="50" cy="50" r="40" strokeWidth="5" strokeDasharray="85 166" strokeDashoffset="95" />
         </g>
         <g className="lya-l2">
-          <circle className="lya-arc2" cx="50" cy="50" r="30" strokeWidth="7" strokeDasharray="70 119" strokeDashoffset="42" />
+          <circle className="lya-arc2" cx="50" cy="50" r="30" strokeWidth="6" strokeDasharray="70 119" strokeDashoffset="42" />
         </g>
         <g className="lya-l3">
-          <circle className="lya-arc3" cx="50" cy="50" r="20" strokeWidth="8" strokeDasharray="55 71" />
+          <circle className="lya-arc3" cx="50" cy="50" r="20" strokeWidth="7" strokeDasharray="55 71" />
           <circle className="lya-dot" cx="50" cy="50" r="7" />
         </g>
         <circle className="lya-halo" cx="50" cy="50" r="46" />

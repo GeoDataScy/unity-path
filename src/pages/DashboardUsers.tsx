@@ -100,7 +100,7 @@ function StatusDot({ user }: { user: ManagerUser }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+          <span className="inline-flex items-center gap-1.5 text-xs text-warning">
             <Circle className="h-2.5 w-2.5 fill-current" />
             Inativo
           </span>
@@ -115,10 +115,10 @@ function StatusDot({ user }: { user: ManagerUser }) {
   }
   if (user.is_online) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 text-xs text-success">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
         </span>
         Online
       </span>
@@ -244,8 +244,8 @@ export default function DashboardUsers() {
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-lg font-semibold text-muted-foreground">Administração</p>
-            <h1 className="text-3xl font-semibold tracking-tight">Usuários</h1>
+            <p className="text-[15px] text-ink-tertiary">Administração</p>
+            <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Usuários</h1>
             <p className="text-sm text-muted-foreground">
               Gerencie acesso, inative ou exclua contas. O histórico (atendimentos, reembolsos) é sempre preservado.
             </p>
@@ -262,46 +262,46 @@ export default function DashboardUsers() {
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" /> Total de usuários
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.total}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.total}</div>}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Ativos
+              <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success" /> Ativos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.active}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.active}</div>}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <UserX className="h-4 w-4 text-amber-500" /> Inativos
+              <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
+                <UserX className="h-4 w-4 text-warning" /> Inativos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.inactive}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.inactive}</div>}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-[11px] font-medium uppercase leading-4 tracking-[0.06em] text-ink-tertiary flex items-center gap-2">
                 <span className="relative flex h-3 w-3">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-success" />
                 </span>
                 Online agora
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-semibold">{counts.online}</div>}
+              {usersQuery.isLoading ? <Skeleton className="h-8 w-16" /> : <div className="font-mono text-[32px] font-normal leading-9 tracking-[-0.03em] tabular-nums">{counts.online}</div>}
             </CardContent>
           </Card>
         </section>
@@ -400,7 +400,7 @@ export default function DashboardUsers() {
                             <div className="flex flex-col gap-1">
                               <StatusDot user={user} />
                               {isAgent && !isDeleted && !user.is_available && (
-                                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-600 dark:text-sky-400">
+                                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-ice-soft px-1.5 py-0.5 text-[10px] font-medium text-info">
                                   <Coffee className="h-2.5 w-2.5" />
                                   De folga
                                 </span>
@@ -426,7 +426,7 @@ export default function DashboardUsers() {
                                 {user.open_tickets_count > 0 ? (
                                   <Badge
                                     variant={user.is_active ? "outline" : "destructive"}
-                                    className="tabular-nums"
+                                    className="font-mono tabular-nums"
                                   >
                                     {user.open_tickets_count}
                                   </Badge>
@@ -436,7 +436,7 @@ export default function DashboardUsers() {
                                 {user.authorized_open_count > 0 && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-signal-soft px-1.5 py-0.5 text-[10px] font-medium text-success">
                                         <BadgeCheck className="h-2.5 w-2.5" />
                                         {user.authorized_open_count} autorizado{user.authorized_open_count > 1 ? "s" : ""}
                                       </span>
@@ -484,7 +484,7 @@ export default function DashboardUsers() {
                                         ? "Marcar como de folga/indisponível"
                                         : "Marcar como disponível"
                                     }
-                                    className={user.is_available ? "" : "text-sky-600 dark:text-sky-400"}
+                                    className={user.is_available ? "" : "text-info"}
                                   >
                                     <Coffee className="mr-1.5 h-3.5 w-3.5" />
                                     {user.is_available ? "De folga" : "Disponível"}
@@ -566,9 +566,9 @@ export default function DashboardUsers() {
               <AlertDialogDescription asChild>
                 <div className="space-y-3 text-sm">
                   <p>
-                    Esta ação remove o acesso de <span className="font-semibold">{deleteTarget?.full_name ?? deleteTarget?.email}</span> ao sistema.
+                    Esta ação remove o acesso de <span className="font-medium">{deleteTarget?.full_name ?? deleteTarget?.email}</span> ao sistema.
                   </p>
-                  <p className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-emerald-700 dark:text-emerald-300">
+                  <p className="rounded-md border border-success/40 bg-signal-soft px-3 py-2 text-success">
                     O histórico (atendimentos, reembolsos, transferências) será <strong>preservado</strong>. Apenas a conta de login é removida.
                   </p>
                   <p>Para confirmar, digite o e-mail do usuário abaixo:</p>

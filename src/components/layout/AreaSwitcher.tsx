@@ -43,7 +43,7 @@ export function AreaSwitcher({ role, currentArea, collapsed }: Props) {
                 type="button"
                 onClick={() => go(area)}
                 aria-label={`Ir para ${AREA_SHORT_LABEL[area]}`}
-                className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 transition-colors hover:bg-white/15"
+                className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border border-line text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
               >
                 <ArrowLeftRight className="h-[18px] w-[18px]" />
               </button>
@@ -56,10 +56,10 @@ export function AreaSwitcher({ role, currentArea, collapsed }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-2 space-y-2">
+    <div className="rounded-lg border border-line bg-surface p-2 space-y-2">
       <div className="px-1">
-        <div className="text-[10px] font-medium uppercase tracking-wide opacity-60">Área atual</div>
-        <div className="text-xs font-medium truncate">{AREA_SHORT_LABEL[currentArea]}</div>
+        <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Área atual</div>
+        <div className="text-xs font-medium text-ink truncate">{AREA_SHORT_LABEL[currentArea]}</div>
       </div>
       {others.map((area) => (
         <button
@@ -68,7 +68,7 @@ export function AreaSwitcher({ role, currentArea, collapsed }: Props) {
           onClick={() => go(area)}
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium",
-            "bg-white/10 hover:bg-white/20 transition",
+            "bg-subtle text-ink-secondary hover:bg-line hover:text-ink transition-colors",
           )}
         >
           <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />

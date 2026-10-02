@@ -142,7 +142,7 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
 
       {hover && (
         <ChartTooltip x={hover.x} y={hover.y}>
-          <div className="mb-1.5 font-semibold" style={{ color: "var(--rf-ink)" }}>
+          <div className="mb-1.5 font-medium" style={{ color: "var(--rf-ink)" }}>
             {hover.bucket.label}
             {gran === "dia" && <span style={{ color: "var(--rf-ink-faint)" }}> · {hover.bucket.sub}</span>}
           </div>
@@ -154,15 +154,15 @@ export function RefundVolumeChart({ buckets, products, metric, gran, hidden }: P
                   <span className="h-2.5 w-2.5 rounded-sm" style={{ background: p.color }} />
                   {p.key}
                 </span>
-                <span className="tabular-nums font-medium">{fmtV(hover.bucket.byProduct[p.key] ?? 0)}</span>
+                <span className="font-mono tabular-nums font-medium">{fmtV(hover.bucket.byProduct[p.key] ?? 0)}</span>
               </div>
             ))}
           <div
-            className="mt-1.5 flex items-center justify-between gap-6 border-t pt-1.5 font-semibold"
+            className="mt-1.5 flex items-center justify-between gap-6 border-t pt-1.5 font-medium"
             style={{ borderColor: "var(--rf-line)" }}
           >
             <span>Total</span>
-            <span className="tabular-nums">{fmtV(hover.bucket.total)}</span>
+            <span className="font-mono tabular-nums">{fmtV(hover.bucket.total)}</span>
           </div>
         </ChartTooltip>
       )}

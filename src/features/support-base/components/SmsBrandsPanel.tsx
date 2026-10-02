@@ -54,7 +54,7 @@ export function SmsBrandsPanel() {
 
   return (
     <div className="space-y-4">
-      <Alert className="border-blue-300 bg-blue-50 py-2.5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+      <Alert className="border-info/40 bg-ice-soft py-2.5 text-ink">
         <Info className="h-4 w-4" />
         <AlertDescription className="text-xs leading-relaxed">
           <strong>Nome no sistema</strong> é como a brand aparece no sistema de suporte. Sempre
@@ -106,12 +106,12 @@ function SmsBrandCard({ brand }: { brand: SupportSmsBrand }) {
   return (
     <Card className="flex flex-col gap-3 p-4 transition-colors hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-tight">{brand.nome}</h3>
+        <h3 className="min-w-0 flex-1 text-sm font-medium leading-tight">{brand.nome}</h3>
         <EstruturaBadge estrutura={brand.estrutura} curto />
       </div>
 
       <div className="rounded-md bg-muted/60 p-2.5">
-        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           Nome no sistema
         </div>
         <div className="flex items-start gap-1">

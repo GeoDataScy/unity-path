@@ -82,9 +82,9 @@ export function AgentNotepad({ enabled, fullName }: Props) {
         }
         className={cn(
           "group fixed bottom-6 right-0 z-30 flex items-center gap-2 rounded-l-2xl py-3 pl-4 pr-4",
-          "bg-dashboard-sidebar text-dashboard-sidebar-foreground shadow-lg ring-1 ring-white/10",
+          "bg-inverse text-ink-inverse shadow-md",
           "transition-all duration-200 hover:pr-6 hover:shadow-xl",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           open && "pointer-events-none translate-x-full opacity-0",
         )}
       >
@@ -93,7 +93,7 @@ export function AgentNotepad({ enabled, fullName }: Props) {
         {pending > 0 && (
           <span
             aria-hidden
-            className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-open px-1 text-[10px] font-bold text-status-open-foreground"
+            className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-open px-1 text-[10px] font-medium text-status-open-foreground"
           >
             {pending > 99 ? "99+" : pending}
           </span>
@@ -108,7 +108,7 @@ export function AgentNotepad({ enabled, fullName }: Props) {
           aria-hidden
           onClick={() => setOpen(false)}
           className={cn(
-            "fixed inset-0 z-[35] bg-slate-950/40 transition-opacity duration-300 sm:hidden",
+            "fixed inset-0 z-[35] bg-scrim transition-opacity duration-300 sm:hidden",
             visible ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         />

@@ -5,11 +5,11 @@ import remarkGfm from "remark-gfm";
 // código, citações) com os tokens do tema do app. A cor do texto é herdada do
 // container (funciona no balão e na tela cheia, claro e escuro).
 const components: Components = {
-  h1: ({ children }) => <h1 className="mb-2 mt-4 text-[1.3em] font-semibold leading-snug first:mt-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="mb-2 mt-4 text-[1.15em] font-semibold leading-snug first:mt-0">{children}</h2>,
-  h3: ({ children }) => <h3 className="mb-1.5 mt-3 text-[1.05em] font-semibold leading-snug first:mt-0">{children}</h3>,
+  h1: ({ children }) => <h1 className="mb-2 mt-4 text-[1.3em] font-medium leading-snug first:mt-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-2 mt-4 text-[1.15em] font-medium leading-snug first:mt-0">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-1.5 mt-3 text-[1.05em] font-medium leading-snug first:mt-0">{children}</h3>,
   p: ({ children }) => <p className="my-2 leading-[1.7] first:mt-0 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+  strong: ({ children }) => <strong className="font-medium text-foreground">{children}</strong>,
   a: ({ href, children }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
       {children}
@@ -36,7 +36,7 @@ const components: Components = {
     </div>
   ),
   thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
-  th: ({ children }) => <th className="whitespace-nowrap border-b border-border px-3 py-2 text-left font-semibold">{children}</th>,
+  th: ({ children }) => <th className="whitespace-nowrap border-b border-border px-3 py-2 text-left font-medium">{children}</th>,
   td: ({ children }) => <td className="border-t border-border px-3 py-1.5 align-top">{children}</td>,
 };
 

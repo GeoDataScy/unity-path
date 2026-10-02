@@ -98,7 +98,7 @@ export function TeamShareKpis({ series }: Props) {
             {c.lab}
           </div>
           <div
-            className="rf-display mt-[3px] text-[clamp(20px,3vw,26px)] font-bold tabular-nums"
+            className="rf-display mt-[3px] text-[clamp(20px,3vw,26px)] font-medium font-mono tabular-nums"
             style={{ color: c.cor }}
           >
             {c.val}

@@ -83,14 +83,14 @@ export function PadraoHorarios({ loading, data }: Props) {
     const out: { icon: React.ReactNode; text: string }[] = [];
     if (data.peak.hour != null && data.peak.dow_name) {
       out.push({
-        icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
+        icon: <TrendingUp className="h-4 w-4 text-success" />,
         text: `O horário mais quente do time é ${data.peak.dow_name} às ${data.peak.hour}h, com ${data.peak.count} ações concentradas nessa hora.`,
       });
     }
     const businessHours = data.shifts_share.morning + data.shifts_share.afternoon;
     if (businessHours > 0) {
       out.push({
-        icon: <Sun className="h-4 w-4 text-amber-500" />,
+        icon: <Sun className="h-4 w-4 text-warning" />,
         text: `${pct(businessHours)} de toda a atividade acontece no horário comercial (8h–18h).`,
       });
     }
@@ -101,13 +101,13 @@ export function PadraoHorarios({ loading, data }: Props) {
       });
     } else if (data.goal_hit.total_active_days > 0) {
       out.push({
-        icon: <Target className="h-4 w-4 text-rose-500" />,
+        icon: <Target className="h-4 w-4 text-destructive" />,
         text: `A meta diária de ${data.goal_hit.threshold} não foi batida em nenhum dia do período. Vale revisar carga ou disponibilidade.`,
       });
     }
     if (data.shifts_share.night > 0.05) {
       out.push({
-        icon: <Moon className="h-4 w-4 text-indigo-400" />,
+        icon: <Moon className="h-4 w-4 text-info" />,
         text: `${pct(data.shifts_share.night)} da atividade ocorre na madrugada (22h–5h). Confirme se isso é esperado.`,
       });
     }
@@ -149,8 +149,8 @@ export function PadraoHorarios({ loading, data }: Props) {
           {/* KPI panel */}
           <div className="flex flex-col gap-2">
             <KpiButton onClick={() => setTopic("peak")} disabled={loading || !data}>
-              <KpiHeader icon={<TrendingUp className="h-3.5 w-3.5 text-emerald-500" />} label="Hora de pico" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <KpiHeader icon={<TrendingUp className="h-3.5 w-3.5 text-success" />} label="Hora de pico" />
+              <div className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">
                 {data?.peak.hour != null ? `${data.peak.hour}h` : "—"}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -159,16 +159,16 @@ export function PadraoHorarios({ loading, data }: Props) {
             </KpiButton>
 
             <KpiButton onClick={() => setTopic("start")} disabled={loading || !data}>
-              <KpiHeader icon={<Coffee className="h-3.5 w-3.5 text-amber-500" />} label="Começa às" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <KpiHeader icon={<Coffee className="h-3.5 w-3.5 text-warning" />} label="Começa às" />
+              <div className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">
                 {decimalToHHMM(data?.shift.start_hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">início típico do dia</div>
             </KpiButton>
 
             <KpiButton onClick={() => setTopic("end")} disabled={loading || !data}>
-              <KpiHeader icon={<Sunset className="h-3.5 w-3.5 text-rose-500" />} label="Termina às" />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <KpiHeader icon={<Sunset className="h-3.5 w-3.5 text-destructive" />} label="Termina às" />
+              <div className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">
                 {decimalToHHMM(data?.shift.end_hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">fim típico do dia</div>
@@ -176,7 +176,7 @@ export function PadraoHorarios({ loading, data }: Props) {
 
             <KpiButton onClick={() => setTopic("goal")} disabled={loading || !data}>
               <KpiHeader icon={<Target className="h-3.5 w-3.5 text-primary" />} label={`Bate meta às`} />
-              <div className="mt-1 text-2xl font-semibold tabular-nums">
+              <div className="mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]">
                 {decimalToHHMM(data?.goal_hit.hour)}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -227,7 +227,7 @@ export function PadraoHorarios({ loading, data }: Props) {
                         <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: s.fill }} />
                         {s.name}
                       </span>
-                      <span className="font-medium tabular-nums">{pct(s.value)}</span>
+                      <span className="font-medium font-mono tabular-nums">{pct(s.value)}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full" style={{ width: `${s.value * 100}%`, backgroundColor: s.fill }} />
@@ -242,7 +242,7 @@ export function PadraoHorarios({ loading, data }: Props) {
         {/* Auto insights */}
         {!loading && insights.length > 0 && (
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h4 className="mb-2 text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
               O que esses dados estão dizendo
             </h4>
             <ul className="space-y-2">
@@ -362,7 +362,7 @@ function KpiButton({
 function KpiHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
         {icon}
         {label}
       </span>
@@ -412,7 +412,7 @@ function ExplainDialog({
                 </ul>
               </Section>
               {content.caveat && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                <div className="rounded-md border border-warning/40 bg-warning-soft p-3 text-xs text-ink">
                   <strong>Vale lembrar:</strong> {content.caveat}
                 </div>
               )}
@@ -427,7 +427,7 @@ function ExplainDialog({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h4>
+      <h4 className="mb-1 text-xs font-medium uppercase tracking-[0.06em] text-foreground">{title}</h4>
       {children}
     </div>
   );

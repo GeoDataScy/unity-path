@@ -19,9 +19,9 @@ export function RefundComposition({ full, partial, unspecified }: Props) {
   if (total === 0) return null;
 
   const cats = [
-    { key: "partial", lab: "Parciais", n: partial, color: "var(--rf-parcial)" },
-    { key: "full", lab: "Integrais", n: full, color: "var(--rf-total)" },
-    { key: "unspecified", lab: "Sem tipo no arquivo", n: unspecified, color: "var(--rf-outros)" },
+    { key: "partial", lab: "Parciais", n: partial, color: "var(--rf-parcial)", ink: "hsl(var(--on-signal))" },
+    { key: "full", lab: "Integrais", n: full, color: "var(--rf-total)", ink: "hsl(var(--ink-inverse))" },
+    { key: "unspecified", lab: "Sem tipo no arquivo", n: unspecified, color: "var(--rf-outros)", ink: "hsl(var(--ink))" },
   ].filter((c) => c.n > 0);
 
   return (
@@ -32,8 +32,8 @@ export function RefundComposition({ full, partial, unspecified }: Props) {
           return (
             <div
               key={c.key}
-              className="flex items-center justify-center text-xs font-semibold text-white"
-              style={{ background: c.color, flex: `${pct} 1 0` }}
+              className="flex items-center justify-center text-xs font-medium"
+              style={{ background: c.color, color: c.ink, flex: `${pct} 1 0` }}
               title={`${c.lab}: ${fmtInt(c.n)} (${fmtPct(pct)})`}
             >
               {pct >= 9 ? fmtPct(pct) : ""}
@@ -46,7 +46,7 @@ export function RefundComposition({ full, partial, unspecified }: Props) {
           <div key={c.key} className="flex items-center gap-2 text-sm">
             <span className="h-3 w-3 rounded" style={{ background: c.color }} />
             <span style={{ color: "var(--rf-ink)" }}>{c.lab}</span>
-            <span className="tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
+            <span className="font-mono tabular-nums" style={{ color: "var(--rf-ink-faint)" }}>
               {fmtInt(c.n)} · {fmtPct((c.n / total) * 100)}
             </span>
           </div>

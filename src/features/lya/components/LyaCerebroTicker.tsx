@@ -24,11 +24,11 @@ const assinarRelogio = (aoMudar: () => void) => {
 const minutoAgora = () => Math.floor(Date.now() / MINUTO_MS);
 
 const COR_TIPO: Record<LyaMemoryType, string> = {
-  feedback: "#fbbf24",
-  user: "#60a5fa",
-  project: "#a78bfa",
-  reference: "#34d399",
-  nota: "#cbd5e1",
+  feedback: "#f2c46d",
+  user: "#9db8ff",
+  project: "#7ce3ea",
+  reference: "#c6f36b",
+  nota: "#d4d4d8",
 };
 
 interface Metrica {
@@ -72,7 +72,7 @@ export function LyaCerebroTicker({
         label: "Memórias",
         valor: String(memorias.length),
         nota: novasSemana > 0 ? `+${novasSemana} na semana` : undefined,
-        cor: "#a78bfa",
+        cor: "#7ce3ea",
         descricao: "Tudo que a Lya já aprendeu com a gestora. Cada memória entra no contexto dela quando a pergunta tem a ver.",
       });
       out.push({
@@ -80,7 +80,7 @@ export function LyaCerebroTicker({
         icon: Sparkles,
         label: "Treinadas hoje",
         valor: String(hoje),
-        cor: "#34d399",
+        cor: "#c6f36b",
         descricao: "Memórias criadas ou corrigidas nas últimas 24 horas.",
       });
     }
@@ -94,7 +94,7 @@ export function LyaCerebroTicker({
         label: "Arquivos",
         valor: String(arquivos.length),
         nota: linhas > 0 ? `${numero(linhas)} linhas` : undefined,
-        cor: "#e2e8f0",
+        cor: "#f4f4f5",
         descricao:
           "Planilhas e documentos que a gestora deu para a Lya. Ela lê as linhas e cruza com os dados da plataforma quando a pergunta pede.",
       });
@@ -107,7 +107,7 @@ export function LyaCerebroTicker({
         label: "Alcance",
         valor: String(sistema.length),
         nota: alcancados > 0 ? `${numero(alcancados)} registros` : undefined,
-        cor: "#94a3b8",
+        cor: "#8a8a93",
         descricao:
           "Tabelas e telas que a Lya consegue consultar de verdade neste momento, com o total de registros que elas têm hoje.",
       });
@@ -119,7 +119,7 @@ export function LyaCerebroTicker({
       icon: Link2,
       label: "Conexões",
       valor: String(grafo.links.length),
-      cor: "#60a5fa",
+      cor: "#9db8ff",
       descricao:
         "Ligações do cérebro: [[wikilinks]] e tags entre memórias, a memória que nasceu de cada arquivo, o arquivo que cita uma tabela e as tabelas entre si.",
     });
@@ -132,7 +132,7 @@ export function LyaCerebroTicker({
         label: "Mais conectada",
         valor: corta(hub.label),
         nota: `${hub.val - 1} conexões`,
-        cor: "#fbbf24",
+        cor: "#f2c46d",
         descricao: "A memória com mais ligações — o assunto que mais aparece junto de outros.",
       });
     }
@@ -158,7 +158,7 @@ export function LyaCerebroTicker({
         icon: Hash,
         label: "Tags",
         valor: String(tags.size),
-        cor: "#cbd5e1",
+        cor: "#d4d4d8",
         descricao: "Palavras-chave distintas. São elas que fazem uma memória ser encontrada quando a pergunta usa outras palavras.",
       });
 
@@ -170,7 +170,7 @@ export function LyaCerebroTicker({
           label: "Último treino",
           valor: desde(ultima.updated_at, agora),
           nota: corta(ultima.description || ultima.name, 24),
-          cor: "#34d399",
+          cor: "#c6f36b",
           descricao: "Quando a gestora ensinou ou corrigiu algo pela última vez.",
         });
     }
@@ -181,11 +181,11 @@ export function LyaCerebroTicker({
   const itens = [...metricas, ...metricas]; // duplicado para o loop da esteira ser contínuo
 
   return (
-    <div className="h-10 select-none overflow-hidden rounded-xl border border-white/10 bg-[#0b0d1f] text-slate-200">
+    <div className="dark h-10 select-none overflow-hidden rounded-lg border border-line bg-canvas text-ink">
       {carregando && metricas.length === 0 ? (
-        <div className="flex h-full items-center px-4 text-[12px] text-slate-500">carregando o cérebro…</div>
+        <div className="flex h-full items-center px-4 text-[12px] text-ink-tertiary">carregando o cérebro…</div>
       ) : metricas.length === 0 ? (
-        <div className="flex h-full items-center px-4 text-[12px] text-slate-500">A Lya ainda não tem memórias. Ensine a primeira e a faixa começa a andar.</div>
+        <div className="flex h-full items-center px-4 text-[12px] text-ink-tertiary">A Lya ainda não tem memórias. Ensine a primeira e a faixa começa a andar.</div>
       ) : (
         <div
           className="lya-ticker-track flex h-full w-max items-center"
@@ -199,11 +199,11 @@ export function LyaCerebroTicker({
           {itens.map((m, i) => (
             <Tooltip key={`${m.key}-${i}`}>
               <TooltipTrigger asChild>
-                <div className="flex h-full cursor-default items-center gap-2 border-r border-white/10 px-5 text-[12px]">
+                <div className="flex h-full cursor-default items-center gap-2 border-r border-line px-5 text-[12px]">
                   <m.icon className="h-3.5 w-3.5 shrink-0" style={{ color: m.cor }} />
-                  <span className="text-slate-400">{m.label}</span>
-                  <span className="font-semibold text-slate-100">{m.valor}</span>
-                  {m.nota && <span className="text-[11px] text-slate-500">{m.nota}</span>}
+                  <span className="text-ink-tertiary">{m.label}</span>
+                  <span className="font-mono font-medium tabular-nums text-ink">{m.valor}</span>
+                  {m.nota && <span className="text-[11px] text-ink-tertiary">{m.nota}</span>}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-[12px]">

@@ -37,7 +37,7 @@ export function FiltroVisaoGeral({ label, semValorLabel, value, onChange, option
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <label htmlFor={id} className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
         {label}
       </label>
       <Select value={value} onValueChange={onChange} disabled={disabled}>

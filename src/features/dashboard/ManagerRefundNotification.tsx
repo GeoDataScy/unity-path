@@ -32,13 +32,13 @@ export function ManagerRefundNotification() {
           logo abaixo, e dois jeitos de dispensar o mesmo aviso só dividem a
           atenção de quem precisa decidir se vai ver os agentes. */}
       <div className="fixed top-4 right-4 z-50 w-[320px]">
-        <div className="rounded-xl border border-amber-400/40 bg-card shadow-2xl ring-1 ring-black/5 dark:ring-white/5 p-4">
+        <div className="rounded-lg border border-warning/40 bg-raised shadow-md p-4">
           <div className="flex items-start gap-3">
-            <div className="shrink-0 rounded-full bg-amber-500/12 p-1.5">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <div className="shrink-0 rounded-full bg-warning-soft p-1.5">
+              <AlertTriangle className="h-4 w-4 text-warning" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold leading-snug">Reembolsos em atraso</p>
+              <p className="text-sm font-medium leading-snug">Reembolsos em atraso</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{data.total_overdue}</span> pendentes há +24h —{" "}
                 <span className="font-medium text-foreground">{data.agents_affected}</span>{" "}
@@ -73,7 +73,7 @@ export function ManagerRefundNotification() {
         <SheetContent className="w-[400px] sm:w-[460px]">
           <SheetHeader className="pb-4 border-b">
             <SheetTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertTriangle className="h-4 w-4 text-warning" />
               Agentes com reembolsos em atraso
             </SheetTitle>
             <p className="text-xs text-muted-foreground">
@@ -100,8 +100,8 @@ export function ManagerRefundNotification() {
                       group.overdue_count >= 4
                         ? "bg-destructive text-destructive-foreground"
                         : group.overdue_count >= 2
-                        ? "bg-orange-500 text-white"
-                        : "bg-amber-400 text-amber-950"
+                        ? "bg-destructive text-destructive-foreground"
+                        : "bg-warning text-warning-foreground"
                     }
                   >
                     {group.overdue_count}
