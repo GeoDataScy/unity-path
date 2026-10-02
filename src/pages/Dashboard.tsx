@@ -66,13 +66,13 @@ function formatEventTime(iso: string) {
   });
 }
 
-// Barras: cada gráfico fala numa voz da marca (agente = signal, plataforma =
-// aqua, canal = ice) — uma cor por gráfico, nunca misturadas. Só a barra
+// Barras: cada gráfico fala numa voz da marca (agente = ice, plataforma =
+// orchid, canal = aqua) — uma cor por gráfico, nunca misturadas. Só a barra
 // líder leva o valor escrito em cima; o resto fica no tooltip.
 const BAR_HUE = {
-  agent: "hsl(var(--signal))",
-  platform: "hsl(var(--aqua))",
-  channel: "hsl(var(--ice))",
+  agent: "hsl(var(--ice))",
+  platform: "hsl(var(--orchid))",
+  channel: "hsl(var(--aqua))",
 } as const;
 
 function leaderLabel(series: { value: number }[]) {

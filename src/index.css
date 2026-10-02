@@ -50,6 +50,9 @@
     --on-signal: 0 0% 100%;           /* #ffffff */
     --aqua: 184.8 100% 27.1%;         /* #007f8a */
     --ice: 225.8 70.2% 55.3%;         /* #3d63dd */
+    /* Quarta voz, só em gráfico (nunca status): orquídea. Escolhida longe
+       do ice (ΔE 16 normal · 6,9 protan no claro; 8,3 deutan no escuro). */
+    --orchid: 292.3 51.4% 47.6%;        /* #a83bb8 */
     --coral: 4.7 61.4% 48.8%;         /* #c93c30 */
     --amber: 38.2 100% 32.9%;         /* #a86b00 */
     /* Os "-soft" do design system são o próprio tom a 10% (claro) / 12%
@@ -208,6 +211,7 @@
     --on-signal: 0 0% 3.9%;           /* #0a0a0a */
     --aqua: 183.8 72.4% 70.2%;        /* #7ce3ea */
     --ice: 223.5 100% 80.8%;          /* #9db8ff */
+    --orchid: 294.7 64.6% 65.7%;          /* #d66fe0 */
     --coral: 7.3 100% 74.1%;          /* #ff8b7b */
     --amber: 39.2 83.6% 68.8%;        /* #f2c46d */
     --soft-alpha: 0.12;
