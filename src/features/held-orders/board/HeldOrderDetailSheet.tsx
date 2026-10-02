@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { formatHeldOrderDate, formatHeldOrderDateTime, HELD_ORDER_DATE_LABEL } from "../dates";
+import { formatHeldOrderAge, formatHeldOrderDate, formatHeldOrderDateTime, HELD_ORDER_DATE_LABEL } from "../dates";
 import { heldOrderStoreLabel, parseAddress, parseItems, parseReasons, totalUnits } from "../format";
 import { useAssignHeldOrdersMutation } from "../useManagerHeldOrdersQuery";
 import { useHeldOrderEventsQuery } from "../useMyHeldOrdersQuery";
@@ -142,7 +142,7 @@ export function HeldOrderDetailSheet({ order, onOpenChange, agents }: Props) {
                 ))}
                 {order.age && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" /> {order.age}
+                    <Clock className="h-3 w-3" /> {formatHeldOrderAge(order.age)}
                   </span>
                 )}
               </div>

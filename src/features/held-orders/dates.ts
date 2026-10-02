@@ -57,3 +57,8 @@ export function formatSince(value: string | null, now: number = Date.now()): str
   if (hours < 24) return `há ${hours} h`;
   return `há ${Math.floor(hours / 24)} d`;
 }
+
+/** Idade do pedido como vem no arquivo ("9 day(s)") em português ("9 dia(s)"). */
+export function formatHeldOrderAge(age: string | null | undefined): string {
+  return (age ?? "").replace(/day\(s\)/i, "dia(s)");
+}

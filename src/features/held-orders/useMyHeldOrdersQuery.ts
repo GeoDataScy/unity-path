@@ -19,19 +19,30 @@ const MY_HELD_ORDERS_KEY = ["held-orders", "mine"] as const;
 const MY_HELD_METRICS_KEY = ["held-orders", "mine", "metrics"] as const;
 const HELD_ORDER_EVENTS_KEY = ["held-orders", "events"] as const;
 
+/**
+ * Pedidos do agente. `concludedDays` limita os concluídos aos últimos N dias (os
+ * em aberto e os inativos vêm sempre); sem ele, vem o histórico inteiro.
+ */
 export function useMyHeldOrdersQuery(
   enabled: boolean,
   status: HeldOrderAgentStatus | "all" = "all",
+  concludedDays: number | null = null,
 ) {
   return useQuery({
-    queryKey: [...MY_HELD_ORDERS_KEY, status],
+    queryKey: [...MY_HELD_ORDERS_KEY, status, concludedDays],
     enabled,
     queryFn: async (): Promise<MyHeldOrder[]> => {
-      const { data, error } = await rpc("my_held_orders", { p_status: status });
+      const { data, error } = await rpc("my_held_orders", {
+        p_status: status,
+        ...(concludedDays !== null ? { p_concluded_days: concludedDays } : {}),
+      });
       if (error) throw error;
-      return (data as MyHeldOrder[]) ?? [];
+      return Array.isArray(data) ? (data as MyHeldOrder[]) : [];
     },
-    refetchOnWindowFocus: false,
+    // A gestão devolve e reatribui pedidos: a lista anda sozinha a cada 2 min e
+    // na volta de foco (o App desliga refetchOnWindowFocus globalmente).
+    refetchOnWindowFocus: true,
+    refetchInterval: 120_000,
   });
 }
 

@@ -8,7 +8,7 @@ import DashboardPedidosEspera from "./DashboardPedidosEspera";
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
 
-const exportHeldOrders = vi.hoisted(() => vi.fn(() => 2));
+const exportHeldOrders = vi.hoisted(() => vi.fn((_params: unknown) => 2));
 vi.mock("@/features/held-orders/exportHeldOrders", () => ({ exportHeldOrders }));
 
 vi.mock("@/features/dashboard/useManagerUsersQuery", () => ({

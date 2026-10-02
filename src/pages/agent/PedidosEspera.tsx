@@ -1,49 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Flag,
-  MapPin,
-  MessageSquare,
-  Package,
-  PackageSearch,
-  RotateCcw,
-  UserX,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Flag, MessageSquare, RotateCcw, Search, UserX } from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import { usePanelPagination } from "@/features/support-base/usePanelPagination";
 import { PanelPagination } from "@/features/support-base/components/PanelPagination";
 import { useMyHeldOrdersMetricsQuery, useMyHeldOrdersQuery } from "@/features/held-orders/useMyHeldOrdersQuery";
 import { HeldOrderTrackingDialog } from "@/features/held-orders/HeldOrderTrackingDialog";
-import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
-import { parseAddress, parseItems, parseReasons, totalUnits } from "@/features/held-orders/format";
-import { formatHeldOrderDateTime } from "@/features/held-orders/dates";
+import { heldOrderStoreLabel, parseAddress, parseItems, parseReasons } from "@/features/held-orders/format";
+import { formatHeldOrderAge, formatHeldOrderDate, formatHeldOrderDateTime } from "@/features/held-orders/dates";
 import {
-  HELD_ORDER_AGENT_STATUS_BADGE as STATUS_BADGE,
-  HELD_ORDER_AGENT_STATUS_LABEL,
   HELD_ORDER_PENDING_TAG_LABEL,
   HELD_ORDER_PENDING_TAGS,
   type HeldOrderAgentStatus,
@@ -51,62 +25,91 @@ import {
   type MyHeldOrder,
 } from "@/features/held-orders/types";
 
-/** Inativo não é filtro da fila: ele tem a sua própria lista, abaixo. */
-type StatusFilter = "all" | Exclude<HeldOrderAgentStatus, "inativo">;
-/** "any" = qualquer pendência; "none" = sem pendência. */
-type PendingFilter = "all" | "any" | "none" | HeldOrderPendingTag;
+/** Concluídos que a tela carrega: os últimos 30 dias (o histórico fica com a gestão). */
+const CONCLUDED_DAYS = 30;
 
-// Cards são altos (produtos + endereço): 10 por página já ocupa a tela toda.
+// Cards são compactos, mas 10 por página ainda enchem a tela.
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "novo", label: "Novo" },
-  { value: "em_andamento", label: "Em Andamento" },
-  { value: "concluido", label: "Concluído" },
+type Tab = "fazer" | "novo" | "em_andamento" | "inativo" | "concluido";
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: "fazer", label: "Para fazer" },
+  { value: "novo", label: "Novos" },
+  { value: "em_andamento", label: "Em andamento" },
+  { value: "inativo", label: "Inativos" },
+  { value: "concluido", label: "Concluídos" },
 ];
+
+function inTab(status: HeldOrderAgentStatus, tab: Tab): boolean {
+  if (tab === "fazer") return status === "novo" || status === "em_andamento";
+  return status === tab;
+}
+
+const STATUS_DOT: Record<HeldOrderAgentStatus, string> = {
+  novo: "bg-info",
+  em_andamento: "bg-status-in-progress",
+  inativo: "bg-warning",
+  concluido: "bg-success",
+};
+
+const STATUS_LABEL: Record<HeldOrderAgentStatus, string> = {
+  novo: "Novo",
+  em_andamento: "Em andamento",
+  inativo: "Inativo",
+  concluido: "Concluído",
+};
+
+/** "any" = qualquer pendência; "none" = sem pendência. */
+type PendingFilter = "all" | "any" | "none" | HeldOrderPendingTag;
+type SortOrder = "antigos" | "recentes";
+
+/** Data que ordena a fila: a do pedido (ou da devolução). */
+function orderRefDate(o: MyHeldOrder): string {
+  return o.order_date ?? o.return_date ?? "";
+}
 
 export default function PedidosEspera() {
   const { userId } = useOutletContext<AgentOutletContext>();
 
-  const ordersQuery = useMyHeldOrdersQuery(Boolean(userId), "all");
+  const ordersQuery = useMyHeldOrdersQuery(Boolean(userId), "all", CONCLUDED_DAYS);
   const metricsQuery = useMyHeldOrdersMetricsQuery(Boolean(userId));
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tab, setTab] = useState<Tab>("fazer");
+  const [search, setSearch] = useState("");
   const [reasonFilter, setReasonFilter] = useState<string>("all");
   const [pendingFilter, setPendingFilter] = useState<PendingFilter>("all");
+  const [sort, setSort] = useState<SortOrder>("antigos");
   const [selected, setSelected] = useState<MyHeldOrder | null>(null);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const listRef = useRef<HTMLDivElement>(null);
 
   const allOrders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
-  // Inativo sai da fila de trabalho e vai para a lista própria.
-  const orders = useMemo(() => allOrders.filter((o) => o.agent_status !== "inativo"), [allOrders]);
-  const inactiveOrders = useMemo(
-    () =>
-      allOrders
-        .filter((o) => o.agent_status === "inativo")
-        .sort((a, b) => (b.status_changed_at ?? "").localeCompare(a.status_changed_at ?? "")),
-    [allOrders],
-  );
   const metrics = metricsQuery.data;
   const goal = metrics?.goal ?? 30;
-  const confirmedToday = metrics?.confirmed_today ?? 0;
-  const remaining = Math.max(0, goal - confirmedToday);
+  const doneToday = metrics?.confirmed_today ?? 0;
+  const remaining = Math.max(0, goal - doneToday);
+  const progress = goal > 0 ? Math.min(100, (doneToday / goal) * 100) : 0;
+  const progressColor = progress < 60 ? "bg-destructive" : progress < 90 ? "bg-warning" : "bg-success";
 
-  // Cada pedido já parseado uma vez — a lista é reusada por card e por filtro.
+  const tabCounts = useMemo(() => {
+    const counts: Record<Tab, number> = { fazer: 0, novo: 0, em_andamento: 0, inativo: 0, concluido: 0 };
+    for (const o of allOrders) {
+      for (const t of TABS) if (inTab(o.agent_status, t.value)) counts[t.value] += 1;
+    }
+    return counts;
+  }, [allOrders]);
+
+  // Cada pedido da aba já parseado uma vez — reusado pelos filtros e pelos cards.
   const parsed = useMemo(
     () =>
-      orders.map((o) => ({
-        order: o,
-        reasons: parseReasons(o.reason),
-        address: parseAddress(o),
-        items: parseItems(o.items),
-      })),
-    [orders],
+      allOrders
+        .filter((o) => inTab(o.agent_status, tab))
+        .map((o) => ({ order: o, reasons: parseReasons(o.reason), items: parseItems(o.items), address: parseAddress(o) })),
+    [allOrders, tab],
   );
 
-  /** Motivos existentes nos pedidos do agente, com contagem — alimenta o filtro. */
+  /** Motivos existentes na aba, com contagem — alimenta o filtro. */
   const reasonOptions = useMemo(() => {
     const counts = new Map<string, { label: string; count: number }>();
     for (const p of parsed) {
@@ -125,10 +128,10 @@ export default function PedidosEspera() {
     const counts = new Map<PendingFilter, number>();
     let withTag = 0;
     for (const p of parsed) {
-      const tag = p.order.pending_tag;
-      if (tag) {
+      const t = p.order.pending_tag;
+      if (t) {
         withTag += 1;
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+        counts.set(t, (counts.get(t) ?? 0) + 1);
       }
     }
     counts.set("any", withTag);
@@ -136,32 +139,39 @@ export default function PedidosEspera() {
     return counts;
   }, [parsed]);
 
-  const filtered = useMemo(
-    () =>
-      parsed.filter((p) => {
-        if (statusFilter !== "all" && p.order.agent_status !== statusFilter) return false;
-        if (reasonFilter !== "all" && !p.reasons.some((r) => r.key === reasonFilter)) return false;
-        if (pendingFilter === "any" && !p.order.pending_tag) return false;
-        if (pendingFilter === "none" && p.order.pending_tag) return false;
-        if (
-          pendingFilter !== "all" &&
-          pendingFilter !== "any" &&
-          pendingFilter !== "none" &&
-          p.order.pending_tag !== pendingFilter
-        ) {
-          return false;
-        }
-        return true;
-      }),
-    [parsed, statusFilter, reasonFilter, pendingFilter],
-  );
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const list = parsed.filter((p) => {
+      const o = p.order;
+      if (term) {
+        const hay = `${o.order_number ?? ""} ${o.customer_name ?? ""} ${o.email ?? ""}`.toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
+      if (reasonFilter !== "all" && !p.reasons.some((r) => r.key === reasonFilter)) return false;
+      if (pendingFilter === "any" && !o.pending_tag) return false;
+      if (pendingFilter === "none" && o.pending_tag) return false;
+      if (!["all", "any", "none"].includes(pendingFilter) && o.pending_tag !== pendingFilter) return false;
+      return true;
+    });
+    // "Mais antigos primeiro" mantém a ordem do banco (novos, pendência, data do
+    // pedido); "mais recentes" ordena pela entrada no sistema, do último para trás.
+    if (sort === "recentes") {
+      return [...list].sort((a, b) => (b.order.imported_at ?? "").localeCompare(a.order.imported_at ?? ""));
+    }
+    return list;
+  }, [parsed, search, reasonFilter, pendingFilter, sort]);
 
   // Qualquer filtro novo volta para a página 1.
   const pagination = usePanelPagination(
     filtered,
     pageSize,
-    [statusFilter, reasonFilter, pendingFilter].join("|"),
+    [tab, search, reasonFilter, pendingFilter, sort].join("|"),
   );
+
+  // Motivo escolhido que não existe na aba nova: volta para todos.
+  useEffect(() => {
+    if (reasonFilter !== "all" && !reasonOptions.some((r) => r.key === reasonFilter)) setReasonFilter("all");
+  }, [reasonOptions, reasonFilter]);
 
   // O pager fica no fim da lista: ao trocar de página, volta para o topo dela
   // em vez de deixar o agente no rodapé dos cards novos.
@@ -177,133 +187,97 @@ export default function PedidosEspera() {
     }
   }, [pagination.pagina]);
 
-  const hasExtraFilters = reasonFilter !== "all" || pendingFilter !== "all";
+  const hasExtraFilters = search.trim() !== "" || reasonFilter !== "all" || pendingFilter !== "all" || sort !== "antigos";
 
-  const progress = useMemo(() => {
-    if (goal <= 0) return 0;
-    return Math.min(100, Math.max(0, (confirmedToday / goal) * 100));
-  }, [confirmedToday, goal]);
-
-  const indicatorClassName = useMemo(() => {
-    const pct = goal > 0 ? confirmedToday / goal : 0;
-    if (pct < 0.6) return "bg-destructive";
-    if (pct < 0.9) return "bg-status-open";
-    return "bg-status-success";
-  }, [confirmedToday, goal]);
+  /** O pedido voltou para o agente por outra pessoa e ele ainda não registrou nada. */
+  function handoffLabel(o: MyHeldOrder): string | null {
+    if (!o.last_event_user_id || o.last_event_user_id === userId) return null;
+    if (o.agent_status === "concluido" || o.agent_status === "inativo") return null;
+    return o.last_event_by_manager ? "Devolvido pela gestão" : "Veio de outro agente";
+  }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <header className="mb-6">
-        <h1 className="flex items-center gap-2 text-[28px] font-medium leading-[34px] tracking-[-0.025em]">
-          <PackageSearch className="h-7 w-7 text-primary" /> Pedidos em Espera
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie cada pedido retido atribuído a você. Clique em um pedido para mudar o status,
-          marcar uma pendência e registrar o que foi feito. Concluir um pedido conta para a sua
-          meta diária.
-        </p>
+    <div className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Pedidos em Espera</h1>
+          <p className="text-sm text-muted-foreground">Clique num pedido para registrar o que foi feito.</p>
+        </div>
+
+        {/* Meta de Pedidos em Espera (separada da de Meus Atendimentos) */}
+        <section aria-label="Meta de hoje" className="grid w-full gap-1.5 rounded-xl border bg-card px-4 py-3 sm:w-[360px]">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">Meta de hoje</span>
+            {metricsQuery.isLoading ? (
+              <Skeleton className="h-6 w-16" />
+            ) : (
+              <span>
+                <span className="font-mono text-[22px] font-normal leading-none tracking-[-0.03em] tabular-nums">
+                  {doneToday.toLocaleString("pt-BR")}
+                </span>
+                <span className="text-sm text-muted-foreground"> / {goal}</span>
+              </span>
+            )}
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className={cn("h-full rounded-full transition-all", progressColor)} style={{ width: `${progress}%` }} />
+          </div>
+          <p className="text-xs text-ink-tertiary">
+            {doneToday >= goal ? "Meta batida! " : `Faltam ${remaining} · `}inclui concluídos e inativos
+          </p>
+        </section>
       </header>
 
-      {/* Métricas do dia (meta própria, separada de Meus Atendimentos) */}
-      <section className="mb-6 grid gap-4 md:grid-cols-3" aria-label="Métricas do dia">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base font-medium">Concluídos hoje</CardTitle>
-              {!metricsQuery.isLoading && confirmedToday >= goal && <Badge variant="success">🏆 Meta Batida!</Badge>}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {metricsQuery.isLoading ? (
-              <Skeleton className="h-10 w-24" />
-            ) : (
-              <div className="text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]">{confirmedToday.toLocaleString("pt-BR")}</div>
-            )}
-            <p className="mt-2 text-sm text-muted-foreground">Inclui os marcados como inativos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Faltam para a meta</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metricsQuery.isLoading ? (
-              <Skeleton className="h-10 w-24" />
-            ) : (
-              <div className="text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]">{remaining.toLocaleString("pt-BR")}</div>
-            )}
-            <p className="mt-2 text-sm text-muted-foreground">Meta diária: {goal}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Pendentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metricsQuery.isLoading ? (
-              <Skeleton className="h-10 w-24" />
-            ) : (
-              <div className="text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]">
-                {(metrics?.pending ?? 0).toLocaleString("pt-BR")}
-              </div>
-            )}
-            <p className="mt-2 text-sm text-muted-foreground">Ainda não concluídos</p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <div className="mb-8">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">Progresso da meta</p>
-          {!metricsQuery.isLoading && (
-            <p className="text-sm font-mono tabular-nums text-muted-foreground">
-              {confirmedToday.toLocaleString("pt-BR")}/{goal}
-            </p>
-          )}
-        </div>
-        {metricsQuery.isLoading ? (
-          <Skeleton className="h-4 w-full" />
-        ) : (
-          <Progress value={progress} className="h-4" indicatorClassName={indicatorClassName} />
-        )}
+      {/* Onde estão os pedidos do agente */}
+      <div role="tablist" aria-label="Status dos pedidos" className="flex flex-wrap gap-1 border-b">
+        {TABS.map((t) => {
+          const active = tab === t.value;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.value)}
+              className={cn(
+                "relative -mb-px inline-flex items-center gap-2 border-b-2 px-3 pb-2.5 pt-2 text-sm transition-colors",
+                active ? "border-foreground font-medium text-foreground" : "border-transparent text-ink-secondary hover:text-foreground",
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 font-mono text-xs tabular-nums",
+                  active ? "bg-primary text-primary-foreground" : "bg-muted text-ink-secondary",
+                )}
+              >
+                {ordersQuery.isLoading ? "…" : tabCounts[t.value].toLocaleString("pt-BR")}
+              </span>
+            </button>
+          );
+        })}
       </div>
+      {tab === "concluido" && (
+        <p className="text-xs text-ink-tertiary">Mostrando os concluídos dos últimos {CONCLUDED_DAYS} dias.</p>
+      )}
 
-      {/* Lista de pedidos */}
-      <Card ref={listRef} className="scroll-mt-4">
-        <CardHeader className="gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle>Pedidos atribuídos a você</CardTitle>
-            <p className="text-sm font-mono tabular-nums text-muted-foreground">
-              {filtered.length === orders.length
-                ? `${orders.length} pedido(s)`
-                : `${filtered.length} de ${orders.length} pedido(s)`}
-            </p>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-56 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="agent-held-orders-search"
+            placeholder="Buscar pedido, cliente ou e-mail"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((f) => {
-              const count =
-                f.value === "all" ? orders.length : orders.filter((o) => o.agent_status === f.value).length;
-              return (
-                <Button
-                  key={f.value}
-                  size="sm"
-                  variant={statusFilter === f.value ? "default" : "outline"}
-                  onClick={() => setStatusFilter(f.value)}
-                >
-                  {f.label}
-                  <span className="ml-1.5 font-mono tabular-nums opacity-70">{count}</span>
-                </Button>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
+        {tab !== "inativo" && (
+          <>
             <Select value={reasonFilter} onValueChange={setReasonFilter}>
-              <SelectTrigger className="h-9 w-full sm:w-[280px]">
-                <SelectValue placeholder="Motivo do On Hold" />
+              <SelectTrigger className="h-10 w-full sm:w-[230px]" aria-label="Motivo do On Hold">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os motivos</SelectItem>
@@ -316,224 +290,92 @@ export default function PedidosEspera() {
             </Select>
 
             <Select value={pendingFilter} onValueChange={(v) => setPendingFilter(v as PendingFilter)}>
-              <SelectTrigger className="h-9 w-full sm:w-[280px]">
-                <SelectValue placeholder="Pendência" />
+              <SelectTrigger className="h-10 w-full sm:w-[230px]" aria-label="Pendência">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as pendências</SelectItem>
-                <SelectItem value="any">
-                  Com pendência ({pendingCounts.get("any") ?? 0})
-                </SelectItem>
-                <SelectItem value="none">
-                  Sem pendência ({pendingCounts.get("none") ?? 0})
-                </SelectItem>
-                {HELD_ORDER_PENDING_TAGS.map((tag) => (
-                  <SelectItem key={tag} value={tag}>
-                    {HELD_ORDER_PENDING_TAG_LABEL[tag]} ({pendingCounts.get(tag) ?? 0})
+                <SelectItem value="any">Com pendência ({pendingCounts.get("any") ?? 0})</SelectItem>
+                <SelectItem value="none">Sem pendência ({pendingCounts.get("none") ?? 0})</SelectItem>
+                {HELD_ORDER_PENDING_TAGS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {HELD_ORDER_PENDING_TAG_LABEL[t]} ({pendingCounts.get(t) ?? 0})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {hasExtraFilters && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setReasonFilter("all");
-                  setPendingFilter("all");
-                }}
-              >
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
-              </Button>
-            )}
+            <Select value={sort} onValueChange={(v) => setSort(v as SortOrder)}>
+              <SelectTrigger className="h-10 w-full sm:w-[220px]" aria-label="Ordem">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="antigos">Mais antigos primeiro</SelectItem>
+                <SelectItem value="recentes">Entraram por último</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+
+        {hasExtraFilters && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setReasonFilter("all");
+              setPendingFilter("all");
+              setSort("antigos");
+            }}
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
+          </Button>
+        )}
+      </div>
+
+      <div ref={listRef} className="scroll-mt-4">
+        {ordersQuery.isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
           </div>
-        </CardHeader>
-
-        <CardContent>
-          {ordersQuery.isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          ) : ordersQuery.isError ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
-              <AlertCircle className="h-6 w-6" />
-              <p>Não foi possível carregar os pedidos.</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
-              <CheckCircle2 className="h-8 w-8 text-status-success" />
-              <p>{allOrders.length === 0 ? "Nenhum pedido atribuído a você." : orders.length === 0 ? "Nenhum pedido na sua fila." : "Nenhum pedido neste filtro."}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {pagination.visiveis.map(({ order: o, reasons, address, items }) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => setSelected(o)}
-                  className="w-full rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/40"
-                >
-                  {/* Linha 1 — o que identifica o pedido, em destaque */}
-                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                      <span className="font-mono text-xl font-medium leading-none tracking-tight">
-                        {o.order_number ?? "Sem número"}
-                      </span>
-                      <Badge variant="secondary">
-                        {o.dyna_code === RETURNS_DYNA_CODE ? "Devolução" : o.dyna_code}
-                      </Badge>
-                      {o.rma && <span className="text-xs text-muted-foreground">RMA: {o.rma}</span>}
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                      {o.pending_tag && (
-                        <Badge variant="destructive" className="gap-1">
-                          <Flag className="h-3 w-3" />
-                          {HELD_ORDER_PENDING_TAG_LABEL[o.pending_tag]}
-                        </Badge>
-                      )}
-                      <Badge variant={STATUS_BADGE[o.agent_status]}>
-                        {HELD_ORDER_AGENT_STATUS_LABEL[o.agent_status]}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Linha 2 — motivos do On Hold + idade */}
-                  {(reasons.length > 0 || o.age) && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {reasons.map((r) => (
-                        <Badge
-                          key={r.key}
-                          variant="outline"
-                          className="border-warning/40 font-medium text-warning"
-                        >
-                          {r.label}
-                        </Badge>
-                      ))}
-                      {o.age && (
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" /> {o.age}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Linha 3 — produto e endereço lado a lado, cada um em seu bloco */}
-                  {(items.length > 0 || address.oneLine) && (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {items.length > 0 && (
-                        <section className="rounded-md border bg-muted/30 p-2.5">
-                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                            <Package className="h-3.5 w-3.5" />
-                            Produtos
-                            <span className="font-normal normal-case tracking-normal">
-                              ({items.length} item(ns) · {totalUnits(items)} un.)
-                            </span>
-                          </p>
-                          <ul className="space-y-1">
-                            {items.map((item, idx) => (
-                              <li key={`${item.sku}-${idx}`} className="flex items-baseline gap-2 text-sm">
-                                <span className="min-w-[2.25rem] shrink-0 rounded bg-primary/10 px-1.5 text-center font-medium font-mono tabular-nums text-primary">
-                                  {item.qty}×
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="font-medium">{item.product}</span>
-                                  <span className="ml-1.5 font-mono text-[11px] text-muted-foreground">
-                                    {item.sku}
-                                  </span>
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </section>
-                      )}
-
-                      {address.oneLine && (
-                        <section className="rounded-md border bg-muted/30 p-2.5">
-                          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" /> Endereço
-                          </p>
-                          <address className="space-y-0.5 text-sm not-italic">
-                            {address.street.map((line, idx) => (
-                              <div key={idx}>{line}</div>
-                            ))}
-                            {address.locality && <div>{address.locality}</div>}
-                            {address.country && (
-                              <div className="font-medium text-muted-foreground">{address.country}</div>
-                            )}
-                          </address>
-                        </section>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Linha 4 — cliente (contexto, não é o dado principal) */}
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm">
-                    <span className="min-w-0">
-                      <span className="font-medium">{o.customer_name ?? "—"}</span>
-                      {o.email && <span className="text-muted-foreground"> · {o.email}</span>}
-                    </span>
-                    {o.event_count > 0 && (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <MessageSquare className="h-3 w-3" />
-                        {o.event_count}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-          {!ordersQuery.isLoading && !ordersQuery.isError && (
-            <div className="mt-4">
-              <PanelPagination
-                estado={pagination}
-                rotulo={["pedido", "pedidos"]}
-                porPagina={pageSize}
-                onPorPaginaChange={setPageSize}
-                opcoesPorPagina={PAGE_SIZE_OPTIONS}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Inativos: clientes que não responderam. Fora da fila; reabrir pelo diálogo. */}
-      <Card className="mt-6">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <UserX className="h-5 w-5 text-muted-foreground" /> Inativos
-            </CardTitle>
-            <p className="text-sm tabular-nums text-muted-foreground">{inactiveOrders.length} pedido(s)</p>
+        ) : ordersQuery.isError ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+            <AlertCircle className="h-6 w-6" />
+            <p>Não foi possível carregar os pedidos.</p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Clientes que não responderam. Se o cliente voltar a falar, abra o pedido e reabra.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {ordersQuery.isLoading ? (
-            <Skeleton className="h-16 w-full" />
-          ) : inactiveOrders.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Nenhum pedido inativo.</p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
+            {tab === "inativo" ? <UserX className="h-8 w-8" /> : <CheckCircle2 className="h-8 w-8 text-success" />}
+            <p>
+              {allOrders.length === 0
+                ? "Nenhum pedido atribuído a você."
+                : parsed.length === 0
+                  ? tab === "fazer"
+                    ? "Nenhum pedido na sua fila."
+                    : "Nenhum pedido nesta aba."
+                  : "Nenhum pedido com estes filtros."}
+            </p>
+          </div>
+        ) : tab === "inativo" ? (
+          // Inativos: clientes que não responderam. Fora da fila; reabrir pelo diálogo.
+          <Card>
+            <CardContent className="overflow-x-auto p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Pedido</TableHead>
+                    <TableHead className="pl-6">Pedido</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Marcado inativo em</TableHead>
                     <TableHead>Observação</TableHead>
-                    <TableHead className="text-right">Ação</TableHead>
+                    <TableHead className="pr-6 text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inactiveOrders.map((o) => (
+                  {pagination.visiveis.map(({ order: o }) => (
                     <TableRow key={o.id}>
-                      <TableCell className="font-mono font-medium">{o.order_number ?? "Sem número"}</TableCell>
+                      <TableCell className="pl-6 font-mono font-medium">{o.order_number ?? "Sem número"}</TableCell>
                       <TableCell className="text-sm">
                         <div>{o.customer_name ?? "—"}</div>
                         {o.email && <div className="text-xs text-muted-foreground">{o.email}</div>}
@@ -542,7 +384,7 @@ export default function PedidosEspera() {
                         {formatHeldOrderDateTime(o.status_changed_at)}
                       </TableCell>
                       <TableCell className="max-w-xs text-sm text-muted-foreground">{o.last_note || "—"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="pr-6 text-right">
                         <Button size="sm" variant="outline" onClick={() => setSelected(o)}>
                           <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reabrir
                         </Button>
@@ -551,10 +393,132 @@ export default function PedidosEspera() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2.5">
+            {pagination.visiveis.map(({ order: o, reasons, items, address }) => {
+              const handoff = handoffLabel(o);
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setSelected(o)}
+                  className="grid w-full gap-2.5 rounded-xl border bg-card px-4 py-3.5 text-left transition-colors hover:border-line-strong hover:bg-muted/40"
+                >
+                  {/* Identificação + estado */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 flex-wrap items-baseline gap-2.5">
+                      <span className="font-mono text-lg font-medium leading-none tracking-tight">
+                        {o.order_number ?? "Sem número"}
+                      </span>
+                      <span className="rounded-md bg-muted px-1.5 text-xs text-ink-tertiary">
+                        {heldOrderStoreLabel(o.dyna_code)}
+                      </span>
+                      {o.rma && <span className="text-xs text-muted-foreground">RMA {o.rma}</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      {handoff && (
+                        <span className="rounded-md bg-info/10 px-1.5 text-xs font-medium text-info">{handoff}</span>
+                      )}
+                      {o.pending_tag && (
+                        <Badge variant="destructive" className="gap-1">
+                          <Flag className="h-3 w-3" />
+                          {HELD_ORDER_PENDING_TAG_LABEL[o.pending_tag]}
+                        </Badge>
+                      )}
+                      <span className="flex items-center gap-1.5 text-xs font-medium">
+                        <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[o.agent_status])} />
+                        {STATUS_LABEL[o.agent_status]}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cliente + motivos */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+                    <span className="min-w-0">
+                      <span className="font-medium">{o.customer_name ?? "—"}</span>
+                      {o.email && <span className="text-muted-foreground"> · {o.email}</span>}
+                    </span>
+                    {reasons.map((r) => (
+                      <span key={r.key} className="rounded-md bg-warning/10 px-1.5 text-xs text-warning">
+                        {r.label}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Datas, cada uma com o nome escrito */}
+                  <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-tertiary">
+                    {o.order_date || !o.return_date ? (
+                      <span>
+                        Data do pedido{" "}
+                        <b className="font-mono font-medium tabular-nums text-foreground">{formatHeldOrderDate(o.order_date)}</b>
+                      </span>
+                    ) : null}
+                    {o.return_date && (
+                      <span>
+                        Data da devolução{" "}
+                        <b className="font-mono font-medium tabular-nums text-foreground">{formatHeldOrderDate(o.return_date)}</b>
+                      </span>
+                    )}
+                    <span>
+                      Entrada no sistema{" "}
+                      <b className="font-mono font-medium tabular-nums text-foreground">{formatHeldOrderDate(o.imported_at)}</b>
+                    </span>
+                    <span>
+                      Última mudança{" "}
+                      <b className="font-mono font-medium tabular-nums text-foreground">
+                        {formatHeldOrderDateTime(o.status_changed_at)}
+                      </b>
+                    </span>
+                    {o.age && (
+                      <span>
+                        Idade no arquivo{" "}
+                        <b className="font-mono font-medium tabular-nums text-foreground">{formatHeldOrderAge(o.age)}</b>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Produtos e endereço numa linha; o completo fica no diálogo */}
+                  {(items.length > 0 || address.oneLine) && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2.5 text-xs text-ink-secondary">
+                      {items.length > 0 && (
+                        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {items.map((it, idx) => (
+                            <span key={`${it.sku}-${idx}`}>
+                              <span className="mr-1 rounded bg-primary/10 px-1 font-mono font-medium text-primary">{it.qty}×</span>
+                              {it.product}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                      {address.oneLine && <span className="min-w-0 truncate text-ink-tertiary">{address.oneLine}</span>}
+                      {o.event_count > 0 && (
+                        <span className="ml-auto inline-flex items-center gap-1 text-ink-tertiary">
+                          <MessageSquare className="h-3 w-3" />
+                          {o.event_count}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {!ordersQuery.isLoading && !ordersQuery.isError && filtered.length > 0 && (
+          <div className="mt-4">
+            <PanelPagination
+              estado={pagination}
+              rotulo={["pedido", "pedidos"]}
+              porPagina={pageSize}
+              onPorPaginaChange={setPageSize}
+              opcoesPorPagina={PAGE_SIZE_OPTIONS}
+            />
+          </div>
+        )}
+      </div>
 
       <HeldOrderTrackingDialog
         order={selected}
