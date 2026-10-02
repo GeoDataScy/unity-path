@@ -52,6 +52,8 @@ export type HeldOrdersExportFilters = {
   search: string;
   /** A tela está mostrando também as linhas repetidas. */
   includesDuplicates: boolean;
+  /** Período escolhido (ex.: "Entrada no sistema de 03/09/2026 a 03/10/2026"); null/ausente = todos. */
+  period?: string | null;
 };
 
 export type HeldOrdersExportParams = {
@@ -171,6 +173,7 @@ export function exportHeldOrders({ rows, filters }: HeldOrdersExportParams): num
 
   const filtersLine = [
     `Status: ${filters.status ?? "todos"}`,
+    `Período: ${filters.period ?? "todos"}`,
     `Loja: ${filters.store ?? "todas"}`,
     `Produto: ${filters.product ?? "todos"}`,
     `Agente: ${filters.agent ?? "todos"}`,

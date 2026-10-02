@@ -21,6 +21,7 @@ const DashboardAcompanhamento = lazy(() => import("./pages/DashboardAcompanhamen
 const DashboardInteracoes = lazy(() => import("./pages/DashboardInteracoes"));
 const DashboardAlertas = lazy(() => import("./pages/DashboardAlertas"));
 const DashboardUsers = lazy(() => import("./pages/DashboardUsers"));
+const DashboardPedidosEspera = lazy(() => import("./pages/DashboardPedidosEspera"));
 const DashboardBaseSuporte = lazy(() => import("./pages/DashboardBaseSuporte"));
 const DashboardZendesk = lazy(() => import("./pages/DashboardZendesk"));
 const DashboardLya = lazy(() => import("./pages/DashboardLya"));
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="interacoes" element={<DashboardInteracoes />} />
             <Route path="alertas" element={<DashboardAlertas />} />
             <Route path="usuarios" element={<DashboardUsers />} />
+            <Route path="pedidos-espera" element={<DashboardPedidosEspera />} />
             <Route path="base" element={<DashboardBaseSuporte />} />
             <Route path="zendesk" element={<DashboardZendesk />} />
             <Route path="lya" element={<DashboardLya />} />

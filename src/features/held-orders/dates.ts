@@ -44,3 +44,16 @@ export function formatHeldOrderDateTime(value: string | null | undefined, empty 
     hour12: false,
   });
 }
+
+/** "há 4 min", "há 2 h", "há 3 d" — sem registro: "sem registro". */
+export function formatSince(value: string | null, now: number = Date.now()): string {
+  if (!value) return "sem registro";
+  const t = new Date(value).getTime();
+  if (Number.isNaN(t)) return "sem registro";
+  const minutes = Math.max(0, Math.floor((now - t) / 60_000));
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return `há ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `há ${hours} h`;
+  return `há ${Math.floor(hours / 24)} d`;
+}
