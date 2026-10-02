@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useManagerUsersQuery } from "@/features/dashboard/useManagerUsersQuery";
+import { usePanelPagination } from "@/features/support-base/usePanelPagination";
+import { PanelPagination } from "@/features/support-base/components/PanelPagination";
 import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
 import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
@@ -76,9 +78,17 @@ type Props = {
    * distribuir pedidos) e sem a coluna de seleção que só serve a elas.
    */
   readOnly?: boolean;
+  /**
+   * Pagina a tabela no cliente (a RPC já devolve tudo). Os cartões, os filtros e
+   * a exportação continuam olhando o conjunto inteiro — só a tabela é fatiada.
+   * A gestora não usa: a seleção em lote dela trabalha sobre a lista inteira.
+   */
+  paginate?: boolean;
 };
 
-export function HeldOrdersManagerTab({ readOnly = false }: Props) {
+const PAGE_SIZE_OPTIONS = [25, 50, 100];
+
+export function HeldOrdersManagerTab({ readOnly = false, paginate = false }: Props) {
   const [statusFilter, setStatusFilter] = useState<ManagerHeldOrderStatusFilter>("all");
   const [productFilter, setProductFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
@@ -88,6 +98,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
   const [batchQty, setBatchQty] = useState<string>("10");
   const [importOpen, setImportOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [pageSize, setPageSize] = useState(50);
 
   const { toast } = useToast();
   // manager_list_users é RPC da gestora: na visão só leitura ela nem é chamada,
@@ -136,7 +147,8 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
   }, [baseRows]);
 
   // O array que a tabela renderiza E que vai para o relatório — a planilha nunca
-  // sai de um conjunto diferente do que está na tela.
+  // sai de um conjunto diferente do que está na tela (com paginação, a tabela
+  // mostra uma fatia dele; a planilha leva todas as páginas).
   const rows = useMemo(
     () =>
       baseRows.filter((o) => {
@@ -145,6 +157,14 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
       }),
     [baseRows, productFilter],
   );
+
+  // Qualquer filtro novo volta para a página 1.
+  const pagination = usePanelPagination(
+    rows,
+    pageSize,
+    [statusFilter, productFilter, agentFilter, search, showDuplicates].join("|"),
+  );
+  const tableRows = paginate ? pagination.visiveis : rows;
 
   // Trocar de status/agente/busca pode fazer o produto escolhido desaparecer do
   // conjunto carregado. Sem isto o filtro seguiria ativo apontando para algo que
@@ -253,7 +273,9 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
       });
       toast({
         title: "Relatório gerado",
-        description: `${count} pedido(s) na planilha — exatamente os que estão na tela.`,
+        description: paginate
+          ? `${count} pedido(s) na planilha — todos os filtrados, de todas as páginas.`
+          : `${count} pedido(s) na planilha — exatamente os que estão na tela.`,
       });
     } catch (error) {
       console.error("[export-held-orders] falhou:", error);
@@ -504,7 +526,7 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((o: ManagerHeldOrder) => {
+                  {tableRows.map((o: ManagerHeldOrder) => {
                     const isDuplicate = Boolean(o.duplicate_of);
                     const isPending = o.status === "pending" && !isDuplicate;
                     return (
@@ -557,6 +579,17 @@ export function HeldOrdersManagerTab({ readOnly = false }: Props) {
                   })}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {paginate && !ordersQuery.isLoading && !ordersQuery.isError && (
+            <div className="mt-4">
+              <PanelPagination
+                estado={pagination}
+                rotulo={["pedido", "pedidos"]}
+                porPagina={pageSize}
+                onPorPaginaChange={setPageSize}
+                opcoesPorPagina={PAGE_SIZE_OPTIONS}
+              />
             </div>
           )}
         </CardContent>

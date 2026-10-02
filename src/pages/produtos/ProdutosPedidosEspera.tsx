@@ -15,7 +15,7 @@ export default function ProdutosPedidosEspera() {
         </p>
       </header>
 
-      <HeldOrdersManagerTab readOnly />
+      <HeldOrdersManagerTab readOnly paginate />
     </div>
   );
 }
