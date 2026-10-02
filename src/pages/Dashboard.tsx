@@ -87,16 +87,29 @@ const LEADER_LABEL_STYLE = {
   fontVariantNumeric: "tabular-nums",
 };
 
+// Donut: os 4 maiores produtos em ordem fixa de cor (ice, orchid, aqua,
+// signal — validada para vizinhas no anel, inclusive daltonismo) e o resto
+// somado em "Outros", cinza. Mais fatias que isso viram arco-íris ilegível.
 const DONUT_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--chart-6))",
-  "hsl(var(--chart-7))",
-  "hsl(var(--chart-8))",
+  "hsl(var(--ice))",
+  "hsl(var(--orchid))",
+  "hsl(var(--aqua))",
+  "hsl(var(--signal))",
 ];
+const DONUT_OTHER_COLOR = "hsl(var(--chart-mute-2))";
+const DONUT_OTHER_LABEL = "Outros";
+
+function foldProducts(series: Array<{ name: string; value: number }>) {
+  const sorted = [...series].sort((a, b) => b.value - a.value);
+  if (sorted.length <= DONUT_COLORS.length + 1) return sorted;
+  const top = sorted.slice(0, DONUT_COLORS.length);
+  const rest = sorted.slice(DONUT_COLORS.length).reduce((sum, p) => sum + p.value, 0);
+  return [...top, { name: DONUT_OTHER_LABEL, value: rest }];
+}
+
+function donutColor(name: string, i: number) {
+  return name === DONUT_OTHER_LABEL ? DONUT_OTHER_COLOR : DONUT_COLORS[i] ?? DONUT_OTHER_COLOR;
+}
 
 const LEADER_LABEL = "Líder do grupo 🏆";
 
@@ -202,7 +215,7 @@ const Dashboard = () => {
     kpi.byAgentSeries = metrics.by_agent
       .filter(({ name }) => !isHiddenAgent(name))
       .map(({ name, value }) => ({ name, value }));
-    kpi.byProductSeries = metrics.by_product.slice(0, 10).map(({ name, value }) => ({ name, value }));
+    kpi.byProductSeries = foldProducts(metrics.by_product.map(({ name, value }) => ({ name, value })));
     kpi.byPlatformSeries = (metrics.by_platform ?? []).map(({ name, value }) => ({ name, value }));
     // Respeita o filtro de agente do cabeçalho, como o modal de detalhamento e a
     // aba "Atendimentos por Canal" do Excel. Antes usava allMetrics (time
@@ -404,8 +417,8 @@ const Dashboard = () => {
                         outerRadius={95}
                         paddingAngle={2}
                       >
-                        {byProductSeries.map((_, i) => (
-                          <Cell key={`cell-${i}`} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                        {byProductSeries.map((p, i) => (
+                          <Cell key={`cell-${i}`} fill={donutColor(p.name, i)} />
                         ))}
                       </Pie>
                     </PieChart>
@@ -420,7 +433,7 @@ const Dashboard = () => {
                         <li key={p.name} className="flex items-center gap-2">
                           <span
                             className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                            style={{ background: donutColor(p.name, i) }}
                           />
                           <span className="flex-1 truncate" title={p.name}>{p.name}</span>
                           <span className="font-mono tabular-nums text-muted-foreground">{formatCompactNumber(p.value)}</span>
