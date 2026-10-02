@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Trophy } from "lucide-react";
-
 import type { AgentDailyMetrics } from "@/features/agent/useAgentDailyMetricsQuery";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,7 +160,7 @@ export function AgentDailyMetricsSection({
     <div className="relative">
       {celebrate && <ConfettiBurst pieces={64} />}
 
-      <section className="mb-2 grid gap-4 md:grid-cols-3" aria-label="Métricas do dia">
+      <section className="mb-2 grid gap-4 md:grid-cols-2" aria-label="Métricas do dia">
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
@@ -179,40 +177,6 @@ export function AgentDailyMetricsSection({
               >
                 {effectiveCount.toLocaleString("pt-BR")}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Distância do líder</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metricsLoading ? (
-              <div className="grid gap-2">
-                <Skeleton className="h-4 w-56" />
-                <Skeleton className="h-4 w-40" />
-              </div>
-            ) : dailyMetrics?.leader_count ? (
-              dailyMetrics.is_leader ? (
-                <div className="flex items-start gap-3">
-                  <Trophy className="mt-0.5 h-5 w-5 text-primary" />
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Parabéns! Você está na liderança</span>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Você está{" "}
-                  <span className="font-medium text-foreground font-mono tabular-nums">
-                    {Math.max(0, (dailyMetrics.leader_count ?? 0) - effectiveCount).toLocaleString("pt-BR")}
-                  </span>{" "}
-                  atendimentos atrás de{" "}
-                  <span className="font-medium text-foreground">{dailyMetrics.leader_name || "Sem nome"}</span>.
-                </p>
-              )
-            ) : (
-              <p className="text-sm text-muted-foreground">Ainda não há atendimentos registrados hoje.</p>
             )}
           </CardContent>
         </Card>

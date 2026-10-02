@@ -16,7 +16,6 @@ export type AgentMetricsRange = {
   best_day: string | null; // YYYY-MM-DD
   best_day_count: number;
   trend_pct: number;
-  trend_label: "Evoluindo" | "Estável" | "Regredindo" | string;
   by_day: AgentMetricsRangeByDayItem[];
 };
 
