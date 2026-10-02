@@ -30,11 +30,11 @@ import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboard
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 import { ManagerApprovalsBell } from "@/features/takeovers/ManagerApprovalsBell";
 import { exportManagerReport } from "@/lib/reportExport";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { TopBar } from "@/components/layout/TopBar";
 import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { LyaMark } from "@/features/lya/components/LyaMark";
 import { LyaWidget } from "@/features/lya/components/LyaWidget";
@@ -545,18 +545,16 @@ export default function ManagerLayout() {
 
       <LyaWidget contexto={lyaContexto} />
 
-      <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
-
-      <ThemeToggle
-        variant="ghost"
-        className="fixed top-4 right-4 z-50 h-9 w-9 text-foreground/70 hover:text-foreground hover:bg-foreground/5"
-      />
-
-      <main className="flex-1 bg-dashboard-surface p-8">
-        <div className="mx-auto max-w-7xl">
-          <Outlet context={outletContext} />
-        </div>
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
+        <TopBar>
+          <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
+        </TopBar>
+        <main className="flex-1 p-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet context={outletContext} />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
