@@ -29,6 +29,7 @@ import { PanelPagination } from "@/features/support-base/components/PanelPaginat
 import { useManagerHeldOrdersQuery } from "./useManagerHeldOrdersQuery";
 import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
+import { formatHeldOrderDate } from "./dates";
 import { exportHeldOrders } from "./exportHeldOrders";
 import { heldOrderStoreLabel, parseItems } from "./format";
 import {
@@ -39,12 +40,6 @@ import {
   type ManagerHeldOrderStatusFilter,
 } from "./types";
 
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  // order_date vem como YYYY-MM-DD.
-  const [y, m, d] = value.split("-");
-  return y && m && d ? `${d}/${m}/${y}` : value;
-}
 
 /** Produtos do pedido (miolo do SKU), para o filtro por produto. */
 function productsOf(o: ManagerHeldOrder): string[] {
@@ -561,7 +556,7 @@ export function HeldOrdersManagerTab({ readOnly = false, paginate = false }: Pro
                             {o.email && <span className="text-xs text-muted-foreground">{o.email}</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm font-mono tabular-nums">{formatDate(o.order_date)}</TableCell>
+                        <TableCell className="text-sm font-mono tabular-nums">{formatHeldOrderDate(o.order_date ?? o.return_date)}</TableCell>
                         <TableCell className="text-sm">
                           {o.assigned_to_name ?? <span className="text-muted-foreground italic">sem agente</span>}
                         </TableCell>

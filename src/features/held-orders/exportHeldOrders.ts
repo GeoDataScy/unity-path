@@ -6,6 +6,7 @@
 // planilha contém exatamente os registros que a gestora está vendo.
 import * as XLSX from "xlsx";
 
+import { formatHeldOrderDate, formatHeldOrderDateTime, HELD_ORDER_DATE_LABEL } from "./dates";
 import { heldOrderStoreLabel, parseAddress, parseItems } from "./format";
 import {
   HELD_ORDER_PENDING_TAG_LABEL,
@@ -14,30 +15,8 @@ import {
   type ManagerHeldOrder,
 } from "./types";
 
-// Aceita 'YYYY-MM-DD' ou timestamp ISO completo; devolve dd/MM/yyyy.
-function formatBrDate(value: string | null): string {
-  if (!value) return "";
-  const [y, m, d] = value.slice(0, 10).split("-");
-  return y && m && d ? `${d}/${m}/${y}` : value;
-}
-
-// Timestamps "naive" (sem timezone) são tratados como UTC e convertidos para
-// São Paulo — mesmo tratamento das demais exportações do sistema.
-function formatBrDateTime(value: string | null): string {
-  if (!value) return "";
-  const ts = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value}Z`;
-  const dt = new Date(ts);
-  if (Number.isNaN(dt.getTime())) return "";
-  return dt.toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
+const formatBrDate = (value: string | null) => formatHeldOrderDate(value, "");
+const formatBrDateTime = (value: string | null) => formatHeldOrderDateTime(value, "");
 
 // Data de hoje em São Paulo no formato YYYY-MM-DD — o gestor abre o arquivo no
 // mesmo dia em que gerou, e antes das 21h em SP o UTC já é o dia seguinte.
@@ -89,7 +68,8 @@ const COLUMNS = [
   "Itens (arquivo)",
   "RMA",
   "Motivo",
-  "Data do pedido",
+  HELD_ORDER_DATE_LABEL.order_date,
+  HELD_ORDER_DATE_LABEL.return_date,
   "Idade",
   "Cliente",
   "E-mail",
@@ -107,7 +87,8 @@ const COLUMNS = [
   "Itens reestocados",
   "Itens danificados",
   "Comentários",
-  "Importado em",
+  HELD_ORDER_DATE_LABEL.imported_at,
+  HELD_ORDER_DATE_LABEL.status_changed_at,
   "Arquivo de origem",
   "ID do pedido",
 ];
@@ -121,6 +102,7 @@ const COLUMN_WIDTHS = [
   14, // RMA
   34, // Motivo
   14, // Data do pedido
+  16, // Data da devolução
   10, // Idade
   26, // Cliente
   30, // E-mail
@@ -138,7 +120,8 @@ const COLUMN_WIDTHS = [
   24, // Itens reestocados
   24, // Itens danificados
   40, // Comentários
-  18, // Importado em
+  18, // Entrada no sistema
+  22, // Última mudança de status
   36, // Arquivo de origem
   38, // ID do pedido
 ];
@@ -162,6 +145,7 @@ export function exportHeldOrders({ rows, filters }: HeldOrdersExportParams): num
     o.rma ?? "",
     o.reason ?? "",
     formatBrDate(o.order_date),
+    formatBrDate(o.return_date),
     o.age ?? "",
     o.customer_name ?? "",
     o.email ?? "",
@@ -180,6 +164,7 @@ export function exportHeldOrders({ rows, filters }: HeldOrdersExportParams): num
     o.damaged_items ?? "",
     o.comments ?? "",
     formatBrDateTime(o.imported_at),
+    formatBrDateTime(o.status_changed_at),
     o.source_file ?? "",
     o.id,
   ]);

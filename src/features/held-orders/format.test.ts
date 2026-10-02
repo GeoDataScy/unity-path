@@ -10,6 +10,7 @@ function order(partial: Partial<MyHeldOrder>): MyHeldOrder {
     order_number: "8AVZ3FW3",
     merged_orders: null,
     reason: null,
+    return_date: null,
     order_date: null,
     email: null,
     customer_name: null,
@@ -30,6 +31,8 @@ function order(partial: Partial<MyHeldOrder>): MyHeldOrder {
     agent_status: "novo",
     pending_tag: null,
     confirmed_at: null,
+    imported_at: null,
+    status_changed_at: null,
     event_count: 0,
     ...partial,
   };

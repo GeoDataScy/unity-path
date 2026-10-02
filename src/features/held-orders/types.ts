@@ -119,7 +119,10 @@ export type MyHeldOrder = {
   order_number: string | null;
   merged_orders: string | null;
   reason: string | null;
+  /** Data do pedido (compra), como veio na planilha. NULL nas devoluções. */
   order_date: string | null;
+  /** Data da devolução (arquivo Returned Shipments). NULL nos On Holds. */
+  return_date: string | null;
   email: string | null;
   customer_name: string | null;
   city: string | null;
@@ -140,6 +143,10 @@ export type MyHeldOrder = {
   agent_status: HeldOrderAgentStatus;
   pending_tag: HeldOrderPendingTag | null;
   confirmed_at: string | null;
+  /** Data de entrada no sistema (import). Imutável no banco. */
+  imported_at: string | null;
+  /** Última mudança de status registrada pelo agente (held_order_events). */
+  status_changed_at: string | null;
   event_count: number;
 };
 
@@ -148,7 +155,6 @@ export type ManagerHeldOrder = MyHeldOrder & {
   source_file: string | null;
   assigned_to: string | null;
   assigned_to_name: string | null;
-  imported_at: string | null;
   /** Quantas vezes o pedido já foi distribuído. 0 = "Novo"; N>=1 = "Pendente N". */
   assign_count: number;
   /**
@@ -219,6 +225,7 @@ export type HeldOrderImportRow = {
   merged_orders?: string;
   reason?: string;
   order_date?: string;
+  return_date?: string;
   email?: string;
   name?: string;
   city?: string;

@@ -19,6 +19,7 @@ function order(overrides: Partial<ManagerHeldOrder> = {}): ManagerHeldOrder {
     order_number: "PED-1",
     merged_orders: null,
     reason: "Held for Bad Address",
+    return_date: null,
     order_date: "2026-08-10",
     email: "cliente@exemplo.com",
     customer_name: "Cliente Um",
@@ -44,6 +45,7 @@ function order(overrides: Partial<ManagerHeldOrder> = {}): ManagerHeldOrder {
     assigned_to: "agente-1",
     assigned_to_name: "Maria",
     imported_at: null,
+    status_changed_at: null,
     assign_count: 1,
     duplicate_of: null,
     ...overrides,
@@ -130,6 +132,35 @@ describe("exportHeldOrders", () => {
     expect(filtros).toContain("Agente: todos");
     expect(filtros).not.toContain("Busca:");
     expect(filtros).not.toContain("repetidas");
+  });
+
+  it("mantém cada data na sua coluna, sem uma substituir a outra", () => {
+    exportHeldOrders({
+      rows: [
+        order({
+          order_date: "2026-08-10",
+          imported_at: "2026-08-15 13:00:00",
+          status_changed_at: "2026-08-20T18:45:00Z",
+        }),
+        // devolução: não tem data de compra, só a da devolução
+        order({ id: "2", dyna_code: "RETURNS", order_date: null, return_date: "2026-06-17" }),
+      ],
+      filters: NO_FILTERS,
+    });
+
+    const aoa = sheetOfLastExport();
+    const pedido = column("Data do pedido");
+    const devolucao = column("Data da devolução");
+    const entrada = column("Entrada no sistema");
+    const mudanca = column("Última mudança de status");
+
+    expect(aoa[FIRST_DATA_ROW][pedido]).toBe("10/08/2026");
+    expect(aoa[FIRST_DATA_ROW][devolucao]).toBe("");
+    expect(aoa[FIRST_DATA_ROW][entrada]).toBe("15/08/2026, 10:00");
+    expect(aoa[FIRST_DATA_ROW][mudanca]).toBe("20/08/2026, 15:45");
+
+    expect(aoa[FIRST_DATA_ROW + 1][pedido]).toBe("");
+    expect(aoa[FIRST_DATA_ROW + 1][devolucao]).toBe("17/06/2026");
   });
 
   it("traduz situação, status e loja de devolução", () => {

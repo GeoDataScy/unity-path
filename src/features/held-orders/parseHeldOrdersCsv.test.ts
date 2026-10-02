@@ -42,7 +42,8 @@ describe("parseHeldOrdersCsv", () => {
     const a = rows[0];
     expect(a.dyna_code).toBe(RETURNS_DYNA_CODE);
     expect(a.order_number).toBe("2JD7MZGE");
-    expect(a.order_date).toBe("2026-06-17");
+    expect(a.return_date).toBe("2026-06-17");
+    expect(a.order_date).toBeUndefined();
     expect(a.name).toBe("Arthur Sarkissian");
     expect(a.items).toBe("Presgera x 3");
     expect(a.restocked_items).toBe("Presgera x 3");
@@ -65,7 +66,7 @@ describe("parseHeldOrdersCsv", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].dyna_code).toBe(RETURNS_DYNA_CODE);
     expect(rows[0].order_number).toBe("2JD7MZGE");
-    expect(rows[0].order_date).toBe("2026-06-17");
+    expect(rows[0].return_date).toBe("2026-06-17");
     expect(rows[0].items).toBe("Presgera x 3");
   });
 
