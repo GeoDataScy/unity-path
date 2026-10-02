@@ -29,6 +29,7 @@ import {
 import { useDashboardRefundAlertsQuery } from "@/features/dashboard/useDashboardRefundAlertsQuery";
 import { ManagerRefundNotification } from "@/features/dashboard/ManagerRefundNotification";
 import { ManagerApprovalsBell } from "@/features/takeovers/ManagerApprovalsBell";
+import { ManagerInactiveAlertsBell } from "@/features/held-orders/ManagerInactiveAlertsBell";
 import { exportManagerReport } from "@/lib/reportExport";
 import { useToast } from "@/hooks/use-toast";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
@@ -555,6 +556,7 @@ export default function ManagerLayout() {
       <div className="flex min-w-0 flex-1 flex-col bg-dashboard-surface">
         <TopBar>
           <ManagerApprovalsBell enabled={isManager && canApproveTakeovers} />
+          <ManagerInactiveAlertsBell enabled={isManager} />
           <SettingsDialog
             fullName={fullName}
             tone={sidebarTone}

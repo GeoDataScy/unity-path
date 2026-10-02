@@ -10,6 +10,7 @@ import {
   Package,
   PackageSearch,
   RotateCcw,
+  UserX,
 } from "lucide-react";
 
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
@@ -25,13 +26,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { usePanelPagination } from "@/features/support-base/usePanelPagination";
 import { PanelPagination } from "@/features/support-base/components/PanelPagination";
 import { useMyHeldOrdersMetricsQuery, useMyHeldOrdersQuery } from "@/features/held-orders/useMyHeldOrdersQuery";
 import { HeldOrderTrackingDialog } from "@/features/held-orders/HeldOrderTrackingDialog";
 import { RETURNS_DYNA_CODE } from "@/features/held-orders/parseHeldOrdersCsv";
 import { parseAddress, parseItems, parseReasons, totalUnits } from "@/features/held-orders/format";
+import { formatHeldOrderDateTime } from "@/features/held-orders/dates";
 import {
+  HELD_ORDER_AGENT_STATUS_BADGE as STATUS_BADGE,
   HELD_ORDER_AGENT_STATUS_LABEL,
   HELD_ORDER_PENDING_TAG_LABEL,
   HELD_ORDER_PENDING_TAGS,
@@ -40,13 +51,8 @@ import {
   type MyHeldOrder,
 } from "@/features/held-orders/types";
 
-const STATUS_BADGE: Record<HeldOrderAgentStatus, "new" | "in-progress" | "done"> = {
-  novo: "new",
-  em_andamento: "in-progress",
-  concluido: "done",
-};
-
-type StatusFilter = "all" | HeldOrderAgentStatus;
+/** Inativo não é filtro da fila: ele tem a sua própria lista, abaixo. */
+type StatusFilter = "all" | Exclude<HeldOrderAgentStatus, "inativo">;
 /** "any" = qualquer pendência; "none" = sem pendência. */
 type PendingFilter = "all" | "any" | "none" | HeldOrderPendingTag;
 
@@ -73,7 +79,16 @@ export default function PedidosEspera() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const orders = ordersQuery.data ?? [];
+  const allOrders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
+  // Inativo sai da fila de trabalho e vai para a lista própria.
+  const orders = useMemo(() => allOrders.filter((o) => o.agent_status !== "inativo"), [allOrders]);
+  const inactiveOrders = useMemo(
+    () =>
+      allOrders
+        .filter((o) => o.agent_status === "inativo")
+        .sort((a, b) => (b.status_changed_at ?? "").localeCompare(a.status_changed_at ?? "")),
+    [allOrders],
+  );
   const metrics = metricsQuery.data;
   const goal = metrics?.goal ?? 30;
   const confirmedToday = metrics?.confirmed_today ?? 0;
@@ -204,6 +219,7 @@ export default function PedidosEspera() {
             ) : (
               <div className="text-4xl font-normal font-mono tabular-nums tracking-[-0.03em]">{confirmedToday.toLocaleString("pt-BR")}</div>
             )}
+            <p className="mt-2 text-sm text-muted-foreground">Inclui os marcados como inativos</p>
           </CardContent>
         </Card>
 
@@ -349,7 +365,7 @@ export default function PedidosEspera() {
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
               <CheckCircle2 className="h-8 w-8 text-status-success" />
-              <p>{orders.length === 0 ? "Nenhum pedido atribuído a você." : "Nenhum pedido neste filtro."}</p>
+              <p>{allOrders.length === 0 ? "Nenhum pedido atribuído a você." : orders.length === 0 ? "Nenhum pedido na sua fila." : "Nenhum pedido neste filtro."}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -479,6 +495,62 @@ export default function PedidosEspera() {
                 onPorPaginaChange={setPageSize}
                 opcoesPorPagina={PAGE_SIZE_OPTIONS}
               />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Inativos: clientes que não responderam. Fora da fila; reabrir pelo diálogo. */}
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <UserX className="h-5 w-5 text-muted-foreground" /> Inativos
+            </CardTitle>
+            <p className="text-sm tabular-nums text-muted-foreground">{inactiveOrders.length} pedido(s)</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Clientes que não responderam. Se o cliente voltar a falar, abra o pedido e reabra.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {ordersQuery.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : inactiveOrders.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Nenhum pedido inativo.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Marcado inativo em</TableHead>
+                    <TableHead>Observação</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inactiveOrders.map((o) => (
+                    <TableRow key={o.id}>
+                      <TableCell className="font-mono font-medium">{o.order_number ?? "Sem número"}</TableCell>
+                      <TableCell className="text-sm">
+                        <div>{o.customer_name ?? "—"}</div>
+                        {o.email && <div className="text-xs text-muted-foreground">{o.email}</div>}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-sm tabular-nums">
+                        {formatHeldOrderDateTime(o.status_changed_at)}
+                      </TableCell>
+                      <TableCell className="max-w-xs text-sm text-muted-foreground">{o.last_note || "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => setSelected(o)}>
+                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reabrir
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
