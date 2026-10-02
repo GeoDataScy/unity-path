@@ -39,6 +39,7 @@ const CopyLayout = lazy(() => import("./layouts/CopyLayout"));
 const CopyMotivos = lazy(() => import("./pages/copy/CopyMotivos"));
 const ProdutosLayout = lazy(() => import("./layouts/ProdutosLayout"));
 const ProdutosPedidosEspera = lazy(() => import("./pages/produtos/ProdutosPedidosEspera"));
+const ProdutosLateHunter = lazy(() => import("./pages/produtos/ProdutosLateHunter"));
 const AreaSelect = lazy(() => import("./pages/AreaSelect"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -114,7 +115,8 @@ const App = () => (
             <Route index element={<CopyMotivos />} />
           </Route>
           <Route path="/produtos" element={<ProdutosLayout />}>
-            <Route index element={<ProdutosPedidosEspera />} />
+            <Route index element={<ProdutosLateHunter />} />
+            <Route path="pedidos-em-espera" element={<ProdutosPedidosEspera />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

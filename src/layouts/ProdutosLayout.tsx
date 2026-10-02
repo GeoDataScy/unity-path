@@ -11,7 +11,7 @@ import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
 import { SIDEBAR_ICON, SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
-import { LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Crosshair, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const SIDEBAR_COLLAPSED_KEY = "produtos-sidebar-collapsed";
 
@@ -21,7 +21,8 @@ export type ProdutosOutletContext = {
 };
 
 const NAV_ITEMS = [
-  { to: "/produtos", end: true, icon: PackageSearch, label: "Pedidos em espera" },
+  { to: "/produtos", end: true, icon: Crosshair, label: "Late Hunter" },
+  { to: "/produtos/pedidos-em-espera", end: false, icon: PackageSearch, label: "Pedidos em espera" },
 ] as const;
 
 export default function ProdutosLayout() {
