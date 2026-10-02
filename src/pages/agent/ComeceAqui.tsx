@@ -61,35 +61,39 @@ export default function ComeceAqui() {
         <div className="rounded-xl border border-destructive/40 bg-coral-soft p-6 text-center text-destructive">
           Não foi possível carregar o guia. Atualize a página em alguns instantes.
         </div>
-      ) : !data || data.videos.length === 0 ? (
-        <div className="rounded-lg border border-line bg-surface p-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-subtle text-ink-tertiary">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <p className="font-medium text-ink">Nenhum vídeo publicado ainda</p>
-          <p className="mt-1 text-sm text-ink-tertiary">
-            Os vídeos do guia aparecerão aqui assim que forem disponibilizados.
-          </p>
-        </div>
       ) : (
         <>
+          {/* A apresentação do guia fica mesmo sem vídeo publicado: o que entra
+              e sai é só o conteúdo (training_videos.is_published). */}
           <TrainingHero agentName={fullName} />
 
-          <div className="space-y-10">
-            {TRAINING_SECTION_ORDER.map((section) => {
-              const videos = data.bySection[section];
-              if (!videos || videos.length === 0) return null;
-              return (
-                <TrainingRow
-                  key={section}
-                  title={TRAINING_SECTION_LABEL[section]}
-                  subtitle={SECTION_SUBTITLES[section]}
-                  videos={videos}
-                  onPlay={setActiveVideo}
-                />
-              );
-            })}
-          </div>
+          {!data || data.videos.length === 0 ? (
+            <div className="rounded-lg border border-line bg-surface p-10 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-subtle text-ink-tertiary">
+                <GraduationCap className="h-6 w-6" />
+              </div>
+              <p className="font-medium text-ink">Nenhum vídeo publicado ainda</p>
+              <p className="mt-1 text-sm text-ink-tertiary">
+                Os vídeos do guia aparecerão aqui assim que forem disponibilizados.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {TRAINING_SECTION_ORDER.map((section) => {
+                const videos = data.bySection[section];
+                if (!videos || videos.length === 0) return null;
+                return (
+                  <TrainingRow
+                    key={section}
+                    title={TRAINING_SECTION_LABEL[section]}
+                    subtitle={SECTION_SUBTITLES[section]}
+                    videos={videos}
+                    onPlay={setActiveVideo}
+                  />
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
