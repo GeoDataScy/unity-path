@@ -11,15 +11,9 @@ import {
 } from "./roles";
 
 describe("homePathForRole", () => {
-  it("manda a gestora para a escolha de área (ela tem duas)", () => {
+  it("gestora, copy e produtos passam pela tela dos três cards", () => {
     expect(homePathForRole("manager")).toBe("/areas");
-  });
-
-  it("manda o time de copy para a escolha de área (também tem duas)", () => {
     expect(homePathForRole("copy_grup")).toBe("/areas");
-  });
-
-  it("manda o time de produtos para a tela de cards, como todo mundo", () => {
     expect(homePathForRole("produto")).toBe("/areas");
   });
 
@@ -34,67 +28,56 @@ describe("homePathForRole", () => {
   });
 });
 
+// Regra do dono (02/10/2026): os três cards aparecem para todo perfil de gestão;
+// produtos só entra em Produtos, copy só em Copy, a gestora em tudo.
+describe("cards da tela /areas", () => {
+  it("gestora, copy e produtos veem os mesmos três cards, na mesma ordem", () => {
+    for (const role of ["manager", "copy_grup", "produto"]) {
+      expect(areaCardsForRole(role)).toEqual(["analytics", "copy", "produtos"]);
+    }
+  });
+
+  it("o agente não vê cards: só tem o workspace", () => {
+    expect(areaCardsForRole("agent")).toEqual(["workspace"]);
+    expect(hasAreaChoice("agent")).toBe(false);
+  });
+});
+
 describe("acesso por área", () => {
-  it("gestora entra nas duas áreas, e o analytics é a casa dela", () => {
-    expect(canAccessArea("manager", "analytics")).toBe(true);
-    expect(canAccessArea("manager", "copy")).toBe(true);
+  it("a gestora entra em todas as áreas de gestão, e o analytics é a casa dela", () => {
+    expect(areasForRole("manager")).toEqual(["analytics", "copy", "produtos"]);
     expect(defaultAreaForRole("manager")).toBe("analytics");
   });
 
-  it("a área de produtos é só da role produto — nem a gestora entra", () => {
-    expect(areasForRole("produto")).toEqual(["produtos"]);
-    expect(canAccessArea("produto", "produtos")).toBe(true);
-    expect(canAccessArea("manager", "produtos")).toBe(false);
+  it("copy entra só em Copy", () => {
+    expect(areasForRole("copy_grup")).toEqual(["copy"]);
+    expect(canAccessArea("copy_grup", "analytics")).toBe(false);
     expect(canAccessArea("copy_grup", "produtos")).toBe(false);
-    expect(canAccessArea("agent", "produtos")).toBe(false);
   });
 
-  it("o time de produtos não entra em nenhuma outra área", () => {
+  it("produtos entra só em Produtos", () => {
+    expect(areasForRole("produto")).toEqual(["produtos"]);
     expect(canAccessArea("produto", "analytics")).toBe(false);
     expect(canAccessArea("produto", "copy")).toBe(false);
-    expect(canAccessArea("produto", "workspace")).toBe(false);
   });
 
-  it("o time de produtos vê os três cards, mas o acesso continua só em produtos", () => {
-    expect(areaCardsForRole("produto")).toEqual(["analytics", "copy", "produtos"]);
-    expect(areasForRole("produto")).toEqual(["produtos"]);
-  });
-
-  it("os outros perfis veem exatamente as áreas que podem acessar", () => {
-    expect(areaCardsForRole("manager")).toEqual(areasForRole("manager"));
-    expect(areaCardsForRole("copy_grup")).toEqual(areasForRole("copy_grup"));
-    expect(areaCardsForRole("agent")).toEqual(["workspace"]);
-  });
-
-  it("copy entra nas duas áreas, e a casa dele é a área de copy", () => {
-    expect(canAccessArea("copy_grup", "copy")).toBe(true);
-    expect(canAccessArea("copy_grup", "analytics")).toBe(true);
-    expect(defaultAreaForRole("copy_grup")).toBe("copy");
-  });
-
-  it("gestora e copy não entram no workspace do agente", () => {
-    expect(canAccessArea("manager", "workspace")).toBe(false);
-    expect(canAccessArea("copy_grup", "workspace")).toBe(false);
+  it("ninguém de gestão entra no workspace do agente", () => {
+    for (const role of ["manager", "copy_grup", "produto"]) {
+      expect(canAccessArea(role, "workspace")).toBe(false);
+    }
   });
 
   it("agente só entra no próprio workspace", () => {
     expect(areasForRole("agent")).toEqual(["workspace"]);
     expect(canAccessArea("agent", "analytics")).toBe(false);
     expect(canAccessArea("agent", "copy")).toBe(false);
-    expect(hasAreaChoice("agent")).toBe(false);
+    expect(canAccessArea("agent", "produtos")).toBe(false);
   });
 
   it("role desconhecida é tratada como agente", () => {
     expect(canAccessArea(null, "analytics")).toBe(false);
     expect(canAccessArea("role_que_nao_existe", "copy")).toBe(false);
     expect(areasForRole(undefined)).toEqual(["workspace"]);
-  });
-
-  it("só quem tem mais de uma área precisa escolher", () => {
-    expect(hasAreaChoice("manager")).toBe(true);
-    expect(hasAreaChoice("copy_grup")).toBe(true);
-    expect(hasAreaChoice("produto")).toBe(true);
-    expect(hasAreaChoice("agent")).toBe(false);
   });
 });
 
