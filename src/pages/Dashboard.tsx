@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -64,6 +65,27 @@ function formatEventTime(iso: string) {
     timeZone: "America/Sao_Paulo",
   });
 }
+
+// Barras: cada gráfico fala numa voz da marca (agente = signal, plataforma =
+// aqua, canal = ice) — uma cor por gráfico, nunca misturadas. Só a barra
+// líder leva o valor escrito em cima; o resto fica no tooltip.
+const BAR_HUE = {
+  agent: "hsl(var(--signal))",
+  platform: "hsl(var(--aqua))",
+  channel: "hsl(var(--ice))",
+} as const;
+
+function leaderLabel(series: { value: number }[]) {
+  const max = series.reduce((m, p) => Math.max(m, p.value), 0);
+  return (v: number) => (max > 0 && v === max ? formatCompactNumber(v) : "");
+}
+
+const LEADER_LABEL_STYLE = {
+  fill: "hsl(var(--ink))",
+  fontSize: 11,
+  fontFamily: "var(--font-mono)",
+  fontVariantNumeric: "tabular-nums",
+};
 
 const DONUT_COLORS = [
   "hsl(var(--chart-1))",
@@ -343,12 +365,14 @@ const Dashboard = () => {
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byAgentSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <BarChart data={byAgentSeries} margin={{ top: 22, right: 10, left: 0, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill={BAR_HUE.agent} radius={[4, 4, 0, 0]} maxBarSize={56}>
+                    <LabelList dataKey="value" position="top" formatter={leaderLabel(byAgentSeries)} style={LEADER_LABEL_STYLE} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -427,12 +451,14 @@ const Dashboard = () => {
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byPlatformSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <BarChart data={byPlatformSeries} margin={{ top: 22, right: 10, left: 0, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-20} height={50} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill={BAR_HUE.platform} radius={[4, 4, 0, 0]} maxBarSize={56}>
+                    <LabelList dataKey="value" position="top" formatter={leaderLabel(byPlatformSeries)} style={LEADER_LABEL_STYLE} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -454,12 +480,14 @@ const Dashboard = () => {
               <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado encontrado neste período</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byChannelSeries} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <BarChart data={byChannelSeries} margin={{ top: 22, right: 10, left: 0, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--chart-mute-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill={BAR_HUE.channel} radius={[4, 4, 0, 0]} maxBarSize={56}>
+                    <LabelList dataKey="value" position="top" formatter={leaderLabel(byChannelSeries)} style={LEADER_LABEL_STYLE} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}

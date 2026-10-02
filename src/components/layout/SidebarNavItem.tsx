@@ -45,12 +45,13 @@ export function SidebarNavItem({ to, end, icon, label, collapsed, badge, matchAl
       to={to}
       end={end}
       className={cn(
-        // hubi: rótulo em sidebar-ink; ativo = fundo sidebar-active, tinta
-        // `ink` peso 500 e um fio de 2px em `ink` na borda esquerda.
-        "relative flex h-[34px] items-center rounded-md text-sm text-sidebar-foreground transition-colors duration-150 hover:bg-subtle hover:text-ink",
+        // hubi: rótulo em sidebar-ink; ativo = fundo lima suave
+        // (sidebar-accent), tinta `ink` peso 500, ícone e fio de 2px em
+        // `signal` — no escuro o fio acende com o glow.
+        "relative flex h-[34px] items-center rounded-md text-sm text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-hover hover:text-ink",
         collapsed ? "mx-auto w-9 justify-center" : "gap-2.5 px-3",
         isActive &&
-          "bg-sidebar-accent font-medium text-sidebar-accent-foreground before:absolute before:bottom-[9px] before:top-[9px] before:w-0.5 before:rounded-full before:bg-ink",
+          "bg-sidebar-accent font-medium text-sidebar-accent-foreground hover:bg-sidebar-accent before:absolute before:bottom-[9px] before:top-[9px] before:w-0.5 before:rounded-full before:bg-signal dark:before:shadow-glow",
         isActive && (collapsed ? "before:-left-[14px]" : "before:-left-3"),
         className,
       )}
@@ -58,7 +59,7 @@ export function SidebarNavItem({ to, end, icon, label, collapsed, badge, matchAl
       {/* O slot precisa ser uma caixa de verdade (inline-flex com tamanho): é
           ele que centraliza o ícone e ancora o badge. Como `span` inline a
           âncora tem largura zero e o badge escapa para a borda da sidebar. */}
-      <span className={cn("relative inline-flex shrink-0 items-center justify-center", SIDEBAR_ICON_SLOT)}>
+      <span className={cn("relative inline-flex shrink-0 items-center justify-center", SIDEBAR_ICON_SLOT, isActive && "text-signal")}>
         {icon}
         {collapsed && badge}
       </span>

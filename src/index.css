@@ -118,18 +118,22 @@
     --login-input-bg: var(--surface);
     --login-input-border: var(--line-control);
 
-    /* Layout: a sidebar é do mesmo tom do canvas, separada por `line` —
-       não existe mais a barra escura. */
-    --dashboard-sidebar: var(--canvas);
+    /* Layout: a sidebar ganha um véu do matiz do `signal` — a mesma luz do
+       ponto do "i", diluída. Musgo-claro aqui, verde-quase-preto no escuro;
+       o item ativo é lima suave com fio e ícone em `signal`. Contraste
+       conferido: ink-secondary 6,8:1 · ink-tertiary 4,7:1 no fundo; ink
+       15:1 no ativo. */
+    --sidebar: 76.7 42.9% 91.8%;          /* #eef3e1 */
+    --sidebar-hover: 77.1 41.2% 86.7%;    /* #e3ebcf */
+    --sidebar-accent: 77.1 57.8% 78.6%;   /* #d6e8a9 */
+    --sidebar-border: 78 34.1% 82.7%;     /* #d9e2c4 */
+    --sidebar-foreground: var(--ink-secondary);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-ring: var(--ring);
+
+    --dashboard-sidebar: var(--sidebar);
     --dashboard-sidebar-foreground: var(--ink);
     --dashboard-surface: var(--canvas);
-
-    --sidebar: var(--canvas);
-    --sidebar-foreground: var(--ink-secondary);
-    --sidebar-accent: var(--subtle);
-    --sidebar-accent-foreground: var(--ink);
-    --sidebar-border: var(--line);
-    --sidebar-ring: var(--ring);
 
     /* Status (ponto + palavra no design system; aqui também viram fundo
        sólido nas pílulas que já existem). */
@@ -281,12 +285,13 @@
     --notepad-paper: var(--surface);
     --notepad-rule: var(--line);
     --notepad-margin: var(--coral);
-    --sidebar: var(--canvas);
+    --sidebar: 93.3 31% 5.7%;             /* #0e130a */
+    --sidebar-hover: 92 31.9% 9.2%;       /* #171f10 */
+    --sidebar-accent: 91.9 45.7% 13.7%;   /* #223313 */
+    --sidebar-border: 91.6 28.4% 13.1%;   /* #212b18 */
     --sidebar-foreground: var(--ink-secondary);
-    --sidebar-accent: var(--subtle);
     --sidebar-accent-foreground: var(--ink);
-    --sidebar-border: var(--line);
-    --dashboard-sidebar: var(--canvas);
+    --dashboard-sidebar: var(--sidebar);
     --dashboard-sidebar-foreground: var(--ink);
     --dashboard-surface: var(--canvas);
     --login-bg: var(--canvas);
@@ -310,6 +315,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Dentro da sidebar, `bg-subtle` (hover dos botões) e `line` (bordas do
+   AreaSwitcher, rodapé) seguem o véu verde em vez do cinza neutro — sem
+   precisar trocar classe em cada botão dos quatro layouts. */
+.hubi-sidebar {
+  --subtle: var(--sidebar-hover);
+  --line: var(--sidebar-border);
 }
 
 /* Movimento hubi: curto e com intenção (120–240ms). */
