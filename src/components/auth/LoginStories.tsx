@@ -10,7 +10,6 @@ const STALL_MS = 2_500;
 type Slide = {
   /** Texto curto embaixo da barrinha. */
   label: string;
-  title: string;
 } & ({ kind: "video"; src: string; poster: string } | { kind: "image"; src: string });
 
 // Os vídeos são 4:5 (864×1080), sem áudio, com 8 s exatos — preparados em public/login.
@@ -20,20 +19,17 @@ const LOGIN_SLIDES: Slide[] = [
     src: "/login/hubi-marca.mp4",
     poster: "/login/hubi-marca-poster.jpg",
     label: "hubi",
-    title: "Tudo num lugar só",
   },
   {
     kind: "image",
     src: "/login/hubi-simbolo.jpg",
     label: "IA Treinada",
-    title: "Sua fila, sua meta",
   },
   {
     kind: "video",
     src: "/login/hubi-dados.mp4",
     poster: "/login/hubi-dados-poster.jpg",
     label: "Para a gestão",
-    title: "Números que andam",
   },
 ];
 
@@ -163,17 +159,10 @@ export function LoginStories({ className }: Props) {
         );
       })}
 
-      {/* Degradê para o texto branco ler bem até sobre a imagem clara */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      {/* Degradê para as barrinhas lerem bem até sobre a imagem clara */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/70 to-transparent" />
 
-      <div className="absolute inset-x-0 bottom-0 grid gap-6 p-8 text-white">
-        <h2
-          key={index}
-          className="text-[44px] font-semibold leading-[48px] tracking-[-0.03em] [text-wrap:balance] animate-in fade-in-0 slide-in-from-bottom-2 duration-500"
-        >
-          {slides[index].title}
-        </h2>
-
+      <div className="absolute inset-x-0 bottom-0 p-8 text-white">
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }}>
           {slides.map((s, i) => {
             const fill = i < index ? 1 : i === index ? progress : 0;
