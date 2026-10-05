@@ -36,9 +36,9 @@ function current() {
 }
 
 describe("LoginStories", () => {
-  it("mostra só o título e uma barrinha com rótulo por slide", () => {
+  it("mostra só as barrinhas com rótulo, sem título", () => {
     render(<LoginStories />);
-    expect(screen.getByRole("heading", { name: "Tudo num lugar só" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver: hubi" })).toHaveAttribute("aria-current", "step");
     expect(screen.getByRole("button", { name: "Ver: IA Treinada" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver: Para a gestão" })).toBeInTheDocument();
@@ -79,6 +79,5 @@ describe("LoginStories", () => {
     render(<LoginStories />);
     fireEvent.click(screen.getByRole("button", { name: "Ver: IA Treinada" }));
     expect(current()).toBe(1);
-    expect(screen.getByRole("heading", { name: "Sua fila, sua meta" })).toBeInTheDocument();
   });
 });
