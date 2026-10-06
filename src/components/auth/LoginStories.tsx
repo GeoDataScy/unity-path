@@ -29,7 +29,7 @@ const LOGIN_SLIDES: Slide[] = [
     kind: "video",
     src: "/login/hubi-dados.mp4",
     poster: "/login/hubi-dados-poster.jpg",
-    label: "Para a gestão",
+    label: "Dados & Insights",
   },
 ];
 
