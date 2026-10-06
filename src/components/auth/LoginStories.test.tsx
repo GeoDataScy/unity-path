@@ -41,7 +41,7 @@ describe("LoginStories", () => {
     expect(screen.queryByRole("heading")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ver: hubi" })).toHaveAttribute("aria-current", "step");
     expect(screen.getByRole("button", { name: "Ver: IA Treinada" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ver: Para a gestão" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver: Dados & Insights" })).toBeInTheDocument();
   });
 
   it("enche a barra em 8 s e passa para o próximo", async () => {
@@ -59,7 +59,7 @@ describe("LoginStories", () => {
   it("depois do último volta para o primeiro", async () => {
     render(<LoginStories />);
     await act(async () => {});
-    fireEvent.click(screen.getByRole("button", { name: "Ver: Para a gestão" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver: Dados & Insights" }));
     await act(async () => {});
     for (let i = 0; i < 81; i++) frame(100);
     expect(current()).toBe(0);
