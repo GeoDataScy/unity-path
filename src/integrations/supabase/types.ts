@@ -307,6 +307,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_access_analytics: boolean
           can_approve_takeovers: boolean
           can_claim_tickets: boolean
           can_register_duplicate_emails: boolean
@@ -323,6 +324,7 @@ export type Database = {
           support_channel: string
         }
         Insert: {
+          can_access_analytics?: boolean
           can_approve_takeovers?: boolean
           can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean
@@ -339,6 +341,7 @@ export type Database = {
           support_channel?: string
         }
         Update: {
+          can_access_analytics?: boolean
           can_approve_takeovers?: boolean
           can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean

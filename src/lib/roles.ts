@@ -80,8 +80,22 @@ export function roleLabel(role: string | null | undefined): string {
 /** Última área escolhida (só conveniência de UI — não é permissão). */
 export const LAST_AREA_KEY = "xmx-last-area";
 
-export function areasForRole(role: string | null | undefined): readonly AppArea[] {
-  return ROLE_AREAS[role as AppRole] ?? ROLE_AREAS.agent;
+/**
+ * Liberações individuais por cima da role (colunas boolean em profiles). Hoje só
+ * `can_access_analytics`: alguém do copy que, sozinho, também entra no Data
+ * Analytics — o resto do time continua só no Copy.
+ */
+export type AreaGrants = { canAccessAnalytics?: boolean };
+
+export function areasForRole(
+  role: string | null | undefined,
+  grants?: AreaGrants,
+): readonly AppArea[] {
+  const areas = ROLE_AREAS[role as AppRole] ?? ROLE_AREAS.agent;
+  if (grants?.canAccessAnalytics && !areas.includes("analytics")) {
+    return [...areas, "analytics"];
+  }
+  return areas;
 }
 
 /**
@@ -94,8 +108,12 @@ export function isKnownRole(role: string | null | undefined): boolean {
   return role != null && Object.prototype.hasOwnProperty.call(ROLE_AREAS, role);
 }
 
-export function canAccessArea(role: string | null | undefined, area: AppArea): boolean {
-  return areasForRole(role).includes(area);
+export function canAccessArea(
+  role: string | null | undefined,
+  area: AppArea,
+  grants?: AreaGrants,
+): boolean {
+  return areasForRole(role, grants).includes(area);
 }
 
 /** Cards da tela /areas. Por padrão, as próprias áreas do perfil. */
