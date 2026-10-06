@@ -15,6 +15,7 @@ import {
   homePathForRole,
   isValidArea,
   type AppArea,
+  type AreaGrants,
 } from "@/lib/roles";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
@@ -67,6 +68,7 @@ export default function AreaSelect() {
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [grants, setGrants] = useState<AreaGrants>({});
   const [areas, setAreas] = useState<readonly AppArea[]>([]);
   const [lastArea, setLastArea] = useState<AppArea | null>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
@@ -99,7 +101,7 @@ export default function AreaSelect() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, can_access_analytics")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -118,6 +120,7 @@ export default function AreaSelect() {
       if (!active) return;
       setFullName(profile?.full_name ?? null);
       setRole(profile?.role ?? null);
+      setGrants({ canAccessAnalytics: Boolean(profile?.can_access_analytics) });
       setAreas(areaCardsForRole(profile?.role));
       const stored = window.localStorage.getItem(LAST_AREA_KEY);
       setLastArea(isValidArea(stored) ? stored : null);
@@ -137,7 +140,7 @@ export default function AreaSelect() {
 
   const enterArea = (area: AppArea) => {
     // O card pode estar na tela sem dar acesso (time de produtos vê todos).
-    if (!canAccessArea(role, area)) {
+    if (!canAccessArea(role, area, grants)) {
       toast.error("Acesso negado", {
         description: `Seu perfil não tem acesso à ${AREA_LABEL[area]}.`,
       });

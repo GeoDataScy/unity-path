@@ -55,6 +55,15 @@ describe("acesso por área", () => {
     expect(canAccessArea("copy_grup", "produtos")).toBe(false);
   });
 
+  it("copy com can_access_analytics entra também no Data Analytics, sem trocar de casa", () => {
+    const grants = { canAccessAnalytics: true };
+    expect(canAccessArea("copy_grup", "analytics", grants)).toBe(true);
+    expect(canAccessArea("copy_grup", "copy", grants)).toBe(true);
+    expect(canAccessArea("copy_grup", "produtos", grants)).toBe(false);
+    expect(areasForRole("copy_grup", grants)[0]).toBe("copy");
+    expect(canAccessArea("copy_grup", "analytics", { canAccessAnalytics: false })).toBe(false);
+  });
+
   it("produtos entra só em Produtos", () => {
     expect(areasForRole("produto")).toEqual(["produtos"]);
     expect(canAccessArea("produto", "analytics")).toBe(false);

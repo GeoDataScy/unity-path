@@ -83,6 +83,7 @@ export default function ManagerLayout() {
   const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [canApproveTakeovers, setCanApproveTakeovers] = useState(false);
+  const [canAccessAnalytics, setCanAccessAnalytics] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -145,7 +146,7 @@ export default function ManagerLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name, can_approve_takeovers")
+        .select("role, full_name, can_approve_takeovers, can_access_analytics")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -155,7 +156,8 @@ export default function ManagerLayout() {
         return;
       }
 
-      if (!canAccessArea(profile?.role, "analytics")) {
+      const grants = { canAccessAnalytics: Boolean(profile?.can_access_analytics) };
+      if (!canAccessArea(profile?.role, "analytics", grants)) {
         navigate(homePathForRole(profile?.role), { replace: true });
         return;
       }
@@ -165,6 +167,7 @@ export default function ManagerLayout() {
       setRole(profile?.role ?? null);
       setFullName(profile?.full_name ?? null);
       setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
+      setCanAccessAnalytics(grants.canAccessAnalytics);
       setAuthLoading(false);
     };
 
@@ -370,7 +373,12 @@ export default function ManagerLayout() {
             collapsed ? "space-y-3 px-2 pb-3" : "space-y-5 px-4 pb-4",
           )}
         >
-          <AreaSwitcher role={role} currentArea="analytics" collapsed={collapsed} />
+          <AreaSwitcher
+            role={role}
+            currentArea="analytics"
+            collapsed={collapsed}
+            grants={{ canAccessAnalytics }}
+          />
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-1")}>
             <SidebarNavItem

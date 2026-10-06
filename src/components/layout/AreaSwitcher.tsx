@@ -9,6 +9,7 @@ import {
   LAST_AREA_KEY,
   areasForRole,
   type AppArea,
+  type AreaGrants,
 } from "@/lib/roles";
 
 type Props = {
@@ -17,14 +18,16 @@ type Props = {
   /** Área em que a sidebar está montada. */
   currentArea: AppArea;
   collapsed: boolean;
+  /** Liberações individuais do perfil (ex.: copy com acesso ao Data Analytics). */
+  grants?: AreaGrants;
 };
 
 // Bloco de troca de área na sidebar. Só aparece para quem tem acesso a mais de
 // uma área (gestora e copy); para o agente não renderiza nada. Com duas áreas
 // o botão leva direto para a outra — um clique em vez de passar por /areas.
-export function AreaSwitcher({ role, currentArea, collapsed }: Props) {
+export function AreaSwitcher({ role, currentArea, collapsed, grants }: Props) {
   const navigate = useNavigate();
-  const others = areasForRole(role).filter((a) => a !== currentArea);
+  const others = areasForRole(role, grants).filter((a) => a !== currentArea);
 
   if (others.length === 0) return null;
 

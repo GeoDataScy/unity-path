@@ -47,6 +47,7 @@ export default function CopyLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [canAccessAnalytics, setCanAccessAnalytics] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -108,7 +109,7 @@ export default function CopyLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, can_access_analytics")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -127,6 +128,7 @@ export default function CopyLayout() {
       setUserId(session.user.id);
       setRole(profile?.role ?? null);
       setFullName(profile?.full_name ?? null);
+      setCanAccessAnalytics(Boolean(profile?.can_access_analytics));
       setAuthLoading(false);
     };
 
@@ -256,7 +258,12 @@ export default function CopyLayout() {
             collapsed ? "space-y-3 px-2 pb-3" : "space-y-5 px-4 pb-4",
           )}
         >
-          <AreaSwitcher role={role} currentArea="copy" collapsed={collapsed} />
+          <AreaSwitcher
+            role={role}
+            currentArea="copy"
+            collapsed={collapsed}
+            grants={{ canAccessAnalytics }}
+          />
 
           {!collapsed && (
             <div className="space-y-1.5">
