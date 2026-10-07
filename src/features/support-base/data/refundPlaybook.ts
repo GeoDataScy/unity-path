@@ -71,7 +71,7 @@ export const FUNIL_STEPS: FunilStep[] = [
     selo: "75%",
     descricao:
       "Durante o preenchimento do Typeform, o próprio formulário apresenta automaticamente uma oferta de 75% de reembolso ao cliente em uma das perguntas. O atendente não precisa fazer nada — é um processo automático do formulário. Se o cliente aceitar o 75% dentro do Typeform, o processo de RMA não é aberto.",
-    tags: ["Automático", "Dentro do formulário", "Sem ação do agente"],
+    tags: ["Automático", "Dentro do formulário", "Sem ação do prestador"],
     typeform: true,
   },
   {
@@ -117,7 +117,7 @@ export const EXCECOES: Excecao[] = [
     quando:
       "Cliente satisfeito com o produto principal mas insatisfeito somente com o upsell. Quer reembolso especificamente dessa compra adicional.",
     detalhe:
-      "Oferecer o reembolso do valor exato pago no upsell — sem escada de porcentagem, sem envolver o pedido principal. Exemplo: Pedido total = $300 · Upsell = $60 → Reembolso = $60. O agente identifica o valor do upsell no sistema, confirma com o cliente e processa o reembolso desse valor específico. O produto principal não é afetado.",
+      "Oferecer o reembolso do valor exato pago no upsell — sem escada de porcentagem, sem envolver o pedido principal. Exemplo: Pedido total = $300 · Upsell = $60 → Reembolso = $60. O prestador identifica o valor do upsell no sistema, confirma com o cliente e processa o reembolso desse valor específico. O produto principal não é afetado.",
     comoAgir:
       "\"Entendo que a experiência com o produto adicional não foi a esperada. Vou verificar aqui o valor exato que você pagou pelo upsell e processar o reembolso integral desse valor, sem afetar seu pedido principal.\"",
     tom: "ambar",

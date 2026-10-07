@@ -165,7 +165,7 @@ export function RadarItemDialog({ open, onOpenChange, item }: Props) {
           <DialogDescription>
             {isEdit
               ? "Corrija os dados do cliente e do pedido. Para mudar o status ou a data, registre uma ação."
-              : "Registre o cliente que depende de uma ação sua. Data de criação, agente e status saem do sistema."}
+              : "Registre o cliente que depende de uma ação sua. Data de criação, prestador e status saem do sistema."}
           </DialogDescription>
         </DialogHeader>
 

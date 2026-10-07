@@ -102,7 +102,7 @@ export function TransferTicketDialog({
       await queryClient.invalidateQueries({ queryKey: ["ticket_transfers"] });
       toast({
         title: "Encaminhado",
-        description: `Pedido enviado para ${ticket?.current_owner_name ?? ticket?.agent_name ?? "o agente responsável"}.`,
+        description: `Pedido enviado para ${ticket?.current_owner_name ?? ticket?.agent_name ?? "o prestador responsável"}.`,
       });
       setMessage("");
       onTransferred?.();
@@ -127,15 +127,15 @@ export function TransferTicketDialog({
           <DialogDescription>
             {ownerUnavailable ? (
               <>
-                O responsável por este cliente está <strong>de folga/indisponível</strong>.
+                O responsável por este cliente está <strong>indisponível</strong>.
                 Para assumir o atendimento, solicite a{" "}
                 <strong>aprovação da gestora</strong>. Assim que autorizado, o ticket passa a ser seu.
               </>
             ) : (
               <>
-                Esse cliente já está sendo atendido por outro agente. Você pode{" "}
+                Esse cliente já está sendo atendido por outro prestador. Você pode{" "}
                 <strong>assumir o atendimento</strong> (passa a ser seu e você registra a
-                interação) ou <strong>encaminhar</strong> uma mensagem para o agente responsável continuar.
+                interação) ou <strong>encaminhar</strong> uma mensagem para o prestador responsável continuar.
               </>
             )}
           </DialogDescription>
@@ -144,7 +144,7 @@ export function TransferTicketDialog({
         {ticket && (
           <div className="grid gap-3 rounded-md border bg-muted/30 p-3 text-sm">
             <div className="grid grid-cols-3 gap-2">
-              <span className="text-muted-foreground">Agente</span>
+              <span className="text-muted-foreground">Prestador</span>
               <span className="col-span-2 font-medium">
                 {ticket.current_owner_name ?? ticket.agent_name ?? "—"}
               </span>
@@ -176,7 +176,7 @@ export function TransferTicketDialog({
 
         <div className="grid gap-2">
           <label htmlFor="transfer-message" className="text-sm font-medium">
-            {ownerUnavailable ? "Observação para a gestora (opcional)" : "Mensagem para o agente (opcional)"}
+            {ownerUnavailable ? "Observação para a gestora (opcional)" : "Mensagem para o prestador (opcional)"}
           </label>
           <Textarea
             id="transfer-message"

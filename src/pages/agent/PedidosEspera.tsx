@@ -193,7 +193,7 @@ export default function PedidosEspera() {
   function handoffLabel(o: MyHeldOrder): string | null {
     if (!o.last_event_user_id || o.last_event_user_id === userId) return null;
     if (o.agent_status === "concluido" || o.agent_status === "inativo") return null;
-    return o.last_event_by_manager ? "Devolvido pela gestão" : "Veio de outro agente";
+    return o.last_event_by_manager ? "Devolvido pela gestão" : "Veio de outro prestador";
   }
 
   return (

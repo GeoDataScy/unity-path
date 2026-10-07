@@ -48,7 +48,7 @@ const COLUMNS = [
   "Prazo",
   "Status",
   "Observações",
-  "Agente responsável",
+  "Prestador responsável",
   "Última ação registrada",
   "Registrada em",
   "Registros no histórico",
@@ -114,7 +114,7 @@ export function exportRadar({ rows, today, agentName, filters }: RadarExportPara
   });
 
   const sheetRows: (string | number)[][] = [
-    [`Radar — acompanhamentos de ${agentName || "agente"}`],
+    [`Radar — acompanhamentos de ${agentName || "prestador"}`],
     [`Filtros — ${filtersLine}`],
     [`Total de casos: ${rows.length}`],
     [`Gerado em: ${generatedAt}`],
