@@ -16,9 +16,16 @@
 //             cliente / time / nota interna
 //   groups  → produtos (grupos) da conta, para o filtro
 //   agents  → agentes e admins da conta
+//   lookup  → tickets recentes de UM e-mail, para o agente pré-encher o
+//             formulário de atendimento (única ação aberta a `agent`)
+//
+// Guarda por ação: tudo acima exige `manager`, menos `lookup`, que `agent`
+// também usa. `lookup` é estreita de propósito — um e-mail entra, no máximo 3
+// tickets daquele solicitante saem, sem paginação e sem busca livre. Abrir
+// `tickets` para o agente daria a ele a conta inteira, que ele não precisa.
 //
 // Limite do Zendesk: 400 chamadas/min por conta. `tickets` gasta 2 chamadas
-// por página (busca + show_many com sideload), `ticket` 2, `status` 9.
+// por página (busca + show_many com sideload), `ticket` 2, `lookup` 2, `status` 9.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const CORS_HEADERS = {
@@ -31,6 +38,19 @@ type TicketStatus = (typeof TICKET_STATUSES)[number];
 
 // A busca do Zendesk devolve no máximo 1.000 resultados por consulta.
 const SEARCH_MAX_RESULTS = 1000;
+
+// Campos do Intelligent Triage. O ticket devolve `custom_fields` só com o id,
+// sem nome, então os números são a única forma de achar o valor. Ids da conta
+// xmx-54224; se a conta mudar, é aqui que se conserta.
+const TOPIC_FIELD_ID = 53650712058387;
+const TOPIC_CONFIDENCE_FIELD_ID = 53650712060947;
+
+// Quantos tickets do mesmo solicitante o `lookup` devolve. Três cobre o caso
+// do cliente que reabriu contato sem virar lista para o agente garimpar.
+const LOOKUP_MAX_TICKETS = 3;
+
+/** Ações que `agent` também executa; todo o resto é exclusivo de `manager`. */
+const AGENT_ACTIONS = new Set(["lookup"]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 type ZendeskUser = { id: number; name: string; email: string | null; role: string };
@@ -57,6 +77,7 @@ type ZendeskTicket = {
   assignee_id: number | null;
   group_id: number | null;
   tags: string[];
+  custom_fields?: { id: number; value: unknown }[];
   via?: {
     channel?: string;
     source?: { from?: { address?: string; name?: string }; to?: { address?: string; name?: string } };
@@ -144,6 +165,12 @@ function buildSearchQuery(f: SearchFilters) {
   return parts.join(" ");
 }
 
+/** `custom_fields` é uma lista de {id, value}; o valor vem "" quando não classificado. */
+function customField(t: ZendeskTicket, id: number): string | null {
+  const raw = t.custom_fields?.find((f) => f.id === id)?.value;
+  return typeof raw === "string" && raw.length > 0 ? raw : null;
+}
+
 function shapeTicket(
   t: ZendeskTicket,
   cfg: ZendeskConfig,
@@ -170,6 +197,10 @@ function shapeTicket(
     group_id: t.group_id,
     group_name: t.group_id ? groups.get(t.group_id)?.name ?? null : null,
     tags: t.tags ?? [],
+    // Intenção do cliente classificada pelo Intelligent Triage, com a confiança
+    // ao lado — quem decide se a confiança basta é o front.
+    topic: customField(t, TOPIC_FIELD_ID),
+    topic_confidence: customField(t, TOPIC_CONFIDENCE_FIELD_ID),
     replies: m?.replies ?? null,
     reopens: m?.reopens ?? null,
     // Última vez que o responsável mexeu no ticket (resposta, status, nota…).
@@ -276,19 +307,24 @@ Deno.serve(async (req) => {
   } = await supabase.auth.getUser();
   if (userError || !user) return json({ error: "Não autenticado." }, 401);
 
+  let body: Record<string, unknown> = {};
+  if (req.method === "POST") body = await req.json().catch(() => ({}));
+  const action = String(body.action ?? "status");
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
-  if (profile?.role !== "manager") return json({ error: "Somente a gestora acessa o Zendesk." }, 403);
+
+  // O body é lido antes do guard porque a permissão depende da ação: o agente
+  // entra só no `lookup`, para pré-encher o formulário de atendimento.
+  if (profile?.role !== "manager" && !(profile?.role === "agent" && AGENT_ACTIONS.has(action))) {
+    return json({ error: "Sem permissão para esta ação no Zendesk." }, 403);
+  }
 
   const cfg = zendeskConfig();
   if (!cfg) return json({ connected: false, error: "Credenciais do Zendesk não configuradas." }, 200);
-
-  let body: Record<string, unknown> = {};
-  if (req.method === "POST") body = await req.json().catch(() => ({}));
-  const action = String(body.action ?? "status");
   const from = parseDate(body.from);
   const to = parseDate(body.to);
 
@@ -404,6 +440,26 @@ Deno.serve(async (req) => {
         },
         comments,
       });
+    }
+
+    if (action === "lookup") {
+      const email = String(body.email ?? "").trim().toLowerCase().slice(0, 160);
+      // `requester:` exige o e-mail inteiro; sem "@" a busca do Zendesk viraria
+      // texto livre e devolveria ticket de outro cliente.
+      if (!email.includes("@") || email.includes(" ")) {
+        return json({ error: "Informe o e-mail completo do cliente." }, 400);
+      }
+
+      const search = await zendesk<{ results: { id: number }[]; count: number }>(
+        cfg,
+        `search.json?query=${encodeURIComponent(`type:ticket requester:${email}`)}` +
+          `&sort_by=created_at&sort_order=desc&per_page=${LOOKUP_MAX_TICKETS}`,
+      );
+      const tickets = await fetchTicketsByIds(
+        cfg,
+        search.results.slice(0, LOOKUP_MAX_TICKETS).map((r) => r.id),
+      );
+      return json({ email, total: search.count, tickets });
     }
 
     if (action === "groups") {

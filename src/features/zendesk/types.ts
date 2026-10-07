@@ -30,6 +30,27 @@ export const ZENDESK_CHANNEL_LABEL: Record<string, string> = {
   system: "Sistema",
 };
 
+/**
+ * Campos do Intelligent Triage. Ids fixos da conta xmx-54224 — o Zendesk não
+ * nomeia campo customizado na resposta do ticket, só devolve `custom_fields`
+ * com o id, então a Edge Function precisa do número para extrair o valor.
+ */
+export const ZENDESK_TOPIC_FIELD_ID = 53650712058387;
+export const ZENDESK_TOPIC_CONFIDENCE_FIELD_ID = 53650712060947;
+
+export const ZENDESK_TOPIC_CONFIDENCES = [
+  "topic_confidence__low",
+  "topic_confidence__medium",
+  "topic_confidence__high",
+] as const;
+export type ZendeskTopicConfidence = (typeof ZENDESK_TOPIC_CONFIDENCES)[number];
+
+export const ZENDESK_TOPIC_CONFIDENCE_LABEL: Record<ZendeskTopicConfidence, string> = {
+  topic_confidence__low: "baixa",
+  topic_confidence__medium: "média",
+  topic_confidence__high: "alta",
+};
+
 export type ZendeskStatus =
   | {
       connected: true;
@@ -58,6 +79,9 @@ export type ZendeskTicket = {
   group_id: number | null;
   group_name: string | null;
   tags: string[];
+  /** Intenção classificada pelo Intelligent Triage; null quando não classificou. */
+  topic: string | null;
+  topic_confidence: ZendeskTopicConfidence | null;
   replies: number | null;
   reopens: number | null;
   assignee_updated_at: string | null;
@@ -114,4 +138,19 @@ export type ZendeskTicketFilters = {
   from: string;
   to: string;
   page: number;
+};
+
+/**
+ * Resposta da ação `lookup` — a única do Zendesk aberta ao agente.
+ *
+ * Diferente de `tickets`, não pagina nem aceita busca livre: um e-mail entra,
+ * os tickets recentes daquele solicitante saem. Superfície estreita de
+ * propósito, porque o agente não precisa navegar a conta inteira para
+ * preencher um atendimento.
+ */
+export type ZendeskLookup = {
+  email: string;
+  /** Total de tickets do solicitante na conta, mesmo além dos devolvidos. */
+  total: number;
+  tickets: ZendeskTicket[];
 };

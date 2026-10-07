@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarDays, CheckCircle2, Download, Loader2, Package, Pencil, Search, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Download, LifeBuoy, Loader2, Package, Pencil, Search, X } from "lucide-react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +53,9 @@ import {
   type ContactReasonCode,
 } from "@/features/services/contact-reasons";
 import { TransferTicketDialog, type DuplicateTicket } from "@/features/transfers/TransferTicketDialog";
+import { useZendeskLookupQuery } from "@/features/zendesk/useZendeskQuery";
+import { ZendeskPrefill } from "@/features/zendesk/components/ZendeskPrefill";
+import type { TicketSuggestion } from "@/features/zendesk/suggest";
 import { exportAgentServices } from "@/lib/reportExport";
 
 const PRODUCTS = [
@@ -248,6 +251,10 @@ export default function Atendimentos() {
   // Número do pedido: só aparece (e só é exigido) quando o motivo é Reembolso —
   // é o dado que faltava para o sistema abrir o reembolso sozinho.
   const [orderId, setOrderId] = useState("");
+  // E-mail efetivamente consultado no Zendesk. Fica null até o agente clicar em
+  // buscar: a consulta gasta 2 das 400 chamadas/min da conta, então não dispara
+  // a cada tecla.
+  const [zendeskEmail, setZendeskEmail] = useState<string | null>(null);
 
   // Search & filter state. Default to "hoje" so the agent sees only today's
   // activity on opening the page — clean slate at the start of the day,
@@ -492,6 +499,24 @@ export default function Atendimentos() {
     const otherCount = services.length - smsCount;
     return smsCount > otherCount ? "sms" : "email";
   }, [services]) as "email" | "sms";
+
+  // ── Pré-preenchimento pelo Zendesk ──────────────────────────────────────
+  // Só faz sentido no canal de e-mail: a conta do Zendesk não tem canal de SMS
+  // configurado, então atendimento por telefone não tem ticket para consultar.
+  const zendeskLookup = useZendeskLookupQuery(zendeskEmail);
+  const podeConsultarZendesk = channel !== "SMS" && /.+@.+\..+/.test(clientEmail.trim());
+
+  const aplicarSugestaoZendesk = useCallback((s: TicketSuggestion) => {
+    // Aplica o que o painel prometeu, sobrescrevendo — o agente clicou em "usar
+    // estes dados", e um clique explícito é pedido para aplicar. O que o ticket
+    // não soube dizer chega null e não apaga o que já estava preenchido.
+    //
+    // Canal fica de fora: um ticket da ClickBank também chega no Zendesk como
+    // `via.channel: email`, então o ticket não desmente a escolha do agente.
+    if (s.clientEmail) setClientEmail(s.clientEmail);
+    if (s.produto.product) setProduct(s.produto.product);
+    if (s.motivo.code) setContactReason(s.motivo.code);
+  }, []);
 
   const isRefund = contactReason === "reembolso";
   // Motivos "Outro" e "Reclamação VSL" pedem descrição livre — cada um com seu texto.
@@ -850,7 +875,40 @@ export default function Atendimentos() {
                 onCheckedChange={setHasTrackingCode}
               />
             </div>
+
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="ml-auto gap-1.5"
+              disabled={!podeConsultarZendesk || zendeskLookup.isFetching}
+              onClick={() => setZendeskEmail(clientEmail.trim().toLowerCase())}
+              title={
+                channel === "SMS"
+                  ? "Atendimento por SMS não gera ticket no Zendesk"
+                  : podeConsultarZendesk
+                    ? "Procura o ticket deste cliente e preenche o que der"
+                    : "Digite o e-mail do cliente primeiro"
+              }
+            >
+              {zendeskLookup.isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LifeBuoy className="h-4 w-4" />
+              )}
+              Buscar no Zendesk
+            </Button>
           </div>
+
+          {zendeskEmail && (
+            <ZendeskPrefill
+              lookup={zendeskLookup.data}
+              carregando={zendeskLookup.isPending}
+              erro={(zendeskLookup.error as Error | null) ?? null}
+              onUsar={aplicarSugestaoZendesk}
+              onFechar={() => setZendeskEmail(null)}
+            />
+          )}
           <form onSubmit={handleCreate} className="grid gap-4 lg:grid-cols-6 lg:items-end">
             <div className="grid gap-2">
               <div className="flex flex-col gap-0.5">
