@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/brand/Logo";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
-import { PendingRefundsAlert } from "@/features/refunds/PendingRefundsAlert";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
 import { TopBar } from "@/components/layout/TopBar";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
@@ -247,8 +246,6 @@ export default function AgentLayout() {
           </main>
         </div>
       </div>
-
-      <PendingRefundsAlert enabled={Boolean(userId)} />
 
       {/* Caderno pessoal do agente: marcador no canto inferior direito, painel
           de altura inteira à direita. Fica no layout (e não numa página) porque
