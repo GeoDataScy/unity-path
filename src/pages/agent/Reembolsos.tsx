@@ -25,6 +25,7 @@ import { useMyRefundsQuery } from "@/features/refunds/useMyRefundsQuery";
 import type { RefundItem } from "@/features/refunds/types";
 import { NewRefundDialog, type NewRefundValues } from "@/features/refunds/NewRefundDialog";
 import { CompleteRefundDialog, type CompleteRefundValues } from "@/features/refunds/CompleteRefundDialog";
+import { authorizedAtToIso } from "@/features/refunds/authorizedAt";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -215,6 +216,7 @@ export default function Reembolsos() {
           refund_type: payload.values.refund_type,
           reason: payload.values.reason,
           items_returned: payload.values.items_returned,
+          authorized_at: authorizedAtToIso(payload.values.authorized_at),
         })
         .eq("id", payload.id);
       if (error) throw error;
@@ -270,6 +272,7 @@ export default function Reembolsos() {
           refund_type: payload.values.refund_type,
           reason: payload.values.reason,
           items_returned: payload.values.items_returned,
+          authorized_at: authorizedAtToIso(payload.values.authorized_at),
         })
         .eq("id", payload.id);
       if (error) throw error;
@@ -685,6 +688,7 @@ export default function Reembolsos() {
         <CompleteRefundDialog
           open={Boolean(completing)}
           refund={completing}
+          showAuthorizedAt
           submitting={completeMutation.isPending}
           onOpenChange={(open) => {
             if (!open) setCompleting(null);
@@ -699,6 +703,7 @@ export default function Reembolsos() {
         <CompleteRefundDialog
           open={Boolean(editing)}
           refund={editing}
+          showAuthorizedAt
           submitting={editMutation.isPending}
           onOpenChange={(open) => {
             if (!open) setEditing(null);

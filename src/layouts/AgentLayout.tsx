@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/brand/Logo";
 import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { AgentNotepad } from "@/features/notepad/AgentNotepad";
+import { OverdueQueueAlert } from "@/features/sla/OverdueQueueAlert";
 import { TopBar } from "@/components/layout/TopBar";
 import { NotificationsBell } from "@/features/transfers/NotificationsBell";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
@@ -246,6 +247,9 @@ export default function AgentLayout() {
           </main>
         </div>
       </div>
+
+      {/* Itens da fila com prazo contratual vencido: informativo, uma vez por sessão. */}
+      <OverdueQueueAlert userId={userId} />
 
       {/* Caderno pessoal do agente: marcador no canto inferior direito, painel
           de altura inteira à direita. Fica no layout (e não numa página) porque

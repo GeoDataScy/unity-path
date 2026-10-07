@@ -213,6 +213,7 @@ const Workspace = () => {
         product,
         status: "registered",
         user_id: session.user.id,
+        current_owner_id: session.user.id,
       });
 
       if (error) throw error;

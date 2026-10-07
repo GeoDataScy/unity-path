@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useMyAgentMetricsQuery, type AgentMyMetrics } from "@/features/agent/useMyAgentMetricsQuery";
+import { MonthlyReportSection } from "@/features/sla/MonthlyReportSection";
 
 // ── Cores ─────────────────────────────────────────────────────────────────────
 //
@@ -208,7 +209,7 @@ type PresetKey = "hoje" | "semana" | "mes" | "30d";
 const DAYS_PER_PAGE = 10;
 
 export default function MinhasMetricas() {
-  const { fullName } = useOutletContext<AgentOutletContext>();
+  const { fullName, userId } = useOutletContext<AgentOutletContext>();
 
   const presets = useMemo(() => {
     const today = parseISOLocal(spToday());
@@ -591,6 +592,8 @@ export default function MinhasMetricas() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      <MonthlyReportSection userId={userId} />
     </main>
   );
 }

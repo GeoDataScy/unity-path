@@ -233,9 +233,6 @@ export default function Atendimentos() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // DEV-only: simulate the exact “hit 100” celebration without backend changes
-  const [debugCelebrateNonce, setDebugCelebrateNonce] = useState(0);
-  const [debugOverrideCount, setDebugOverrideCount] = useState<number | null>(null);
-  const debugResetTimeoutRef = useRef<number | null>(null);
 
   // Form state
   const [clientEmail, setClientEmail] = useState("");
@@ -488,13 +485,12 @@ export default function Atendimentos() {
     return filteredServices.slice(start, start + PAGE_SIZE);
   }, [filteredServices, page]);
 
-  // Derive agent's channel from their services: if majority is SMS → 150/day, otherwise 100/day
+  // Canal predominante do agente (rótulo SMS/EMAIL ao lado da saudação).
   const supportChannel = useMemo(() => {
     const smsCount = services.filter((s) => s.channel === "SMS").length;
     const otherCount = services.length - smsCount;
     return smsCount > otherCount ? "sms" : "email";
   }, [services]) as "email" | "sms";
-  const dailyGoal = supportChannel === "sms" ? 150 : 100;
 
   const isRefund = contactReason === "reembolso";
   // Motivos "Outro" e "Reclamação VSL" pedem descrição livre — cada um com seu texto.
@@ -568,6 +564,8 @@ export default function Atendimentos() {
           // "concluido" directly avoids a follow-up insert, preventing double-counting in daily metrics
           status: concludeAfterCreate.current ? "concluido" : "registered",
           user_id: session.user.id,
+          // Mesmo valor que o trigger trg_service_default_current_owner aplicaria.
+          current_owner_id: session.user.id,
         })
         .select("id, client_email, service_date, product, platform, channel, status, created_at, has_tracking_code, contact_reason, contact_reason_note, user_id, current_owner_id")
         .single();
@@ -804,27 +802,6 @@ export default function Atendimentos() {
     createMutation.mutate();
   };
 
-  useEffect(() => {
-    return () => {
-      if (debugResetTimeoutRef.current != null) {
-        window.clearTimeout(debugResetTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleDebugSimulateGoalHit = () => {
-    const CELEBRATION_MS = 9600;
-    const GOAL = dailyGoal;
-
-    setDebugOverrideCount(GOAL);
-    setDebugCelebrateNonce((n) => n + 1);
-
-    if (debugResetTimeoutRef.current != null) {
-      window.clearTimeout(debugResetTimeoutRef.current);
-    }
-    debugResetTimeoutRef.current = window.setTimeout(() => setDebugOverrideCount(null), CELEBRATION_MS);
-  };
-
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -834,20 +811,12 @@ export default function Atendimentos() {
             {supportChannel.toUpperCase()}
           </span>
         </div>
-        {import.meta.env.DEV && (
-          <Button type="button" variant="outline" size="sm" onClick={handleDebugSimulateGoalHit}>
-            Simular meta batida (DEV)
-          </Button>
-        )}
       </div>
 
       <AgentDailyMetricsSection
         userId={userId}
         metricsLoading={metricsLoading}
         dailyMetrics={dailyMetrics}
-        goal={dailyGoal}
-        debugCelebrateNonce={debugCelebrateNonce}
-        debugOverrideCount={debugOverrideCount}
       />
 
       <Card>
