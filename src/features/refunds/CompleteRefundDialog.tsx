@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -22,7 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 import type { RefundItem } from "@/features/refunds/types";
+import { isoToAuthorizedAtInput } from "@/features/refunds/authorizedAt";
 
 const PERCENT_OPTIONS = Array.from({ length: 20 }, (_, i) => {
   const value = (i + 1) * 5;
@@ -79,6 +81,11 @@ const completeSchema = z.object({
   refund_type: z.enum(PERCENT_OPTIONS, { message: "Selecione um percentual válido" }),
   reason: z.enum(REASON_OPTIONS, { message: "Selecione um motivo" }),
   items_returned: z.boolean(),
+  /** "YYYY-MM-DDTHH:mm" (horário local) ou vazio. Base do prazo de 48h úteis. */
+  authorized_at: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || !Number.isNaN(new Date(v).getTime()), "Data e hora inválidas"),
 });
 
 export type CompleteRefundValues = z.infer<typeof completeSchema>;
@@ -94,7 +101,7 @@ export type CompletableRefund = Pick<
   | "refund_type"
   | "refund_value"
   | "items_returned"
->;
+> & { id?: string };
 
 type Props = {
   open: boolean;
@@ -106,6 +113,8 @@ type Props = {
   description?: string;
   /** Nome do agente dono do reembolso — exibido quando quem conclui não é o dono. */
   ownerName?: string;
+  /** Mostra "Autorizado pela plataforma em" (refunds.authorized_at). Exige `refund.id`. */
+  showAuthorizedAt?: boolean;
 };
 
 export function CompleteRefundDialog({
@@ -117,6 +126,7 @@ export function CompleteRefundDialog({
   title = "Concluir reembolso",
   description = "Defina a data de conclusão e ajuste o tipo final do reembolso.",
   ownerName,
+  showAuthorizedAt = false,
 }: Props) {
   const defaultValues = useMemo<CompleteRefundValues>(
     () => ({
@@ -125,6 +135,7 @@ export function CompleteRefundDialog({
       refund_type: isValidPercentOption(refund.refund_type) ? refund.refund_type : ("" as CompleteRefundValues["refund_type"]),
       reason: isValidReasonOption(refund.reason) ? refund.reason : ("" as CompleteRefundValues["reason"]),
       items_returned: Boolean(refund.items_returned),
+      authorized_at: "",
     }),
     [refund.completion_date, refund.refund_value, refund.refund_type, refund.reason, refund.items_returned],
   );
@@ -135,9 +146,35 @@ export function CompleteRefundDialog({
     mode: "onChange",
   });
 
+  // authorized_at não vem na lista de reembolsos: busca ao abrir, e o botão só
+  // libera depois disso — senão salvar antes da resposta apagaria o valor gravado.
+  const [authorizedLoaded, setAuthorizedLoaded] = useState(!showAuthorizedAt);
+
   useEffect(() => {
-    if (open) form.reset(defaultValues);
-  }, [open, form, defaultValues]);
+    if (!open) return;
+    form.reset(defaultValues);
+    if (!showAuthorizedAt || !refund.id) {
+      setAuthorizedLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    setAuthorizedLoaded(false);
+    void supabase
+      .from("refunds")
+      .select("authorized_at")
+      .eq("id", refund.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data?.authorized_at) {
+          form.setValue("authorized_at", isoToAuthorizedAtInput(data.authorized_at), { shouldValidate: true });
+        }
+        setAuthorizedLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, form, defaultValues, showAuthorizedAt, refund.id]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit(values);
@@ -166,6 +203,25 @@ export function CompleteRefundDialog({
               <p className="text-sm text-destructive">{form.formState.errors.completion_date.message}</p>
             )}
           </div>
+
+          {showAuthorizedAt && (
+            <div className="grid gap-2">
+              <Label htmlFor="authorized-at">Autorizado pela plataforma em (opcional)</Label>
+              <Input
+                id="authorized-at"
+                type="datetime-local"
+                disabled={!authorizedLoaded}
+                {...form.register("authorized_at")}
+              />
+              <p className="text-sm text-muted-foreground">
+                Data e hora em que a plataforma de venda autorizou o reembolso. É a base do prazo contratual de
+                48h úteis para a conclusão; sem ela, o caso fica fora dessa medição.
+              </p>
+              {form.formState.errors.authorized_at?.message && (
+                <p className="text-sm text-destructive">{form.formState.errors.authorized_at.message}</p>
+              )}
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="refund-value">Valor do reembolso</Label>
@@ -267,7 +323,7 @@ export function CompleteRefundDialog({
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!form.formState.isValid || Boolean(submitting)}>
+            <Button type="submit" disabled={!form.formState.isValid || !authorizedLoaded || Boolean(submitting)}>
               {submitting ? "Salvando..." : "Concluir"}
             </Button>
           </DialogFooter>

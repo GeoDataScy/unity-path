@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Circle,
   Coffee,
+  FileText,
   Inbox,
   LogIn,
   LogOut,
@@ -49,6 +50,7 @@ import {
   useSetUserActiveMutation,
 } from "@/features/dashboard/useManagerUsersQuery";
 import { ReassignTicketsDialog } from "@/features/dashboard/ReassignTicketsDialog";
+import { ProviderContractDialog } from "@/features/sla/ProviderContractDialog";
 
 type StatusFilter = "all" | "active" | "inactive" | "online" | "deleted";
 
@@ -153,6 +155,7 @@ export default function DashboardUsers() {
   const [deleteTarget, setDeleteTarget] = useState<ManagerUser | null>(null);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [reassignTarget, setReassignTarget] = useState<ManagerUser | null>(null);
+  const [contractTarget, setContractTarget] = useState<ManagerUser | null>(null);
 
   const users = usersQuery.data ?? [];
 
@@ -468,6 +471,17 @@ export default function DashboardUsers() {
                                 {reassignButton}
                                 {isAgent && (
                                   <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setContractTarget(user)}
+                                    title="Pacote, capacidade e aderência do prestador"
+                                  >
+                                    <FileText className="mr-1.5 h-3.5 w-3.5" />
+                                    Contrato
+                                  </Button>
+                                )}
+                                {isAgent && (
+                                  <Button
                                     variant={user.is_available ? "ghost" : "secondary"}
                                     size="sm"
                                     onClick={() => handleToggleAvailability(user)}
@@ -534,6 +548,14 @@ export default function DashboardUsers() {
           }}
           sourceAgent={reassignTarget}
           allUsers={users}
+        />
+
+        <ProviderContractDialog
+          open={contractTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setContractTarget(null);
+          }}
+          provider={contractTarget}
         />
 
         <AlertDialog
