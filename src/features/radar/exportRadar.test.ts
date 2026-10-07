@@ -68,7 +68,7 @@ describe("exportRadar", () => {
       "Prazo",
       "Status",
       "Observações",
-      "Agente responsável",
+      "Prestador responsável",
       "Última ação registrada",
       "Registrada em",
       "Registros no histórico",

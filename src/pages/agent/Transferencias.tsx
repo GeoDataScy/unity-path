@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { encaminhadoPor } from "@/features/transfers/encaminhadoPor";
 import {
   Select,
   SelectContent,
@@ -164,22 +165,21 @@ export default function Transferencias() {
                       <TableHead>Recebido em</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Produto</TableHead>
-                      <TableHead>De</TableHead>
-                      <TableHead>Origem</TableHead>
+                      <TableHead>Encaminhado por</TableHead>
                       <TableHead className="text-right">Ação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                           Carregando...
                         </TableCell>
                       </TableRow>
                     )}
                     {!isLoading && toResolve.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                        <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
                           Nenhum ticket pendente para resolver. Tudo em dia. 🎉
                         </TableCell>
                       </TableRow>
@@ -195,18 +195,14 @@ export default function Transferencias() {
                             {t.client_email}
                           </TableCell>
                           <TableCell className="text-sm">{t.product}</TableCell>
-                          <TableCell className="text-sm">{t.other_agent_name ?? "—"}</TableCell>
-                          <TableCell>
+                          <TableCell className="text-sm">
                             {fromManager ? (
                               <Badge variant="outline" className="gap-1 bg-ice-soft text-info">
                                 <Shield className="h-3 w-3" />
-                                Gestor
+                                {encaminhadoPor(t)}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="gap-1">
-                                <ArrowDownLeft className="h-3 w-3" />
-                                Agente
-                              </Badge>
+                              encaminhadoPor(t)
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -246,7 +242,7 @@ export default function Transferencias() {
                 <div className="grid flex-1 gap-1">
                   <label className="text-xs text-muted-foreground">Buscar</label>
                   <Input
-                    placeholder="E-mail do cliente ou nome do agente"
+                    placeholder="E-mail do cliente ou nome do prestador"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />

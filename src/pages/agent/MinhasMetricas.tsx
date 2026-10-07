@@ -250,7 +250,7 @@ export default function MinhasMetricas() {
   const isLoading = metricsQuery.isLoading;
   const m = metricsQuery.data;
 
-  const firstName = ((fullName ?? "").trim().split(/\s+/)[0]) || "Agente";
+  const firstName = ((fullName ?? "").trim().split(/\s+/)[0]) || "Prestador";
 
   const myRate     = Number(m?.my_rate ?? 0);
   const myTotal    = Number(m?.total_interactions ?? 0);
@@ -332,17 +332,17 @@ export default function MinhasMetricas() {
                 <p className="text-sm font-medium text-muted-foreground">Seu ritmo</p>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-5xl font-medium font-mono tabular-nums leading-none">{fmtRate(myRate)}</span>
-                  <span className="text-sm text-muted-foreground">atendimentos por dia trabalhado</span>
+                  <span className="text-sm text-muted-foreground">atendimentos por dia com atendimentos</span>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">
                   {fmtN(m.total_interactions)} no total, em{" "}
                   <span className="font-medium text-foreground">
                     {activeDays} {plural(activeDays, "dia", "dias")}
                   </span>{" "}
-                  que você trabalhou.
+                  com atendimentos.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Contamos por dia trabalhado, não pelo total do mês — assim folga e férias não contam contra você.
+                  Contamos por dia com atendimentos, não pelo total do mês.
                 </p>
               </div>
 
@@ -403,8 +403,8 @@ export default function MinhasMetricas() {
           value={isLoading || !m?.trend_reliable ? "—" : fmtPct(trendPct)}
           hint={
             !m?.trend_reliable || !halves
-              ? "Poucos dias trabalhados para comparar o começo com o fim do período."
-              : `Atendimentos por dia trabalhado de ${halves.second}, comparados com ${halves.first}.`
+              ? "Poucos dias com atendimentos para comparar o começo com o fim do período."
+              : `Atendimentos por dia com atendimentos de ${halves.second}, comparados com ${halves.first}.`
           }
           icon={TrendIcon}
           valueClass={m?.trend_reliable ? undefined : "text-muted-foreground"}

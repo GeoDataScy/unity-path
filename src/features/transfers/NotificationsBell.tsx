@@ -231,7 +231,7 @@ function InboxItem({
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm">
           <p>
-            <span className="font-medium">{n.other_agent_name ?? "Outro agente"}</span>{" "}
+            <span className="font-medium">{n.other_agent_name ?? "Outro prestador"}</span>{" "}
             <span className="text-muted-foreground">pediu pra continuar o ticket</span>
           </p>
           <p className="break-all text-xs text-muted-foreground">
@@ -301,7 +301,7 @@ function ResponseItem({ n, onMarkSeen, markSeenPending }: ResponseItemProps) {
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm">
           <p>
-            <span className="font-medium">{n.other_agent_name ?? "Outro agente"}</span>{" "}
+            <span className="font-medium">{n.other_agent_name ?? "Outro prestador"}</span>{" "}
             <span className="text-muted-foreground">
               {isAccepted ? "aceitou seu encaminhamento" : "recusou seu encaminhamento"}
             </span>

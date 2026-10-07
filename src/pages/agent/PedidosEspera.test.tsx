@@ -127,11 +127,11 @@ describe("PedidosEspera (agente)", () => {
     expect(card).not.toHaveTextContent("Data do pedido");
   });
 
-  it("avisa quando o pedido voltou pela gestão ou veio de outro agente", () => {
+  it("avisa quando o pedido voltou pela gestão ou veio de outro prestador", () => {
     setOrders(SAMPLE);
     render(<PedidosEspera />);
     expect(screen.getByRole("button", { name: /PED-DEVOLVIDO/ })).toHaveTextContent("Devolvido pela gestão");
-    expect(screen.getByRole("button", { name: /PED-REATRIBUIDO/ })).toHaveTextContent("Veio de outro agente");
+    expect(screen.getByRole("button", { name: /PED-REATRIBUIDO/ })).toHaveTextContent("Veio de outro prestador");
     expect(screen.getByRole("button", { name: /PED-ANDAMENTO/ })).not.toHaveTextContent(/Devolvido|Veio de outro/);
   });
 

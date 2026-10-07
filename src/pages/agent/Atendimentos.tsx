@@ -41,6 +41,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AgentOutletContext } from "@/layouts/AgentLayout";
 import { AgentDailyMetricsSection } from "@/features/agent/components/AgentDailyMetricsSection";
+import { ProviderIdentificationHeader } from "@/features/provider/ProviderIdentificationHeader";
 import {
   CONTACT_REASONS,
   CONTACT_REASON_NOTE_MAX_LENGTH,
@@ -506,11 +507,6 @@ export default function Atendimentos() {
     return emailOk && Boolean(serviceDate) && Boolean(product) && Boolean(platform) && reasonOk && orderOk;
   }, [clientEmail, serviceDate, product, platform, channel, contactReason, contactReasonNote, isRefund, orderId]);
 
-  const greetingName = useMemo(() => {
-    const trimmed = (fullName ?? "").trim();
-    return trimmed.length > 0 ? trimmed : "Time";
-  }, [fullName]);
-
   const concludeAfterCreate = useRef(false);
 
   const createMutation = useMutation({
@@ -804,14 +800,15 @@ export default function Atendimentos() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-normal tracking-tight md:text-4xl">Vamos lá, {greetingName} 🚀</h1>
+      <ProviderIdentificationHeader
+        userId={userId}
+        fullName={fullName}
+        channelBadge={
           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${supportChannel === "sms" ? "bg-aqua-soft text-aqua" : "bg-ice-soft text-info"}`}>
             {supportChannel.toUpperCase()}
           </span>
-        </div>
-      </div>
+        }
+      />
 
       <AgentDailyMetricsSection
         userId={userId}
@@ -1118,7 +1115,7 @@ export default function Atendimentos() {
               <TableRow>
                 <TableHead>Data de abertura</TableHead>
                 <TableHead className="w-[80px]">Hora</TableHead>
-                {canViewAllTickets && <TableHead>Agente</TableHead>}
+                {canViewAllTickets && <TableHead>Prestador</TableHead>}
                 <TableHead>E-mail do Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Plataforma</TableHead>
@@ -1141,8 +1138,7 @@ export default function Atendimentos() {
                       if (isTodayDefault) {
                         return (
                           <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
-                            <span className="text-sm font-medium text-foreground">Pronto para começar o dia 🚀</span>
-                            <span className="text-xs">Seu primeiro atendimento de hoje aparecerá aqui assim que registrado.</span>
+                            <span className="text-sm font-medium text-foreground">Nenhum atendimento registrado nesta data</span>
                           </div>
                         );
                       }
