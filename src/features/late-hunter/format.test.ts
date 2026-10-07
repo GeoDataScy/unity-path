@@ -13,12 +13,17 @@ describe("saudeDoSync", () => {
     expect(saudeDoSync(null, agora)).toBe("sem_dados");
   });
 
-  it("lote da madrugada de hoje está em dia", () => {
-    expect(saudeDoSync(sync("2026-10-02T02:00:00Z"), agora)).toBe("em_dia");
+  it("varredura das 10:15 está em dia", () => {
+    expect(saudeDoSync(sync("2026-10-02T10:15:00Z"), agora)).toBe("em_dia");
   });
 
-  it("mais de 30 h sem lote é atraso (o Late Hunter roda 1x por dia)", () => {
-    expect(saudeDoSync(sync("2026-10-01T05:00:00Z"), agora)).toBe("atrasado");
+  it("o buraco da madrugada (22:15 → 04:15, 6 h) não é atraso", () => {
+    const madrugada = new Date("2026-10-02T04:10:00Z");
+    expect(saudeDoSync(sync("2026-10-01T22:15:00Z"), madrugada)).toBe("em_dia");
+  });
+
+  it("mais de 7 h sem lote é atraso (o Late Hunter varre de 3 em 3 h)", () => {
+    expect(saudeDoSync(sync("2026-10-02T04:15:00Z"), agora)).toBe("atrasado");
   });
 });
 
@@ -66,6 +71,7 @@ describe("planilha", () => {
         encerrado_referencia: "2026-09-17",
         primeira_referencia: "2026-09-16",
         ultima_referencia: "2026-09-16",
+        ultimo_lote: "2026-09-16T22:15:00Z",
         vezes_reaberto: 0,
         atualizado_em: "2026-09-18T02:00:00Z",
       } satisfies LateHunterOrder,

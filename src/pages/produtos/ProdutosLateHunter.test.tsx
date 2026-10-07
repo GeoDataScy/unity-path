@@ -17,7 +17,7 @@ vi.mock("@/features/late-hunter/useLateHunterQueries", () => ({
     listCalls.push({ ambiente, filtros, pagina, porPagina });
     return listResult.current;
   },
-  useLateHunterHistoryQuery: () => ({ data: [{ evento: "criado", referencia: "2026-09-16", ocorrido_em: "" }], isLoading: false }),
+  useLateHunterHistoryQuery: () => ({ data: [{ evento: "criado", referencia: "2026-09-16", lote: "2026-09-16T04:15:00Z", ocorrido_em: "" }], isLoading: false }),
   fetchLateHunterList: vi.fn(),
   listArgs: vi.fn(),
 }));
@@ -52,6 +52,7 @@ function order(o: Partial<LateHunterOrder> = {}): LateHunterOrder {
     encerrado_referencia: null,
     primeira_referencia: "2026-09-16",
     ultima_referencia: "2026-10-01",
+    ultimo_lote: "2026-10-01T22:15:00Z",
     vezes_reaberto: 1,
     atualizado_em: "2026-10-02T02:00:00Z",
     ...o,

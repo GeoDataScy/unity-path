@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { enderecoLinha, formatDay, motivoLabel, paisLabel, parseItems } from "../format";
+import { enderecoLinha, formatDateTime, formatDay, motivoLabel, paisLabel, parseItems } from "../format";
 import { useLateHunterHistoryQuery } from "../useLateHunterQueries";
 import type { LateHunterEvento, LateHunterOrder } from "../types";
 import { DiasEmEspera, SituacaoBadge } from "./LateHunterTable";
@@ -79,7 +79,7 @@ export function LateHunterOrderSheet({ order, onClose }: Props) {
                 </Field>
                 <Field label="Data do pedido">{formatDay(order.data_pedido)}</Field>
                 <Field label="No Late Hunter desde">{formatDay(order.primeira_referencia)}</Field>
-                <Field label="Último lote com o pedido">{formatDay(order.ultima_referencia)}</Field>
+                <Field label="Última varredura com o pedido">{formatDateTime(order.ultimo_lote)}</Field>
               </dl>
 
               <section className="space-y-2">
@@ -161,7 +161,7 @@ export function LateHunterOrderSheet({ order, onClose }: Props) {
                           <Icon className="h-4 w-4 text-ink-tertiary" aria-hidden />
                           <span>{meta.label}</span>
                           <span className="ml-auto font-mono text-xs tabular-nums text-ink-tertiary">
-                            lote de {formatDay(e.referencia)}
+                            varredura de {formatDateTime(e.lote)}
                           </span>
                         </li>
                       );

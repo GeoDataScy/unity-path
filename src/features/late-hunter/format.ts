@@ -74,20 +74,24 @@ export const ENCERRAMENTO_LABEL: Record<LateHunterEncerramento, string> = {
   aplicado: "Lote completo — quem saiu do on-hold foi encerrado",
   lote_incompleto: "Lote parcial — nada foi encerrado",
   paginas_pendentes: "Aguardando as demais páginas do lote",
-  lote_antigo: "Lote atrasado de um dia anterior — só atualizou",
+  lote_antigo: "Varredura antiga chegou depois de uma mais nova — só atualizou",
 };
 
 export type SaudeSync = "em_dia" | "atrasado" | "sem_dados";
 
+export const LIMITE_ATRASO_H = 7;
+
 /**
- * O Late Hunter roda 1x por dia (~02:00 UTC). Sem lote há mais de 30 h, algo
- * parou — a tela avisa em vez de deixar o time trabalhar com a fila de ontem.
+ * O Late Hunter varre a ShipOffers 7x por dia (04:15 a 22:15 UTC, de 3 em 3 h).
+ * O maior intervalo é o da madrugada, 6 h (22:15 → 04:15); sem lote há mais de
+ * 7 h, alguma varredura não chegou — a tela avisa em vez de deixar o time
+ * trabalhar com uma fila velha.
  */
 export function saudeDoSync(sync: LateHunterSync | null, agora = new Date()): SaudeSync {
   if (!sync) return "sem_dados";
   const recebido = new Date(sync.recebido_em).getTime();
   if (Number.isNaN(recebido)) return "sem_dados";
-  return agora.getTime() - recebido > 30 * 3_600_000 ? "atrasado" : "em_dia";
+  return agora.getTime() - recebido > LIMITE_ATRASO_H * 3_600_000 ? "atrasado" : "em_dia";
 }
 
 /** Nome do país a partir do código ISO que a ShipOffers manda ("US"). */

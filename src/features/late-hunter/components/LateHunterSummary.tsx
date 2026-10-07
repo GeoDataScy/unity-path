@@ -9,7 +9,6 @@ import {
   LIMITE_ANTIGO,
   formatCount,
   formatDateTime,
-  formatDay,
   saudeDoSync,
 } from "../format";
 import type { LateHunterOverview, LateHunterSync } from "../types";
@@ -41,7 +40,7 @@ export function SyncStatus({ sync }: { sync: LateHunterSync | null }) {
         {atrasado ? "Sync atrasado" : "Sync em dia"}
       </span>
       <span className="text-ink-secondary">
-        Fila de <strong className="font-medium text-ink">{formatDay(sync.referencia)}</strong> · recebida{" "}
+        Varredura de <strong className="font-medium text-ink">{formatDateTime(sync.gerado_em)}</strong> · recebida{" "}
         {formatDateTime(sync.recebido_em)}
         {paginas}
       </span>

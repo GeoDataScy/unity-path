@@ -34,6 +34,8 @@ export type LateHunterOrder = {
   encerrado_referencia: string | null;
   primeira_referencia: string;
   ultima_referencia: string;
+  /** Instante (geradoEm) da última varredura que trouxe o pedido. */
+  ultimo_lote: string;
   vezes_reaberto: number;
   atualizado_em: string;
 };
@@ -45,7 +47,7 @@ export type LateHunterSync = {
   ambiente: LateHunterAmbiente;
   fonte: string;
   referencia: string;
-  gerado_em: string | null;
+  gerado_em: string;
   completo: boolean;
   pagina: number;
   total_paginas: number;
@@ -105,5 +107,7 @@ export type LateHunterListResult = { total: number; rows: LateHunterOrder[] };
 export type LateHunterEvento = {
   evento: "criado" | "reaberto" | "encerrado";
   referencia: string;
+  /** Instante (geradoEm) da varredura em que aconteceu. */
+  lote: string;
   ocorrido_em: string;
 };

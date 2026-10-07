@@ -17,8 +17,9 @@ const rpc = supabase.rpc.bind(supabase) as (
 
 const KEY = ["produtos", "late-hunter"] as const;
 
-// O lote chega 1x por dia (~02:00 UTC). Reler a cada 5 min com a aba em foco
-// basta para quem deixa a tela aberta de madrugada ver o sync entrar.
+// Chega um lote a cada varredura do Late Hunter (7x por dia, de 3 em 3 h).
+// Reler a cada 5 min com a aba em foco basta para quem deixa a tela aberta ver
+// a varredura entrar.
 const REFRESH_MS = 5 * 60_000;
 
 export function useLateHunterOverviewQuery(ambiente: LateHunterAmbiente) {
