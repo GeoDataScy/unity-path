@@ -33,7 +33,6 @@ export function PackageServiceLevelCard({ enabled }: { enabled: boolean }) {
               {data.volume.toLocaleString("pt-BR")}
               <span className="text-muted-foreground"> / {data.capacidade.toLocaleString("pt-BR")}</span>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">Volume contratado no mês (cláusula do pacote)</p>
             <Progress
               value={pct}
               className="mt-3 h-2"
