@@ -36,8 +36,6 @@ import { useFollowUpInsightsQuery } from "@/features/dashboard/useFollowUpInsigh
 import { AtendimentosSubNav } from "@/components/dashboard/AtendimentosSubNav";
 import { ChannelDetailModal } from "@/components/dashboard/ChannelDetailModal";
 import { TendenciaTemporal } from "@/features/dashboard/TendenciaTemporal";
-import { PadraoHorarios } from "@/features/dashboard/PadraoHorarios";
-import { useDashboardHourlyPatternQuery } from "@/features/dashboard/useDashboardHourlyPatternQuery";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -144,13 +142,6 @@ const Dashboard = () => {
   });
 
   const followUpQuery = useFollowUpInsightsQuery(fromISO, toISO);
-
-  const hourlyQuery = useDashboardHourlyPatternQuery({
-    enabled: true,
-    from: fromISO,
-    to: toISO,
-    agentId: agentId === "all" ? undefined : agentId,
-  });
 
   // Channel detail modal
   const [channelModalOpen, setChannelModalOpen] = useState(false);
@@ -516,11 +507,6 @@ const Dashboard = () => {
           movingWindow={15}
           forecastDays={7}
         />
-      </section>
-
-      {/* Hourly pattern */}
-      <section>
-        <PadraoHorarios loading={hourlyQuery.isLoading} data={hourlyQuery.data} />
       </section>
 
       {/* Table */}
