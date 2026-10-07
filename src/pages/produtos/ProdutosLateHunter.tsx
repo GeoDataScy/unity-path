@@ -30,7 +30,7 @@ import type {
 } from "@/features/late-hunter/types";
 
 // Late Hunter — a aba principal do time de produtos. Os pedidos em on-hold da
-// ShipOffers chegam todo dia pelo Late Hunter (Edge Function late-hunter-sync)
+// ShipOffers chegam a cada varredura do Late Hunter (Edge Function late-hunter-sync)
 // e ficam numa base própria, separada dos Pedidos em Espera dos agentes.
 //
 // A tela responde, de cima para baixo: o dado é de hoje? (sync) · quanto tem e
@@ -205,7 +205,7 @@ export default function ProdutosLateHunter() {
         <div className="space-y-1">
           <h1 className="text-2xl font-medium tracking-tight">Late Hunter</h1>
           <p className="text-sm text-muted-foreground">
-            Pedidos em on-hold na ShipOffers, sincronizados todo dia pelo Late Hunter. Quem sai do hold sai da fila
+            Pedidos em on-hold na ShipOffers, sincronizados pelo Late Hunter a cada 3 horas. Quem sai do hold sai da fila
             sozinho.
           </p>
         </div>
@@ -242,8 +242,8 @@ export default function ProdutosLateHunter() {
           <CardContent className="space-y-2 py-12 text-center">
             <p className="font-medium">Nenhum lote recebido {ambiente === "homologacao" ? "em homologação" : "ainda"}.</p>
             <p className="mx-auto max-w-lg text-sm text-muted-foreground">
-              Assim que o Late Hunter enviar o primeiro lote diário (por volta das 23h de Brasília), os pedidos em
-              on-hold aparecem aqui. Nada precisa ser importado à mão.
+              Assim que o Late Hunter enviar a primeira varredura (ele varre a ShipOffers 7 vezes por dia), os
+              pedidos em on-hold aparecem aqui. Nada precisa ser importado à mão.
             </p>
           </CardContent>
         </Card>

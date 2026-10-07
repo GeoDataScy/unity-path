@@ -1,8 +1,10 @@
 // Edge Function `late-hunter-sync` — porta de entrada do Late Hunter.
 //
 // O Late Hunter (o "Wall-E" da especificação "API Pedidos em Espera") chama
-// esta função 1x por dia, por volta das 02:00 UTC, com o lote consolidado de
-// on-holds da ShipOffers. Toda a regra de negócio (upsert, encerramento,
+// esta função a cada varredura (7x por dia: 04:15, 07:15, 10:15, 13:15, 16:15,
+// 19:15 e 22:15 UTC) com o lote consolidado de on-holds da ShipOffers. Cada
+// varredura é um lote, identificado por `geradoEm`; todas as páginas de uma
+// varredura levam o mesmo `geradoEm`. Toda a regra de negócio (upsert, encerramento,
 // idempotência, paginação) mora na função SQL `late_hunter_sync`, que roda numa
 // transação só. Aqui ficam só a porta: autenticação, limites e o envelope.
 //

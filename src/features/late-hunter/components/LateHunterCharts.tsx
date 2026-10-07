@@ -176,9 +176,9 @@ function FlowTooltip({ active, payload }: { active?: boolean; payload?: Array<{ 
   const r = payload[0].payload;
   return (
     <div className="rounded-md border border-line bg-surface px-3 py-2 text-xs shadow-sm">
-      <div className="mb-1 font-medium text-ink">Lote de {formatDay(r.referencia)}</div>
+      <div className="mb-1 font-medium text-ink">{formatDay(r.referencia)}</div>
       <div className="grid grid-cols-[auto_auto] gap-x-4 gap-y-0.5 text-ink-secondary">
-        <span>Em on-hold ao fim do dia</span>
+        <span>Em on-hold na última varredura</span>
         <span className="text-right font-mono tabular-nums text-ink">{r.abertos == null ? "—" : formatCount(r.abertos)}</span>
         <span>Entraram</span>
         <span className="text-right font-mono tabular-nums text-ink">{formatCount(r.entraram)}</span>
@@ -190,19 +190,19 @@ function FlowTooltip({ active, payload }: { active?: boolean; payload?: Array<{ 
 }
 
 /**
- * Tamanho da fila dia a dia (últimos 30 lotes). Uma série só, num eixo só;
+ * Tamanho da fila dia a dia (últimos 30 dias com varredura). Uma série só, num eixo só;
  * entradas e saídas do dia ficam no tooltip — em vez de três linhas coloridas
  * disputando a mesma escala.
  */
 export function FlowChart({ overview, loading }: { overview: LateHunterOverview | undefined; loading: boolean }) {
   const rows: FlowRow[] = (overview?.fluxo ?? []).map((f) => ({ ...f, label: formatShortDay(f.referencia) }));
   return (
-    <ChartCard title="Tamanho da fila por dia" subtitle="Pedidos em on-hold ao fim de cada lote. Passe o mouse para ver entradas e saídas.">
+    <ChartCard title="Tamanho da fila por dia" subtitle="Pedidos em on-hold na última varredura de cada dia. Passe o mouse para ver entradas e saídas do dia.">
       {loading ? (
         <Skeleton className="h-[188px] w-full" />
       ) : rows.length < 2 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
-          O gráfico aparece a partir do segundo lote recebido.
+          O gráfico aparece a partir do segundo dia com varredura.
         </p>
       ) : (
         <div className="h-[188px]">
