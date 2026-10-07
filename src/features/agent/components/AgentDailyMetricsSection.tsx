@@ -33,7 +33,6 @@ export function AgentDailyMetricsSection({ userId, metricsLoading, dailyMetrics,
               {myCount.toLocaleString("pt-BR")}
             </div>
           )}
-          <p className="mt-2 text-sm text-muted-foreground">Somente contagem — sem meta do dia</p>
         </CardContent>
       </Card>
 
