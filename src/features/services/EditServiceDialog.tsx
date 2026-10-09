@@ -28,6 +28,7 @@ import {
   requiresContactReasonNote,
   type ContactReasonCode,
 } from "@/features/services/contact-reasons";
+import { ProductCombobox } from "@/features/services/ProductCombobox";
 
 const PRODUCTS = [
   "Arialief",
@@ -117,6 +118,48 @@ const PRODUCTS = [
   "Gut Active",
   "Military Honey",
   "Golden Nerves",
+  "Balancemax",
+  "Beautycell",
+  "Bicarburn",
+  "Brainignition",
+  "BuzzBalance",
+  "Cinna Nerves",
+  "Cognishift",
+  "Curvereset",
+  "Deep Ease",
+  "Effect Plus",
+  "Family Health Corner",
+  "Farulena",
+  "Firm Flow",
+  "Flora Harmony",
+  "FlowerNerves",
+  "Gluco Quiet",
+  "Glucopoise",
+  "Glucoserene",
+  "Glyco Oliva",
+  "Hard Peak",
+  "Honey Protocol",
+  "Im Mush",
+  "Joint Relax",
+  "Lipo Jelly",
+  "Magnesium Uni5",
+  "Nerve Relief Gelatin",
+  "One Click Health",
+  "Peak Rises",
+  "Prime Greens",
+  "Red Horse",
+  "Rose Memory",
+  "Sharpfocus",
+  "Skinfortify",
+  "Stallion Force",
+  "Strong Peak",
+  "Trace Eraser",
+  "Vapo Mind",
+  "Velvet Lift",
+  "Vigor Jelly",
+  "Virilemax",
+  "Vitahear",
+  "Your Health World",
 ] as const;
 
 const PLATFORMS = [
@@ -229,18 +272,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onSave }: Props
 
           <div className="grid gap-2">
             <Label>Produto</Label>
-            <Select value={product} onValueChange={setProduct}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {PRODUCTS.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ProductCombobox value={product} onChange={setProduct} options={PRODUCTS} />
           </div>
 
           <div className="grid gap-2">

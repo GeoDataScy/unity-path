@@ -33,6 +33,7 @@ import { useMyServicesQuery, type ServiceItem } from "@/features/services/useMyS
 import { useAgentDailyMetricsQuery } from "@/features/agent/useAgentDailyMetricsQuery";
 import { useMyAgentMetricsQuery } from "@/features/agent/useMyAgentMetricsQuery";
 import { EditServiceDialog } from "@/features/services/EditServiceDialog";
+import { ProductCombobox } from "@/features/services/ProductCombobox";
 import { DeleteServiceAlert } from "@/features/services/DeleteServiceAlert";
 import { StatusTrackingDialog } from "@/features/services/StatusTrackingDialog";
 import { useStatusTracking, useFollowUpsQuery } from "@/features/services/useStatusTracking";
@@ -143,6 +144,48 @@ const PRODUCTS = [
   "Gut Active",
   "Military Honey",
   "Golden Nerves",
+  "Balancemax",
+  "Beautycell",
+  "Bicarburn",
+  "Brainignition",
+  "BuzzBalance",
+  "Cinna Nerves",
+  "Cognishift",
+  "Curvereset",
+  "Deep Ease",
+  "Effect Plus",
+  "Family Health Corner",
+  "Farulena",
+  "Firm Flow",
+  "Flora Harmony",
+  "FlowerNerves",
+  "Gluco Quiet",
+  "Glucopoise",
+  "Glucoserene",
+  "Glyco Oliva",
+  "Hard Peak",
+  "Honey Protocol",
+  "Im Mush",
+  "Joint Relax",
+  "Lipo Jelly",
+  "Magnesium Uni5",
+  "Nerve Relief Gelatin",
+  "One Click Health",
+  "Peak Rises",
+  "Prime Greens",
+  "Red Horse",
+  "Rose Memory",
+  "Sharpfocus",
+  "Skinfortify",
+  "Stallion Force",
+  "Strong Peak",
+  "Trace Eraser",
+  "Vapo Mind",
+  "Velvet Lift",
+  "Vigor Jelly",
+  "Virilemax",
+  "Vitahear",
+  "Your Health World",
 ] as const;
 
 const PLATFORMS = [
@@ -880,18 +923,7 @@ export default function Atendimentos() {
 
             <div className="grid gap-2">
               <Label>Produto</Label>
-              <Select value={product} onValueChange={setProduct}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRODUCTS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ProductCombobox value={product} onChange={setProduct} options={PRODUCTS} />
             </div>
 
             <div className="grid gap-2">
