@@ -596,7 +596,12 @@ export default function DashboardRefundsComparativo() {
               ))}
             </div>
           ) : (
-            <ProductBreakdownCards series={series} products={products} metric={metric} />
+            <ProductBreakdownCards
+              series={series}
+              products={products}
+              metric={metric}
+              onDelete={isManager ? setProductToDelete : undefined}
+            />
           )}
         </section>
 
