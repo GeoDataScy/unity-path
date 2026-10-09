@@ -18,6 +18,7 @@ import {
 import { RefundsSubNav } from "@/components/dashboard/RefundsSubNav";
 import { DivergencesTable } from "@/features/external-refunds/DivergencesTable";
 import { ImportExternalRefundsDialog } from "@/features/external-refunds/ImportExternalRefundsDialog";
+import { ProductFilterCombobox } from "@/features/external-refunds/ProductFilterCombobox";
 import { ProductBreakdownCards } from "@/features/external-refunds/ProductBreakdownCards";
 import { RefundPeriodPicker } from "@/features/external-refunds/RefundPeriodPicker";
 import { RefundComposition } from "@/features/external-refunds/RefundComposition";
@@ -310,19 +311,7 @@ export default function DashboardRefundsComparativo() {
     {
       lab: "Produto",
       node: (
-        <Select value={product} onValueChange={setProduct}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos com reembolso externo</SelectItem>
-            {productOptions.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ProductFilterCombobox value={product} onChange={setProduct} options={productOptions} />
       ),
     },
     {
