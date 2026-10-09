@@ -1,4 +1,7 @@
 import { useMemo } from "react";
+import { Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 import type { ChartMetric } from "./series";
 import type { ComparisonSeriesRow } from "./types";
@@ -8,6 +11,8 @@ type Props = {
   series: ComparisonSeriesRow[];
   products: { key: string; color: string }[];
   metric: ChartMetric;
+  /** Lixeira do cartão (só gestora): apaga o reembolso externo importado do produto. */
+  onDelete?: (product: string) => void;
 };
 
 /**
@@ -16,7 +21,7 @@ type Props = {
  * leitura de forma ("subiu? tem pico?"), não de comparação entre cartões, que é
  * o que a fatia em % já responde.
  */
-export function ProductBreakdownCards({ series, products, metric }: Props) {
+export function ProductBreakdownCards({ series, products, metric, onDelete }: Props) {
   const dates = useMemo(() => [...new Set(series.map((r) => r.date))].sort(), [series]);
 
   const agg = useMemo(() => {
@@ -58,9 +63,23 @@ export function ProductBreakdownCards({ series, products, metric }: Props) {
             className="rounded-2xl border p-4"
             style={{ background: "var(--rf-panel)", borderColor: "var(--rf-line)", boxShadow: "var(--rf-shadow)" }}
           >
-            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--rf-ink)" }}>
-              <span className="h-3 w-3 rounded" style={{ background: p.color }} />
-              {p.key}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2 text-sm font-medium" style={{ color: "var(--rf-ink)" }}>
+                <span className="h-3 w-3 shrink-0 rounded" style={{ background: p.color }} />
+                <span className="truncate">{p.key}</span>
+              </div>
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-mr-1.5 -mt-1 h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => onDelete(p.key)}
+                  aria-label={`Apagar reembolsos externos de ${p.key}`}
+                  title="Apagar os dados importados deste produto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <div className="rf-display mt-1 text-2xl font-normal font-mono tabular-nums tracking-[-0.03em]" style={{ color: "var(--rf-ink)" }}>
               {metric === "qtd" ? fmtInt(a.orders) : fmtUsd(a.amount)}

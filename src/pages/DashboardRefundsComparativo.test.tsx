@@ -199,6 +199,13 @@ describe("DashboardRefundsComparativo", () => {
     expect(screen.getByText("Arquivos importados")).toBeTruthy();
   });
 
+  it("cartão de produto tem lixeira que pede confirmação antes de apagar", () => {
+    withData();
+    const secao = screen.getByText("Por produto no período").closest("section") as HTMLElement;
+    fireEvent.click(within(secao).getByRole("button", { name: "Apagar reembolsos externos de Jellyrock" }));
+    expect(screen.getByText("Apagar reembolsos externos de Jellyrock?")).toBeTruthy();
+  });
+
   it("mostra a composição com o terceiro tipo quando o arquivo não classifica", () => {
     withData();
     expect(screen.getByText("Sem tipo no arquivo")).toBeTruthy();
