@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { to: "/dashboard/reembolsos", label: "Visão geral", end: true },
   { to: "/dashboard/reembolsos/comparativo", label: "Comparativo com reembolso externo", end: false },
+  { to: "/dashboard/reembolsos/sistema-xmx", label: "Comparativo sistema XMX", end: false },
 ];
 
 /**
