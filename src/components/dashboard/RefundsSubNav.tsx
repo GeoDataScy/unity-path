@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { to: "/dashboard/reembolsos", label: "Visão geral", end: true },
   { to: "/dashboard/reembolsos/comparativo", label: "Comparativo com reembolso externo", end: false },
+  { to: "/dashboard/reembolsos/sistema-xmx", label: "Sistema XMX", end: false },
+  { to: "/dashboard/reembolsos/cartpanda", label: "Cartpanda", end: false },
+  { to: "/dashboard/reembolsos/buygoods", label: "Buygoods", end: false },
+  { to: "/dashboard/reembolsos/pagamerican", label: "PagAmerican", end: false },
 ];
 
 /**
@@ -16,7 +20,10 @@ export function RefundsSubNav({ className }: { className?: string }) {
   return (
     <nav
       aria-label="Seções de reembolsos"
-      className={cn("inline-flex h-[34px] items-center rounded-[9px] bg-subtle p-[3px] text-ink-secondary", className)}
+      className={cn(
+        "inline-flex h-[34px] max-w-full items-center overflow-x-auto rounded-[9px] bg-subtle p-[3px] text-ink-secondary",
+        className,
+      )}
     >
       {ITEMS.map((item) => (
         <NavLink
