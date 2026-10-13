@@ -3,6 +3,7 @@ import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useOutletContext } from "react-router-dom";
 
 import type { ManagerOutletContext } from "@/layouts/ManagerLayout";
+import { RefundsSubNav } from "@/components/dashboard/RefundsSubNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,8 +22,11 @@ const MAX_DIAS_POR_DIA = 92;
  * Sistema XMX: vendas, reembolsos e chargebacks lidos do banco de vendas da XMX
  * (sincronizados a cada 15 min). Por plataforma, porque o banco de vendas ainda
  * não nos diz o produto de cada pedido.
+ *
+ * Aparece em dois lugares: no item "Sistema XMX" do menu e como aba dentro de
+ * Reembolsos (`dentroDeReembolsos`), com o cabeçalho e as abas daquela área.
  */
-export default function DashboardSistemaXmx() {
+export default function DashboardSistemaXmx({ dentroDeReembolsos = false }: { dentroDeReembolsos?: boolean }) {
   const { fromISO, toISO } = useOutletContext<ManagerOutletContext>();
   const [groupBy, setGroupBy] = useState<XmxGroupBy>("day");
   const [platform, setPlatform] = useState("all");
@@ -61,10 +65,21 @@ export default function DashboardSistemaXmx() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
+      {dentroDeReembolsos && (
+        <header className="space-y-2">
           <p className="text-[15px] text-ink-tertiary">Analytics</p>
-          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Sistema XMX</h1>
+          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Reembolsos</h1>
+          <RefundsSubNav />
+        </header>
+      )}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          {!dentroDeReembolsos && (
+            <>
+              <p className="text-[15px] text-ink-tertiary">Analytics</p>
+              <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Sistema XMX</h1>
+            </>
+          )}
           <p className="text-sm text-muted-foreground">
             Vendas, reembolsos e chargebacks do sistema de vendas da XMX · {periodo}
           </p>
@@ -90,7 +105,7 @@ export default function DashboardSistemaXmx() {
             </SelectContent>
           </Select>
         </div>
-      </header>
+      </div>
 
       {data?.sync && data.sync.ready === false && (
         <p className="rounded-md bg-subtle px-3 py-2 text-sm text-muted-foreground">

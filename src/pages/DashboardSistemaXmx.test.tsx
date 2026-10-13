@@ -138,6 +138,18 @@ describe("DashboardSistemaXmx", () => {
     expect(screen.getByText(/Carga inicial em andamento/)).toBeInTheDocument();
   });
 
+  it("dentro de Reembolsos, usa o cabeçalho e as abas daquela área", () => {
+    render(
+      <MemoryRouter initialEntries={["/dashboard/reembolsos/sistema-xmx"]}>
+        <DashboardSistemaXmx dentroDeReembolsos />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "Reembolsos" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Sistema XMX" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sistema XMX" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("54.673")).toBeInTheDocument();
+  });
+
   it("mostra erro sem quebrar a tela", () => {
     useXmxSistemaQuery.mockReturnValue({ data: undefined, isLoading: false, isError: true });
     renderTela();
