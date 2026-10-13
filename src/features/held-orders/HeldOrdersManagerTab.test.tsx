@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HeldOrdersManagerTab } from "./HeldOrdersManagerTab";
@@ -29,6 +29,10 @@ vi.mock("@/features/dashboard/useManagerUsersQuery", () => ({
 }));
 
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
+
+// O registro da exportação (ajuste 6) roda antes da planilha.
+const logClientDataExport = vi.hoisted(() => vi.fn());
+vi.mock("@/features/client-export/logClientDataExport", () => ({ logClientDataExport }));
 
 function order(overrides: Partial<ManagerHeldOrder> = {}): ManagerHeldOrder {
   return {
@@ -102,6 +106,13 @@ function exportButton(): HTMLElement {
   return screen.getByRole("button", { name: /Exportar/ });
 }
 
+/** Clica em Exportar e espera o registro assíncrono terminar. */
+async function clickExport() {
+  await act(async () => {
+    fireEvent.click(exportButton());
+  });
+}
+
 /**
  * Abre o select cujo gatilho mostra `current`. É pelo gatilho, e não por
  * getByText, porque os cartões do resumo repetem os nomes dos status.
@@ -127,10 +138,14 @@ beforeAll(() => {
   proto.scrollIntoView = () => {};
 });
 
-beforeEach(() => exportHeldOrders.mockClear());
+beforeEach(() => {
+  exportHeldOrders.mockClear();
+  logClientDataExport.mockReset();
+  logClientDataExport.mockResolvedValue(undefined);
+});
 
 describe("HeldOrdersManagerTab — exportação", () => {
-  it("exporta exatamente as linhas da tela, na mesma ordem", () => {
+  it("exporta exatamente as linhas da tela, na mesma ordem", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1" }),
       order({ id: "2", order_number: "PED-2" }),
@@ -139,14 +154,14 @@ describe("HeldOrdersManagerTab — exportação", () => {
     render(<HeldOrdersManagerTab />);
 
     expect(exportButton()).toHaveTextContent("Exportar (3)");
-    fireEvent.click(exportButton());
+    await clickExport();
 
     const { rows } = exportCall();
     expect(rows.map((o) => o.order_number)).toEqual(orderNumbersOnScreen());
     expect(rows.map((o) => o.order_number)).toEqual(["PED-1", "PED-2", "PED-3"]);
   });
 
-  it("a busca da tela também estreita o relatório", () => {
+  it("a busca da tela também estreita o relatório", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1", customer_name: "Ana" }),
       order({ id: "2", order_number: "PED-2", customer_name: "Bruno" }),
@@ -158,31 +173,31 @@ describe("HeldOrdersManagerTab — exportação", () => {
     expect(orderNumbersOnScreen()).toEqual(["PED-2"]);
     expect(exportButton()).toHaveTextContent("Exportar (1)");
 
-    fireEvent.click(exportButton());
+    await clickExport();
     const call = exportCall();
     expect(ids(call.rows)).toEqual(["2"]);
     expect(call.filters.search).toBe("bruno");
   });
 
-  it("linhas repetidas ficam fora do relatório até a gestora pedir para vê-las", () => {
+  it("linhas repetidas ficam fora do relatório até a gestora pedir para vê-las", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1" }),
       order({ id: "2", order_number: "PED-1-REP", duplicate_of: "1" }),
     ]);
     render(<HeldOrdersManagerTab />);
 
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(ids(exportCall().rows)).toEqual(["1"]);
     expect(exportCall().filters.includesDuplicates).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: /Ver repetidos/ }));
-    fireEvent.click(exportButton());
+    await clickExport();
     const segunda = exportCall(1);
     expect(ids(segunda.rows)).toEqual(["1", "2"]);
     expect(segunda.filters.includesDuplicates).toBe(true);
   });
 
-  it("filtra por produto (item do pedido) e leva o filtro para o relatório", () => {
+  it("filtra por produto (item do pedido) e leva o filtro para o relatório", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1", items: "6294-NRVEBLND-114 x 2" }),
       order({ id: "2", order_number: "PED-2", items: "127-MVIT-277 x 1" }),
@@ -196,13 +211,13 @@ describe("HeldOrdersManagerTab — exportação", () => {
     chooseOption("MVIT (2)");
 
     expect(orderNumbersOnScreen()).toEqual(["PED-2", "PED-3"]);
-    fireEvent.click(exportButton());
+    await clickExport();
     const call = exportCall();
     expect(ids(call.rows)).toEqual(["2", "3"]);
     expect(call.filters.product).toBe("MVIT");
   });
 
-  it("não oferece mais o filtro de lojas e sempre exporta 'store: null'", () => {
+  it("não oferece mais o filtro de lojas e sempre exporta 'store: null'", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1", dyna_code: "LSD001" }),
       order({ id: "2", order_number: "PED-2", dyna_code: "RETURNS" }),
@@ -211,37 +226,37 @@ describe("HeldOrdersManagerTab — exportação", () => {
 
     expect(screen.queryByText("Todas as lojas")).not.toBeInTheDocument();
 
-    fireEvent.click(exportButton());
+    await clickExport();
     const call = exportCall();
     expect(ids(call.rows)).toEqual(["1", "2"]);
     expect(call.filters.store).toBeNull();
   });
 
   // Os três relatórios que a operação pede por nome, e a combinação deles.
-  it("leva status e agente escolhidos para o cabeçalho do relatório", () => {
+  it("leva status e agente escolhidos para o cabeçalho do relatório", async () => {
     setRows([order({ id: "1", agent_status: "concluido", status: "confirmed" })]);
     render(<HeldOrdersManagerTab />);
 
     openSelect("Todos status");
     chooseOption("Confirmados");
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(exportCall().filters.status).toBe("Concluído");
 
     openSelect("Confirmados");
     chooseOption("Aguardando");
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(exportCall(1).filters.status).toBe("Aguardando atendimento");
 
     openSelect("Aguardando");
     chooseOption("Em andamento");
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(exportCall(2).filters.status).toBe("Em andamento");
 
     // Por agente — e "todos os agentes" não vira rótulo nenhum.
     expect(exportCall(2).filters.agent).toBeNull();
     openSelect("Todos agentes");
     chooseOption("Maria");
-    fireEvent.click(exportButton());
+    await clickExport();
     const combinado = exportCall(3).filters;
     expect(combinado.agent).toBe("Maria");
     expect(combinado.status).toBe("Em andamento");
@@ -281,7 +296,7 @@ describe("HeldOrdersManagerTab — readOnly (Área de Produtos)", () => {
 
   // manager_list_users é RPC da gestora e responde "forbidden" para a role
   // produto: os agentes do filtro têm de sair das próprias linhas.
-  it("monta o filtro de agentes a partir dos pedidos, não da lista de usuários", () => {
+  it("monta o filtro de agentes a partir dos pedidos, não da lista de usuários", async () => {
     setRows([
       order({ id: "1", order_number: "PED-1", assigned_to: "agente-9", assigned_to_name: "Rita" }),
       order({ id: "2", order_number: "PED-2", assigned_to: null, assigned_to_name: null }),
@@ -296,7 +311,7 @@ describe("HeldOrdersManagerTab — readOnly (Área de Produtos)", () => {
     // A filtragem por agente específico é do RPC (agent_id); o que a tela faz é
     // carregar o nome escolhido no cabeçalho do relatório.
     chooseOption("Rita");
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(exportCall().filters.agent).toBe("Rita");
   });
 });
@@ -359,14 +374,14 @@ describe("HeldOrdersManagerTab — paginação (Área de Produtos)", () => {
     expect(screen.getByText("1–32")).toBeInTheDocument();
   });
 
-  it("exporta todos os filtrados, não só a página aberta", () => {
+  it("exporta todos os filtrados, não só a página aberta", async () => {
     const rows = many(120);
     setRows(rows);
     render(<HeldOrdersManagerTab readOnly paginate />);
 
     fireEvent.click(screen.getByRole("link", { name: "2" }));
     expect(exportButton()).toHaveTextContent("Exportar (120)");
-    fireEvent.click(exportButton());
+    await clickExport();
     expect(ids(exportCall().rows)).toEqual(ids(rows));
   });
 
@@ -376,5 +391,27 @@ describe("HeldOrdersManagerTab — paginação (Área de Produtos)", () => {
 
     expect(orderNumbersOnScreen()).toHaveLength(120);
     expect(screen.queryByText(/de 120 pedidos/)).not.toBeInTheDocument();
+  });
+  it("registra a exportação antes da planilha, sem o termo buscado", async () => {
+    setRows([order({ id: "1" }), order({ id: "2", order_number: "PED-2" })]);
+    render(<HeldOrdersManagerTab readOnly />);
+    await clickExport();
+
+    expect(logClientDataExport).toHaveBeenCalledTimes(1);
+    const args = logClientDataExport.mock.calls[0][0];
+    expect(args).toMatchObject({ screen: "pedidos_espera_produtos", rowCount: 2 });
+    expect(args.filters).toMatchObject({ has_search: false });
+    expect(JSON.stringify(args)).not.toContain("@");
+    expect(logClientDataExport.mock.invocationCallOrder[0]).toBeLessThan(
+      exportHeldOrders.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("não gera a planilha quando o registro é recusado", async () => {
+    logClientDataExport.mockRejectedValue(new Error("forbidden"));
+    setRows([order({ id: "1" })]);
+    render(<HeldOrdersManagerTab readOnly />);
+    await clickExport();
+    expect(exportHeldOrders).not.toHaveBeenCalled();
   });
 });

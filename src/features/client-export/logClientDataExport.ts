@@ -11,7 +11,9 @@ export type ClientExportScreen =
   | "radar"
   | "relatorio_gestora"
   | "motivo_reembolso"
-  | "pedidos_espera";
+  | "pedidos_espera"
+  | "late_hunter"
+  | "pedidos_espera_produtos";
 
 type Params = {
   screen: ClientExportScreen;
