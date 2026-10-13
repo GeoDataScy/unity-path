@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientDataExport } from "@/features/client-export/logClientDataExport";
 import { formatContactReason } from "@/features/services/contact-reasons";
 import type { DashboardRefundReasonDetailRow } from "@/features/dashboard/useDashboardRefundReasonDetailQuery";
 import type {
@@ -535,6 +536,15 @@ export async function exportManagerReport(
     (extras.refund_values_by_product ?? []).map((row) => [row.product, formatBrCurrency(row.value ?? 0)]),
   );
 
+  // A aba "Motivos descritos" leva e-mail de cliente: registra antes de baixar.
+  await logClientDataExport({
+    screen: "relatorio_gestora",
+    rowCount: (reasonNotes ?? []).length,
+    filters: { agent_id: agentId && agentId !== "all" ? agentId : null },
+    fromISO,
+    toISO,
+  });
+
   const fileName = `relatorio-suporte_${fromISO}_a_${toISO}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
@@ -665,6 +675,20 @@ export async function exportRefundReasonDetail(params: RefundReasonExportParams)
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Reembolsos");
+
+  await logClientDataExport({
+    screen: "motivo_reembolso",
+    rowCount: all.length,
+    filters: {
+      reason_category: reasonCategory,
+      agent_id: agentId && agentId !== "all" ? agentId : null,
+      status,
+      refund_type: refundType,
+      product,
+    },
+    fromISO,
+    toISO,
+  });
 
   const fileName = `reembolsos_${safeFileSegment(reasonCategory)}_${fromISO}_a_${toISO}.xlsx`;
   XLSX.writeFile(wb, fileName);

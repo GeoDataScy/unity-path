@@ -62,7 +62,7 @@ import { supabaseErrorMessage } from "@/lib/supabaseError";
 import { RadarActionDialog } from "@/features/radar/RadarActionDialog";
 import { RadarItemDialog } from "@/features/radar/RadarItemDialog";
 import { exportRadar, exportRadarSummary } from "@/features/radar/exportRadar";
-import { supabase } from "@/integrations/supabase/client";
+import { logClientDataExport } from "@/features/client-export/logClientDataExport";
 import { ExportSummaryDialog, type ExportSummaryField } from "@/features/client-export/ExportSummaryDialog";
 import {
   FULL_EXPORT_UNAVAILABLE,
@@ -202,18 +202,17 @@ export default function Radar() {
     const params = exportParams();
     setExportingFull(true);
     try {
-      const { error } = await supabase.rpc("log_client_data_export", {
-        p_screen: "radar",
-        p_row_count: params.rows.length,
+      await logClientDataExport({
+        screen: "radar",
+        rowCount: params.rows.length,
         // O termo buscado pode ser um e-mail de cliente: registra só que houve busca.
-        p_filters: {
+        filters: {
           bucket: params.filters.bucket,
           kind: params.filters.kind,
           status: params.filters.status,
           has_search: params.filters.search.trim() !== "",
         },
       });
-      if (error) throw error;
       exportedToast(exportRadar(params));
     } catch (e) {
       toast({
