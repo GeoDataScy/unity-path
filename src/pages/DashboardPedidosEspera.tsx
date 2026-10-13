@@ -16,6 +16,7 @@ import { PanelPagination } from "@/features/support-base/components/PanelPaginat
 import { AssignHeldOrdersDialog } from "@/features/held-orders/AssignHeldOrdersDialog";
 import { ImportHeldOrdersDialog } from "@/features/held-orders/ImportHeldOrdersDialog";
 import { exportHeldOrders } from "@/features/held-orders/exportHeldOrders";
+import { logClientDataExport } from "@/features/client-export/logClientDataExport";
 import { formatHeldOrderDate, formatHeldOrderDateTime, formatSince } from "@/features/held-orders/dates";
 import { heldOrderStoreLabel, parseReasons } from "@/features/held-orders/format";
 import { HeldOrderDetailSheet } from "@/features/held-orders/board/HeldOrderDetailSheet";
@@ -211,6 +212,19 @@ export default function DashboardPedidosEspera() {
     setExporting(true);
     try {
       const all = await fetchAllHeldOrdersForExport(filters);
+      await logClientDataExport({
+        screen: "pedidos_espera",
+        rowCount: all.length,
+        filters: {
+          status: status ?? null,
+          product: product ?? null,
+          agent_id: agentId ?? null,
+          date_field: dateField,
+          has_search: (search ?? "").trim() !== "",
+        },
+        fromISO: range.from,
+        toISO: range.to,
+      });
       const count = exportHeldOrders({
         rows: all,
         filters: {

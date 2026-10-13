@@ -206,4 +206,31 @@ describe("DashboardPedidosEspera", () => {
     const params = exportHeldOrders.mock.calls[0][0] as { filters: { period: string } };
     expect(params.filters.period).toContain("Entrada no sistema");
   });
+  it("registra a exportação antes de gerar a planilha, sem o termo buscado", async () => {
+    renderPage();
+    await screen.findByText("PED-1");
+    fireEvent.click(screen.getByRole("button", { name: /Exportar \(2\)/ }));
+    await waitFor(() => expect(exportHeldOrders).toHaveBeenCalledTimes(1));
+
+    const logIdx = rpc.mock.calls.findIndex(([fn]) => fn === "log_client_data_export");
+    expect(logIdx).toBeGreaterThanOrEqual(0);
+    expect(rpc.mock.calls[logIdx][1]).toMatchObject({
+      p_screen: "pedidos_espera",
+      p_from: spDate(-29),
+      p_filters: { date_field: "entrada", has_search: false },
+    });
+    expect(rpc.mock.invocationCallOrder[logIdx]).toBeLessThan(exportHeldOrders.mock.invocationCallOrder[0]);
+  });
+
+  it("não gera a planilha quando o registro é recusado", async () => {
+    const base = rpc.getMockImplementation()!;
+    rpc.mockImplementation(async (fn: string, args: Record<string, unknown>) =>
+      fn === "log_client_data_export" ? { data: null, error: { message: "forbidden" } } : base(fn, args),
+    );
+    renderPage();
+    await screen.findByText("PED-1");
+    fireEvent.click(screen.getByRole("button", { name: /Exportar \(2\)/ }));
+    await waitFor(() => expect(rpc.mock.calls.some(([fn]) => fn === "log_client_data_export")).toBe(true));
+    expect(exportHeldOrders).not.toHaveBeenCalled();
+  });
 });
