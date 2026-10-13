@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
@@ -94,11 +94,11 @@ const App = () => (
             <Route path="visao-geral" element={<DashboardAtendimentosVisaoGeral />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />
             <Route path="reembolsos/comparativo" element={<DashboardRefundsComparativo />} />
-            <Route path="reembolsos/sistema-xmx" element={<DashboardSistemaXmx dentroDeReembolsos />} />
+            <Route path="reembolsos/sistema-xmx" element={<DashboardSistemaXmx />} />
             <Route path="reembolsos/cartpanda" element={<DashboardRefundsAguardando plataforma="Cartpanda" />} />
             <Route path="reembolsos/buygoods" element={<DashboardRefundsAguardando plataforma="Buygoods" />} />
             <Route path="reembolsos/pagamerican" element={<DashboardRefundsAguardando plataforma="PagAmerican" />} />
-            <Route path="sistema-xmx" element={<DashboardSistemaXmx />} />
+            <Route path="sistema-xmx" element={<Navigate to="/dashboard/reembolsos/sistema-xmx" replace />} />
             <Route path="acompanhamento" element={<DashboardAcompanhamento />} />
             <Route path="interacoes" element={<DashboardInteracoes />} />
             <Route path="alertas" element={<DashboardAlertas />} />

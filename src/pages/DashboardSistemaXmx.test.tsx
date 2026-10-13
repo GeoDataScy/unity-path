@@ -86,7 +86,7 @@ const renderTela = () =>
 describe("DashboardSistemaXmx", () => {
   it("mostra os quatro indicadores do período", () => {
     renderTela();
-    expect(screen.getByRole("heading", { name: "Sistema XMX" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reembolsos" })).toBeInTheDocument();
     expect(screen.getByText("54.673")).toBeInTheDocument();
     expect(screen.getByText("6.449")).toBeInTheDocument();
     expect(screen.getByText("1.057")).toBeInTheDocument();
@@ -138,16 +138,13 @@ describe("DashboardSistemaXmx", () => {
     expect(screen.getByText(/Carga inicial em andamento/)).toBeInTheDocument();
   });
 
-  it("dentro de Reembolsos, usa o cabeçalho e as abas daquela área", () => {
+  it("fica na aba Sistema XMX de Reembolsos", () => {
     render(
       <MemoryRouter initialEntries={["/dashboard/reembolsos/sistema-xmx"]}>
-        <DashboardSistemaXmx dentroDeReembolsos />
+        <DashboardSistemaXmx />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "Reembolsos" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Sistema XMX" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sistema XMX" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("54.673")).toBeInTheDocument();
   });
 
   it("mostra erro sem quebrar a tela", () => {
