@@ -167,6 +167,15 @@
     --chart-6: var(--coral);
     --chart-7: var(--amber);
     --chart-8: var(--chart-mute-3);
+    /* Comparativo sistema XMX: uma cor fixa por plataforma (paleta categórica validada). */
+    --xmx-cartpanda: #2a78d6;
+    --xmx-buygoods: #eb6834;
+    --xmx-pagamerican: #1baf7a;
+    --xmx-helpgrid: #eda100;
+    --xmx-clickbank: #e87ba4;
+    --xmx-digistore: #008300;
+    --xmx-cartcandy: #6250d6;
+    --xmx-outras: #8a8984;
 
     /* Visão Geral Atendimentos: aberto = aqua, concluído = signal (README). */
     --chart-ticket-open: var(--aqua);
@@ -278,6 +287,14 @@
     --chart-6: var(--coral);
     --chart-7: var(--amber);
     --chart-8: var(--chart-mute-3);
+    --xmx-cartpanda: #3987e5;
+    --xmx-buygoods: #d95926;
+    --xmx-pagamerican: #199e70;
+    --xmx-helpgrid: #c98500;
+    --xmx-clickbank: #d55181;
+    --xmx-digistore: #008300;
+    --xmx-cartcandy: #9085e9;
+    --xmx-outras: #77766f;
     --chart-ticket-open: var(--aqua);
     --chart-ticket-done: var(--signal);
     --chart-success: var(--signal);
