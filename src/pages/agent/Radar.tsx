@@ -61,7 +61,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabaseErrorMessage } from "@/lib/supabaseError";
 import { RadarActionDialog } from "@/features/radar/RadarActionDialog";
 import { RadarItemDialog } from "@/features/radar/RadarItemDialog";
-import { exportRadar } from "@/features/radar/exportRadar";
+import { exportRadar, exportRadarSummary } from "@/features/radar/exportRadar";
+import { supabase } from "@/integrations/supabase/client";
+import { ExportSummaryDialog, type ExportSummaryField } from "@/features/client-export/ExportSummaryDialog";
+import {
+  FULL_EXPORT_UNAVAILABLE,
+  useCanExportFullClientData,
+} from "@/features/client-export/useCanExportFullClientData";
 import { dueLabel, formatBrDate } from "@/features/radar/nextFollowUp";
 import { useDeleteRadarItemMutation, useMyRadarQuery } from "@/features/radar/useMyRadarQuery";
 import {
@@ -111,6 +117,15 @@ function matchesBucket(item: MyRadarItem, bucket: Bucket): boolean {
   }
 }
 
+
+const RADAR_SUMMARY_FIELDS: ExportSummaryField[] = [
+  { label: "Data de criação e próximo acompanhamento", included: true },
+  { label: "Tipo · Produto · Status · Prazo", included: true },
+  { label: "ID interno do caso", included: true },
+  { label: "E-mail do cliente", included: false },
+  { label: "Número do pedido, observações e textos livres", included: false },
+];
+
 export default function Radar() {
   const { userId, fullName } = useOutletContext<AgentOutletContext>();
   const { toast } = useToast();
@@ -154,22 +169,61 @@ export default function Radar() {
     setItemDialogOpen(true);
   };
 
-  const handleExport = () => {
-    const count = exportRadar({
-      rows: filtered,
-      today,
-      agentName: fullName ?? "",
-      filters: {
-        bucket: BUCKET_LABEL[bucket],
-        kind: kindFilter === "all" ? "Todos os tipos" : radarKindLabel(kindFilter),
-        status: statusFilter === "all" ? "Todos os status" : radarStatusLabel(statusFilter),
-        search,
-      },
-    });
+  const { data: canExportFull = false } = useCanExportFullClientData(Boolean(userId));
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [exportingFull, setExportingFull] = useState(false);
+
+  const exportParams = () => ({
+    rows: filtered,
+    today,
+    agentName: fullName ?? "",
+    filters: {
+      bucket: BUCKET_LABEL[bucket],
+      kind: kindFilter === "all" ? "Todos os tipos" : radarKindLabel(kindFilter),
+      status: statusFilter === "all" ? "Todos os status" : radarStatusLabel(statusFilter),
+      search,
+    },
+  });
+
+  const exportedToast = (count: number) =>
     toast({
       title: "Planilha gerada",
       description: `${count} ${count === 1 ? "caso" : "casos"} exportado${count === 1 ? "" : "s"}.`,
     });
+
+  const handleExportSummary = () => {
+    exportedToast(exportRadarSummary(exportParams()));
+    setSummaryOpen(false);
+  };
+
+  // A exportação completa só baixa depois que o registro (quem, quando, quais
+  // filtros) foi gravado; sem a capacidade, o banco recusa e nada é gerado.
+  const handleExportFull = async () => {
+    const params = exportParams();
+    setExportingFull(true);
+    try {
+      const { error } = await supabase.rpc("log_client_data_export", {
+        p_screen: "radar",
+        p_row_count: params.rows.length,
+        // O termo buscado pode ser um e-mail de cliente: registra só que houve busca.
+        p_filters: {
+          bucket: params.filters.bucket,
+          kind: params.filters.kind,
+          status: params.filters.status,
+          has_search: params.filters.search.trim() !== "",
+        },
+      });
+      if (error) throw error;
+      exportedToast(exportRadar(params));
+    } catch (e) {
+      toast({
+        title: "Erro ao exportar",
+        description: supabaseErrorMessage(e, "Não foi possível gerar a planilha."),
+        variant: "destructive",
+      });
+    } finally {
+      setExportingFull(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -232,9 +286,23 @@ export default function Radar() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={radarQuery.isLoading}>
-            <Download className="mr-2 h-4 w-4" /> Exportar
+          <Button variant="outline" onClick={() => setSummaryOpen(true)} disabled={radarQuery.isLoading}>
+            <Download className="mr-2 h-4 w-4" /> Exportar resumo (sem dados pessoais)
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportFull}
+            disabled={!canExportFull || exportingFull || radarQuery.isLoading}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {canExportFull ? "Exportar (Excel)" : `Exportar (Excel) — ${FULL_EXPORT_UNAVAILABLE.toLowerCase()}`}
+          </Button>
+          <ExportSummaryDialog
+            open={summaryOpen}
+            onOpenChange={setSummaryOpen}
+            fields={RADAR_SUMMARY_FIELDS}
+            onConfirm={handleExportSummary}
+          />
           <Button onClick={openNew}>
             <Plus className="mr-2 h-4 w-4" /> Novo caso
           </Button>

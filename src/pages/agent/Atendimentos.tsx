@@ -54,7 +54,12 @@ import {
   type ContactReasonCode,
 } from "@/features/services/contact-reasons";
 import { TransferTicketDialog, type DuplicateTicket } from "@/features/transfers/TransferTicketDialog";
-import { exportAgentServices } from "@/lib/reportExport";
+import { exportAgentServices, exportAgentServicesSummary } from "@/lib/reportExport";
+import { ExportSummaryDialog, type ExportSummaryField } from "@/features/client-export/ExportSummaryDialog";
+import {
+  FULL_EXPORT_UNAVAILABLE,
+  useCanExportFullClientData,
+} from "@/features/client-export/useCanExportFullClientData";
 
 const PRODUCTS = [
   "Arialief",
@@ -270,6 +275,15 @@ function parseServiceDateForDisplay(value: string | null | undefined): Date | nu
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
+
+const SERVICES_SUMMARY_FIELDS: ExportSummaryField[] = [
+  { label: "Data e hora do atendimento", included: true },
+  { label: "Canal · Produto · Plataforma · Motivo · Status", included: true },
+  { label: "ID interno do atendimento", included: true },
+  { label: "E-mail do cliente", included: false },
+  { label: "Nome, telefone, endereço, order ID", included: false },
+];
+
 export default function Atendimentos() {
   const { userId, fullName, canViewAllTickets, canRegisterDuplicateEmails, canClaimTickets } = useOutletContext<AgentOutletContext>();
   const queryClient = useQueryClient();
@@ -366,30 +380,39 @@ export default function Atendimentos() {
     [canAddInteraction, addEntryMutation, toast],
   );
 
-  const handleExport = useCallback(async () => {
-    if (!dateFrom || !dateTo) {
-      toast({
-        title: "Selecione o período",
-        description: "Escolha a data inicial e final antes de exportar.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setExporting(true);
-    try {
-      const count = await exportAgentServices({ fromISO: dateFrom, toISO: dateTo });
-      toast({
-        title: "Exportação concluída",
-        description: `${count} atendimento(s) exportado(s) para a planilha.`,
-      });
-    } catch (error) {
-      console.error("[export-services] failed:", error);
-      const message = error instanceof Error ? error.message : "Não foi possível gerar a planilha.";
-      toast({ title: "Erro ao exportar", description: message, variant: "destructive" });
-    } finally {
-      setExporting(false);
-    }
-  }, [dateFrom, dateTo, toast]);
+  const { data: canExportFull = false } = useCanExportFullClientData(Boolean(userId));
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
+  const runExport = useCallback(
+    async (kind: "summary" | "full") => {
+      if (!dateFrom || !dateTo) {
+        toast({
+          title: "Selecione o período",
+          description: "Escolha a data inicial e final antes de exportar.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setExporting(true);
+      try {
+        const params = { fromISO: dateFrom, toISO: dateTo };
+        const count =
+          kind === "summary" ? await exportAgentServicesSummary(params) : await exportAgentServices(params);
+        toast({
+          title: "Exportação concluída",
+          description: `${count} atendimento(s) exportado(s) para a planilha.`,
+        });
+        setSummaryOpen(false);
+      } catch (error) {
+        console.error("[export-services] failed:", error);
+        const message = error instanceof Error ? error.message : "Não foi possível gerar a planilha.";
+        toast({ title: "Erro ao exportar", description: message, variant: "destructive" });
+      } finally {
+        setExporting(false);
+      }
+    },
+    [dateFrom, dateTo, toast],
+  );
 
   const { data: services = [], isLoading: servicesLoading } = useMyServicesQuery(Boolean(userId), canViewAllTickets);
   const { data: dailyMetrics, isLoading: metricsLoading } = useAgentDailyMetricsQuery(Boolean(userId));
@@ -1120,21 +1143,44 @@ export default function Atendimentos() {
               variant="outline"
               size="sm"
               className="h-7 gap-1.5 text-xs"
-              onClick={handleExport}
+              onClick={() => setSummaryOpen(true)}
               disabled={exporting || !dateFrom || !dateTo}
               title={
                 !dateFrom || !dateTo
                   ? "Selecione a data inicial e final para exportar"
-                  : "Exportar os atendimentos do período para Excel"
+                  : "Exportar o período sem e-mail nem outros dados pessoais dos clientes"
               }
             >
-              {exporting ? (
+              <Download className="h-3.5 w-3.5" />
+              Exportar resumo (sem dados pessoais)
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => runExport("full")}
+              disabled={!canExportFull || exporting || !dateFrom || !dateTo}
+              title={canExportFull ? "Exportar os atendimentos do período para Excel" : undefined}
+            >
+              {exporting && canExportFull ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Download className="h-3.5 w-3.5" />
               )}
-              {exporting ? "Exportando..." : "Exportar (Excel)"}
+              {canExportFull
+                ? exporting
+                  ? "Exportando..."
+                  : "Exportar (Excel)"
+                : `Exportar (Excel) — ${FULL_EXPORT_UNAVAILABLE.toLowerCase()}`}
             </Button>
+            <ExportSummaryDialog
+              open={summaryOpen}
+              onOpenChange={setSummaryOpen}
+              fields={SERVICES_SUMMARY_FIELDS}
+              onConfirm={() => runExport("summary")}
+              loading={exporting}
+            />
           </div>
           {(servicesLoading || createMutation.isPending) && (
             <span className="text-sm text-muted-foreground">Atualizando...</span>

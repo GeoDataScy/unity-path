@@ -2266,6 +2266,7 @@ export type Database = {
       }
       business_start: { Args: { p_at: string }; Returns: string }
       can_claim_tickets: { Args: never; Returns: boolean }
+      can_export_full_client_data: { Args: never; Returns: boolean }
       can_read_refund_analytics: { Args: never; Returns: boolean }
       can_view_all_tickets: { Args: never; Returns: boolean }
       can_view_support_analytics: { Args: never; Returns: boolean }
@@ -2440,6 +2441,10 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
+      export_agent_services_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       find_ticket_by_email: {
         Args: { p_email: string }
         Returns: {
@@ -2509,6 +2514,16 @@ export type Database = {
         Returns: Json
       }
       late_hunter_valid_date: { Args: { p: string }; Returns: boolean }
+      log_client_data_export: {
+        Args: {
+          p_filters?: Json
+          p_from?: string
+          p_row_count: number
+          p_screen: string
+          p_to?: string
+        }
+        Returns: undefined
+      }
       lya_atualizar_arquivo: {
         Args: {
           p_file_id: string
