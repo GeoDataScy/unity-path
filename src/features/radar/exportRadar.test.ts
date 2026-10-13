@@ -9,7 +9,7 @@ vi.mock("xlsx", async (importOriginal) => {
 
 import * as XLSX from "xlsx";
 
-import { exportRadar } from "./exportRadar";
+import { exportRadar, exportRadarSummary } from "./exportRadar";
 import type { MyRadarItem } from "./types";
 
 function item(overrides: Partial<MyRadarItem> = {}): MyRadarItem {
@@ -135,5 +135,43 @@ describe("exportRadar", () => {
     expect(writeFile.mock.calls[0][1]).toMatch(
       /^radar_ana-vidotti_atrasados_todos-os-tipos_\d{4}-\d{2}-\d{2}\.xlsx$/,
     );
+  });
+});
+
+describe("exportRadarSummary (sem dados pessoais)", () => {
+  beforeEach(() => writeFile.mockClear());
+
+  it("não leva e-mail, pedido, textos livres nem o termo buscado", () => {
+    const count = exportRadarSummary({
+      ...params,
+      filters: { ...params.filters, search: "cliente@exemplo.com" },
+      rows: [item({ id: "abc-123" })],
+    });
+
+    expect(count).toBe(1);
+    const rows = sheetOf();
+    // 0..2 = cabeçalho, 3 = linha vazia, 4 = colunas, 5 = 1º caso.
+    expect(rows[4]).toEqual([
+      "Data de criação",
+      "Tipo de acompanhamento",
+      "Produto",
+      "Status",
+      "Data do próximo acompanhamento",
+      "Prazo",
+      "Fechado em",
+      "ID interno",
+    ]);
+    expect(rows[5][7]).toBe("abc-123");
+
+    const all = JSON.stringify(rows);
+    for (const sensitive of [
+      "cliente@exemplo.com",
+      "PED-1",
+      "Cobrar o parceiro",
+      "foto do produto",
+      "Cobrei o parceiro",
+    ]) {
+      expect(all).not.toContain(sensitive);
+    }
   });
 });

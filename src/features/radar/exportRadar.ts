@@ -145,3 +145,67 @@ export function exportRadar({ rows, today, agentName, filters }: RadarExportPara
 
   return rows.length;
 }
+
+// ── Resumo sem dados pessoais (ajuste 6 do Jurídico) ───────────────────────
+// O que o prestador exporta: sem e-mail, sem número do pedido e sem os campos
+// de texto livre (ação necessária, observações, última ação), que podem
+// carregar dado pessoal do cliente.
+const SUMMARY_COLUMNS = [
+  "Data de criação",
+  "Tipo de acompanhamento",
+  "Produto",
+  "Status",
+  "Data do próximo acompanhamento",
+  "Prazo",
+  "Fechado em",
+  "ID interno",
+];
+
+const SUMMARY_COLUMN_WIDTHS = [18, 30, 18, 20, 24, 16, 18, 38];
+
+export function exportRadarSummary({ rows, today, agentName, filters }: RadarExportParams): number {
+  const dataRows: (string | number)[][] = rows.map((r) => [
+    formatBrDateTime(r.created_at),
+    radarKindLabel(r.kind),
+    r.product ?? "",
+    radarStatusLabel(r.status),
+    formatBrDate(r.next_follow_up_date),
+    r.next_follow_up_date ? dueLabel(r.next_follow_up_date, today) : "",
+    formatBrDateTime(r.closed_at),
+    r.id,
+  ]);
+
+  // A busca textual pode ser um e-mail ou um pedido; não vai para a planilha.
+  const filtersLine = [
+    `Prazo: ${filters.bucket}`,
+    `Tipo: ${filters.kind}`,
+    `Status: ${filters.status}`,
+    ...(filters.search.trim() ? ["Com busca aplicada"] : []),
+  ].join("  |  ");
+
+  const sheetRows: (string | number)[][] = [
+    [`Radar — resumo sem dados pessoais — ${agentName || "prestador"}`],
+    [`Filtros — ${filtersLine}`],
+    [`Total de casos: ${rows.length}`],
+    [],
+    SUMMARY_COLUMNS,
+    ...(dataRows.length > 0
+      ? dataRows
+      : [["Nenhum caso com os filtros aplicados", ...SUMMARY_COLUMNS.slice(1).map(() => "")]]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+  ws["!merges"] = [0, 1, 2].map((r) => ({
+    s: { r, c: 0 },
+    e: { r, c: SUMMARY_COLUMNS.length - 1 },
+  }));
+  ws["!cols"] = SUMMARY_COLUMN_WIDTHS.map((wch) => ({ wch }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resumo");
+
+  const segments = ["radar-resumo", safeFileSegment(agentName), safeFileSegment(filters.bucket)].filter(Boolean);
+  XLSX.writeFile(wb, `${segments.join("_")}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+  return rows.length;
+}

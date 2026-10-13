@@ -735,7 +735,9 @@ function serviceDateBr(value: string | null | undefined): string {
   return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? formatBrDate(datePart) : value;
 }
 
-function ticketStatusLabel(t: ExportTicketRow): string {
+function ticketStatusLabel(
+  t: Pick<ExportTicketRow, "follow_up_count" | "status" | "last_follow_up_status">,
+): string {
   if ((t.follow_up_count ?? 0) === 0) {
     return t.status === "concluido" ? "Concluído" : "Novo";
   }
@@ -918,4 +920,77 @@ export async function exportAgentServices(params: AgentServicesExportParams): Pr
   XLSX.writeFile(wb, fileName);
 
   return tickets.length;
+}
+
+// ── Resumo sem dados pessoais (ajuste 6 do Jurídico) ───────────────────────
+// É o que o prestador exporta. Vai só data e hora, canal, produto, plataforma,
+// motivo, status e ID interno. A RPC já não devolve e-mail, order ID nem texto
+// livre (observação, descrição do "Outro"); por isso o motivo sai só com o
+// rótulo.
+type ExportSummaryRow = {
+  id: string;
+  service_date: string;
+  created_at: string | null;
+  channel: string | null;
+  product: string | null;
+  platform: string | null;
+  contact_reason: string | null;
+  status: string;
+  follow_up_count: number;
+  last_follow_up_status: string | null;
+};
+
+export async function exportAgentServicesSummary(params: AgentServicesExportParams): Promise<number> {
+  const { fromISO, toISO } = params;
+
+  const { data, error } = await supabase.rpc("export_agent_services_summary", {
+    p_from: fromISO,
+    p_to: toISO,
+  });
+  if (error) throw error;
+
+  const rows = ((data ?? []) as unknown as ExportSummaryRow[]) ?? [];
+
+  const columns = [
+    "Data de abertura",
+    "Hora",
+    "Canal",
+    "Produto",
+    "Plataforma",
+    "Motivo de contato",
+    "Status",
+    "ID interno",
+  ];
+
+  const dataRows: (string | number)[][] = rows.map((t) => [
+    serviceDateBr(t.service_date),
+    formatBrDateTimeSP(t.created_at).slice(11) || "—",
+    t.channel ?? "—",
+    t.product ?? "—",
+    t.platform ?? "—",
+    reasonLabel(t.contact_reason ?? "nao_informado"),
+    ticketStatusLabel(t),
+    t.id,
+  ]);
+
+  const sheetRows: (string | number)[][] = [
+    ["Meus Atendimentos — resumo sem dados pessoais"],
+    [`Período: ${formatBrDate(fromISO)} até ${formatBrDate(toISO)}`],
+    [`Total de atendimentos: ${rows.length}`],
+    [],
+    columns,
+    ...(dataRows.length > 0
+      ? dataRows
+      : [[EMPTY_PLACEHOLDER, ...columns.slice(1).map(() => "")]]),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+  ws["!merges"] = [0, 1, 2].map((r) => ({ s: { r, c: 0 }, e: { r, c: columns.length - 1 } }));
+  ws["!cols"] = [14, 8, 12, 18, 14, 24, 14, 38].map((wch) => ({ wch }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resumo");
+  XLSX.writeFile(wb, `meus-atendimentos-resumo_${fromISO}_a_${toISO}.xlsx`);
+
+  return rows.length;
 }
