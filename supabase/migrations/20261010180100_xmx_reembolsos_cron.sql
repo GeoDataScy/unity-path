@@ -15,7 +15,7 @@ SELECT cron.schedule(
   '*/15 * * * *',
   $cron$
   SELECT net.http_post(
-    url     := 'https://kjkyyqxqrqsdozjyyuon.supabase.co/functions/v1/xmx-refunds-sync',
+    url     := 'https://cggigwessiododyjbegp.supabase.co/functions/v1/xmx-refunds-sync',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || coalesce(

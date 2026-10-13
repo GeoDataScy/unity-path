@@ -18,7 +18,7 @@
 //   XMX_REFUNDS_SYNC_TOKEN  -> Bearer exigido de quem chama (o cron)
 //
 // Deploy SEM verificação de JWT do Supabase (o cron manda o token próprio):
-//   supabase functions deploy xmx-refunds-sync --project-ref kjkyyqxqrqsdozjyyuon --use-api --no-verify-jwt
+//   supabase functions deploy xmx-refunds-sync --project-ref cggigwessiododyjbegp --use-api --no-verify-jwt
 import { createClient } from "npm:@supabase/supabase-js@2";
 import mysql from "npm:mysql2@3.11.0/promise";
 
