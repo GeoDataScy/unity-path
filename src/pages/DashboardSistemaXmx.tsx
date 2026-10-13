@@ -22,11 +22,9 @@ const MAX_DIAS_POR_DIA = 92;
  * Sistema XMX: vendas, reembolsos e chargebacks lidos do banco de vendas da XMX
  * (sincronizados a cada 15 min). Por plataforma, porque o banco de vendas ainda
  * não nos diz o produto de cada pedido.
- *
- * Aparece em dois lugares: no item "Sistema XMX" do menu e como aba dentro de
- * Reembolsos (`dentroDeReembolsos`), com o cabeçalho e as abas daquela área.
+ * Mora na aba "Sistema XMX" de Reembolsos.
  */
-export default function DashboardSistemaXmx({ dentroDeReembolsos = false }: { dentroDeReembolsos?: boolean }) {
+export default function DashboardSistemaXmx() {
   const { fromISO, toISO } = useOutletContext<ManagerOutletContext>();
   const [groupBy, setGroupBy] = useState<XmxGroupBy>("day");
   const [platform, setPlatform] = useState("all");
@@ -65,21 +63,13 @@ export default function DashboardSistemaXmx({ dentroDeReembolsos = false }: { de
 
   return (
     <div className="space-y-6">
-      {dentroDeReembolsos && (
-        <header className="space-y-2">
-          <p className="text-[15px] text-ink-tertiary">Analytics</p>
-          <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Reembolsos</h1>
-          <RefundsSubNav />
-        </header>
-      )}
+      <header className="space-y-2">
+        <p className="text-[15px] text-ink-tertiary">Analytics</p>
+        <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Reembolsos</h1>
+        <RefundsSubNav />
+      </header>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          {!dentroDeReembolsos && (
-            <>
-              <p className="text-[15px] text-ink-tertiary">Analytics</p>
-              <h1 className="text-[28px] font-medium leading-[34px] tracking-[-0.025em]">Sistema XMX</h1>
-            </>
-          )}
           <p className="text-sm text-muted-foreground">
             Vendas, reembolsos e chargebacks do sistema de vendas da XMX · {periodo}
           </p>
