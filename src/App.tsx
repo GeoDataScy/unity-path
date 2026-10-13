@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
@@ -17,7 +17,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DashboardRefunds = lazy(() => import("./pages/DashboardRefunds"));
 const DashboardAtendimentosVisaoGeral = lazy(() => import("./pages/DashboardAtendimentosVisaoGeral"));
 const DashboardRefundsComparativo = lazy(() => import("./pages/DashboardRefundsComparativo"));
-const DashboardRefundsSistemaXmx = lazy(() => import("./pages/DashboardRefundsSistemaXmx"));
+const DashboardSistemaXmx = lazy(() => import("./pages/DashboardSistemaXmx"));
 const DashboardAcompanhamento = lazy(() => import("./pages/DashboardAcompanhamento"));
 const DashboardInteracoes = lazy(() => import("./pages/DashboardInteracoes"));
 const DashboardAlertas = lazy(() => import("./pages/DashboardAlertas"));
@@ -93,7 +93,8 @@ const App = () => (
             <Route path="visao-geral" element={<DashboardAtendimentosVisaoGeral />} />
             <Route path="reembolsos" element={<DashboardRefunds />} />
             <Route path="reembolsos/comparativo" element={<DashboardRefundsComparativo />} />
-            <Route path="reembolsos/sistema-xmx" element={<DashboardRefundsSistemaXmx />} />
+            <Route path="reembolsos/sistema-xmx" element={<Navigate to="/dashboard/sistema-xmx" replace />} />
+            <Route path="sistema-xmx" element={<DashboardSistemaXmx />} />
             <Route path="acompanhamento" element={<DashboardAcompanhamento />} />
             <Route path="interacoes" element={<DashboardInteracoes />} />
             <Route path="alertas" element={<DashboardAlertas />} />

@@ -23,6 +23,7 @@ import {
   PanelLeftOpen,
   PackageSearch,
   RefreshCcw,
+  Store,
   Table2,
   Users,
   Brain,
@@ -304,6 +305,7 @@ export default function ManagerLayout() {
   }
 
   const isOnRefunds = location.pathname.startsWith("/dashboard/reembolsos");
+  const isOnSistemaXmx = location.pathname.startsWith("/dashboard/sistema-xmx");
   const isOnAcompanhamento = location.pathname.startsWith("/dashboard/acompanhamento");
   const isOnInteracoes = location.pathname.startsWith("/dashboard/interacoes");
   const isOnAlertas = location.pathname.startsWith("/dashboard/alertas");
@@ -393,6 +395,12 @@ export default function ManagerLayout() {
               to="/dashboard/reembolsos"
               icon={<RefreshCcw className={SIDEBAR_ICON} />}
               label="Reembolsos"
+              collapsed={collapsed}
+            />
+            <SidebarNavItem
+              to="/dashboard/sistema-xmx"
+              icon={<Store className={SIDEBAR_ICON} />}
+              label="Sistema XMX"
               collapsed={collapsed}
             />
             <SidebarNavItem
@@ -559,7 +567,7 @@ export default function ManagerLayout() {
                 </Button>
 
                 <div className="text-[11px] text-ink-tertiary px-1">
-                  {isOnHeldOrders ? "Visualizando: Pedidos em Espera" : isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : "Visualizando: Atendimentos"}
+                  {isOnHeldOrders ? "Visualizando: Pedidos em Espera" : isOnZendesk ? "Visualizando: Zendesk" : isOnAlertas ? "Visualizando: Alertas" : isOnInteracoes ? "Visualizando: Interacoes" : isOnAcompanhamento ? "Visualizando: Acompanhamento" : isOnRefunds ? "Visualizando: Reembolsos" : isOnSistemaXmx ? "Visualizando: Sistema XMX" : "Visualizando: Atendimentos"}
                 </div>
               </>
           )}

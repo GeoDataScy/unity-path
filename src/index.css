@@ -167,7 +167,7 @@
     --chart-6: var(--coral);
     --chart-7: var(--amber);
     --chart-8: var(--chart-mute-3);
-    /* Comparativo sistema XMX: uma cor fixa por plataforma (paleta categórica validada). */
+    /* Sistema XMX: uma cor fixa por plataforma (paleta categórica validada). */
     --xmx-cartpanda: #2a78d6;
     --xmx-buygoods: #eb6834;
     --xmx-pagamerican: #1baf7a;
@@ -176,6 +176,9 @@
     --xmx-digistore: #008300;
     --xmx-cartcandy: #6250d6;
     --xmx-outras: #8a8984;
+    /* Sistema XMX: linhas de taxa (cores que nenhuma plataforma usa). */
+    --xmx-taxa-reembolso: hsl(var(--foreground));
+    --xmx-taxa-chargeback: #e34948;
 
     /* Visão Geral Atendimentos: aberto = aqua, concluído = signal (README). */
     --chart-ticket-open: var(--aqua);
@@ -295,6 +298,8 @@
     --xmx-digistore: #008300;
     --xmx-cartcandy: #9085e9;
     --xmx-outras: #77766f;
+    --xmx-taxa-reembolso: hsl(var(--foreground));
+    --xmx-taxa-chargeback: #e66767;
     --chart-ticket-open: var(--aqua);
     --chart-ticket-done: var(--signal);
     --chart-success: var(--signal);
