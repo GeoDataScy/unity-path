@@ -3,6 +3,8 @@
 // mesma RPC, outro limite) — nunca só a página aberta.
 import * as XLSX from "xlsx";
 
+import { logClientDataExport } from "@/features/client-export/logClientDataExport";
+
 import { enderecoLinha, formatDay, motivoLabel, parseItems } from "./format";
 import { fetchLateHunterList, listArgs } from "./useLateHunterQueries";
 import type { LateHunterAmbiente, LateHunterFiltros, LateHunterOrder } from "./types";
@@ -44,6 +46,26 @@ export async function exportLateHunter(ambiente: LateHunterAmbiente, filtros: La
   if (total > rows.length) {
     throw new Error(`Filtro pega ${total} pedidos; a planilha aceita até ${LIMITE_EXPORTACAO}. Estreite os filtros.`);
   }
+  // A planilha leva nome, e-mail e endereço do cliente: registra antes de baixar
+  // (ajuste 6). O termo buscado não vai para o registro — só se houve busca.
+  await logClientDataExport({
+    screen: "late_hunter",
+    rowCount: rows.length,
+    filters: {
+      ambiente,
+      situacao: filtros.situacao,
+      motivos: filtros.motivos,
+      lojas: filtros.lojas,
+      paises: filtros.paises,
+      dias_min: filtros.diasMin,
+      dias_max: filtros.diasMax,
+      reabertos: filtros.reabertos,
+      has_search: filtros.busca.trim() !== "",
+    },
+    fromISO: filtros.dataDe,
+    toISO: filtros.dataAte,
+  });
+
   const sheet = XLSX.utils.json_to_sheet(lateHunterSheetRows(rows));
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, "Late Hunter");

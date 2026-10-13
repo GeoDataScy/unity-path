@@ -31,6 +31,7 @@ import { ImportHeldOrdersDialog } from "./ImportHeldOrdersDialog";
 import { AssignHeldOrdersDialog } from "./AssignHeldOrdersDialog";
 import { formatHeldOrderDate } from "./dates";
 import { exportHeldOrders } from "./exportHeldOrders";
+import { logClientDataExport } from "@/features/client-export/logClientDataExport";
 import { heldOrderStoreLabel, parseItems } from "./format";
 import {
   MANAGER_HELD_ORDER_STATUS_FILTER_LABEL,
@@ -253,8 +254,21 @@ export function HeldOrdersManagerTab({ readOnly = false, paginate = false }: Pro
 
   // Exporta as linhas já filtradas — o mesmo array que a tabela renderiza, na
   // mesma ordem.
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
+      // A planilha leva nome, e-mail e endereço do cliente: registra antes de
+      // baixar (ajuste 6). O termo buscado não vai para o registro.
+      await logClientDataExport({
+        screen: "pedidos_espera_produtos",
+        rowCount: rows.length,
+        filters: {
+          status: statusFilter,
+          product: productFilter,
+          agent: agentFilter,
+          includes_duplicates: showDuplicates,
+          has_search: search.trim() !== "",
+        },
+      });
       const count = exportHeldOrders({
         rows,
         filters: {
