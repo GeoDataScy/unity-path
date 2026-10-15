@@ -192,6 +192,7 @@ const PRODUCTS = [
   "Vitahear",
   "Your Health World",
   "Soda Steel",
+  "Horse Jelly",
 ] as const;
 
 const PLATFORMS = [
