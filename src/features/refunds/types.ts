@@ -153,4 +153,5 @@ export const REFUND_PRODUCTS = [
   "Virilemax",
   "Vitahear",
   "Your Health World",
+  "Soda Steel",
 ] as const;
