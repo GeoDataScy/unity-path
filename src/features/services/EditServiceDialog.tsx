@@ -160,6 +160,7 @@ const PRODUCTS = [
   "Virilemax",
   "Vitahear",
   "Your Health World",
+  "Soda Steel",
 ] as const;
 
 const PLATFORMS = [
