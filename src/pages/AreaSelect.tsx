@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, ClipboardList, Loader2, LogOut, Package, PenLine } from "lucide-react";
+import { ArrowRight, BarChart3, ClipboardList, Loader2, Lock, LogOut, Package, PenLine } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -18,19 +18,23 @@ import {
   type AreaGrants,
 } from "@/lib/roles";
 import { Logo } from "@/components/brand/Logo";
+import { fetchGeovaniAnalysesGrant } from "@/features/analises/geovaniAnalysesGrant";
+import { JupyterMark } from "@/features/analises/components/JupyterMark";
 import { cn } from "@/lib/utils";
 
 // Escolha de área depois do login, para os perfis de gestão (gestora, copy e
-// produtos): todos veem os mesmos três cards, e cada um só entra onde o perfil
+// produtos): todos veem os mesmos quatro cards, e cada um só entra onde o perfil
 // permite (ver roles.ts). É uma tela e não um modal de propósito: sobrevive a
 // refresh, é linkável (/areas), não pisca por cima de um dashboard vazio e o
 // usuário pode voltar aqui pelo botão de trocar área na sidebar.
 
 type AreaCard = {
-  icon: typeof BarChart3;
+  icon: ComponentType<{ className?: string }>;
   headline: string;
   description: string;
   bullets: string[];
+  /** Selo "Acesso restrito": a área não vem da role, só de liberação individual. */
+  restricted?: boolean;
 };
 
 const AREA_CARDS: Record<AppArea, AreaCard> = {
@@ -52,6 +56,13 @@ const AREA_CARDS: Record<AppArea, AreaCard> = {
     description: "Os pedidos retidos no fulfillment, até o atendimento fechar.",
     bullets: ["Pedidos em espera", "Motivos do on-hold", "Andamento por agente"],
   },
+  analises: {
+    icon: JupyterMark,
+    headline: "Análises Geovani",
+    description: "Notebooks, relatórios e dúvidas de dados — acesso restrito.",
+    bullets: ["Relatórios em notebook", "Mapa do banco de dados", "Dúvidas sobre os dados"],
+    restricted: true,
+  },
   // O agente nunca chega nesta tela (só tem uma área), mas o mapa é completo
   // para o dia em que alguém acumular workspace + outra área.
   workspace: {
@@ -61,6 +72,9 @@ const AREA_CARDS: Record<AppArea, AreaCard> = {
     bullets: [],
   },
 };
+
+// "Análises Geovani" é plural: "nas"/"às" em vez de "na"/"à".
+const isPlural = (area: AppArea) => area === "analises";
 
 export default function AreaSelect() {
   const navigate = useNavigate();
@@ -117,10 +131,16 @@ export default function AreaSelect() {
         return;
       }
 
+      // Consulta à parte e tolerante (coluna pode ainda não existir no banco).
+      const canViewGeovaniAnalyses = await fetchGeovaniAnalysesGrant(session.user.id);
+
       if (!active) return;
       setFullName(profile?.full_name ?? null);
       setRole(profile?.role ?? null);
-      setGrants({ canAccessAnalytics: Boolean(profile?.can_access_analytics) });
+      setGrants({
+        canAccessAnalytics: Boolean(profile?.can_access_analytics),
+        canViewGeovaniAnalyses,
+      });
       setAreas(areaCardsForRole(profile?.role));
       const stored = window.localStorage.getItem(LAST_AREA_KEY);
       setLastArea(isValidArea(stored) ? stored : null);
@@ -142,7 +162,7 @@ export default function AreaSelect() {
     // O card pode estar na tela sem dar acesso (time de produtos vê todos).
     if (!canAccessArea(role, area, grants)) {
       toast.error("Acesso negado", {
-        description: `Seu perfil não tem acesso à ${AREA_LABEL[area]}.`,
+        description: `Seu perfil não tem acesso ${isPlural(area) ? "às" : "à"} ${AREA_LABEL[area]}.`,
       });
       return;
     }
@@ -181,13 +201,14 @@ export default function AreaSelect() {
           </div>
         </header>
 
-        {/* Com 3+ áreas os cards viram uma linha de três: em duas colunas o
-            terceiro card ficaria órfão ocupando metade da segunda linha. */}
+        {/* Com 3 áreas os cards viram uma linha de três: em duas colunas o
+            terceiro card ficaria órfão ocupando metade da segunda linha. Com 4,
+            grade 2×2 — quatro colunas em max-w-4xl apertariam o texto. */}
         <div
           className={cn(
             "grid gap-4",
-            areas.length === 2 && "sm:grid-cols-2",
-            areas.length >= 3 && "sm:grid-cols-2 lg:grid-cols-3",
+            (areas.length === 2 || areas.length >= 4) && "sm:grid-cols-2",
+            areas.length === 3 && "sm:grid-cols-2 lg:grid-cols-3",
           )}
         >
           {areas.map((area, index) => {
@@ -201,21 +222,38 @@ export default function AreaSelect() {
                 ref={index === 0 ? primaryRef : undefined}
                 type="button"
                 onClick={() => enterArea(area)}
-                aria-label={`Entrar na ${AREA_LABEL[area]}`}
+                aria-label={`Entrar ${isPlural(area) ? "nas" : "na"} ${AREA_LABEL[area]}`}
                 className={cn(
                   "group relative flex h-full flex-col gap-4 rounded-lg border border-line bg-surface p-6 text-left",
                   "transition duration-200 hover:border-line-strong hover:shadow-sm",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 )}
               >
-                {isLast && (
-                  <span className="absolute right-4 top-4 rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
-                    última usada
+                {(isLast || card.restricted) && (
+                  <span className="absolute right-4 top-4 flex flex-wrap justify-end gap-1.5">
+                    {card.restricted && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
+                        <Lock className="h-3 w-3" aria-hidden="true" />
+                        restrito
+                      </span>
+                    )}
+                    {isLast && (
+                      <span className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-tertiary">
+                        última usada
+                      </span>
+                    )}
                   </span>
                 )}
 
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-subtle text-ink transition-colors group-hover:bg-inverse group-hover:text-ink-inverse">
-                  <Icon className="h-5 w-5" />
+                {/* O símbolo do notebook é colorido (laranja Jupyter); não inverte
+                    no hover como os ícones de traço. */}
+                <span
+                  className={cn(
+                    "inline-flex h-11 w-11 items-center justify-center rounded-md bg-subtle text-ink transition-colors",
+                    !card.restricted && "group-hover:bg-inverse group-hover:text-ink-inverse",
+                  )}
+                >
+                  <Icon className={card.restricted ? "h-7 w-7" : "h-5 w-5"} />
                 </span>
 
                 <div className="space-y-1.5">

@@ -2,21 +2,28 @@
 // acesso. Centralizado aqui para que login, "/", a tela de escolha de área e os
 // três layouts concordem sobre o destino e a permissão de cada perfil.
 //
-// Áreas != roles. Hoje existem quatro áreas de produto:
+// Áreas != roles. Hoje existem cinco áreas de produto:
 //   workspace  -> /workspace  (o agente trabalhando os tickets)
 //   analytics  -> /dashboard  (Data Analytics do Suporte)
 //   copy       -> /copy       (time de copy)
 //   produtos   -> /produtos   (time de produtos)
+//   analises   -> /analises   (Análises Geovani: notebooks, relatórios e dúvidas)
 //
-// Gestão (gestora, copy e produtos) cai em /areas depois do login e vê os três
-// cards — Data Analytics, Copy e Produtos —, mas só entra nos que o perfil
-// permite; os demais respondem "Acesso negado" (ver areaCardsForRole). O agente
+// A área "analises" é a única que NÃO vem de role — nem a gestora entra por ser
+// manager. Só a flag individual profiles.can_view_geovani_analyses libera, para
+// qualquer role (ver AreaGrants). Lida à parte por
+// src/features/analises/geovaniAnalysesGrant.ts, tolerante à coluna ainda não
+// existir no banco.
+//
+// Gestão (gestora, copy e produtos) cai em /areas depois do login e vê os quatro
+// cards — Data Analytics, Copy, Produtos e Análises Geovani —, mas só entra nos
+// que o perfil permite; os demais respondem "Acesso negado" (ver areaCardsForRole). O agente
 // vai direto para o workspace. A ordem do array de áreas é significativa — a
 // primeira é a "casa" do perfil e é o destino quando não há escolha a fazer.
 
 export type AppRole = "agent" | "manager" | "copy_grup" | "produto";
 
-export type AppArea = "workspace" | "analytics" | "copy" | "produtos";
+export type AppArea = "workspace" | "analytics" | "copy" | "produtos" | "analises";
 
 /** Tela de escolha de área, para quem tem acesso a mais de uma. */
 export const AREA_CHOICE_PATH = "/areas";
@@ -26,6 +33,7 @@ export const AREA_PATH: Record<AppArea, string> = {
   analytics: "/dashboard",
   copy: "/copy",
   produtos: "/produtos",
+  analises: "/analises",
 };
 
 /** Nome da área como o usuário fala dela. */
@@ -34,6 +42,7 @@ export const AREA_LABEL: Record<AppArea, string> = {
   analytics: "Data Analytics do Suporte",
   copy: "Área de Copy",
   produtos: "Área de Produtos",
+  analises: "Análises Geovani",
 };
 
 /** Versão curta, para caber na sidebar. */
@@ -42,6 +51,7 @@ export const AREA_SHORT_LABEL: Record<AppArea, string> = {
   analytics: "Data Analytics",
   copy: "Copy",
   produtos: "Produtos",
+  analises: "Análises",
 };
 
 // Acesso por perfil (decisão do dono, 02/10/2026): a gestora entra em tudo; copy
@@ -53,11 +63,11 @@ const ROLE_AREAS: Record<AppRole, readonly AppArea[]> = {
   agent: ["workspace"],
 };
 
-// Os três cards de /areas aparecem para todos os perfis de gestão, tenham ou não
+// Os quatro cards de /areas aparecem para todos os perfis de gestão, tenham ou não
 // acesso — o card sem acesso responde "Acesso negado". Mostrar um card NÃO dá
 // acesso: quem decide é canAccessArea, e os layouts continuam barrando. O
 // agente não passa por /areas: vai direto para o workspace.
-const TODOS_OS_CARDS: readonly AppArea[] = ["analytics", "copy", "produtos"];
+const TODOS_OS_CARDS: readonly AppArea[] = ["analytics", "copy", "produtos", "analises"];
 const ROLE_AREA_CARDS: Partial<Record<AppRole, readonly AppArea[]>> = {
   manager: TODOS_OS_CARDS,
   copy_grup: TODOS_OS_CARDS,
@@ -81,19 +91,25 @@ export function roleLabel(role: string | null | undefined): string {
 export const LAST_AREA_KEY = "xmx-last-area";
 
 /**
- * Liberações individuais por cima da role (colunas boolean em profiles). Hoje só
- * `can_access_analytics`: alguém do copy que, sozinho, também entra no Data
- * Analytics — o resto do time continua só no Copy.
+ * Liberações individuais por cima da role (colunas boolean em profiles):
+ * - `can_access_analytics`: alguém do copy que, sozinho, também entra no Data
+ *   Analytics — o resto do time continua só no Copy.
+ * - `can_view_geovani_analyses`: única porta da área Análises Geovani, para
+ *   qualquer role (inclusive manager — a role sozinha não basta).
  */
-export type AreaGrants = { canAccessAnalytics?: boolean };
+export type AreaGrants = { canAccessAnalytics?: boolean; canViewGeovaniAnalyses?: boolean };
 
 export function areasForRole(
   role: string | null | undefined,
   grants?: AreaGrants,
 ): readonly AppArea[] {
-  const areas = ROLE_AREAS[role as AppRole] ?? ROLE_AREAS.agent;
+  let areas: readonly AppArea[] = ROLE_AREAS[role as AppRole] ?? ROLE_AREAS.agent;
   if (grants?.canAccessAnalytics && !areas.includes("analytics")) {
-    return [...areas, "analytics"];
+    areas = [...areas, "analytics"];
+  }
+  // Sempre no fim: não muda a "casa" (primeira área) de ninguém.
+  if (grants?.canViewGeovaniAnalyses && !areas.includes("analises")) {
+    areas = [...areas, "analises"];
   }
   return areas;
 }
@@ -138,5 +154,11 @@ export function homePathForRole(role: string | null | undefined): string {
 }
 
 export function isValidArea(value: string | null | undefined): value is AppArea {
-  return value === "workspace" || value === "analytics" || value === "copy" || value === "produtos";
+  return (
+    value === "workspace" ||
+    value === "analytics" ||
+    value === "copy" ||
+    value === "produtos" ||
+    value === "analises"
+  );
 }

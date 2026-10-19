@@ -8,6 +8,7 @@ import {
   hasAreaChoice,
   homePathForRole,
   isKnownRole,
+  isValidArea,
 } from "./roles";
 
 describe("homePathForRole", () => {
@@ -31,9 +32,16 @@ describe("homePathForRole", () => {
 // Regra do dono (02/10/2026): os três cards aparecem para todo perfil de gestão;
 // produtos só entra em Produtos, copy só em Copy, a gestora em tudo.
 describe("cards da tela /areas", () => {
-  it("gestora, copy e produtos veem os mesmos três cards, na mesma ordem", () => {
+  it("gestora, copy e produtos veem os mesmos quatro cards, na mesma ordem", () => {
     for (const role of ["manager", "copy_grup", "produto"]) {
-      expect(areaCardsForRole(role)).toEqual(["analytics", "copy", "produtos"]);
+      expect(areaCardsForRole(role)).toEqual(["analytics", "copy", "produtos", "analises"]);
+    }
+  });
+
+  it("o quarto card não muda o destino depois do login", () => {
+    for (const role of ["manager", "copy_grup", "produto"]) {
+      expect(hasAreaChoice(role)).toBe(true);
+      expect(homePathForRole(role)).toBe("/areas");
     }
   });
 
@@ -87,6 +95,47 @@ describe("acesso por área", () => {
     expect(canAccessArea(null, "analytics")).toBe(false);
     expect(canAccessArea("role_que_nao_existe", "copy")).toBe(false);
     expect(areasForRole(undefined)).toEqual(["workspace"]);
+  });
+});
+
+// Análises Geovani: a role não dá acesso (nem manager); só a flag
+// can_view_geovani_analyses, para qualquer role.
+describe("área Análises Geovani", () => {
+  const comFlag = { canViewGeovaniAnalyses: true };
+
+  it("a flag libera a área para qualquer role", () => {
+    for (const role of ["manager", "copy_grup", "produto", "agent", null]) {
+      expect(canAccessArea(role, "analises", comFlag)).toBe(true);
+    }
+  });
+
+  it("sem a flag ninguém entra — nem a gestora", () => {
+    for (const role of ["manager", "copy_grup", "produto", "agent", null]) {
+      expect(canAccessArea(role, "analises")).toBe(false);
+      expect(canAccessArea(role, "analises", { canViewGeovaniAnalyses: false })).toBe(false);
+    }
+    expect(areasForRole("manager")).not.toContain("analises");
+  });
+
+  it("a flag entra no fim da lista: a casa de ninguém muda", () => {
+    expect(areasForRole("manager", comFlag)).toEqual(["analytics", "copy", "produtos", "analises"]);
+    expect(areasForRole("copy_grup", { canAccessAnalytics: true, canViewGeovaniAnalyses: true })).toEqual([
+      "copy",
+      "analytics",
+      "analises",
+    ]);
+    expect(areasForRole("agent", comFlag)[0]).toBe("workspace");
+  });
+
+  it("o agente continua sem /areas, mesmo com a flag", () => {
+    expect(hasAreaChoice("agent")).toBe(false);
+    expect(homePathForRole("agent")).toBe("/workspace");
+    expect(areaCardsForRole("agent")).toEqual(["workspace"]);
+  });
+
+  it("isValidArea aceita analises", () => {
+    expect(isValidArea("analises")).toBe(true);
+    expect(isValidArea("analise")).toBe(false);
   });
 });
 

@@ -7,7 +7,10 @@ import AreaSelect from "./AreaSelect";
 // Gestora, copy e produtos veem os mesmos três cards; cada um só entra onde o
 // perfil permite. O card sem acesso avisa "Acesso negado" e a pessoa fica em /areas.
 
-const perfil = { role: "produto", full_name: "Teste Produtos" };
+const perfil: { role: string; full_name: string; can_view_geovani_analyses?: boolean } = {
+  role: "produto",
+  full_name: "Teste Produtos",
+};
 
 vi.mock("@/integrations/supabase/client", () => {
   const chain: Record<string, unknown> = {};
@@ -43,6 +46,7 @@ function renderTela() {
         <Route path="/dashboard" element={<div>tela analytics</div>} />
         <Route path="/copy" element={<div>tela copy</div>} />
         <Route path="/produtos" element={<div>tela produtos</div>} />
+        <Route path="/analises" element={<div>tela analises</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -116,6 +120,33 @@ describe("AreaSelect — time de copy", () => {
     renderTela();
     fireEvent.click(await screen.findByLabelText("Entrar na Área de Copy"));
     expect(await screen.findByText("tela copy")).toBeTruthy();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+// Análises Geovani: o card aparece para todo perfil de gestão, mas só entra
+// quem tem can_view_geovani_analyses — nem a gestora entra pela role.
+describe("AreaSelect — card Análises Geovani", () => {
+  beforeEach(() => {
+    toastError.mockClear();
+    perfil.role = "manager";
+    delete perfil.can_view_geovani_analyses;
+  });
+
+  it("aparece para a gestora e nega sem a flag", async () => {
+    renderTela();
+    fireEvent.click(await screen.findByLabelText("Entrar nas Análises Geovani"));
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0][0]).toBe("Acesso negado");
+    expect(screen.queryByText("tela analises")).toBeNull();
+  });
+
+  it("com a flag, copy entra nas Análises", async () => {
+    perfil.role = "copy_grup";
+    perfil.can_view_geovani_analyses = true;
+    renderTela();
+    fireEvent.click(await screen.findByLabelText("Entrar nas Análises Geovani"));
+    expect(await screen.findByText("tela analises")).toBeTruthy();
     expect(toastError).not.toHaveBeenCalled();
   });
 });
