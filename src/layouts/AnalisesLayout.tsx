@@ -220,7 +220,7 @@ export default function AnalisesLayout() {
               Análises Geovani
             </div>
             <div className="truncate text-[12px] text-[var(--nb-ink-3)]">
-              Notebooks, relatórios e dúvidas de dados
+              Notebooks e Relatórios
             </div>
           </div>
 

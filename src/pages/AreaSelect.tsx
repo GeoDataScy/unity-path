@@ -59,7 +59,7 @@ const AREA_CARDS: Record<AppArea, AreaCard> = {
   analises: {
     icon: JupyterMark,
     headline: "Análises Geovani",
-    description: "Notebooks, relatórios e dúvidas de dados — acesso restrito.",
+    description: "Notebooks e Relatórios — acesso restrito.",
     bullets: ["Relatórios em notebook", "Mapa do banco de dados", "Dúvidas sobre os dados"],
     restricted: true,
   },
