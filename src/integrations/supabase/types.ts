@@ -1064,6 +1064,7 @@ export type Database = {
           can_claim_tickets: boolean
           can_register_duplicate_emails: boolean
           can_view_all_tickets: boolean
+          can_view_geovani_analyses: boolean
           created_at: string | null
           deactivated_at: string | null
           deactivated_by: string | null
@@ -1081,6 +1082,7 @@ export type Database = {
           can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
+          can_view_geovani_analyses?: boolean
           created_at?: string | null
           deactivated_at?: string | null
           deactivated_by?: string | null
@@ -1098,6 +1100,7 @@ export type Database = {
           can_claim_tickets?: boolean
           can_register_duplicate_emails?: boolean
           can_view_all_tickets?: boolean
+          can_view_geovani_analyses?: boolean
           created_at?: string | null
           deactivated_at?: string | null
           deactivated_by?: string | null
@@ -2269,6 +2272,7 @@ export type Database = {
       can_export_full_client_data: { Args: never; Returns: boolean }
       can_read_refund_analytics: { Args: never; Returns: boolean }
       can_view_all_tickets: { Args: never; Returns: boolean }
+      can_view_geovani_analyses: { Args: never; Returns: boolean }
       can_view_support_analytics: { Args: never; Returns: boolean }
       claim_ticket: {
         Args: { p_service_id: string }

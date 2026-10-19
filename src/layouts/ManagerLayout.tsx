@@ -37,6 +37,7 @@ import { getMeStatus, recordAuthEvent, sendHeartbeat } from "@/lib/userSession";
 import { createSessionExit } from "@/lib/sessionExit";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { fetchGeovaniAnalysesGrant } from "@/features/analises/geovaniAnalysesGrant";
 import { TopBar } from "@/components/layout/TopBar";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { useSidebarTone } from "@/lib/sidebarTone";
@@ -84,6 +85,7 @@ export default function ManagerLayout() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [canApproveTakeovers, setCanApproveTakeovers] = useState(false);
   const [canAccessAnalytics, setCanAccessAnalytics] = useState(false);
+  const [canViewGeovaniAnalyses, setCanViewGeovaniAnalyses] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -169,6 +171,10 @@ export default function ManagerLayout() {
       setCanApproveTakeovers(Boolean(profile?.can_approve_takeovers));
       setCanAccessAnalytics(grants.canAccessAnalytics);
       setAuthLoading(false);
+      // Consulta à parte e tolerante: só alimenta o AreaSwitcher.
+      fetchGeovaniAnalysesGrant(session.user.id).then((v) => {
+        if (active) setCanViewGeovaniAnalyses(v);
+      });
     };
 
     checkAuth();
@@ -377,7 +383,7 @@ export default function ManagerLayout() {
             role={role}
             currentArea="analytics"
             collapsed={collapsed}
-            grants={{ canAccessAnalytics }}
+            grants={{ canAccessAnalytics, canViewGeovaniAnalyses }}
           />
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-1")}>

@@ -1,0 +1,66 @@
+-- Liberar a área "Análises Geovani" (/analises) para Webert e Mateus Maialle.
+--
+-- Rodar no banco de PRODUÇÃO (cggigwessiododyjbegp) pela Management API,
+-- DEPOIS da migration 20261019120000_analises_geovani_acesso.sql.
+-- Não é migration: é operação pontual, como os UPDATEs de contas em memória.
+--
+-- Passo a passo:
+--   1. Rodar só o bloco 1 (conferência). Deve voltar EXATAMENTE 1 linha do
+--      Webert e 1 do Maialle, ambas com is_active = true.
+--   2. Se o Webert vier com 0 ou 2+ linhas, NÃO rodar o bloco 2. Pegar o id
+--      certo e trocar o filtro do Webert por `id = '<uuid>'`.
+--   3. Rodar o bloco 2 (UPDATE). Ele confere sozinho que mexeu em 2 linhas.
+--   4. Rodar o bloco 3 para ver o resultado.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 1) Conferência (só leitura)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SELECT id, full_name, email, role, is_active, can_view_geovani_analyses
+--   FROM public.profiles
+--  WHERE id = 'e2b130ad-1fb8-4577-8589-dcf974574010'   -- Mateus Maialle
+--     OR full_name ILIKE '%webert%'
+--     OR email ILIKE '%webert%'
+--  ORDER BY full_name;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 2) UPDATE (descomentar depois da conferência)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- DO $$
+-- DECLARE
+--   v_webert int;
+--   v_total  int;
+-- BEGIN
+--   SELECT count(*) INTO v_webert
+--     FROM public.profiles
+--    WHERE full_name ILIKE '%webert%';
+--
+--   IF v_webert <> 1 THEN
+--     RAISE EXCEPTION 'esperava 1 perfil com full_name ~ webert, achei %. Usar o id.', v_webert;
+--   END IF;
+--
+--   UPDATE public.profiles
+--      SET can_view_geovani_analyses = true
+--    WHERE id = 'e2b130ad-1fb8-4577-8589-dcf974574010'   -- Mateus Maialle
+--       OR full_name ILIKE '%webert%';                    -- Webert
+--   GET DIAGNOSTICS v_total = ROW_COUNT;
+--
+--   IF v_total <> 2 THEN
+--     RAISE EXCEPTION 'esperava 2 perfis atualizados, foram %. Nada foi gravado.', v_total;
+--   END IF;
+-- END $$;
+
+-- Opcional: o próprio Geovani também precisa da flag para entrar na área.
+-- Conferir o id antes (SELECT id, full_name, email FROM public.profiles
+-- WHERE full_name ILIKE '%geovani%' OR email ILIKE '%geovani%';) e então:
+-- UPDATE public.profiles SET can_view_geovani_analyses = true WHERE id = '<uuid do Geovani>';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 3) Resultado
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SELECT id, full_name, email, role, is_active
+--   FROM public.profiles
+--  WHERE can_view_geovani_analyses
+--  ORDER BY full_name;
+
+-- Revogar de alguém:
+-- UPDATE public.profiles SET can_view_geovani_analyses = false WHERE id = '<uuid>';

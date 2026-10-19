@@ -10,6 +10,7 @@ import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { fetchGeovaniAnalysesGrant } from "@/features/analises/geovaniAnalysesGrant";
 import { TopBar } from "@/components/layout/TopBar";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { useSidebarTone } from "@/lib/sidebarTone";
@@ -48,6 +49,7 @@ export default function CopyLayout() {
   const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [canAccessAnalytics, setCanAccessAnalytics] = useState(false);
+  const [canViewGeovaniAnalyses, setCanViewGeovaniAnalyses] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -130,6 +132,10 @@ export default function CopyLayout() {
       setFullName(profile?.full_name ?? null);
       setCanAccessAnalytics(Boolean(profile?.can_access_analytics));
       setAuthLoading(false);
+      // Consulta à parte e tolerante: só alimenta o AreaSwitcher.
+      fetchGeovaniAnalysesGrant(session.user.id).then((v) => {
+        if (active) setCanViewGeovaniAnalyses(v);
+      });
     };
 
     checkAuth();
@@ -262,7 +268,7 @@ export default function CopyLayout() {
             role={role}
             currentArea="copy"
             collapsed={collapsed}
-            grants={{ canAccessAnalytics }}
+            grants={{ canAccessAnalytics, canViewGeovaniAnalyses }}
           />
 
           {!collapsed && (

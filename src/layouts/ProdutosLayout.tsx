@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { canAccessArea, homePathForRole } from "@/lib/roles";
 import { AreaSwitcher } from "@/components/layout/AreaSwitcher";
+import { fetchGeovaniAnalysesGrant } from "@/features/analises/geovaniAnalysesGrant";
 import { TopBar } from "@/components/layout/TopBar";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { useSidebarTone } from "@/lib/sidebarTone";
@@ -35,6 +36,7 @@ export default function ProdutosLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [canViewGeovaniAnalyses, setCanViewGeovaniAnalyses] = useState(false);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -95,6 +97,10 @@ export default function ProdutosLayout() {
       setRole(profile?.role ?? null);
       setFullName(profile?.full_name ?? null);
       setAuthLoading(false);
+      // Consulta à parte e tolerante: só alimenta o AreaSwitcher.
+      fetchGeovaniAnalysesGrant(session.user.id).then((v) => {
+        if (active) setCanViewGeovaniAnalyses(v);
+      });
     };
 
     checkAuth();
@@ -223,7 +229,12 @@ export default function ProdutosLayout() {
             collapsed ? "space-y-3 px-2 pb-3" : "space-y-5 px-4 pb-4",
           )}
         >
-          <AreaSwitcher role={role} currentArea="produtos" collapsed={collapsed} />
+          <AreaSwitcher
+            role={role}
+            currentArea="produtos"
+            collapsed={collapsed}
+            grants={{ canViewGeovaniAnalyses }}
+          />
 
           <nav className={cn(collapsed ? "space-y-1" : "space-y-2")}>
             {NAV_ITEMS.map((item) => {

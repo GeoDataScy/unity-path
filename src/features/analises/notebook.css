@@ -1,0 +1,120 @@
+/* Tema "notebook" da área Análises Geovani.
+   Paleta inspirada no Jupyter (classic/JupyterLab), escopada em
+   .analises-notebook para não vazar no resto do app. Os tons hubi continuam
+   valendo fora daqui.
+
+   Contraste (AA, texto normal ≥ 4,5:1) conferido sobre o fundo onde cada token
+   aparece. O laranja Jupyter puro (#f37626) dá só ~2,9:1 sobre branco: fica
+   para traço, borda e símbolo; texto laranja usa --nb-accent-ink.
+   Dark: variante discreta no espírito do JupyterLab dark — o app troca de tema
+   pela classe .dark (next-themes) e esta área acompanha. */
+
+.analises-notebook {
+  --nb-page: #eeeeee;          /* fundo atrás da folha */
+  --nb-sheet: #ffffff;         /* a "folha" do notebook */
+  --nb-sheet-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --nb-chrome: #f7f7f7;        /* cabeçalho / barra de abas */
+  --nb-tab: #e4e4e4;           /* aba inativa */
+  --nb-tab-hover: #ececec;
+  --nb-border: #e0e0e0;        /* borda de célula */
+  --nb-border-strong: #c8c8c8;
+  --nb-code-bg: #f7f7f7;       /* área de entrada de código */
+  --nb-ink: #212121;           /* 16:1 sobre branco */
+  --nb-ink-2: #4f4f4f;         /* 8,2:1 */
+  --nb-ink-3: #666666;         /* 5,7:1 (5,3:1 sobre --nb-code-bg) */
+  --nb-in: #303f9f;            /* prompt "In [ ]:"  — 8,9:1 */
+  --nb-out: #bf360c;           /* prompt "Out[ ]:"  — 5,6:1 */
+  --nb-accent: #f37626;        /* laranja Jupyter — só traço/símbolo */
+  --nb-accent-ink: #a8430b;    /* laranja para texto — 5,9:1 */
+  --nb-comment: #3a7373;       /* comentário de código — 5,1:1 sobre --nb-code-bg */
+  --nb-keyword: #1b6a1b;       /* palavra-chave — 6,1:1 */
+  --nb-cell-active: #42a5f5;   /* barra lateral da célula sob o cursor */
+  --nb-skeleton: #e8e8e8;
+  --nb-note-bg: #fcf8e3;       /* aviso "em construção" (alert-warning do Jupyter) */
+  --nb-note-border: #f0dfa8;
+  --nb-note-ink: #725a1d;      /* 6,3:1 sobre --nb-note-bg */
+  --nb-font-code: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --nb-font-text: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  background: var(--nb-page);
+  color: var(--nb-ink);
+  font-family: var(--nb-font-text);
+}
+
+.dark .analises-notebook {
+  --nb-page: #111111;
+  --nb-sheet: #1c1c1c;
+  --nb-sheet-shadow: 0 0 0 1px #2c2c2c;
+  --nb-chrome: #171717;
+  --nb-tab: #232323;
+  --nb-tab-hover: #2a2a2a;
+  --nb-border: #363636;
+  --nb-border-strong: #4a4a4a;
+  --nb-code-bg: #242424;
+  --nb-ink: #e6e6e6;           /* 13,9:1 sobre a folha */
+  --nb-ink-2: #c2c2c2;
+  --nb-ink-3: #a3a3a3;         /* 6,9:1 */
+  --nb-in: #a5b0e6;            /* 8,2:1 */
+  --nb-out: #ff9a76;           /* 7,6:1 */
+  --nb-accent: #f37626;
+  --nb-accent-ink: #ffa36b;    /* 8,1:1 */
+  --nb-comment: #7fc2c2;
+  --nb-keyword: #8fd18f;
+  --nb-cell-active: #4a90c8;
+  --nb-skeleton: #2e2e2e;
+  --nb-note-bg: #2a2413;
+  --nb-note-border: #4d4220;
+  --nb-note-ink: #ecd394;      /* 10,9:1 */
+}
+
+/* Prosa das células de markdown — o "rendered markdown" do Jupyter. */
+.analises-notebook .nb-md {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--nb-ink);
+}
+.analises-notebook .nb-md h1 {
+  font-size: 1.75rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.6em;
+}
+.analises-notebook .nb-md h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+}
+.analises-notebook .nb-md p + p,
+.analises-notebook .nb-md p + ul,
+.analises-notebook .nb-md ul + p {
+  margin-top: 0.75em;
+}
+.analises-notebook .nb-md ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.analises-notebook .nb-md li + li {
+  margin-top: 0.25em;
+}
+.analises-notebook .nb-md code {
+  font-family: var(--nb-font-code);
+  font-size: 0.86em;
+  background: var(--nb-code-bg);
+  border: 1px solid var(--nb-border);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+}
+
+.analises-notebook .nb-code {
+  font-family: var(--nb-font-code);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Foco visível consistente em toda a área (abas, links, botões). */
+.analises-notebook :focus-visible {
+  outline: 2px solid var(--nb-in);
+  outline-offset: 2px;
+}

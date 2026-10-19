@@ -43,6 +43,10 @@ const CopyMotivos = lazy(() => import("./pages/copy/CopyMotivos"));
 const ProdutosLayout = lazy(() => import("./layouts/ProdutosLayout"));
 const ProdutosPedidosEspera = lazy(() => import("./pages/produtos/ProdutosPedidosEspera"));
 const ProdutosLateHunter = lazy(() => import("./pages/produtos/ProdutosLateHunter"));
+const AnalisesLayout = lazy(() => import("./layouts/AnalisesLayout"));
+const AnalisesRelatorios = lazy(() => import("./pages/analises/AnalisesRelatorios"));
+const AnalisesDuvidas = lazy(() => import("./pages/analises/AnalisesDuvidas"));
+const AnalisesBanco = lazy(() => import("./pages/analises/AnalisesBanco"));
 const AreaSelect = lazy(() => import("./pages/AreaSelect"));
 const Blocked = lazy(() => import("./pages/Blocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -126,6 +130,13 @@ const App = () => (
           <Route path="/produtos" element={<ProdutosLayout />}>
             <Route index element={<ProdutosLateHunter />} />
             <Route path="pedidos-em-espera" element={<ProdutosPedidosEspera />} />
+          </Route>
+          {/* Análises Geovani: acesso só pela flag can_view_geovani_analyses */}
+          <Route path="/analises" element={<AnalisesLayout />}>
+            <Route index element={<Navigate to="/analises/relatorios" replace />} />
+            <Route path="relatorios" element={<AnalisesRelatorios />} />
+            <Route path="duvidas" element={<AnalisesDuvidas />} />
+            <Route path="banco" element={<AnalisesBanco />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

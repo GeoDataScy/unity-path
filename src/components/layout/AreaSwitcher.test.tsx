@@ -4,13 +4,13 @@ import { MemoryRouter } from "react-router-dom";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AreaSwitcher } from "./AreaSwitcher";
-import type { AppArea } from "@/lib/roles";
+import type { AppArea, AreaGrants } from "@/lib/roles";
 
-function renderSwitcher(role: string | null, currentArea: AppArea, collapsed = false) {
+function renderSwitcher(role: string | null, currentArea: AppArea, collapsed = false, grants?: AreaGrants) {
   return render(
     <MemoryRouter>
       <TooltipProvider>
-        <AreaSwitcher role={role} currentArea={currentArea} collapsed={collapsed} />
+        <AreaSwitcher role={role} currentArea={currentArea} collapsed={collapsed} grants={grants} />
       </TooltipProvider>
     </MemoryRouter>,
   );
@@ -47,6 +47,22 @@ describe("AreaSwitcher", () => {
   it("não renderiza nada para role desconhecida", () => {
     const { container } = renderSwitcher(null, "workspace");
     expect(container.firstChild).toBeNull();
+  });
+
+  it("sem a flag, ninguém vê Análises — nem a gestora", () => {
+    renderSwitcher("manager", "analytics");
+    expect(screen.queryByText("Ir para Análises")).toBeNull();
+  });
+
+  it("com can_view_geovani_analyses, oferece Análises à gestora", () => {
+    renderSwitcher("manager", "analytics", false, { canViewGeovaniAnalyses: true });
+    expect(screen.getByText("Ir para Análises")).toBeTruthy();
+  });
+
+  it("produtos com a flag passa a ver o switcher só com Análises", () => {
+    renderSwitcher("produto", "produtos", false, { canViewGeovaniAnalyses: true });
+    expect(screen.getByText("Ir para Análises")).toBeTruthy();
+    expect(screen.queryByText("Ir para Copy")).toBeNull();
   });
 
   it("colapsado vira botão de ícone com aria-label", () => {
